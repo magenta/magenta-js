@@ -16,14 +16,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tensorflow/magenta.git"
+    "url": "git+https://github.com/tensorflow/magenta-js.git"
   },
   "author": "",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/tensorflow/magenta/issues"
+    "url": "https://github.com/tensorflow/magenta-js/issues"
   },
-  "homepage": "https://github.com/tensorflow/magenta/tree/master/magenta/models/music_vae/js/#readme",
+  "homepage": "https://github.com/tensorflow/magenta-js/tree/master/music_vae/#readme",
   "devDependencies": {
     "browserify": "^15.2.0",
     "http-server": "^0.11.1",
