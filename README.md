@@ -13,4 +13,5 @@ Learn more about the Magenta project at our [blog](https://magenta.tensorflow.or
 MelodyRNN, DrumsRNN, [PerformanceRNN](https://g.co/magenta/performance-rnn), and PolyphonyRNN, whose Python TensorFlow implementations can be found in the [main Magenta repo](https://github.com/tensorflow/magenta/tree/master/magenta/models).
 * [music_vae](music_vae): A model library containing MusicVAE.js, a [deeplearn.js][dljs] implementation of Magenta's [MusicVAE](https://g.co/magenta/music-vae) model. The Python TensorFlow implementation can be found in the [main Magenta repo](https://goo.gl/magenta/musicvae-code).
 
+[dljs]: https://deeplearnjs.org
 [ns-proto]: https://github.com/tensorflow/magenta/blob/master/magenta/protobuf/music.proto
