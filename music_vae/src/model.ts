@@ -18,6 +18,7 @@ import * as dl from 'deeplearn';
 import * as data from './data';
 // Use custom CheckpointLoader until quantization is added to dl.
 import { CheckpointLoader } from './checkpoint_loader';
+import { INoteSequence } from '@magenta/core';
 
 /**
  * A class for keeping track of the parameters of an affine transformation.
@@ -676,7 +677,7 @@ class MusicVAE {
    * @returns An array of interpolation `NoteSequence` objects, as described
    * above.
    */
-  async interpolate(inputSequences: data.INoteSequence[], numInterps: number) {
+  async interpolate(inputSequences: INoteSequence[], numInterps: number) {
     const numSteps = this.dataConverter.numSteps;
 
 
@@ -698,7 +699,7 @@ class MusicVAE {
       return result;
     });
 
-    const outputSequences: data.INoteSequence[] = [];
+    const outputSequences: INoteSequence[] = [];
     for (const tensor of oh) {
       outputSequences.push(await this.dataConverter.toNoteSequence(tensor));
       tensor.dispose();
@@ -780,7 +781,7 @@ class MusicVAE {
       return result;
     });
 
-    const outputSequences: data.INoteSequence[] = [];
+    const outputSequences: INoteSequence[] = [];
     for (const tensor of oh) {
       outputSequences.push(await this.dataConverter.toNoteSequence(tensor));
       tensor.dispose();

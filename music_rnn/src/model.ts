@@ -18,27 +18,17 @@
 import * as dl from 'deeplearn';
 import * as magenta from '@magenta/core';
 import * as data from './data';
-import { INoteSequence } from '@magenta/core';
-
-// tslint:disable-next-line:max-line-length
-const CHECKPOINT_URL = "https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_rnn/dljs/basic_rnn/";
-
-const DEFAULT_MIN_NOTE = 48;
-const DEFAULT_MAX_NOTE = 83;
 
 const CELL_FORMAT = "rnn/multi_rnn_cell/cell_%d/basic_lstm_cell/";
 
 /**
- * Main MusicVAE model class.
+ * Main MusicRNN model class.
  *
- * A MusicVAE is a variational autoencoder made up of an `Encoder` and
- * `Decoder`, along with a `DataConverter` for converting between `Tensor`
- * and `NoteSequence` objects for input and output.
- *
- * Exposes methods for interpolation and sampling of musical sequences.
+ * A MusicRNN is an LSTM-based language model for musical notes.
  */
-export class MelodyRnn {
+export class MusicRNN {
   checkpointURL: string;
+  dataConverter: data.DataConverter;
 
   lstmCells: dl.LSTMCellFunc[];
   lstmFcB: dl.Tensor1D;
@@ -50,7 +40,7 @@ export class MelodyRnn {
   initialized: boolean;
 
   /**
-   * `MusicVAE` constructor.
+   * `MusicRNN` constructor.
    *
    * @param checkpointURL Path to the checkpoint directory.
    * @param dataConverter A `DataConverter` object to use for converting between
@@ -58,12 +48,13 @@ export class MelodyRnn {
    * file must exist within the checkpoint directory specifying the type and
    * args for the correct `DataConverter`.
    */
-  constructor(checkpointURL=CHECKPOINT_URL) {
+  constructor(checkpointURL:string, dataConverter?:data.DataConverter) {
     this.checkpointURL = checkpointURL;
     this.initialized = false;
     this.rawVars = {};
     this.biasShapes = [];
     this.lstmCells = [];
+    this.dataConverter = dataConverter;
   }
 
   /**
@@ -72,6 +63,14 @@ export class MelodyRnn {
    */
   async initialize() {
     this.dispose();
+
+    if (!this.dataConverter) {
+      fetch(this.checkpointURL + '/converter.json')
+        .then((response) => response.json())
+        .then((converterSpec: data.ConverterSpec) => {
+          this.dataConverter = data.converterFromSpec(converterSpec);
+        });
+    }
 
     const reader = new dl.CheckpointLoader(this.checkpointURL);
     const vars = await reader.getAllVariables();
@@ -125,16 +124,12 @@ export class MelodyRnn {
       temperature?: number): Promise<magenta.INoteSequence> {
     magenta.Sequences.assertIsQuantizedSequence(sequence);
 
-    let continuation: INoteSequence;
-
     if(!this.initialized) {
       await this.initialize();
     }
 
-    dl.tidy(() => {
-      const converterIn = new data.MelodyConverter(
-        sequence.totalQuantizedSteps, DEFAULT_MIN_NOTE, DEFAULT_MAX_NOTE);
-      const inputs = converterIn.toTensor(sequence);
+    const oh = dl.tidy(() => {
+      const inputs = this.dataConverter.toTensor(sequence);
 
       const length:number = inputs.shape[0];
       const outputSize:number = inputs.shape[1];
@@ -168,12 +163,11 @@ export class MelodyRnn {
         h = output[1];
       }
 
-      const output = dl.stack(samples).as2D(samples.length, outputSize);
-      const converterOut = new data.MelodyConverter(
-        sequence.totalQuantizedSteps, DEFAULT_MIN_NOTE, DEFAULT_MAX_NOTE);
-      continuation = converterOut.toNoteSequence(output);
+      return dl.stack(samples).as2D(samples.length, outputSize);
     });
-    return continuation;
-  }
 
+    const result = this.dataConverter.toNoteSequence(await oh);
+    oh.dispose();
+    return result;
+  }
 }

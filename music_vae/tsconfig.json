@@ -19,6 +19,6 @@
     "allowUnreachableCode": false
   },
   "include": [
-    "index.ts"
+    "src/index.ts"
   ]
 }
