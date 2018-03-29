@@ -15,9 +15,7 @@
  * =============================================================================
  */
 import * as dl from 'deeplearn';
-import * as magenta from '@magenta/core';
-import NoteSequence = magenta.NoteSequence;
-import INoteSequence = magenta.INoteSequence;
+import {INoteSequence, NoteSequence} from '@magenta/core';
 
 const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
   // bass drum
@@ -49,7 +47,7 @@ const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
  */
 export interface ConverterSpec {
   type: string;
-  args: {[argName: string] : any};   // tslint:disable-line:no-any
+  args: DrumsConverterArgs | MelodyConverterArgs;
 }
 
 /**
@@ -61,18 +59,11 @@ export interface ConverterSpec {
  */
 export function converterFromSpec(spec: ConverterSpec) {
   if (spec.type === 'MelodyConverter') {
-    return new MelodyConverter(
-        spec.args.numSteps,
-        spec.args.minPitch,
-        spec.args.maxPitch);
+    return new MelodyConverter(spec.args as MelodyConverterArgs);
   } else if (spec.type === 'DrumsConverter') {
-    return new DrumsConverter(
-        spec.args.numSteps,
-        spec.args.pitchClasses);
+    return new DrumsConverter(spec.args as DrumsConverterArgs);
   } else if (spec.type === 'DrumRollConverter') {
-    return new DrumRollConverter(
-        spec.args.numSteps,
-        spec.args.pitchClasses);
+    return new DrumRollConverter(spec.args as DrumsConverterArgs);
   } else {
     throw new Error(
       'Unknown DataConverter type in spec: ' + spec.type);
@@ -84,9 +75,11 @@ export function converterFromSpec(spec: ConverterSpec) {
  * `NoteSequence` objects.
  */
 export abstract class DataConverter {
-  abstract numSteps: number;
+  abstract numSteps: number;  // Total length of sequences.
+  abstract numSegments: number;  // Number of steps for conductor.
+  abstract readonly NUM_SPLITS: number;  // Number of conductor splits.
   abstract toTensor(noteSequence: INoteSequence): dl.Tensor2D;
-  abstract toNoteSequence(tensor: dl.Tensor2D): INoteSequence;
+  abstract async toNoteSequence(tensor: dl.Tensor2D): Promise<INoteSequence>;
 }
 
 /**
@@ -105,36 +98,44 @@ export abstract class DataConverter {
  *
  * The output `NoteSequence` uses quantized time and only the first pitch in
  * pitch class are used.
+ *
+ * @param numSteps The length of each sequence.
+ * @param numSegments (Optional) The number of conductor segments, if
+ * applicable.
+ * @param pitchClasses (Optional) An array of arrays, grouping together MIDI
+ * pitches to treat as the same drum. The first pitch in each class will be used
+ * in the `NoteSequence` returned by `toNoteSequence`. A default mapping to 9
+ * classes is used if not provided.
  */
+export interface DrumsConverterArgs {
+  numSteps: number;
+  numSegments?: number;
+  pitchClasses?: number[][];
+}
 export class DrumsConverter extends DataConverter{
   numSteps: number;
+  numSegments: number;
   pitchClasses: number[][];
   pitchToClass: {[pitch: number] : number};
+  NUM_SPLITS = 0;
 
-  /**
-   * `DrumsConverter` constructor.
-   *
-   * @param numSteps The length of each sequence.
-   * @param pitchClasses An array of arrays, grouping together MIDI pitches to
-   * treat as the same drum. The first pitch in each class will be used in the
-   * `NoteSequence` returned by `toNoteSequence`.
-   */
-  constructor(
-      numSteps: number, pitchClasses?: number[][]) {
+  constructor(args: DrumsConverterArgs) {
     super();
-    pitchClasses = (pitchClasses) ? pitchClasses : DEFAULT_DRUM_PITCH_CLASSES;
-    this.numSteps = numSteps;
-    this.pitchClasses = pitchClasses;
+    this.pitchClasses = (args.pitchClasses) ?
+        args.pitchClasses : DEFAULT_DRUM_PITCH_CLASSES;
+    this.numSteps = args.numSteps;
+    this.numSegments = args.numSegments;
     this.pitchToClass = {};
-    for (let c = 0; c < pitchClasses.length; ++c) {  // class
-      pitchClasses[c].forEach((p) => {this.pitchToClass[p] = c;});
+    for (let c = 0; c < this.pitchClasses.length; ++c) {  // class
+      this.pitchClasses[c].forEach((p) => {this.pitchToClass[p] = c;});
     }
   }
 
-  toTensor(noteSequence: INoteSequence): dl.Tensor2D {
-    const drumRoll = dl.buffer([this.numSteps, this.pitchClasses.length + 1]);
-    // Set final values to 1 and change to 0 later if the has gets a note.
-    for (let i = 0; i < this.numSteps; ++i) {
+  toTensor(noteSequence: INoteSequence) {
+    const numSteps = this.numSteps | noteSequence.totalQuantizedSteps;
+    const drumRoll = dl.buffer([numSteps, this.pitchClasses.length + 1]);
+    // Set final values to 1 and change to 0 later if the column gets a note.
+    for (let i = 0; i < numSteps; ++i) {
       drumRoll.set(1, i, -1);
     }
     noteSequence.notes.forEach((note) => {
@@ -144,10 +145,10 @@ export class DrumsConverter extends DataConverter{
     return drumRoll.toTensor() as dl.Tensor2D;
   }
 
-  toNoteSequence(oh: dl.Tensor2D): INoteSequence {
+  async toNoteSequence(oh: dl.Tensor2D) {
     const noteSequence = NoteSequence.create();
     const labelsTensor = oh.argMax(1);
-    const labels: Int32Array = labelsTensor.dataSync() as Int32Array;
+    const labels: Int32Array = await labelsTensor.data() as Int32Array;
     labelsTensor.dispose();
     for (let s = 0; s < labels.length; ++s) {  // step
       for (let p = 0; p < this.pitchClasses.length; p++) {  // pitch class
@@ -176,14 +177,13 @@ export class DrumsConverter extends DataConverter{
  *
  * The output `NoteSequence` uses quantized time and only the first pitch in
  * pitch class are used.
- *
  */
 export class DrumRollConverter extends DrumsConverter {
-  toNoteSequence(roll: dl.Tensor2D) {
+  async toNoteSequence(roll: dl.Tensor2D) {
     const noteSequence = NoteSequence.create();
     for (let s = 0; s < roll.shape[0]; ++s) {  // step
       const rollSlice = roll.slice([s, 0], [1, roll.shape[1]]);
-      const pitches = rollSlice.dataSync() as Uint8Array;
+      const pitches = await rollSlice.data() as Uint8Array;
       rollSlice.dispose();
       for (let p = 0; p < pitches.length; ++p) {  // pitch class
         if (pitches[p]) {
@@ -214,36 +214,45 @@ export class DrumRollConverter extends DrumsConverter {
  *
  * The expected `Tensor` in `toNoteSequence` is a one-hot encoding of melody
  * sequence labels like those returned by `toTensor`.
+ *
+ * @param numSteps The length of each sequence.
+ * @param minPitch The minimum pitch to model. Those above this value will
+ * cause an errot to be thrown.
+ * @param maxPitch The maximum pitch to model. Those above this value will
+ * cause an error to be thrown.
+ * @param numSegments (Optional) The number of conductor segments, if
+ * applicable.
  */
-export class MelodyConverter extends DataConverter {
+export interface MelodyConverterArgs {
   numSteps: number;
+  minPitch: number;
+  maxPitch: number;
+  numSegments?: number;
+}
+export class MelodyConverter extends DataConverter{
+  numSteps: number;
+  numSegments: number;
   minPitch: number;  // inclusive
   maxPitch: number;  // inclusive
   depth: number;
-  NOTE_OFF = 1;
-  FIRST_PITCH = 2;
+  readonly NUM_SPLITS = 0;
+  readonly NOTE_OFF = 1;
+  readonly FIRST_PITCH = 2;
 
-  /**
-   * `MelodyConverter` constructor.
-   *
-   * @param numSteps The length of each sequence.
-   * @param minPitch The minimum pitch to model. Those above this value will
-   * cause an errot to be thrown.
-   * @param maxPitch The maximum pitch to model. Those above this value will
-   * cause an error to be thrown.
-   */
-  constructor(numSteps: number, minPitch: number, maxPitch: number) {
+  constructor(args: MelodyConverterArgs) {
     super();
-    this.numSteps = numSteps;
-    this.minPitch = minPitch;
-    this.maxPitch = maxPitch;
-    this.depth = maxPitch - minPitch + 3;
+    this.numSteps = args.numSteps;
+    this.numSegments = args.numSegments;
+    this.minPitch = args.minPitch;
+    this.maxPitch = args.maxPitch;
+    this.depth = args.maxPitch - args.minPitch + 1 + this.FIRST_PITCH;
   }
 
-  toTensor(noteSequence: INoteSequence): dl.Tensor2D {
+  toTensor(noteSequence: INoteSequence) {
+    const numSteps = this.numSteps | noteSequence.totalQuantizedSteps;
     const sortedNotes: NoteSequence.INote[] = noteSequence.notes.sort(
       (n1, n2) => n1.quantizedStartStep - n2.quantizedStartStep);
-    const mel = dl.buffer([this.numSteps]);
+    const mel = dl.buffer([numSteps]);
     let lastEnd = -1;
     sortedNotes.forEach(n => {
       if  (n.quantizedStartStep < lastEnd) {
@@ -251,8 +260,8 @@ export class MelodyConverter extends DataConverter {
       }
       if (n.pitch < this.minPitch || n.pitch > this.maxPitch) {
         throw Error(
-          `\`NoteSequence\` has a pitch outside of the valid range: ` +
-          `${n.pitch}`);
+          `\`NoteSequence\` has a pitch outside of the valid range: ${n.pitch}`
+        );
       }
       mel.set(n.pitch - this.minPitch + this.FIRST_PITCH, n.quantizedStartStep);
       mel.set(this.NOTE_OFF, n.quantizedEndStep);
@@ -262,10 +271,10 @@ export class MelodyConverter extends DataConverter {
         mel.toTensor() as dl.Tensor1D, this.depth) as dl.Tensor2D;
   }
 
-  toNoteSequence(oh: dl.Tensor2D): INoteSequence {
+  async toNoteSequence(oh: dl.Tensor2D) {
     const noteSequence = NoteSequence.create();
     const labelsTensor = oh.argMax(1);
-    const labels: Int32Array = labelsTensor.dataSync() as Int32Array;
+    const labels: Int32Array = await labelsTensor.data() as Int32Array;
     labelsTensor.dispose();
     let currNote: NoteSequence.Note = null;
     for (let s = 0; s < labels.length; ++s) {  // step

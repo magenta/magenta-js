@@ -17,8 +17,11 @@
 
 import * as magenta from '@magenta/core';
 import INoteSequence = magenta.INoteSequence;
-import { MelodyRnn } from '../src/index';
+import { MusicRNN } from '../src/index';
 import * as dl from 'deeplearn';
+
+// tslint:disable-next-line:max-line-length
+const CHECKPOINT_URL = "https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_rnn/dljs/basic_rnn";
 
 const MELODY_NS:INoteSequence = {
   ticksPerQuarter: 220,
@@ -94,7 +97,7 @@ function writeNoteSeqs(elementId: string, seqs: INoteSequence[]) {
 }
 
 async function runMelodyRnn() {
-  const melodyRnn = new MelodyRnn();
+  const melodyRnn = new MusicRNN(CHECKPOINT_URL);
   await melodyRnn.initialize();
 
   const qns = magenta.Sequences.quantizeNoteSequence(MELODY_NS, 1);

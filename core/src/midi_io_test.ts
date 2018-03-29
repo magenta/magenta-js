@@ -22,7 +22,7 @@ import {MidiIO} from './midi_io';
 import fs = require('fs');
 
 test("Parse Simple MIDI", (t:test.Test) => {
-  const midi = fs.readFileSync('../../music/testdata/melody.mid', "binary");
+  const midi = fs.readFileSync('../testdata/melody.mid', "binary");
   const ns = MidiIO.midiToSequenceProto(midi);
 
   const expectedNs = NoteSequence.create({

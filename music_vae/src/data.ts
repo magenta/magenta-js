@@ -17,8 +17,6 @@
 import * as dl from 'deeplearn';
 import {INoteSequence, NoteSequence} from '@magenta/core';
 
-export {INoteSequence};
-
 const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
   // bass drum
   [36, 35],
@@ -81,7 +79,7 @@ export abstract class DataConverter {
   abstract numSegments: number;  // Number of steps for conductor.
   abstract readonly NUM_SPLITS: number;  // Number of conductor splits.
   abstract toTensor(noteSequence: INoteSequence): dl.Tensor2D;
-  abstract toNoteSequence(tensor: dl.Tensor2D): Promise<INoteSequence>;
+  abstract async toNoteSequence(tensor: dl.Tensor2D): Promise<INoteSequence>;
 }
 
 /**
@@ -134,9 +132,10 @@ export class DrumsConverter extends DataConverter{
   }
 
   toTensor(noteSequence: INoteSequence) {
-    const drumRoll = dl.buffer([this.numSteps, this.pitchClasses.length + 1]);
+    const numSteps = this.numSteps | noteSequence.totalQuantizedSteps;
+    const drumRoll = dl.buffer([numSteps, this.pitchClasses.length + 1]);
     // Set final values to 1 and change to 0 later if the column gets a note.
-    for (let i = 0; i < this.numSteps; ++i) {
+    for (let i = 0; i < numSteps; ++i) {
       drumRoll.set(1, i, -1);
     }
     noteSequence.notes.forEach((note) => {
@@ -236,9 +235,9 @@ export class MelodyConverter extends DataConverter{
   minPitch: number;  // inclusive
   maxPitch: number;  // inclusive
   depth: number;
-  NUM_SPLITS = 0;
-  NOTE_OFF = 1;
-  FIRST_PITCH = 2;
+  readonly NUM_SPLITS = 0;
+  readonly NOTE_OFF = 1;
+  readonly FIRST_PITCH = 2;
 
   constructor(args: MelodyConverterArgs) {
     super();
@@ -246,13 +245,14 @@ export class MelodyConverter extends DataConverter{
     this.numSegments = args.numSegments;
     this.minPitch = args.minPitch;
     this.maxPitch = args.maxPitch;
-    this.depth = args.maxPitch - args.minPitch + 3;
+    this.depth = args.maxPitch - args.minPitch + 1 + this.FIRST_PITCH;
   }
 
   toTensor(noteSequence: INoteSequence) {
+    const numSteps = this.numSteps | noteSequence.totalQuantizedSteps;
     const sortedNotes: NoteSequence.INote[] = noteSequence.notes.sort(
       (n1, n2) => n1.quantizedStartStep - n2.quantizedStartStep);
-    const mel = dl.buffer([this.numSteps]);
+    const mel = dl.buffer([numSteps]);
     let lastEnd = -1;
     sortedNotes.forEach(n => {
       if  (n.quantizedStartStep < lastEnd) {
@@ -260,7 +260,8 @@ export class MelodyConverter extends DataConverter{
       }
       if (n.pitch < this.minPitch || n.pitch > this.maxPitch) {
         throw Error(
-          '`NoteSequence` has a pitch outside of the valid range: ' + n.pitch);
+          `\`NoteSequence\` has a pitch outside of the valid range: ${n.pitch}`
+        );
       }
       mel.set(n.pitch - this.minPitch + this.FIRST_PITCH, n.quantizedStartStep);
       mel.set(this.NOTE_OFF, n.quantizedEndStep);

@@ -1,5 +1,5 @@
 // tslint:disable-next-line:max-line-length
-import { MusicVAE, INoteSequence} from '../index';
+import { MusicVAE, INoteSequence} from '../src/index';
 import * as dl from 'deeplearn';
 import * as clone from 'clone';
 
