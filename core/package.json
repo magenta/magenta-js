@@ -1,6 +1,6 @@
 {
   "name": "@magenta/core",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "",
   "main": "es5/index.js",
   "types": "es5/index.d.ts",
@@ -17,7 +17,7 @@
     "@types/tape": "^4.2.31",
     "browserify": "~14.4.0",
     "clang-format": "^1.2.2",
-    "deeplearn": "^0.6.0-alpha6",
+    "deeplearn": "0.6.0-alpha6",
     "tape": "^4.9.0",
     "ts-node": "^5.0.1",
     "tsify": "~3.0.1",
