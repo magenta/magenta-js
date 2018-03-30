@@ -17,7 +17,6 @@
 
 import * as dl from 'deeplearn';
 import * as magenta from '@magenta/core';
-import * as data from './data';
 
 const CELL_FORMAT = "rnn/multi_rnn_cell/cell_%d/basic_lstm_cell/";
 
@@ -28,7 +27,7 @@ const CELL_FORMAT = "rnn/multi_rnn_cell/cell_%d/basic_lstm_cell/";
  */
 export class MusicRNN {
   checkpointURL: string;
-  dataConverter: data.DataConverter;
+  dataConverter: magenta.DataConverter;
 
   lstmCells: dl.LSTMCellFunc[];
   lstmFcB: dl.Tensor1D;
@@ -48,7 +47,7 @@ export class MusicRNN {
    * file must exist within the checkpoint directory specifying the type and
    * args for the correct `DataConverter`.
    */
-  constructor(checkpointURL:string, dataConverter?:data.DataConverter) {
+  constructor(checkpointURL:string, dataConverter?:magenta.DataConverter) {
     this.checkpointURL = checkpointURL;
     this.initialized = false;
     this.rawVars = {};
@@ -67,8 +66,8 @@ export class MusicRNN {
     if (!this.dataConverter) {
       fetch(this.checkpointURL + '/converter.json')
         .then((response) => response.json())
-        .then((converterSpec: data.ConverterSpec) => {
-          this.dataConverter = data.converterFromSpec(converterSpec);
+        .then((converterSpec: magenta.ConverterSpec) => {
+          this.dataConverter = magenta.converterFromSpec(converterSpec);
         });
     }
 

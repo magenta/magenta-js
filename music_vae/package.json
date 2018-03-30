@@ -32,7 +32,7 @@
     "typescript": "^2.6.2"
   },
   "dependencies": {
-    "@magenta/core": "^0.0.9",
+    "@magenta/core": "^0.0.13",
     "@types/clone": "^0.1.30",
     "clang-format": "^1.2.2",
     "clone": "^1.0.4",

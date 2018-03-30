@@ -15,7 +15,9 @@
  * =============================================================================
  */
 import * as dl from 'deeplearn';
-import {INoteSequence, NoteSequence} from '@magenta/core';
+import {tensorflow} from '@magenta/protobuf';
+import NoteSequence = tensorflow.magenta.NoteSequence;
+import INoteSequence = tensorflow.magenta.INoteSequence;
 
 const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
   // bass drum

@@ -15,10 +15,9 @@
  * =============================================================================
  */
 import * as dl from 'deeplearn';
-import * as data from './data';
 // Use custom CheckpointLoader until quantization is added to dl.
 import { CheckpointLoader } from './checkpoint_loader';
-import { INoteSequence } from '@magenta/core';
+import * as magenta from '@magenta/core';
 
 /**
  * A class for keeping track of the parameters of an affine transformation.
@@ -488,7 +487,7 @@ class Nade {
  */
 class MusicVAE {
   private checkpointURL: string;
-  private dataConverter: data.DataConverter;
+  private dataConverter: magenta.DataConverter;
   private encoder: Encoder;
   private decoder: Decoder;
   private rawVars: {[varName: string]: dl.Tensor};  // Store for disposal.
@@ -501,15 +500,15 @@ class MusicVAE {
    * file must exist within the checkpoint directory specifying the type and
    * args for the correct `DataConverter`.
    */
-  constructor(checkpointURL: string, dataConverter?: data.DataConverter) {
+  constructor(checkpointURL: string, dataConverter?: magenta.DataConverter) {
     this.checkpointURL = checkpointURL;
     if (dataConverter) {
       this.dataConverter = dataConverter;
     } else {
       fetch(checkpointURL + '/converter.json')
         .then((response) => response.json())
-        .then((converterSpec: data.ConverterSpec) => {
-          this.dataConverter = data.converterFromSpec(converterSpec);
+        .then((converterSpec: magenta.ConverterSpec) => {
+          this.dataConverter = magenta.converterFromSpec(converterSpec);
         });
     }
   }
@@ -570,8 +569,8 @@ class MusicVAE {
 
       if (fwLayers.length !== bwLayers.length || fwLayers.length !== 2) {
         throw Error('Only 2 hierarchical encoder levels are supported. ' +
-                    'Got ' + fwLayers.length + ' forward and ' +
-                    bwLayers.length + ' backward.');
+                    `Got ${fwLayers.length} forward and ${bwLayers.length} ` +
+                    'backward.');
       }
       const baseEncoders: BidirectonalLstmEncoder[] = [0, 1].map(
           l => new BidirectonalLstmEncoder(fwLayers[l], bwLayers[l]));
@@ -584,9 +583,9 @@ class MusicVAE {
           ENCODER_FORMAT.replace('%s', 'bw'), vars);
       if (fwLayers.length !== bwLayers.length || fwLayers.length !== 1) {
         throw Error('Only single-layer bidirectional encoders are supported. ' +
-                    'Got ' + fwLayers.length + ' forward and ' +
-                    bwLayers.length + ' backward.');
-      }
+                    `Got ${fwLayers.length} forward and ${bwLayers.length} ` +
+                    'backward.');
+}
       this.encoder = new BidirectonalLstmEncoder(
           fwLayers[0], bwLayers[0], encMu);
     }
@@ -598,7 +597,7 @@ class MusicVAE {
     const decVarPrefixes: string[] = [];
     if (this.dataConverter.NUM_SPLITS) {
       for (let i = 0; i < this.dataConverter.NUM_SPLITS; ++i) {
-        decVarPrefixes.push(decVarPrefix + 'core_decoder_' + i + '/decoder/');
+        decVarPrefixes.push(decVarPrefix + `core_decoder_${i}/decoder/`);
       }
     } else {
       decVarPrefixes.push(decVarPrefix + 'decoder/');
@@ -636,7 +635,7 @@ class MusicVAE {
       this.decoder = baseDecoders[0];
     } else {
       throw Error('Unexpected number of base decoders without conductor: ' +
-                  baseDecoders.length);
+                  `${baseDecoders.length}`);
     }
 
     return this;
@@ -677,9 +676,9 @@ class MusicVAE {
    * @returns An array of interpolation `NoteSequence` objects, as described
    * above.
    */
-  async interpolate(inputSequences: INoteSequence[], numInterps: number) {
+  async interpolate(
+      inputSequences: magenta.INoteSequence[], numInterps: number) {
     const numSteps = this.dataConverter.numSteps;
-
 
     const oh = dl.tidy(() => {
       const inputTensors = dl.stack(
@@ -699,7 +698,7 @@ class MusicVAE {
       return result;
     });
 
-    const outputSequences: INoteSequence[] = [];
+    const outputSequences: magenta.INoteSequence[] = [];
     for (const tensor of oh) {
       outputSequences.push(await this.dataConverter.toNoteSequence(tensor));
       tensor.dispose();
@@ -781,7 +780,7 @@ class MusicVAE {
       return result;
     });
 
-    const outputSequences: INoteSequence[] = [];
+    const outputSequences: magenta.INoteSequence[] = [];
     for (const tensor of oh) {
       outputSequences.push(await this.dataConverter.toNoteSequence(tensor));
       tensor.dispose();
