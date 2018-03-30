@@ -134,7 +134,7 @@ export class DrumsConverter extends DataConverter{
   }
 
   toTensor(noteSequence: INoteSequence) {
-    const numSteps = this.numSteps | noteSequence.totalQuantizedSteps;
+    const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
     const drumRoll = tf.buffer([numSteps, this.pitchClasses.length + 1]);
     // Set final values to 1 and change to 0 later if the column gets a note.
     for (let i = 0; i < numSteps; ++i) {
@@ -251,7 +251,7 @@ export class MelodyConverter extends DataConverter{
   }
 
   toTensor(noteSequence: INoteSequence) {
-    const numSteps = this.numSteps | noteSequence.totalQuantizedSteps;
+    const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
     const sortedNotes: NoteSequence.INote[] = noteSequence.notes.sort(
       (n1, n2) => n1.quantizedStartStep - n2.quantizedStartStep);
     const mel = tf.buffer([numSteps]);
