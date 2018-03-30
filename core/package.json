@@ -1,6 +1,6 @@
 {
   "name": "@magenta/core",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "",
   "main": "es5/index.js",
   "types": "es5/index.d.ts",
@@ -10,10 +10,14 @@
     "@magenta/protobuf": "^0.0.4",
     "midiconvert": "^0.4.3"
   },
+  "peerDependencies": {
+    "deeplearn": "^0.5.1"
+  },
   "devDependencies": {
     "@types/tape": "^4.2.31",
     "browserify": "~14.4.0",
     "clang-format": "^1.2.2",
+    "deeplearn": "^0.5.1",
     "tape": "^4.9.0",
     "ts-node": "^5.0.1",
     "tsify": "~3.0.1",
