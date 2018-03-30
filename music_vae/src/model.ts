@@ -585,7 +585,7 @@ class MusicVAE {
         throw Error('Only single-layer bidirectional encoders are supported. ' +
                     `Got ${fwLayers.length} forward and ${bwLayers.length} ` +
                     'backward.');
-}
+      }
       this.encoder = new BidirectonalLstmEncoder(
           fwLayers[0], bwLayers[0], encMu);
     }
