@@ -22,5 +22,13 @@ import INote = NoteSequence.INote;
 
 export {NoteSequence, INoteSequence, INote};
 
+import * as tf from '@tensorflow/tfjs';
+export {tf};
+
+export { CheckpointLoader } from './checkpoint_loader';
+
+import * as data from './data';
+export {data};
+
 export * from './midi_io';
 export * from './sequences';

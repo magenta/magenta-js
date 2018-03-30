@@ -1,6 +1,6 @@
 // tslint:disable-next-line:max-line-length
-import { MusicVAE, INoteSequence} from '../index';
-import * as dl from 'deeplearn';
+import { MusicVAE } from '../src/index';
+import { INoteSequence, tf } from '@magenta/core';
 import * as clone from 'clone';
 
 // tslint:disable:max-line-length
@@ -139,7 +139,7 @@ async function runDrums(){
   writeNoteSeqs('drums-samples', sample);
 
   mvae.dispose();
-  console.log(dl.memory());
+  console.log(tf.memory());
 }
 
 async function runDrumsNade(){
@@ -159,7 +159,7 @@ async function runDrumsNade(){
   writeNoteSeqs('nade-samples', sample);
 
   mvae.dispose();
-  console.log(dl.memory());
+  console.log(tf.memory());
 }
 
 async function runMel(){
@@ -180,7 +180,7 @@ async function runMel(){
   writeNoteSeqs('mel-samples', sample);
 
   mvae.dispose();
-  console.log(dl.memory());
+  console.log(tf.memory());
 }
 
 // TODO(adarob): Switch to magenta/core function once implemented.
@@ -226,7 +226,7 @@ async function runMel16(){
   writeNoteSeqs('mel16-samples', sample);
 
   mvae.dispose();
-  console.log(dl.memory());
+  console.log(tf.memory());
 }
 
 try {

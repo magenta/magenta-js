@@ -15,42 +15,32 @@
  * =============================================================================
  */
 
-import * as dl from 'deeplearn';
 import * as magenta from '@magenta/core';
-import * as data from './data';
-import { INoteSequence } from '@magenta/core';
-
-// tslint:disable-next-line:max-line-length
-const CHECKPOINT_URL = "https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_rnn/dljs/basic_rnn/";
-
-const DEFAULT_MIN_NOTE = 48;
-const DEFAULT_MAX_NOTE = 83;
+import tf = magenta.tf;
+import { isNullOrUndefined } from 'util';
 
 const CELL_FORMAT = "rnn/multi_rnn_cell/cell_%d/basic_lstm_cell/";
 
 /**
- * Main MusicVAE model class.
+ * Main MusicRNN model class.
  *
- * A MusicVAE is a variational autoencoder made up of an `Encoder` and
- * `Decoder`, along with a `DataConverter` for converting between `Tensor`
- * and `NoteSequence` objects for input and output.
- *
- * Exposes methods for interpolation and sampling of musical sequences.
+ * A MusicRNN is an LSTM-based language model for musical notes.
  */
-export class MelodyRnn {
+export class MusicRNN {
   checkpointURL: string;
+  dataConverter: magenta.data.DataConverter;
 
-  lstmCells: dl.LSTMCellFunc[];
-  lstmFcB: dl.Tensor1D;
-  lstmFcW: dl.Tensor2D;
-  forgetBias: dl.Scalar;
+  lstmCells: tf.LSTMCellFunc[];
+  lstmFcB: tf.Tensor1D;
+  lstmFcW: tf.Tensor2D;
+  forgetBias: tf.Scalar;
   biasShapes: number[];
-  rawVars: {[varName: string]: dl.Tensor};  // Store for disposal.
+  rawVars: {[varName: string]: tf.Tensor};  // Store for disposal.
 
   initialized: boolean;
 
   /**
-   * `MusicVAE` constructor.
+   * `MusicRNN` constructor.
    *
    * @param checkpointURL Path to the checkpoint directory.
    * @param dataConverter A `DataConverter` object to use for converting between
@@ -58,12 +48,13 @@ export class MelodyRnn {
    * file must exist within the checkpoint directory specifying the type and
    * args for the correct `DataConverter`.
    */
-  constructor(checkpointURL=CHECKPOINT_URL) {
+  constructor(checkpointURL:string, dataConverter?:magenta.data.DataConverter) {
     this.checkpointURL = checkpointURL;
     this.initialized = false;
     this.rawVars = {};
     this.biasShapes = [];
     this.lstmCells = [];
+    this.dataConverter = dataConverter;
   }
 
   /**
@@ -73,10 +64,18 @@ export class MelodyRnn {
   async initialize() {
     this.dispose();
 
-    const reader = new dl.CheckpointLoader(this.checkpointURL);
+    if (isNullOrUndefined(this.dataConverter)) {
+      fetch(this.checkpointURL + '/converter.json')
+        .then((response) => response.json())
+        .then((converterSpec: magenta.data.ConverterSpec) => {
+          this.dataConverter = magenta.data.converterFromSpec(converterSpec);
+        });
+    }
+
+    const reader = new magenta.CheckpointLoader(this.checkpointURL);
     const vars = await reader.getAllVariables();
 
-    this.forgetBias = dl.scalar(1.0);
+    this.forgetBias = tf.scalar(1.0);
 
     this.lstmCells.length = 0;
     this.biasShapes.length = 0;
@@ -88,16 +87,16 @@ export class MelodyRnn {
       }
       // TODO(fjord): Support attention model.
       this.lstmCells.push(
-        (data: dl.Tensor2D, c: dl.Tensor2D, h: dl.Tensor2D) =>
-            dl.basicLSTMCell(this.forgetBias,
-              vars[cellPrefix + 'kernel'] as dl.Tensor2D,
-              vars[cellPrefix + 'bias'] as dl.Tensor1D, data, c, h));
-      this.biasShapes.push((vars[cellPrefix + 'bias'] as dl.Tensor2D).shape[0]);
+        (data: tf.Tensor2D, c: tf.Tensor2D, h: tf.Tensor2D) =>
+            tf.basicLSTMCell(this.forgetBias,
+              vars[cellPrefix + 'kernel'] as tf.Tensor2D,
+              vars[cellPrefix + 'bias'] as tf.Tensor1D, data, c, h));
+      this.biasShapes.push((vars[cellPrefix + 'bias'] as tf.Tensor2D).shape[0]);
       ++l;
     }
 
-    this.lstmFcW = vars['fully_connected/weights'] as dl.Tensor2D;
-    this.lstmFcB = vars['fully_connected/biases'] as dl.Tensor1D;
+    this.lstmFcW = vars['fully_connected/weights'] as tf.Tensor2D;
+    this.lstmFcB = vars['fully_connected/biases'] as tf.Tensor1D;
 
     this.rawVars = vars;
     this.initialized = true;
@@ -110,6 +109,7 @@ export class MelodyRnn {
       this.forgetBias.dispose();
       this.forgetBias = undefined;
     }
+    this.dataConverter= undefined;
     this.initialized = false;
   }
 
@@ -125,55 +125,47 @@ export class MelodyRnn {
       temperature?: number): Promise<magenta.INoteSequence> {
     magenta.Sequences.assertIsQuantizedSequence(sequence);
 
-    let continuation: INoteSequence;
-
     if(!this.initialized) {
       await this.initialize();
     }
 
-    dl.tidy(() => {
-      const converterIn = new data.MelodyConverter(
-        sequence.totalQuantizedSteps, DEFAULT_MIN_NOTE, DEFAULT_MAX_NOTE);
-      const inputs = converterIn.toTensor(sequence);
+    const oh = tf.tidy(() => {
+      const inputs = this.dataConverter.toTensor(sequence);
 
       const length:number = inputs.shape[0];
       const outputSize:number = inputs.shape[1];
 
-      let c: dl.Tensor2D[] = [];
-      let h: dl.Tensor2D[] = [];
+      let c: tf.Tensor2D[] = [];
+      let h: tf.Tensor2D[] = [];
       for (let i = 0; i < this.biasShapes.length; i++) {
-        c.push(dl.zeros([1, this.biasShapes[i] / 4]));
-        h.push(dl.zeros([1, this.biasShapes[i] / 4]));
+        c.push(tf.zeros([1, this.biasShapes[i] / 4]));
+        h.push(tf.zeros([1, this.biasShapes[i] / 4]));
       }
 
       // Initialize with input.
-      const samples: dl.Tensor1D[] = [];
+      const samples: tf.Tensor1D[] = [];
       for (let i = 0; i < length + steps; i++) {
-        let nextInput: dl.Tensor2D;
+        let nextInput: tf.Tensor2D;
         if (i < length) {
-          nextInput = inputs.slice([
-            i, 0], [1, outputSize]).as2D(1, outputSize);
+          nextInput = inputs.slice([i, 0], [1, outputSize]).as2D(1, outputSize);
         } else {
-          const logits = h[1].matMul(this.lstmFcW).add(this.lstmFcB);
+          const logits = h[h.length - 1].matMul(this.lstmFcW).add(this.lstmFcB);
           const sampledOutput = (
             temperature ?
-            dl.multinomial(logits.div(dl.scalar(temperature)), 1).as1D():
+            tf.multinomial(logits.div(tf.scalar(temperature)), 1).as1D():
             logits.argMax(1).as1D());
-          nextInput = dl.oneHot(sampledOutput, outputSize).toFloat();
+          nextInput = tf.oneHot(sampledOutput, outputSize).toFloat();
           // Save samples as bool to reduce data sync time.
           samples.push(nextInput.as1D().toBool());
         }
-        const output = dl.multiRNNCell(this.lstmCells, nextInput, c, h);
-        c = output[0];
-        h = output[1];
+        [c, h] = tf.multiRNNCell(this.lstmCells, nextInput, c, h);
       }
 
-      const output = dl.stack(samples).as2D(samples.length, outputSize);
-      const converterOut = new data.MelodyConverter(
-        sequence.totalQuantizedSteps, DEFAULT_MIN_NOTE, DEFAULT_MAX_NOTE);
-      continuation = converterOut.toNoteSequence(output);
+      return tf.stack(samples).as2D(samples.length, outputSize);
     });
-    return continuation;
-  }
 
+    const result = this.dataConverter.toNoteSequence(await oh);
+    oh.dispose();
+    return result;
+  }
 }

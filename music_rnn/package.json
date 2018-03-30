@@ -7,7 +7,8 @@
   "jsdelivr": "dist/musicrnn.js",
   "unpkg": "dist/musicrnn.js",
   "dependencies": {
-    "@magenta/core": "^0.0.10",
+    "@magenta/core": "^0.0.13",
+    "@magenta/protobuf": "^0.0.4",
     "deeplearn": "^0.6.0-alpha6"
   },
   "devDependencies": {

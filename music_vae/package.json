@@ -7,12 +7,13 @@
   "jsdelivr": "dist/musicvae.js",
   "unpkg": "dist/musicvae.js",
   "scripts": {
-    "bundle": "browserify index.ts -p [tsify] --standalone musicvae -o dist/musicvae.js",
+    "lint": "tslint -p . -t verbose",
+    "bundle": "browserify src/index.ts -p [tsify] --standalone musicvae -o dist/musicvae.js",
     "build-demo": "browserify demo/index.ts -p [tsify] > demo/bundle.js",
     "build": "tsc",
     "run-demo": "yarn build && yarn build-demo && http-server ./demo",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "pub": "yarn build && yarn bundle && yarn publish"
+    "prepublish": "yarn lint && yarn build && yarn bundle"
   },
   "repository": {
     "type": "git",
@@ -31,11 +32,10 @@
     "typescript": "^2.6.2"
   },
   "dependencies": {
-    "@magenta/core": "^0.0.9",
+    "@magenta/core": "^0.0.13",
     "@types/clone": "^0.1.30",
     "clang-format": "^1.2.2",
     "clone": "^1.0.4",
-    "deeplearn": "^0.6.0-alpha6",
     "npm": "^5.7.1",
     "tslint": "^5.9.1"
   }

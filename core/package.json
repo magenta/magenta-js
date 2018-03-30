@@ -1,6 +1,6 @@
 {
   "name": "@magenta/core",
-  "version": "0.0.9",
+  "version": "0.0.13",
   "description": "",
   "main": "es5/index.js",
   "types": "es5/index.d.ts",
@@ -8,7 +8,9 @@
   "unpkg": "dist/magenta.js",
   "dependencies": {
     "@magenta/protobuf": "^0.0.4",
-    "midiconvert": "^0.4.3"
+    "@tensorflow/tfjs": "^0.6.1",
+    "midiconvert": "^0.4.3",
+    "util": "^0.10.3"
   },
   "devDependencies": {
     "@types/tape": "^4.2.31",
