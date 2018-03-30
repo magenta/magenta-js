@@ -14,7 +14,7 @@
  * limitations under the License.
  * =============================================================================
  */
-import * as dl from 'deeplearn';
+import * as tf from '@tensorflow/tfjs';
 import {tensorflow} from '@magenta/protobuf';
 import NoteSequence = tensorflow.magenta.NoteSequence;
 import INoteSequence = tensorflow.magenta.INoteSequence;
@@ -80,8 +80,8 @@ export abstract class DataConverter {
   abstract numSteps: number;  // Total length of sequences.
   abstract numSegments: number;  // Number of steps for conductor.
   abstract readonly NUM_SPLITS: number;  // Number of conductor splits.
-  abstract toTensor(noteSequence: INoteSequence): dl.Tensor2D;
-  abstract async toNoteSequence(tensor: dl.Tensor2D): Promise<INoteSequence>;
+  abstract toTensor(noteSequence: INoteSequence): tf.Tensor2D;
+  abstract async toNoteSequence(tensor: tf.Tensor2D): Promise<INoteSequence>;
 }
 
 /**
@@ -135,7 +135,7 @@ export class DrumsConverter extends DataConverter{
 
   toTensor(noteSequence: INoteSequence) {
     const numSteps = this.numSteps | noteSequence.totalQuantizedSteps;
-    const drumRoll = dl.buffer([numSteps, this.pitchClasses.length + 1]);
+    const drumRoll = tf.buffer([numSteps, this.pitchClasses.length + 1]);
     // Set final values to 1 and change to 0 later if the column gets a note.
     for (let i = 0; i < numSteps; ++i) {
       drumRoll.set(1, i, -1);
@@ -144,10 +144,10 @@ export class DrumsConverter extends DataConverter{
       drumRoll.set(1, note.quantizedStartStep, this.pitchToClass[note.pitch]);
       drumRoll.set(0, note.quantizedStartStep, -1);
     });
-    return drumRoll.toTensor() as dl.Tensor2D;
+    return drumRoll.toTensor() as tf.Tensor2D;
   }
 
-  async toNoteSequence(oh: dl.Tensor2D) {
+  async toNoteSequence(oh: tf.Tensor2D) {
     const noteSequence = NoteSequence.create();
     const labelsTensor = oh.argMax(1);
     const labels: Int32Array = await labelsTensor.data() as Int32Array;
@@ -181,7 +181,7 @@ export class DrumsConverter extends DataConverter{
  * pitch class are used.
  */
 export class DrumRollConverter extends DrumsConverter {
-  async toNoteSequence(roll: dl.Tensor2D) {
+  async toNoteSequence(roll: tf.Tensor2D) {
     const noteSequence = NoteSequence.create();
     for (let s = 0; s < roll.shape[0]; ++s) {  // step
       const rollSlice = roll.slice([s, 0], [1, roll.shape[1]]);
@@ -254,7 +254,7 @@ export class MelodyConverter extends DataConverter{
     const numSteps = this.numSteps | noteSequence.totalQuantizedSteps;
     const sortedNotes: NoteSequence.INote[] = noteSequence.notes.sort(
       (n1, n2) => n1.quantizedStartStep - n2.quantizedStartStep);
-    const mel = dl.buffer([numSteps]);
+    const mel = tf.buffer([numSteps]);
     let lastEnd = -1;
     sortedNotes.forEach(n => {
       if  (n.quantizedStartStep < lastEnd) {
@@ -269,11 +269,11 @@ export class MelodyConverter extends DataConverter{
       mel.set(this.NOTE_OFF, n.quantizedEndStep);
       lastEnd = n.quantizedEndStep;
     });
-    return dl.oneHot(
-        mel.toTensor() as dl.Tensor1D, this.depth) as dl.Tensor2D;
+    return tf.oneHot(
+        mel.toTensor() as tf.Tensor1D, this.depth) as tf.Tensor2D;
   }
 
-  async toNoteSequence(oh: dl.Tensor2D) {
+  async toNoteSequence(oh: tf.Tensor2D) {
     const noteSequence = NoteSequence.create();
     const labelsTensor = oh.argMax(1);
     const labels: Int32Array = await labelsTensor.data() as Int32Array;

@@ -8,16 +8,13 @@
   "unpkg": "dist/magenta.js",
   "dependencies": {
     "@magenta/protobuf": "^0.0.4",
+    "@tensorflow/tfjs": "^0.6.1",
     "midiconvert": "^0.4.3"
-  },
-  "peerDependencies": {
-    "deeplearn": "^0.6.0-alpha6"
   },
   "devDependencies": {
     "@types/tape": "^4.2.31",
     "browserify": "~14.4.0",
     "clang-format": "^1.2.2",
-    "deeplearn": "0.6.0-alpha6",
     "tape": "^4.9.0",
     "ts-node": "^5.0.1",
     "tsify": "~3.0.1",

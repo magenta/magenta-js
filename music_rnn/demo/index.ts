@@ -17,8 +17,8 @@
 
 import * as magenta from '@magenta/core';
 import INoteSequence = magenta.INoteSequence;
+import tf = magenta.tf;
 import { MusicRNN } from '../src/index';
-import * as dl from 'deeplearn';
 
 // tslint:disable:max-line-length
 const MEL_CHECKPOINT = "https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_rnn/dljs/basic_rnn";
@@ -176,8 +176,8 @@ async function runMelodyRnn() {
   writeNoteSeqs('melody-cont-results', [continuation]);
   melodyRnn.dispose();
 
-  console.log(dl.getBackend());
-  console.log(dl.memory());
+  console.log(tf.getBackend());
+  console.log(tf.memory());
 }
 
 async function runDrumsRnn() {
@@ -192,8 +192,8 @@ async function runDrumsRnn() {
   writeNoteSeqs('drums-cont-results', [continuation]);
   drumsRnn.dispose();
 
-  console.log(dl.getBackend());
-  console.log(dl.memory());
+  console.log(tf.getBackend());
+  console.log(tf.memory());
 }
 
 

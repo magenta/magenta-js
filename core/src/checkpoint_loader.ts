@@ -15,7 +15,7 @@
  * =============================================================================
  */
 // Adds quantization support to dl.CheckpointLoader.
-import {Tensor} from 'deeplearn';
+import {Tensor} from '@tensorflow/tfjs';
 
 /**
  * @hidden

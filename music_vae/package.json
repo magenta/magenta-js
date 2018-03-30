@@ -36,7 +36,6 @@
     "@types/clone": "^0.1.30",
     "clang-format": "^1.2.2",
     "clone": "^1.0.4",
-    "deeplearn": "^0.6.0-alpha6",
     "npm": "^5.7.1",
     "tslint": "^5.9.1"
   }

@@ -15,8 +15,9 @@
  * =============================================================================
  */
 
-import * as dl from 'deeplearn';
 import * as magenta from '@magenta/core';
+import tf = magenta.tf;
+import { isNullOrUndefined } from 'util';
 
 const CELL_FORMAT = "rnn/multi_rnn_cell/cell_%d/basic_lstm_cell/";
 
@@ -27,14 +28,14 @@ const CELL_FORMAT = "rnn/multi_rnn_cell/cell_%d/basic_lstm_cell/";
  */
 export class MusicRNN {
   checkpointURL: string;
-  dataConverter: magenta.DataConverter;
+  dataConverter: magenta.data.DataConverter;
 
-  lstmCells: dl.LSTMCellFunc[];
-  lstmFcB: dl.Tensor1D;
-  lstmFcW: dl.Tensor2D;
-  forgetBias: dl.Scalar;
+  lstmCells: tf.LSTMCellFunc[];
+  lstmFcB: tf.Tensor1D;
+  lstmFcW: tf.Tensor2D;
+  forgetBias: tf.Scalar;
   biasShapes: number[];
-  rawVars: {[varName: string]: dl.Tensor};  // Store for disposal.
+  rawVars: {[varName: string]: tf.Tensor};  // Store for disposal.
 
   initialized: boolean;
 
@@ -47,7 +48,7 @@ export class MusicRNN {
    * file must exist within the checkpoint directory specifying the type and
    * args for the correct `DataConverter`.
    */
-  constructor(checkpointURL:string, dataConverter?:magenta.DataConverter) {
+  constructor(checkpointURL:string, dataConverter?:magenta.data.DataConverter) {
     this.checkpointURL = checkpointURL;
     this.initialized = false;
     this.rawVars = {};
@@ -63,18 +64,18 @@ export class MusicRNN {
   async initialize() {
     this.dispose();
 
-    if (!this.dataConverter) {
+    if (isNullOrUndefined(this.dataConverter)) {
       fetch(this.checkpointURL + '/converter.json')
         .then((response) => response.json())
-        .then((converterSpec: magenta.ConverterSpec) => {
-          this.dataConverter = magenta.converterFromSpec(converterSpec);
+        .then((converterSpec: magenta.data.ConverterSpec) => {
+          this.dataConverter = magenta.data.converterFromSpec(converterSpec);
         });
     }
 
-    const reader = new dl.CheckpointLoader(this.checkpointURL);
+    const reader = new magenta.CheckpointLoader(this.checkpointURL);
     const vars = await reader.getAllVariables();
 
-    this.forgetBias = dl.scalar(1.0);
+    this.forgetBias = tf.scalar(1.0);
 
     this.lstmCells.length = 0;
     this.biasShapes.length = 0;
@@ -86,16 +87,16 @@ export class MusicRNN {
       }
       // TODO(fjord): Support attention model.
       this.lstmCells.push(
-        (data: dl.Tensor2D, c: dl.Tensor2D, h: dl.Tensor2D) =>
-            dl.basicLSTMCell(this.forgetBias,
-              vars[cellPrefix + 'kernel'] as dl.Tensor2D,
-              vars[cellPrefix + 'bias'] as dl.Tensor1D, data, c, h));
-      this.biasShapes.push((vars[cellPrefix + 'bias'] as dl.Tensor2D).shape[0]);
+        (data: tf.Tensor2D, c: tf.Tensor2D, h: tf.Tensor2D) =>
+            tf.basicLSTMCell(this.forgetBias,
+              vars[cellPrefix + 'kernel'] as tf.Tensor2D,
+              vars[cellPrefix + 'bias'] as tf.Tensor1D, data, c, h));
+      this.biasShapes.push((vars[cellPrefix + 'bias'] as tf.Tensor2D).shape[0]);
       ++l;
     }
 
-    this.lstmFcW = vars['fully_connected/weights'] as dl.Tensor2D;
-    this.lstmFcB = vars['fully_connected/biases'] as dl.Tensor1D;
+    this.lstmFcW = vars['fully_connected/weights'] as tf.Tensor2D;
+    this.lstmFcB = vars['fully_connected/biases'] as tf.Tensor1D;
 
     this.rawVars = vars;
     this.initialized = true;
@@ -108,6 +109,7 @@ export class MusicRNN {
       this.forgetBias.dispose();
       this.forgetBias = undefined;
     }
+    this.dataConverter= undefined;
     this.initialized = false;
   }
 
@@ -127,39 +129,39 @@ export class MusicRNN {
       await this.initialize();
     }
 
-    const oh = dl.tidy(() => {
+    const oh = tf.tidy(() => {
       const inputs = this.dataConverter.toTensor(sequence);
 
       const length:number = inputs.shape[0];
       const outputSize:number = inputs.shape[1];
 
-      let c: dl.Tensor2D[] = [];
-      let h: dl.Tensor2D[] = [];
+      let c: tf.Tensor2D[] = [];
+      let h: tf.Tensor2D[] = [];
       for (let i = 0; i < this.biasShapes.length; i++) {
-        c.push(dl.zeros([1, this.biasShapes[i] / 4]));
-        h.push(dl.zeros([1, this.biasShapes[i] / 4]));
+        c.push(tf.zeros([1, this.biasShapes[i] / 4]));
+        h.push(tf.zeros([1, this.biasShapes[i] / 4]));
       }
 
       // Initialize with input.
-      const samples: dl.Tensor1D[] = [];
+      const samples: tf.Tensor1D[] = [];
       for (let i = 0; i < length + steps; i++) {
-        let nextInput: dl.Tensor2D;
+        let nextInput: tf.Tensor2D;
         if (i < length) {
           nextInput = inputs.slice([i, 0], [1, outputSize]).as2D(1, outputSize);
         } else {
           const logits = h[h.length - 1].matMul(this.lstmFcW).add(this.lstmFcB);
           const sampledOutput = (
             temperature ?
-            dl.multinomial(logits.div(dl.scalar(temperature)), 1).as1D():
+            tf.multinomial(logits.div(tf.scalar(temperature)), 1).as1D():
             logits.argMax(1).as1D());
-          nextInput = dl.oneHot(sampledOutput, outputSize).toFloat();
+          nextInput = tf.oneHot(sampledOutput, outputSize).toFloat();
           // Save samples as bool to reduce data sync time.
           samples.push(nextInput.as1D().toBool());
         }
-        [c, h] = dl.multiRNNCell(this.lstmCells, nextInput, c, h);
+        [c, h] = tf.multiRNNCell(this.lstmCells, nextInput, c, h);
       }
 
-      return dl.stack(samples).as2D(samples.length, outputSize);
+      return tf.stack(samples).as2D(samples.length, outputSize);
     });
 
     const result = this.dataConverter.toNoteSequence(await oh);

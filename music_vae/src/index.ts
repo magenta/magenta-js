@@ -14,7 +14,7 @@
  * limitations under the License.
  * =============================================================================
  */
-import * as dl from 'deeplearn';
+import {tf} from '@magenta/core';
 
 export {
   Encoder,
@@ -29,5 +29,5 @@ export const isDeviceSupported = isWebGLSupported();
 // ideally could be retrieved from NPM modules or internally from deeplearn via
 // NPM
 function isWebGLSupported(): boolean {
-  return dl.ENV.get('WEBGL_VERSION') >= 1;
+  return tf.ENV.get('WEBGL_VERSION') >= 1;
 }
