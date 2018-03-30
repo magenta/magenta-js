@@ -20,8 +20,10 @@ import INoteSequence = magenta.INoteSequence;
 import { MusicRNN } from '../src/index';
 import * as dl from 'deeplearn';
 
-// tslint:disable-next-line:max-line-length
-const CHECKPOINT_URL = "https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_rnn/dljs/basic_rnn";
+// tslint:disable:max-line-length
+const MEL_CHECKPOINT = "https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_rnn/dljs/basic_rnn";
+const DRUMS_CHECKPOINT = "https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_rnn/dljs/drums_rnn";
+// tslint:enable:max-line-length
 
 const MELODY_NS:INoteSequence = {
   ticksPerQuarter: 220,
@@ -79,6 +81,72 @@ const MELODY_NS:INoteSequence = {
   ]
 };
 
+const DRUMS_NS:INoteSequence = {
+  ticksPerQuarter: 220,
+  totalTime: 1.5,
+  timeSignatures: [
+    {
+      time: 0,
+      numerator: 4,
+      denominator: 4
+    }
+  ],
+  tempos: [
+    {
+      time: 0,
+      qpm: 120
+    }
+  ],
+  notes: [
+    {
+      startTime: 0,
+      endTime: 0.5,
+      pitch: 34,
+      velocity: 100,
+      isDrum: true
+    },
+    {
+      instrument: 0,
+      startTime: 0.5,
+      endTime: 1.0,
+      pitch: 39,
+      velocity: 100,
+      isDrum: true
+    },
+    {
+      instrument: 0,
+      startTime: 0.5,
+      endTime: 1.0,
+      pitch: 43,
+      velocity: 100,
+      isDrum: true
+    },
+    {
+      startTime: 1.0,
+      endTime: 1.5,
+      pitch: 34,
+      velocity: 100,
+      isDrum: true
+    },
+    {
+      instrument: 0,
+      startTime: 1.5,
+      endTime: 2.0,
+      pitch: 39,
+      velocity: 100,
+      isDrum: true
+    },
+    {
+      instrument: 0,
+      startTime: 1.5,
+      endTime: 2.0,
+      pitch: 43,
+      velocity: 100,
+      isDrum: true
+    },
+  ]
+};
+
 function writeTimer(elementId: string, startTime: number) {
   document.getElementById(elementId).innerHTML = (
   (performance.now() - startTime) / 1000.).toString() + 's';
@@ -97,7 +165,7 @@ function writeNoteSeqs(elementId: string, seqs: INoteSequence[]) {
 }
 
 async function runMelodyRnn() {
-  const melodyRnn = new MusicRNN(CHECKPOINT_URL);
+  const melodyRnn = new MusicRNN(MEL_CHECKPOINT);
   await melodyRnn.initialize();
 
   const qns = magenta.Sequences.quantizeNoteSequence(MELODY_NS, 1);
@@ -112,5 +180,22 @@ async function runMelodyRnn() {
   console.log(dl.memory());
 }
 
+async function runDrumsRnn() {
+  const drumsRnn = new MusicRNN(DRUMS_CHECKPOINT);
+  await drumsRnn.initialize();
+
+  const qns = magenta.Sequences.quantizeNoteSequence(DRUMS_NS, 1);
+  writeNoteSeqs('drums-cont-inputs', [qns]);
+  const start = performance.now();
+  const continuation = await drumsRnn.continueSequence(qns, 20);
+  writeTimer('drums-cont-time', start);
+  writeNoteSeqs('drums-cont-results', [continuation]);
+  drumsRnn.dispose();
+
+  console.log(dl.getBackend());
+  console.log(dl.memory());
+}
+
 
 runMelodyRnn();
+runDrumsRnn();

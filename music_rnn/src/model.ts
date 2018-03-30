@@ -145,10 +145,9 @@ export class MusicRNN {
       for (let i = 0; i < length + steps; i++) {
         let nextInput: dl.Tensor2D;
         if (i < length) {
-          nextInput = inputs.slice([
-            i, 0], [1, outputSize]).as2D(1, outputSize);
+          nextInput = inputs.slice([i, 0], [1, outputSize]).as2D(1, outputSize);
         } else {
-          const logits = h[1].matMul(this.lstmFcW).add(this.lstmFcB);
+          const logits = h[h.length - 1].matMul(this.lstmFcW).add(this.lstmFcB);
           const sampledOutput = (
             temperature ?
             dl.multinomial(logits.div(dl.scalar(temperature)), 1).as1D():
@@ -157,9 +156,7 @@ export class MusicRNN {
           // Save samples as bool to reduce data sync time.
           samples.push(nextInput.as1D().toBool());
         }
-        const output = dl.multiRNNCell(this.lstmCells, nextInput, c, h);
-        c = output[0];
-        h = output[1];
+        [c, h] = dl.multiRNNCell(this.lstmCells, nextInput, c, h);
       }
 
       return dl.stack(samples).as2D(samples.length, outputSize);
