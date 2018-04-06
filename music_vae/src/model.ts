@@ -299,10 +299,10 @@ class BaseDecoder extends Decoder {
           nextInput = tf.oneHot(timeLabels, this.outputDims).toFloat();
           timeSamples = nextInput.toBool();
         } else {
-          const splitLogits = tflib.split(
+          const [encBias, decBias] = tflib.split(
               logits, [this.nade.numHidden, this.nade.numDims], 1);
           nextInput = this.nade.sample(
-              splitLogits[0] as tf.Tensor2D, splitLogits[1] as tf.Tensor2D);
+              encBias as tf.Tensor2D, decBias as tf.Tensor2D);
           timeSamples = nextInput.toBool();
         }
         samples.push(timeSamples);
