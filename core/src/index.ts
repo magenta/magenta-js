@@ -25,10 +25,13 @@ export {NoteSequence, INoteSequence, INote};
 import * as tf from '@tensorflow/tfjs';
 export {tf};
 
-export { CheckpointLoader } from './checkpoint_loader';
+export {CheckpointLoader} from './checkpoint_loader';
 
 import * as data from './data';
 export {data};
+
+import * as tflib from './tf_lib';
+export {tflib};
 
 export * from './midi_io';
 export * from './sequences';

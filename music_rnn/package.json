@@ -26,7 +26,7 @@
     "prepublish": "yarn lint && yarn test && yarn build && yarn bundle",
     "build": "tsc",
     "bundle": "browserify --standalone magenta src/index.ts -p [tsify] > dist/musicrnn.js",
-    "lint": "tslint -p . -t verbose",
+    "lint": "tslint -c ../tslint.json -p . -t verbose",
     "test": "ts-node node_modules/tape/bin/tape src/**/*_test.ts",
     "build-demo": "browserify demo/index.ts -p [tsify] > demo/bundle.js",
     "run-demo": "yarn build && yarn build-demo && http-server ./demo"

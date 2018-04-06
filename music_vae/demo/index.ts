@@ -1,4 +1,3 @@
-// tslint:disable-next-line:max-line-length
 import { MusicVAE } from '../src/index';
 import { INoteSequence, tf } from '@magenta/core';
 import * as clone from 'clone';

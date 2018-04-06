@@ -849,7 +849,7 @@ midi-file-parser@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/midi-file-parser/-/midi-file-parser-1.0.0.tgz#175a013f277e9d26acf94cfe6c03b13abb0a1e9e"
 
-midiconvert@^0.4.3:
+midiconvert@^0.4.4:
   version "0.4.4"
   resolved "https://registry.yarnpkg.com/midiconvert/-/midiconvert-0.4.4.tgz#9884d8e197f0de78536d60357a16b7acff8a4652"
   dependencies:
@@ -1406,7 +1406,7 @@ tslib@^1.8.0, tslib@^1.8.1:
   version "1.9.0"
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.9.0.tgz#e37a86fda8cbbaf23a057f473c9f4dc64e5fc2e8"
 
-tslint@~5.9.1:
+tslint@^5.9.1:
   version "5.9.1"
   resolved "https://registry.yarnpkg.com/tslint/-/tslint-5.9.1.tgz#1255f87a3ff57eb0b0e1f0e610a8b4748046c9ae"
   dependencies:
