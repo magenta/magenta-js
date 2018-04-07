@@ -18,10 +18,10 @@
 import { Chord, Note } from 'tonal';
 
 const CHORD_QUALITY_INTERVALS = [
-  ['1P', '3M', '5P'],
-  ['1P', '3m', '5P'],
-  ['1P', '3M', '5A'],
-  ['1P', '3m', '5d'],
+  ['1P', '3M', '5P'],  // major
+  ['1P', '3m', '5P'],  // minor
+  ['1P', '3M', '5A'],  // augmented
+  ['1P', '3m', '5d'],  // diminished
 ];
 
 export enum ChordQuality {
@@ -53,7 +53,7 @@ export class ChordSymbols {
         'Unrecognized chord symbol: ' + `${chord}`);
     }
 
-    let notes = Chord.notes(chord);
+    const notes = Chord.notes(chord);
     return notes.map(Note.chroma);
   }
 
@@ -64,7 +64,7 @@ export class ChordSymbols {
    * @throws {ChordSymbolException} If the chord root cannot be determined.
    */
   public static root(chord: string): number {
-    let [root, kind] = Chord.tokenize(chord);
+    const root = Chord.tokenize(chord)[0];
     if (!root) {
       throw new ChordSymbolException(
         'Chord symbol has unknown root: ' + `${chord}`);
@@ -85,12 +85,12 @@ export class ChordSymbols {
         'Unrecognized chord symbol: ' + `${chord}`);
     }
 
-    let intervals = Chord.intervals(chord);
-    let qualities = CHORD_QUALITY_INTERVALS.map(
+    const intervals = Chord.intervals(chord);
+    const qualities = CHORD_QUALITY_INTERVALS.map(
       cqis => cqis.every(cqi => intervals.includes(cqi)));
 
-    let i = qualities.indexOf(true);
-    let j = qualities.lastIndexOf(true);
+    const i = qualities.indexOf(true);
+    const j = qualities.lastIndexOf(true);
 
     if (i >= 0 && i === j) {
       return i;
@@ -100,4 +100,3 @@ export class ChordSymbols {
     }
   }
 }
-
