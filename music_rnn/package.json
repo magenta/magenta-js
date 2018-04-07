@@ -7,7 +7,7 @@
   "jsdelivr": "dist/musicrnn.js",
   "unpkg": "dist/musicrnn.js",
   "dependencies": {
-    "@magenta/core": "^0.0.13",
+    "@magenta/core": "^0.0.15",
     "@magenta/protobuf": "^0.0.4",
     "deeplearn": "^0.6.0-alpha6"
   },
@@ -26,7 +26,7 @@
     "prepublish": "yarn lint && yarn test && yarn build && yarn bundle",
     "build": "tsc",
     "bundle": "browserify --standalone magenta src/index.ts -p [tsify] > dist/musicrnn.js",
-    "lint": "tslint -p . -t verbose",
+    "lint": "tslint -c ../tslint.json -p . -t verbose",
     "test": "ts-node node_modules/tape/bin/tape src/**/*_test.ts",
     "build-demo": "browserify demo/index.ts -p [tsify] > demo/bundle.js",
     "run-demo": "yarn build && yarn build-demo && http-server ./demo"

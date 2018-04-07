@@ -15,8 +15,8 @@
  * =============================================================================
  */
 // Use custom CheckpointLoader until quantization is added to tf.
-import { data, tf, CheckpointLoader, INoteSequence } from '@magenta/core';
-import { isNullOrUndefined } from 'util';
+import {data, tf, tflib, CheckpointLoader, INoteSequence} from '@magenta/core';
+import {isNullOrUndefined} from 'util';
 
 /**
  * A class for keeping track of the parameters of an affine transformation.
@@ -101,7 +101,6 @@ class BidirectonalLstmEncoder extends Encoder {
   private singleDirection(inputs: tf.Tensor3D, fw: boolean) {
     const batchSize = inputs.shape[0];
     const length = inputs.shape[1];
-    const outputSize = inputs.shape[2];
 
     const lstmVars = fw ? this.lstmFwVars : this.lstmBwVars;
     let state: [tf.Tensor2D, tf.Tensor2D] = [
@@ -112,12 +111,9 @@ class BidirectonalLstmEncoder extends Encoder {
     const lstm = (data: tf.Tensor2D, state: [tf.Tensor2D, tf.Tensor2D]) =>
         tf.basicLSTMCell(
           forgetBias, lstmVars.kernel, lstmVars.bias, data, state[0], state[1]);
-    for (let i = 0; i < length; i++) {
-      const index = fw ? i : length - 1 - i;
-      state = lstm(
-          inputs.slice([0, index, 0], [batchSize, 1, outputSize]).as2D(
-              batchSize, outputSize),
-          state);
+    const splitInputs = tflib.split(inputs, length, 1);
+    for (const data of (fw ? splitInputs : splitInputs.reverse())) {
+      state = lstm(data.squeeze([1]) as tf.Tensor2D, state);
     }
     return state;
   }
@@ -158,19 +154,15 @@ class HierarchicalEncoder extends Encoder {
    */
   encode(sequence: tf.Tensor3D) {
     return tf.tidy(() => {
-      const batchSize = sequence.shape[0];
       let inputs: tf.Tensor3D = sequence;
 
       for (let level = 0; level < this.baseEncoders.length; ++level) {
         const levelSteps = this.numSteps[level];
-        const stepSize = inputs.shape[1] / levelSteps;
-        const depth = inputs.shape[2];
+        const splitInputs = tflib.split(inputs, levelSteps, 1);
         const embeddings: tf.Tensor2D[] = [];
         for (let step = 0; step < levelSteps; ++ step) {
-
           embeddings.push(this.baseEncoders[level].encode(
-              inputs.slice([0, step * stepSize, 0],
-                           [batchSize, stepSize, depth])));
+              splitInputs[step] as tf.Tensor3D));
         }
         inputs = (embeddings.length > 1) ?
             tf.stack(embeddings, 1) as tf.Tensor3D :
@@ -192,24 +184,20 @@ class HierarchicalEncoder extends Encoder {
  */
 function initLstmCells(
   z: tf.Tensor2D, lstmCellVars: LayerVars[], zToInitStateVars: LayerVars) {
-  const batchSize = z.shape[0];
 
   const lstmCells: tf.LSTMCellFunc[] =  [];
   const c: tf.Tensor2D[] = [];
   const h: tf.Tensor2D[] = [];
-  const initialStates = dense(zToInitStateVars, z).tanh();
-  let stateOffset = 0;
+  const initialStates = tflib.split(
+      dense(zToInitStateVars, z).tanh(), 4, 1);
   for (let i = 0; i < lstmCellVars.length; ++i) {
     const lv = lstmCellVars[i];
-    const stateWidth = lv.bias.shape[0] / 4;
     const forgetBias = tf.scalar(1.0);
     lstmCells.push(
         (data: tf.Tensor2D, c: tf.Tensor2D, h: tf.Tensor2D) =>
         tf.basicLSTMCell(forgetBias, lv.kernel, lv.bias, data, c, h));
-    c.push(initialStates.slice([0, stateOffset], [batchSize, stateWidth]));
-    stateOffset += stateWidth;
-    h.push(initialStates.slice([0, stateOffset], [batchSize, stateWidth]));
-    stateOffset += stateWidth;
+    c.push(initialStates[i * 2] as tf.Tensor2D);
+    h.push(initialStates[i * 2 + 1] as tf.Tensor2D);
   }
   return {'cell': lstmCells, 'c': c, 'h': h};
 }
@@ -311,11 +299,10 @@ class BaseDecoder extends Decoder {
           nextInput = tf.oneHot(timeLabels, this.outputDims).toFloat();
           timeSamples = nextInput.toBool();
         } else {
-          const encBias = logits.slice(
-              [0, 0], [batchSize, this.nade.numHidden]);
-          const decBias = logits.slice(
-              [0, this.nade.numHidden], [batchSize, this.nade.numDims]);
-          nextInput = this.nade.sample(encBias, decBias);
+          const [encBias, decBias] = tflib.split(
+              logits, [this.nade.numHidden, this.nade.numDims], 1);
+          nextInput = this.nade.sample(
+              encBias as tf.Tensor2D, decBias as tf.Tensor2D);
           timeSamples = nextInput.toBool();
         }
         samples.push(timeSamples);
@@ -777,8 +764,7 @@ class MusicVAE {
       for (let i = 0; i < numSamples; ++i) {
         const t = outputTensors.slice(
             [i, 0, 0],
-            [1, numSteps, outputTensors.shape[2]]).as2D(
-                numSteps, outputTensors.shape[2]);
+            [1, numSteps, outputTensors.shape[2]]).squeeze([0]) as tf.Tensor2D;
           result.push(t);
       }
       return result;

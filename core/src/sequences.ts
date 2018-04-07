@@ -74,6 +74,10 @@ export class Sequences {
     return n && (n & (n - 1)) === 0;
   }
 
+  public static clone(ns:INoteSequence) {
+    return NoteSequence.decode(NoteSequence.encode(ns).finish());
+  }
+
   /**
    * Calculates steps per second given stepsPerQuarter and a QPM.
    */
@@ -174,7 +178,7 @@ export class Sequences {
   public static quantizeNoteSequence(noteSequence: INoteSequence,
       stepsPerQuarter: number): NoteSequence {
     // Make a copy.
-    const qns = NoteSequence.decode(NoteSequence.encode(noteSequence).finish());
+    const qns = this.clone(noteSequence);
 
     qns.quantizationInfo = NoteSequence.QuantizationInfo.create({
       stepsPerQuarter

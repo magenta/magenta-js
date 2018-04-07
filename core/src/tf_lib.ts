@@ -14,24 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import {tensorflow} from '@magenta/protobuf';
-import NoteSequence = tensorflow.magenta.NoteSequence;
-import INoteSequence = tensorflow.magenta.INoteSequence;
-import INote = NoteSequence.INote;
-
-export {NoteSequence, INoteSequence, INote};
-
 import * as tf from '@tensorflow/tfjs';
-export {tf};
 
-export {CheckpointLoader} from './checkpoint_loader';
-
-import * as data from './data';
-export {data};
-
-import * as tflib from './tf_lib';
-export {tflib};
-
-export * from './midi_io';
-export * from './sequences';
+export function split(
+    t: tf.Tensor, numOrSizeSplits: number[] | number, axis: number) {
+  if (axis < 0) {
+    axis += t.rank;
+  }
+  let splitSizes: number[];
+  if (typeof(numOrSizeSplits) === "number") {
+    splitSizes = Array(numOrSizeSplits).fill(t.shape[axis] / numOrSizeSplits);
+  } else {
+    splitSizes = numOrSizeSplits;
+  }
+  const begin = Array(t.rank).fill(0);
+  return splitSizes.map(s => {
+    const size = t.shape.slice();
+    size[axis] = s;
+    const slice = t.slice(begin, size);
+    begin[axis] += s;
+    return slice;
+  });
+}
