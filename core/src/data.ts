@@ -70,6 +70,8 @@ export function converterFromSpec(spec: ConverterSpec) {
     return new DrumRollConverter(spec.args as DrumsConverterArgs);
   } else if (spec.type === 'TrioConverter') {
     return new TrioConverter(spec.args as TrioConverterArgs);
+  } else if (spec.type === 'DrumsOneHotConverter') {
+    return new DrumsOneHotConverter(spec.args as DrumsConverterArgs);
   } else {
     throw new Error(
       'Unknown DataConverter type in spec: ' + spec.type);
@@ -203,6 +205,79 @@ export class DrumRollConverter extends DrumsConverter {
                 quantizedStartStep: s,
                 quantizedEndStep: s + 1,
                 isDrum: true}));
+        }
+      }
+    }
+    return noteSequence;
+  }
+}
+
+/**
+ * Converts between a quantized `NoteSequence` containing a drum sequence
+ * and the `Tensor` objects used by `MusicRNN`.
+ *
+ * The `Tensor` output by `toTensor` is a 2D one-hot encoding. Each
+ * row is a time step, and each column is a one-hot vector where each drum type
+ * is mapped to a single bit of a binary integer representation, where the
+ * bit has value 0 if the drum type is not present, and 1 if it is present.
+ *
+ * The expected `Tensor` in `toNoteSequence` is the same kind of one-hot
+ * encoding as the `Tensor` output by `toTensor`.
+ *
+ * The output `NoteSequence` uses quantized time and only the first pitch in
+ * pitch class are used.
+ *
+ * @param numSteps The length of each sequence.
+ * @param numSegments (Optional) The number of conductor segments, if
+ * applicable.
+ * @param pitchClasses (Optional) An array of arrays, grouping together MIDI
+ * pitches to treat as the same drum. The first pitch in each class will be used
+ * in the `NoteSequence` returned by `toNoteSequence`. A default mapping to 9
+ * classes is used if not provided.
+ */
+export class DrumsOneHotConverter extends DrumsConverter {
+
+  constructor(args: DrumsConverterArgs) {
+    super(args);
+  }
+
+  toTensor(noteSequence: INoteSequence) {
+    const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
+    const indexes = this.toOneHotIndexes(noteSequence);
+    const drumRoll = tf.buffer([numSteps, 2 ** this.pitchClasses.length]);
+    indexes.forEach((index, quantizedStartStep) => {
+      drumRoll.set(1, quantizedStartStep, index);
+    });
+    return drumRoll.toTensor() as tf.Tensor2D;
+  }
+
+  private toOneHotIndexes(noteSequence: INoteSequence): Map<number, number> {
+    const result = new Map<number, number>();
+    for (const {pitch, quantizedStartStep} of noteSequence.notes) {
+      const val = 2 ** this.pitchToClass[pitch];
+      if (result.has(quantizedStartStep)) {
+        result.set(quantizedStartStep, result.get(quantizedStartStep) + val);
+      } else {
+        result.set(quantizedStartStep, val);
+      }
+    }
+    return result;
+  }
+
+  async toNoteSequence(oh: tf.Tensor2D) {
+    const noteSequence = NoteSequence.create();
+    const labelsTensor = oh.argMax(1);
+    const labels: Int32Array = await labelsTensor.data() as Int32Array;
+    labelsTensor.dispose();
+    for (let s = 0; s < labels.length; ++s) {  // step
+      const bin = (labels[s] >>> 0).toString(2);
+      for (let i = bin.length - 1; i >= 0; i--) {
+        if (bin[i] === '1') {
+          noteSequence.notes.push(
+            NoteSequence.Note.create({
+              pitch: this.pitchClasses[bin.length - i - 1][0],
+              quantizedStartStep: s,
+              quantizedEndStep: s + 1}));
         }
       }
     }
