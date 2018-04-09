@@ -16,25 +16,23 @@
  */
 
 import * as test from 'tape';
-import { ChordQuality, ChordSymbols } from './chords';
+import {ChordQuality, ChordSymbols} from './chords';
 
-test("Test Chord Pitches", (t: test.Test) => {
+test('Test Chord Pitches', (t: test.Test) => {
+  t.deepEqual(ChordSymbols.pitches('Am').sort((x, y) => x - y), [0, 4, 9]);
   t.deepEqual(
-    ChordSymbols.pitches('Am').sort((x, y) => x - y), [0, 4, 9]);
+      ChordSymbols.pitches('D7b9').sort((x, y) => x - y), [0, 2, 3, 6, 9]);
   t.deepEqual(
-    ChordSymbols.pitches('D7b9').sort((x, y) => x - y), [0, 2, 3, 6, 9]);
+      ChordSymbols.pitches('Fm7b5').sort((x, y) => x - y), [3, 5, 8, 11]);
   t.deepEqual(
-    ChordSymbols.pitches('Fm7b5').sort((x, y) => x - y), [3, 5, 8, 11]);
+      ChordSymbols.pitches('CmM7').sort((x, y) => x - y), [0, 3, 7, 11]);
   t.deepEqual(
-    ChordSymbols.pitches('CmM7').sort((x, y) => x - y), [0, 3, 7, 11]);
-  t.deepEqual(
-    ChordSymbols.pitches('E##13').sort((x, y) => x - y), [1, 3, 4, 6, 8, 10]);
-  t.deepEqual(
-    ChordSymbols.pitches('G+').sort((x, y) => x - y), [3, 7, 11]);
+      ChordSymbols.pitches('E##13').sort((x, y) => x - y), [1, 3, 4, 6, 8, 10]);
+  t.deepEqual(ChordSymbols.pitches('G+').sort((x, y) => x - y), [3, 7, 11]);
   t.end();
 });
 
-test("Test Chord Root", (t: test.Test) => {
+test('Test Chord Root', (t: test.Test) => {
   // Note: not all of these chords can be parsed, but even so the roots can be
   // correctly identified.
   t.equal(ChordSymbols.root('Dm9'), 2);
@@ -46,7 +44,7 @@ test("Test Chord Root", (t: test.Test) => {
   t.end();
 });
 
-test("Test Chord Quality", (t: test.Test) => {
+test('Test Chord Quality', (t: test.Test) => {
   // Test major chords.
   t.equal(ChordSymbols.quality('B13'), ChordQuality.Major);
   t.equal(ChordSymbols.quality('E7#9'), ChordQuality.Major);
