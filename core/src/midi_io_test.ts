@@ -15,32 +15,23 @@
  * limitations under the License.
  */
 
-import * as test from "tape";
 import {tensorflow} from '@magenta/protobuf';
+import * as test from 'tape';
+
 import NoteSequence = tensorflow.magenta.NoteSequence;
 import {MidiIO} from './midi_io';
-import fs = require('fs');
+import * as fs from 'fs';
 
-test("Parse Simple MIDI", (t:test.Test) => {
-  const midi = fs.readFileSync('../testdata/melody.mid', "binary");
+test('Parse Simple MIDI', (t: test.Test) => {
+  const midi = fs.readFileSync('../testdata/melody.mid', 'binary');
   const ns = MidiIO.midiToSequenceProto(midi);
 
   const expectedNs = NoteSequence.create({
     ticksPerQuarter: 220,
     totalTime: 1.5,
-    timeSignatures: [
-      NoteSequence.TimeSignature.create({
-        time: 0,
-        numerator: 4,
-        denominator: 4
-      })
-    ],
-    tempos: [
-      NoteSequence.Tempo.create({
-        time: 0,
-        qpm: 120
-      })
-    ],
+    timeSignatures: [NoteSequence.TimeSignature.create(
+        {time: 0, numerator: 4, denominator: 4})],
+    tempos: [NoteSequence.Tempo.create({time: 0, qpm: 120})],
     sourceInfo: NoteSequence.SourceInfo.create({
       encodingType: NoteSequence.SourceInfo.EncodingType.MIDI,
       parser: NoteSequence.SourceInfo.Parser.TONEJS_MIDI_CONVERT
@@ -159,8 +150,8 @@ test("Parse Simple MIDI", (t:test.Test) => {
 
   t.deepEqual(ns, expectedNs);
 
-  const nsRoundTrip = MidiIO.midiToSequenceProto(
-    MidiIO.SequenceProtoToMidi(ns));
+  const nsRoundTrip =
+      MidiIO.midiToSequenceProto(MidiIO.SequenceProtoToMidi(ns));
 
   t.deepEqual(nsRoundTrip, expectedNs);
 

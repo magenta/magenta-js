@@ -23,7 +23,7 @@ import {Tensor} from '@tensorflow/tfjs';
 export interface CheckpointVariable {
   filename: string;
   shape: number[];
-  quantization: {bytes: number, min: number, max:number};
+  quantization: {bytes: number, min: number, max: number};
 }
 
 /**
@@ -65,21 +65,17 @@ export class CheckpointLoader {
   getCheckpointManifest(): Promise<CheckpointManifest> {
     if (this.checkpointManifest == null) {
       return new Promise<CheckpointManifest>((resolve, reject) => {
-        this.loadManifest().then(() => {
-          resolve(this.checkpointManifest);
-        });
+        this.loadManifest().then(() => { resolve(this.checkpointManifest); });
       });
     }
-    return new Promise<CheckpointManifest>((resolve, reject) => {
-      resolve(this.checkpointManifest);
-    });
+    return new Promise<CheckpointManifest>(
+        (resolve, reject) => { resolve(this.checkpointManifest); });
   }
 
   getAllVariables(): Promise<{[varName: string]: Tensor}> {
     if (this.variables != null) {
-      return new Promise<{[varName: string]: Tensor}>((resolve, reject) => {
-        resolve(this.variables);
-      });
+      return new Promise<{[varName: string]: Tensor}>(
+          (resolve, reject) => { resolve(this.variables); });
     }
 
     return new Promise<{[varName: string]: Tensor}>((resolve, reject) => {
@@ -129,14 +125,14 @@ export class CheckpointLoader {
                 quantValues = Float32Array.from(new Uint16Array(xhr.response));
               } else {
                 throw new Error(
-                  'Quantization bytes must be either 1 or 2. ' +
-                  'Got: ${quantInfo.bytes}');
+                    'Quantization bytes must be either 1 or 2. ' +
+                    'Got: ${quantInfo.bytes}');
               }
               let quantConstant = 1.0;
               if (quantInfo.max !== quantInfo.min) {
-                quantConstant = (
-                    (quantInfo.max - quantInfo.min) /
-                    (Math.pow(2, quantInfo.bytes * 8) - 1));
+                quantConstant =
+                    ((quantInfo.max - quantInfo.min) /
+                     (Math.pow(2, quantInfo.bytes * 8) - 1));
               }
               values = quantValues.map(v => v * quantConstant + quantInfo.min);
             } else {

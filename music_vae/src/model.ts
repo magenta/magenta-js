@@ -15,7 +15,7 @@
  * =============================================================================
  */
 // Use custom CheckpointLoader until quantization is added to tf.
-import {data, tf, tflib, CheckpointLoader, INoteSequence} from '@magenta/core';
+import {CheckpointLoader, INoteSequence, data, tf, tflib} from '@magenta/core';
 import {isNullOrUndefined} from 'util';
 
 /**
@@ -110,7 +110,8 @@ class BidirectonalLstmEncoder extends Encoder {
     const forgetBias = tf.scalar(1.0);
     const lstm = (data: tf.Tensor2D, state: [tf.Tensor2D, tf.Tensor2D]) =>
         tf.basicLSTMCell(
-          forgetBias, lstmVars.kernel, lstmVars.bias, data, state[0], state[1]);
+            forgetBias, lstmVars.kernel, lstmVars.bias, data, state[0],
+            state[1]);
     const splitInputs = tflib.split(inputs, length, 1);
     for (const data of (fw ? splitInputs : splitInputs.reverse())) {
       state = lstm(data.squeeze([1]) as tf.Tensor2D, state);
@@ -160,7 +161,7 @@ class HierarchicalEncoder extends Encoder {
         const levelSteps = this.numSteps[level];
         const splitInputs = tflib.split(inputs, levelSteps, 1);
         const embeddings: tf.Tensor2D[] = [];
-        for (let step = 0; step < levelSteps; ++ step) {
+        for (let step = 0; step < levelSteps; ++step) {
           embeddings.push(this.baseEncoders[level].encode(
               splitInputs[step] as tf.Tensor3D));
         }
@@ -183,19 +184,17 @@ class HierarchicalEncoder extends Encoder {
  * @returns An Object containing the LSTM cells and initial states.
  */
 function initLstmCells(
-  z: tf.Tensor2D, lstmCellVars: LayerVars[], zToInitStateVars: LayerVars) {
-
-  const lstmCells: tf.LSTMCellFunc[] =  [];
+    z: tf.Tensor2D, lstmCellVars: LayerVars[], zToInitStateVars: LayerVars) {
+  const lstmCells: tf.LSTMCellFunc[] = [];
   const c: tf.Tensor2D[] = [];
   const h: tf.Tensor2D[] = [];
-  const initialStates = tflib.split(
-      dense(zToInitStateVars, z).tanh(), 4, 1);
+  const initialStates = tflib.split(dense(zToInitStateVars, z).tanh(), 4, 1);
   for (let i = 0; i < lstmCellVars.length; ++i) {
     const lv = lstmCellVars[i];
     const forgetBias = tf.scalar(1.0);
     lstmCells.push(
         (data: tf.Tensor2D, c: tf.Tensor2D, h: tf.Tensor2D) =>
-        tf.basicLSTMCell(forgetBias, lv.kernel, lv.bias, data, c, h));
+            tf.basicLSTMCell(forgetBias, lv.kernel, lv.bias, data, c, h));
     c.push(initialStates[i * 2] as tf.Tensor2D);
     h.push(initialStates[i * 2 + 1] as tf.Tensor2D);
   }
@@ -270,39 +269,42 @@ class BaseDecoder extends Decoder {
    * @returns A boolean tensor containing the decoded sequences, shaped
    * `[batchSize, length, depth]`.
    */
-  decode(z: tf.Tensor2D, length: number, initialInput?: tf.Tensor2D,
-         temperature?: number) {
+  decode(
+      z: tf.Tensor2D, length: number, initialInput?: tf.Tensor2D,
+      temperature?: number) {
     const batchSize = z.shape[0];
 
     return tf.tidy(() => {
       // Initialize LSTMCells.
-      const lstmCell = initLstmCells(
-          z, this.lstmCellVars, this.zToInitStateVars);
+      const lstmCell =
+          initLstmCells(z, this.lstmCellVars, this.zToInitStateVars);
 
       // Generate samples.
       const samples: tf.Tensor2D[] = [];
       let nextInput = initialInput ?
-          initialInput : tf.zeros([batchSize, this.outputDims]) as tf.Tensor2D;
+          initialInput :
+          tf.zeros([batchSize, this.outputDims]) as tf.Tensor2D;
       for (let i = 0; i < length; ++i) {
         [lstmCell.c, lstmCell.h] = tf.multiRNNCell(
             lstmCell.cell, tf.concat2d([nextInput, z], 1), lstmCell.c,
             lstmCell.h);
-        const logits = dense(
-            this.outputProjectVars, lstmCell.h[lstmCell.h.length - 1]);
+        const logits =
+            dense(this.outputProjectVars, lstmCell.h[lstmCell.h.length - 1]);
 
         let timeSamples: tf.Tensor2D;
         if (this.nade == null) {
-          const timeLabels = (
-            temperature ?
-            tf.multinomial(logits.div(tf.scalar(temperature)), 1).as1D():
-            logits.argMax(1).as1D());
+          const timeLabels =
+              (temperature ?
+                   tf.multinomial(logits.div(tf.scalar(temperature)), 1)
+                       .as1D() :
+                   logits.argMax(1).as1D());
           nextInput = tf.oneHot(timeLabels, this.outputDims).toFloat();
           timeSamples = nextInput.toBool();
         } else {
-          const [encBias, decBias] = tflib.split(
-              logits, [this.nade.numHidden, this.nade.numDims], 1);
-          nextInput = this.nade.sample(
-              encBias as tf.Tensor2D, decBias as tf.Tensor2D);
+          const [encBias, decBias] =
+              tflib.split(logits, [this.nade.numHidden, this.nade.numDims], 1);
+          nextInput =
+              this.nade.sample(encBias as tf.Tensor2D, decBias as tf.Tensor2D);
           timeSamples = nextInput.toBool();
         }
         samples.push(timeSamples);
@@ -346,8 +348,8 @@ class ConductorDecoder extends Decoder {
     this.zToInitStateVars = zToInitStateVars;
     this.numSteps = numSteps;
     this.zDims = this.zToInitStateVars.kernel.shape[0];
-    this.outputDims = this.coreDecoders.reduce(
-        (dims, dec) => dims + dec.outputDims, 0);
+    this.outputDims =
+        this.coreDecoders.reduce((dims, dec) => dims + dec.outputDims, 0);
   }
 
   /**
@@ -361,35 +363,36 @@ class ConductorDecoder extends Decoder {
    * @returns A boolean tensor containing the decoded sequences, shaped
    * `[batchSize, length, depth]`.
    */
-  decode(z: tf.Tensor2D, length: number, initialInput?: tf.Tensor2D,
-         temperature?: number) {
+  decode(
+      z: tf.Tensor2D, length: number, initialInput?: tf.Tensor2D,
+      temperature?: number) {
     const batchSize = z.shape[0];
 
     return tf.tidy(() => {
       // Initialize LSTMCells.
-      const lstmCell = initLstmCells(
-          z, this.lstmCellVars, this.zToInitStateVars);
+      const lstmCell =
+          initLstmCells(z, this.lstmCellVars, this.zToInitStateVars);
 
-       // Generate embeddings.
+      // Generate embeddings.
       const samples: tf.Tensor3D[] = [];
       let initialInput: tf.Tensor2D[] = this.coreDecoders.map(_ => undefined);
       const dummyInput: tf.Tensor2D = tf.zeros([batchSize, 1]);
       for (let i = 0; i < this.numSteps; ++i) {
-        [lstmCell.c, lstmCell.h] = tf.multiRNNCell(
-            lstmCell.cell, dummyInput, lstmCell.c, lstmCell.h);
+        [lstmCell.c, lstmCell.h] =
+            tf.multiRNNCell(lstmCell.cell, dummyInput, lstmCell.c, lstmCell.h);
         const currSamples: tf.Tensor3D[] = [];
         for (let j = 0; j < this.coreDecoders.length; ++j) {
-          currSamples.push(
-            this.coreDecoders[j].decode(
+          currSamples.push(this.coreDecoders[j].decode(
               lstmCell.h[lstmCell.h.length - 1], length / this.numSteps,
               initialInput[j], temperature));
         }
         samples.push(
-            (currSamples.length > 1) ?
-            tf.concat(currSamples, -1) : currSamples[0]);
-        initialInput = currSamples.map(s => s.slice(
-            [0, -1, 0],
-            [batchSize, 1, this.outputDims]).as2D(batchSize, -1).toFloat());
+            (currSamples.length > 1) ? tf.concat(currSamples, -1) :
+                                       currSamples[0]);
+        initialInput = currSamples.map(
+            s => s.slice([0, -1, 0], [batchSize, 1, this.outputDims])
+                     .as2D(batchSize, -1)
+                     .toFloat());
       }
       return tf.concat(samples, 1);
     });
@@ -433,31 +436,30 @@ class Nade {
    */
   sample(encBias: tf.Tensor2D, decBias: tf.Tensor2D) {
     const batchSize = encBias.shape[0];
-    return tf.tidy(()=> {
+    return tf.tidy(() => {
       const samples: tf.Tensor1D[] = [];
       let a = encBias.clone();
 
       for (let i = 0; i < this.numDims; i++) {
         const h = tf.sigmoid(a);
-        const encWeightsI = this.encWeights.slice(
-            [i, 0], [1, this.numHidden]).as1D();
-        const decWeightsTI = this.decWeightsT.slice(
-            [i, 0], [1, this.numHidden]);
+        const encWeightsI =
+            this.encWeights.slice([i, 0], [1, this.numHidden]).as1D();
+        const decWeightsTI =
+            this.decWeightsT.slice([i, 0], [1, this.numHidden]);
         const decBiasI = decBias.slice([0, i], [batchSize, 1]);
-        const contfogitsI = decBiasI.add(
-            tf.matMul(h, decWeightsTI, false, true));
+        const contfogitsI =
+            decBiasI.add(tf.matMul(h, decWeightsTI, false, true));
         const condProbsI = contfogitsI.sigmoid();
 
-        const samplesI = condProbsI.greaterEqual(
-            tf.scalar(0.5)).toFloat().as1D();
+        const samplesI =
+            condProbsI.greaterEqual(tf.scalar(0.5)).toFloat().as1D();
         if (i < this.numDims - 1) {
-          a = a.add(
-            tf.outerProduct(samplesI.toFloat(), encWeightsI)) as tf.Tensor2D;
+          a = a.add(tf.outerProduct(samplesI.toFloat(), encWeightsI));
         }
 
         samples.push(samplesI);
       }
-     return tf.stack(samples, 1) as tf.Tensor2D;
+      return tf.stack(samples, 1) as tf.Tensor2D;
     });
   }
 }
@@ -486,8 +488,7 @@ class MusicVAE {
    * file must exist within the checkpoint directory specifying the type and
    * args for the correct `DataConverter`.
    */
-  constructor(
-      checkpointURL: string, dataConverter?: data.DataConverter) {
+  constructor(checkpointURL: string, dataConverter?: data.DataConverter) {
     this.checkpointURL = checkpointURL;
     this.dataConverter = dataConverter;
   }
@@ -505,7 +506,7 @@ class MusicVAE {
   }
 
   private getLstmLayers(
-      cellFormat: string,  vars: {[varName: string]: tf.Tensor}) {
+      cellFormat: string, vars: {[varName: string]: tf.Tensor}) {
     const lstmLayers: LayerVars[] = [];
     let l = 0;
     while (true) {
@@ -539,52 +540,54 @@ class MusicVAE {
 
     if (isNullOrUndefined(this.dataConverter)) {
       fetch(this.checkpointURL + '/converter.json')
-        .then((response) => response.json())
-        .then((converterSpec: data.ConverterSpec) => {
-          this.dataConverter = data.converterFromSpec(converterSpec);
-        });
+          .then((response) => response.json())
+          .then((converterSpec: data.ConverterSpec) => {
+            this.dataConverter = data.converterFromSpec(converterSpec);
+          });
     }
 
     const reader = new CheckpointLoader(this.checkpointURL);
     const vars = await reader.getAllVariables();
-    this.rawVars= vars;  // Save for disposal.
+    this.rawVars = vars;  // Save for disposal.
     // Encoder variables.
     const encMu = new LayerVars(
-      vars['encoder/mu/kernel'] as tf.Tensor2D,
-      vars['encoder/mu/bias'] as tf.Tensor1D);
+        vars['encoder/mu/kernel'] as tf.Tensor2D,
+        vars['encoder/mu/bias'] as tf.Tensor1D);
 
     if (this.dataConverter.numSegments) {
-      const fwLayers = this.getLstmLayers(
-          HIER_ENCODER_FORMAT.replace('%s', 'fw'), vars);
-      const bwLayers = this.getLstmLayers(
-          HIER_ENCODER_FORMAT.replace('%s', 'bw'), vars);
+      const fwLayers =
+          this.getLstmLayers(HIER_ENCODER_FORMAT.replace('%s', 'fw'), vars);
+      const bwLayers =
+          this.getLstmLayers(HIER_ENCODER_FORMAT.replace('%s', 'bw'), vars);
 
       if (fwLayers.length !== bwLayers.length || fwLayers.length !== 2) {
-        throw Error('Only 2 hierarchical encoder levels are supported. ' +
-                    `Got ${fwLayers.length} forward and ${bwLayers.length} ` +
-                    'backward.');
+        throw Error(
+            'Only 2 hierarchical encoder levels are supported. ' +
+            `Got ${fwLayers.length} forward and ${bwLayers.length} ` +
+            'backward.');
       }
       const baseEncoders: BidirectonalLstmEncoder[] = [0, 1].map(
           l => new BidirectonalLstmEncoder(fwLayers[l], bwLayers[l]));
       this.encoder = new HierarchicalEncoder(
           baseEncoders, [this.dataConverter.numSegments, 1], encMu);
     } else {
-      const fwLayers = this.getLstmLayers(
-          ENCODER_FORMAT.replace('%s', 'fw'), vars);
-      const bwLayers = this.getLstmLayers(
-          ENCODER_FORMAT.replace('%s', 'bw'), vars);
+      const fwLayers =
+          this.getLstmLayers(ENCODER_FORMAT.replace('%s', 'fw'), vars);
+      const bwLayers =
+          this.getLstmLayers(ENCODER_FORMAT.replace('%s', 'bw'), vars);
       if (fwLayers.length !== bwLayers.length || fwLayers.length !== 1) {
-        throw Error('Only single-layer bidirectional encoders are supported. ' +
-                    `Got ${fwLayers.length} forward and ${bwLayers.length} ` +
-                    'backward.');
+        throw Error(
+            'Only single-layer bidirectional encoders are supported. ' +
+            `Got ${fwLayers.length} forward and ${bwLayers.length} ` +
+            'backward.');
       }
-      this.encoder = new BidirectonalLstmEncoder(
-          fwLayers[0], bwLayers[0], encMu);
+      this.encoder =
+          new BidirectonalLstmEncoder(fwLayers[0], bwLayers[0], encMu);
     }
 
     // BaseDecoder variables.
-    const decVarPrefix = (this.dataConverter.numSegments) ?
-      'core_decoder/' : '';
+    const decVarPrefix =
+        (this.dataConverter.numSegments) ? 'core_decoder/' : '';
 
     const decVarPrefixes: string[] = [];
     if (this.dataConverter.NUM_SPLITS) {
@@ -596,8 +599,8 @@ class MusicVAE {
     }
 
     const baseDecoders = decVarPrefixes.map((varPrefix) => {
-      const decLstmLayers = this.getLstmLayers(
-          varPrefix + MUTLI_LSTM_CELL_FORMAT, vars);
+      const decLstmLayers =
+          this.getLstmLayers(varPrefix + MUTLI_LSTM_CELL_FORMAT, vars);
       const decZtoInitState = new LayerVars(
           vars[varPrefix + 'z_to_initial_state/kernel'] as tf.Tensor2D,
           vars[varPrefix + 'z_to_initial_state/bias'] as tf.Tensor1D);
@@ -605,18 +608,20 @@ class MusicVAE {
           vars[varPrefix + 'output_projection/kernel'] as tf.Tensor2D,
           vars[varPrefix + 'output_projection/bias'] as tf.Tensor1D);
       // Optional NADE for the BaseDecoder.
-      const nade = ((varPrefix + 'nade/w_enc' in vars) ?
-          new Nade(
-              vars[varPrefix + 'nade/w_enc'] as tf.Tensor3D,
-              vars[varPrefix + 'nade/w_dec_t'] as tf.Tensor3D) : null);
+      const nade =
+          ((varPrefix + 'nade/w_enc' in vars) ?
+               new Nade(
+                   vars[varPrefix + 'nade/w_enc'] as tf.Tensor3D,
+                   vars[varPrefix + 'nade/w_dec_t'] as tf.Tensor3D) :
+               null);
       return new BaseDecoder(
           decLstmLayers, decZtoInitState, decOutputProjection, nade);
     });
 
     // ConductorDecoder variables.
     if (this.dataConverter.numSegments) {
-      const contfstmLayers = this.getLstmLayers(
-          CONDUCTOR_PREFIX + LSTM_CELL_FORMAT, vars);
+      const contfstmLayers =
+          this.getLstmLayers(CONDUCTOR_PREFIX + LSTM_CELL_FORMAT, vars);
       const condZtoInitState = new LayerVars(
           vars[CONDUCTOR_PREFIX + 'initial_state/kernel'] as tf.Tensor2D,
           vars[CONDUCTOR_PREFIX + 'initial_state/bias'] as tf.Tensor1D);
@@ -626,8 +631,9 @@ class MusicVAE {
     } else if (baseDecoders.length === 1) {
       this.decoder = baseDecoders[0];
     } else {
-      throw Error('Unexpected number of base decoders without conductor: ' +
-                  `${baseDecoders.length}`);
+      throw Error(
+          'Unexpected number of base decoders without conductor: ' +
+          `${baseDecoders.length}`);
     }
 
     return this;
@@ -637,9 +643,7 @@ class MusicVAE {
    * @returns true iff an `Encoder` and `Decoder` have been instantiated for the
    * model.
    */
-  isInitialized() {
-    return (!!this.encoder && !!this.decoder);
-  }
+  isInitialized() { return (!!this.encoder && !!this.decoder); }
 
   /**
    * Interpolates between the input `NoteSequences` in latent space.
@@ -672,19 +676,16 @@ class MusicVAE {
     const numSteps = this.dataConverter.numSteps;
 
     const oh = tf.tidy(() => {
-      const inputTensors = tf.stack(
-        inputSequences.map(
-          this.dataConverter.toTensor.bind(this.dataConverter)) as tf.Tensor2D[]
-        ) as tf.Tensor3D;
+      const inputTensors = tf.stack(inputSequences.map(
+          t => this.dataConverter.toTensor(t) as tf.Tensor2D)) as tf.Tensor3D;
 
       const outputTensors = this.interpolateTensors(inputTensors, numInterps);
       const result = [];
       for (let i = 0; i < outputTensors.shape[0]; ++i) {
-        const t = outputTensors.slice(
-            [i, 0, 0],
-            [1, numSteps, outputTensors.shape[2]]).as2D(
-                numSteps, outputTensors.shape[2]);
-          result.push(t);
+        const t = outputTensors
+                      .slice([i, 0, 0], [1, numSteps, outputTensors.shape[2]])
+                      .as2D(numSteps, outputTensors.shape[2]);
+        result.push(t);
       }
       return result;
     });
@@ -704,7 +705,7 @@ class MusicVAE {
     }
 
     // Use the mean `mu` of the latent variable as the best estimate of `z`.
-    const z =this.encoder.encode(sequences);
+    const z = this.encoder.encode(sequences);
 
     // Compute the interpolations of the latent variable.
     const interpolatedZs: tf.Tensor2D = tf.tidy(() => {
@@ -723,8 +724,8 @@ class MusicVAE {
         const revRangeArray = tf.scalar(1.0).sub(rangeArray) as tf.Tensor1D;
 
         const r = numInterps;
-        let finalZs = z0.mul(
-            tf.outerProduct(revRangeArray, revRangeArray).as3D(r, r, 1));
+        let finalZs =
+            z0.mul(tf.outerProduct(revRangeArray, revRangeArray).as3D(r, r, 1));
         finalZs = tf.addStrict(
             finalZs,
             z1.mul(tf.outerProduct(rangeArray, revRangeArray).as3D(r, r, 1)));
@@ -738,7 +739,7 @@ class MusicVAE {
         return finalZs.as2D(r * r, z.shape[1]);
       } else {
         throw new Error(
-          'Invalid number of note sequences. Requires length 2, or 4');
+            'Invalid number of note sequences. Requires length 2, or 4');
       }
     });
 
@@ -754,18 +755,18 @@ class MusicVAE {
    *
    * @returns An array of sampled `NoteSequence` objects.
    */
-  async sample(numSamples: number, temperature=0.5) {
+  async sample(numSamples: number, temperature = 0.5) {
     const numSteps = this.dataConverter.numSteps;
 
     const oh = tf.tidy(() => {
-      const outputTensors = this.sampleTensors(
-          numSamples, numSteps, temperature);
+      const outputTensors =
+          this.sampleTensors(numSamples, numSteps, temperature);
       const result = [];
       for (let i = 0; i < numSamples; ++i) {
-        const t = outputTensors.slice(
-            [i, 0, 0],
-            [1, numSteps, outputTensors.shape[2]]).squeeze([0]) as tf.Tensor2D;
-          result.push(t);
+        const t = outputTensors
+                      .slice([i, 0, 0], [1, numSteps, outputTensors.shape[2]])
+                      .squeeze([0]) as tf.Tensor2D;
+        result.push(t);
       }
       return result;
     });
@@ -779,10 +780,10 @@ class MusicVAE {
   }
 
   private sampleTensors(
-    numSamples: number, numSteps: number, temperature?: number) {
+      numSamples: number, numSteps: number, temperature?: number) {
     return tf.tidy(() => {
-      const randZs: tf.Tensor2D = tf.randomNormal(
-          [numSamples, this.decoder.zDims]);
+      const randZs: tf.Tensor2D =
+          tf.randomNormal([numSamples, this.decoder.zDims]);
       return this.decoder.decode(randZs, numSteps, undefined, temperature);
     });
   }
