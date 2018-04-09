@@ -20,7 +20,7 @@ import * as test from 'tape';
 
 import NoteSequence = tensorflow.magenta.NoteSequence;
 import {MidiIO} from './midi_io';
-import fs = require('fs');
+import * as fs from 'fs';
 
 test('Parse Simple MIDI', (t: test.Test) => {
   const midi = fs.readFileSync('../testdata/melody.mid', 'binary');

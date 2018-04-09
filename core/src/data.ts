@@ -272,7 +272,8 @@ export class MelodyConverter extends DataConverter {
       }
       if (n.pitch < this.minPitch || n.pitch > this.maxPitch) {
         throw Error(
-            `\`NoteSequence\` has a pitch outside of the valid range: ${n.pitch}`);
+            '`NoteSequence` has a pitch outside of the valid range: ' +
+            `${n.pitch}`);
       }
       mel.set(n.pitch - this.minPitch + this.FIRST_PITCH, n.quantizedStartStep);
       mel.set(this.NOTE_OFF, n.quantizedEndStep);

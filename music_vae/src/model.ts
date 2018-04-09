@@ -454,8 +454,7 @@ class Nade {
         const samplesI =
             condProbsI.greaterEqual(tf.scalar(0.5)).toFloat().as1D();
         if (i < this.numDims - 1) {
-          a = a.add(tf.outerProduct(samplesI.toFloat(), encWeightsI))
-                  as tf.Tensor2D;
+          a = a.add(tf.outerProduct(samplesI.toFloat(), encWeightsI));
         }
 
         samples.push(samplesI);

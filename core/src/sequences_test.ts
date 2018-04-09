@@ -373,7 +373,6 @@ test('Assert isQuantizedNoteSequence', (t: test.Test) => {
     [55, 120, 4.0, 4.01], [52, 99, 4.75, 5.0]
   ]);
 
-
   t.throws(
       () => Sequences.assertIsQuantizedSequence(ns),
       sequences.QuantizationStatusException);

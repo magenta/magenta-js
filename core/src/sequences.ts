@@ -184,7 +184,7 @@ export class Sequences {
         NoteSequence.QuantizationInfo.create({stepsPerQuarter});
 
     if (qns.timeSignatures.length > 0) {
-      qns.timeSignatures.sort((a, b) => { return a.time - b.time; });
+      qns.timeSignatures.sort((a, b) => a.time - b.time);
       // There is an implicit 4/4 time signature at 0 time. So if the first time
       // signature is something other than 4/4 and it's at a time other than 0,
       // that's an implicit time signature change.
@@ -235,7 +235,7 @@ export class Sequences {
     }
 
     if (qns.tempos.length > 0) {
-      qns.tempos.sort((a, b) => { return a.time - b.time; });
+      qns.tempos.sort((a, b) => a.time - b.time);
       // There is an implicit 120.0 qpm tempo at 0 time. So if the first tempo
       // is something other that 120.0 and it's at a time other than 0, that's
       // an implicit tempo change.
