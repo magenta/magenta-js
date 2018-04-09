@@ -378,9 +378,9 @@ cipher-base@^1.0.0, cipher-base@^1.0.1, cipher-base@^1.0.3:
     inherits "^2.0.1"
     safe-buffer "^5.0.1"
 
-clang-format@^1.2.2:
-  version "1.2.3"
-  resolved "https://registry.yarnpkg.com/clang-format/-/clang-format-1.2.3.tgz#2763561aa7449c43737480f8df3a2b5b66e6cf37"
+clang-format@^1.0.41-c:
+  version "1.0.41-c"
+  resolved "https://registry.yarnpkg.com/clang-format/-/clang-format-1.0.41-c.tgz#af113775968377d11b1315be3e20969b85c450b5"
   dependencies:
     async "^1.5.2"
     glob "^7.0.0"

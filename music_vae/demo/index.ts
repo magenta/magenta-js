@@ -7,6 +7,7 @@ const DRUMS_CKPT = 'https://storage.googleapis.com/download.magenta.tensorflow.o
 const DRUMS_NADE_CKPT = 'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_vae/dljs/drums_nade_9';
 const MEL_CKPT = 'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_vae/dljs/mel_small';
 const MEL_16_CKPT = 'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_vae/dljs/mel_16bar_small';
+const TRIO_CKPT = 'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_vae/dljs/trio_4bar_q16';
 // tslint:enable:max-line-length
 const DRUM_SEQS: INoteSequence[] = [
   {notes: [
@@ -73,6 +74,7 @@ const DRUM_SEQS: INoteSequence[] = [
   {notes: [
       {pitch: 50, quantizedStartStep: 4}, {pitch: 50, quantizedStartStep: 20}
   ]}];
+  DRUM_SEQS.map(s => s.notes.map(n => {n.isDrum = true;}));
 
   const MEL_TEAPOT: INoteSequence = {notes: [
       {pitch: 69, quantizedStartStep: 0, quantizedEndStep: 2},
@@ -102,6 +104,26 @@ const DRUM_SEQS: INoteSequence[] = [
       {pitch: 62, quantizedStartStep: 26, quantizedEndStep: 28},
       {pitch: 60, quantizedStartStep: 28, quantizedEndStep: 32}
   ]};
+
+  const TRIO_EXAMPLE: INoteSequence = {notes: []};
+  concatNoteSequences([MEL_TEAPOT, MEL_TEAPOT], 32).notes.map(n => {
+    const m = clone(n);
+    m.program = 0;
+    m.instrument = 0;
+    TRIO_EXAMPLE.notes.push(m);
+  });
+  concatNoteSequences([MEL_TWINKLE, MEL_TWINKLE], 32).notes.map(n => {
+    const m = clone(n);
+    m.pitch -= 36;
+    m.program = 32;
+    m.instrument = 1;
+    TRIO_EXAMPLE.notes.push(m);
+  });
+  concatNoteSequences([DRUM_SEQS[0], DRUM_SEQS[0]], 32).notes.map(n => {
+    const m = clone(n);
+    m.instrument = 2;
+    TRIO_EXAMPLE.notes.push(m);
+  });
 
 function writeTimer(elementId: string, startTime: number) {
   document.getElementById(elementId).innerHTML = (
@@ -182,6 +204,29 @@ async function runMel(){
   console.log(tf.memory());
 }
 
+async function runTrio(){
+  const mvae:MusicVAE = new MusicVAE(TRIO_CKPT);
+  await mvae.initialize();
+
+  const inputs = [TRIO_EXAMPLE];
+  writeNoteSeqs('trio-inputs', inputs);
+
+  let start = performance.now();
+  const z = await mvae.encode(inputs);
+  const recon = await mvae.decode(z);
+  z.dispose();
+  writeTimer('trio-recon-time', start);
+  writeNoteSeqs('trio-recon', recon);
+
+  start = performance.now();
+  const sample = await mvae.sample(1);
+  writeTimer('trio-sample-time', start);
+  writeNoteSeqs('trio-samples', sample);
+
+  mvae.dispose();
+  console.log(tf.memory());
+}
+
 // TODO(adarob): Switch to magenta/core function once implemented.
 function concatNoteSequences(
     seqs: INoteSequence[], individualDuration: number) {
@@ -233,6 +278,7 @@ try {
   runDrumsNade();
   runMel();
   runMel16();
+  runTrio();
 } catch (err){
   console.error(err);
 }
