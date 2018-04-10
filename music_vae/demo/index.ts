@@ -151,7 +151,7 @@ const MEL_TWINKLE: INoteSequence = {
 const TRIO_EXAMPLE: INoteSequence = {
   notes: []
 };
-concatNoteSequences([MEL_TEAPOT, MEL_TEAPOT], 32).notes.map(n => {
+concatNoteSequences([MEL_TWINKLE, MEL_TWINKLE], 32).notes.map(n => {
   const m = clone(n);
   m.program = 0;
   m.instrument = 0;
