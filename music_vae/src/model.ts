@@ -15,7 +15,7 @@
  * =============================================================================
  */
 // Use custom CheckpointLoader until quantization is added to tf.
-import {CheckpointLoader, INoteSequence, data, tf, tflib} from '@magenta/core';
+import {CheckpointLoader, data, INoteSequence, tf, tflib} from '@magenta/core';
 import {isNullOrUndefined} from 'util';
 
 /**
@@ -28,6 +28,12 @@ class LayerVars {
   kernel: tf.Tensor2D;
   bias: tf.Tensor1D;
   constructor(kernel: tf.Tensor2D, bias: tf.Tensor1D) {
+    if (isNullOrUndefined(kernel)) {
+      throw Error('`kernel` is undefined.');
+    }
+    if (isNullOrUndefined(bias)) {
+      throw Error('`bias` is undefined.');
+    }
     this.kernel = kernel;
     this.bias = bias;
   }
@@ -390,9 +396,9 @@ class ConductorDecoder extends Decoder {
             (currSamples.length > 1) ? tf.concat(currSamples, -1) :
                                        currSamples[0]);
         initialInput = currSamples.map(
-            s => s.slice([0, -1, 0], [batchSize, 1, this.outputDims])
-                     .as2D(batchSize, -1)
-                     .toFloat());
+            s => s.slice([0, -1, 0], [batchSize, 1, s.shape[s.rank - 1]])
+                     .squeeze([1])
+                     .toFloat() as tf.Tensor2D);
       }
       return tf.concat(samples, 1);
     });
@@ -454,8 +460,7 @@ class Nade {
         const samplesI =
             condProbsI.greaterEqual(tf.scalar(0.5)).toFloat().as1D();
         if (i < this.numDims - 1) {
-          a = a.add(tf.outerProduct(samplesI.toFloat(), encWeightsI))
-                  as tf.Tensor2D;
+          a = a.add(tf.outerProduct(samplesI.toFloat(), encWeightsI));
         }
 
         samples.push(samplesI);
@@ -621,13 +626,13 @@ class MusicVAE {
 
     // ConductorDecoder variables.
     if (this.dataConverter.numSegments) {
-      const contfstmLayers =
+      const condLstmLayers =
           this.getLstmLayers(CONDUCTOR_PREFIX + LSTM_CELL_FORMAT, vars);
       const condZtoInitState = new LayerVars(
           vars[CONDUCTOR_PREFIX + 'initial_state/kernel'] as tf.Tensor2D,
           vars[CONDUCTOR_PREFIX + 'initial_state/bias'] as tf.Tensor1D);
       this.decoder = new ConductorDecoder(
-          baseDecoders, contfstmLayers, condZtoInitState,
+          baseDecoders, condLstmLayers, condZtoInitState,
           this.dataConverter.numSegments);
     } else if (baseDecoders.length === 1) {
       this.decoder = baseDecoders[0];
@@ -644,7 +649,9 @@ class MusicVAE {
    * @returns true iff an `Encoder` and `Decoder` have been instantiated for the
    * model.
    */
-  isInitialized() { return (!!this.encoder && !!this.decoder); }
+  isInitialized() {
+    return (!!this.encoder && !!this.decoder);
+  }
 
   /**
    * Interpolates between the input `NoteSequences` in latent space.
@@ -686,10 +693,12 @@ class MusicVAE {
   async encode(inputSequences: INoteSequence[]) {
     return tf.tidy(() => {
       const inputTensors =
-          tf.stack(
-                inputSequences
-                    .map(this.dataConverter.toTensor.bind(this.dataConverter))
-                        as tf.Tensor2D[]) as tf.Tensor3D;
+          (inputSequences.length === 1 ?
+               this.dataConverter.toTensor(inputSequences[0]).expandDims() :
+               tf.stack(inputSequences.map(
+                   t => this.dataConverter.toTensor(t) as tf.Tensor2D))) as
+          tf.Tensor3D;
+
       // Use the mean `mu` of the latent variable as the best estimate of `z`.
       return this.encoder.encode(inputTensors);
     });
