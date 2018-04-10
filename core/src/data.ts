@@ -280,7 +280,8 @@ export class DrumsOneHotConverter extends DrumsConverter {
             NoteSequence.Note.create({
               pitch: this.pitchClasses[bin.length - i - 1][0],
               quantizedStartStep: s,
-              quantizedEndStep: s + 1}));
+              quantizedEndStep: s + 1,
+            isDrum: true}));
         }
       }
     }
