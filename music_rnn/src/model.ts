@@ -17,9 +17,9 @@
 
 import * as magenta from '@magenta/core';
 import tf = magenta.tf;
-import { isNullOrUndefined } from 'util';
+import {isNullOrUndefined} from 'util';
 
-const CELL_FORMAT = "rnn/multi_rnn_cell/cell_%d/basic_lstm_cell/";
+const CELL_FORMAT = 'rnn/multi_rnn_cell/cell_%d/basic_lstm_cell/';
 
 /**
  * Main MusicRNN model class.
@@ -48,7 +48,8 @@ export class MusicRNN {
    * file must exist within the checkpoint directory specifying the type and
    * args for the correct `DataConverter`.
    */
-  constructor(checkpointURL:string, dataConverter?:magenta.data.DataConverter) {
+  constructor(
+      checkpointURL: string, dataConverter?: magenta.data.DataConverter) {
     this.checkpointURL = checkpointURL;
     this.initialized = false;
     this.rawVars = {};
@@ -66,10 +67,10 @@ export class MusicRNN {
 
     if (isNullOrUndefined(this.dataConverter)) {
       fetch(this.checkpointURL + '/converter.json')
-        .then((response) => response.json())
-        .then((converterSpec: magenta.data.ConverterSpec) => {
-          this.dataConverter = magenta.data.converterFromSpec(converterSpec);
-        });
+          .then((response) => response.json())
+          .then((converterSpec: magenta.data.ConverterSpec) => {
+            this.dataConverter = magenta.data.converterFromSpec(converterSpec);
+          });
     }
 
     const reader = new magenta.CheckpointLoader(this.checkpointURL);
@@ -83,14 +84,14 @@ export class MusicRNN {
     while (true) {
       const cellPrefix = CELL_FORMAT.replace('%d', l.toString());
       if (!(cellPrefix + 'kernel' in vars)) {
-          break;
+        break;
       }
       // TODO(fjord): Support attention model.
       this.lstmCells.push(
-        (data: tf.Tensor2D, c: tf.Tensor2D, h: tf.Tensor2D) =>
-            tf.basicLSTMCell(this.forgetBias,
-              vars[cellPrefix + 'kernel'] as tf.Tensor2D,
-              vars[cellPrefix + 'bias'] as tf.Tensor1D, data, c, h));
+          (data: tf.Tensor2D, c: tf.Tensor2D, h: tf.Tensor2D) =>
+              tf.basicLSTMCell(
+                  this.forgetBias, vars[cellPrefix + 'kernel'] as tf.Tensor2D,
+                  vars[cellPrefix + 'bias'] as tf.Tensor1D, data, c, h));
       this.biasShapes.push((vars[cellPrefix + 'bias'] as tf.Tensor2D).shape[0]);
       ++l;
     }
@@ -109,7 +110,7 @@ export class MusicRNN {
       this.forgetBias.dispose();
       this.forgetBias = undefined;
     }
-    this.dataConverter= undefined;
+    this.dataConverter = undefined;
     this.initialized = false;
   }
 
@@ -121,19 +122,23 @@ export class MusicRNN {
    * @param temperature The softmax temperature to use when sampling from the
    *   logits. Argmax is used if not provided.
    */
-  async continueSequence(sequence: magenta.INoteSequence, steps: number,
+  async continueSequence(
+      sequence: magenta.INoteSequence, steps: number,
       temperature?: number): Promise<magenta.INoteSequence> {
     magenta.Sequences.assertIsQuantizedSequence(sequence);
 
-    if(!this.initialized) {
+    if (!this.initialized) {
       await this.initialize();
     }
 
     const oh = tf.tidy(() => {
-      const inputs = this.dataConverter.toTensor(sequence);
+      const tensors = this.dataConverter.toTensors(sequence);
+      const inputs = tensors.inputs;
+      const controls = tensors.controls || tf.zeros([inputs.shape[0], 0]);
 
-      const length:number = inputs.shape[0];
-      const outputSize:number = inputs.shape[1];
+      const length: number = inputs.shape[0];
+      const outputSize: number = inputs.shape[1];
+      const controlSize: number = controls.shape[1];
 
       let c: tf.Tensor2D[] = [];
       let h: tf.Tensor2D[] = [];
@@ -150,15 +155,19 @@ export class MusicRNN {
           nextInput = inputs.slice([i, 0], [1, outputSize]).as2D(1, outputSize);
         } else {
           const logits = h[h.length - 1].matMul(this.lstmFcW).add(this.lstmFcB);
-          const sampledOutput = (
-            temperature ?
-            tf.multinomial(logits.div(tf.scalar(temperature)), 1).as1D():
-            logits.argMax(1).as1D());
+          const sampledOutput =
+              (temperature ?
+                   tf.multinomial(logits.div(tf.scalar(temperature)), 1)
+                       .as1D() :
+                   logits.argMax(1).as1D());
           nextInput = tf.oneHot(sampledOutput, outputSize).toFloat();
           // Save samples as bool to reduce data sync time.
           samples.push(nextInput.as1D().toBool());
         }
-        [c, h] = tf.multiRNNCell(this.lstmCells, nextInput, c, h);
+        const nextControl =
+            controls.slice([i, 0], [1, controlSize]).as2D(1, controlSize);
+        [c, h] = tf.multiRNNCell(
+            this.lstmCells, tf.concat2d([nextInput, nextControl], 1), c, h);
       }
 
       return tf.stack(samples).as2D(samples.length, outputSize);
