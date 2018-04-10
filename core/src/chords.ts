@@ -58,9 +58,7 @@ export class ChordSymbols {
    */
   public static pitches(chord: string): number[] {
     if (!Chord.exists(chord)) {
-      throw new ChordSymbolException(
-          'Unrecognized chord symbol: ' +
-          `${chord}`);
+      throw new ChordSymbolException(`Unrecognized chord symbol: ${chord}`);
     }
 
     const notes = Chord.notes(chord);
@@ -76,9 +74,7 @@ export class ChordSymbols {
   public static root(chord: string): number {
     const root = Chord.tokenize(chord)[0];
     if (!root) {
-      throw new ChordSymbolException(
-          'Chord symbol has unknown root: ' +
-          `${chord}`);
+      throw new ChordSymbolException(`Chord symbol has unknown root: ${chord}`);
     }
 
     return Note.chroma(root);
@@ -92,9 +88,7 @@ export class ChordSymbols {
    */
   public static quality(chord: string): ChordQuality {
     if (!Chord.exists(chord)) {
-      throw new ChordSymbolException(
-          'Unrecognized chord symbol: ' +
-          `${chord}`);
+      throw new ChordSymbolException(`Unrecognized chord symbol: ${chord}`);
     }
 
     const intervals = Chord.intervals(chord);
@@ -137,8 +131,7 @@ export class MajorMinorChordEncoder extends ChordEncoder {
 
     if (index >= this.depth) {
       throw new ChordEncodingException(
-          'Chord is neither major nor minor: ' +
-          `${chord}`);
+          `Chord is neither major nor minor: ${chord}`);
     }
 
     return index;
@@ -167,8 +160,7 @@ export class TriadChordEncoder extends ChordEncoder {
 
     if (index >= this.depth) {
       throw new ChordEncodingException(
-          'Chord is not a standard triad: ' +
-          `${chord}`);
+          `Chord is not a standard triad: ${chord}`);
     }
 
     return index;
