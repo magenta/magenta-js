@@ -18,6 +18,7 @@
 import * as magenta from '@magenta/core';
 import tf = magenta.tf;
 import { isNullOrUndefined } from 'util';
+import { ATTENTION_PREFIX, AttentionWrapper } from './attention';
 
 const CELL_FORMAT = "multi_rnn_cell/cell_%d/basic_lstm_cell/";
 
@@ -35,6 +36,7 @@ export class MusicRNN {
   lstmFcW: tf.Tensor2D;
   forgetBias: tf.Scalar;
   biasShapes: number[];
+  attentionWrapper?: AttentionWrapper;
 
   rawVars: {[varName: string]: tf.Tensor};  // Store for disposal.
 
@@ -75,7 +77,8 @@ export class MusicRNN {
 
     const reader = new magenta.CheckpointLoader(this.checkpointURL);
     const vars = await reader.getAllVariables();
-    const rnnPrefix = 'rnn/';
+    const hasAttention = AttentionWrapper.isWrapped(vars);
+    const rnnPrefix = hasAttention ? 'rnn/' + ATTENTION_PREFIX : 'rnn/';
 
     this.forgetBias = tf.scalar(1.0);
 
@@ -98,6 +101,12 @@ export class MusicRNN {
 
     this.lstmFcW = vars['fully_connected/weights'] as tf.Tensor2D;
     this.lstmFcB = vars['fully_connected/biases'] as tf.Tensor1D;
+
+    if (hasAttention) {
+      this.attentionWrapper =
+        new AttentionWrapper(this.lstmCells, 32, this.biasShapes[0] / 4);
+      this.attentionWrapper.initialize(vars);
+    }
 
     this.rawVars = vars;
     this.initialized = true;
@@ -133,7 +142,9 @@ export class MusicRNN {
     const oh = tf.tidy(() => {
       const inputs = this.dataConverter.toTensor(sequence);
       const outputSize:number = inputs.shape[1];
-      const samples = this.sampleRnn(inputs, steps, temperature);
+      const samples = this.attentionWrapper ?
+        this.sampleRnnWithAttention(inputs, steps, temperature) :
+        this.sampleRnn(inputs, steps, temperature);
       return tf.stack(samples).as2D(samples.length, outputSize);
     });
 
@@ -171,6 +182,57 @@ export class MusicRNN {
           samples.push(nextInput.as1D().toBool());
       }
       [c, h] = tf.multiRNNCell(this.lstmCells, nextInput, c, h);
+    }
+    return samples;
+  }
+
+  private sampleRnnWithAttention(inputs: tf.Tensor2D,
+                                 steps: number,
+                                 temperature: number) {
+    const length:number = inputs.shape[0];
+    const outputSize:number = inputs.shape[1];
+
+    let c: tf.Tensor2D[] = [];
+    let h: tf.Tensor2D[] = [];
+    for (let i = 0; i < this.biasShapes.length; i++) {
+      c.push(tf.zeros([1, this.biasShapes[i] / 4]));
+      h.push(tf.zeros([1, this.biasShapes[i] / 4]));
+    }
+    const numCounterBits = 6;
+
+    let attentionState = this.attentionWrapper.initState();
+    let lastOutput: tf.Tensor2D;
+
+    // Initialize with input.
+    const samples: tf.Tensor1D[] = [];
+    for (let i = 0; i < length + steps; i++) {
+      let nextInput: tf.Tensor2D;
+      if (i < length) {
+        nextInput = inputs.slice([i, 0], [1, outputSize]).as2D(1, outputSize);
+      } else {
+        const logits = lastOutput.matMul(this.lstmFcW).add(this.lstmFcB);
+        const sampledOutput = (
+          temperature ?
+          tf.multinomial(logits.div(tf.scalar(temperature)), 1).as1D():
+          logits.argMax(1).as1D());
+        nextInput = tf.oneHot(sampledOutput, outputSize).toFloat();
+        // Save samples as bool to reduce data sync time.
+        samples.push(nextInput.as1D().toBool());
+      }
+
+      const binaryCounts = tf.buffer([1, numCounterBits]);
+      for (let bit = 0; bit < numCounterBits; bit++) {
+        const counterValue = Math.floor((i + 1) / 2 ** bit) % 2 ? 1.0 : -1.0;
+        binaryCounts.set(counterValue, 0, bit);
+      }
+      nextInput = nextInput.concat(binaryCounts.toTensor(), 1) as tf.Tensor2D;
+
+      const wrapperOutput =
+        this.attentionWrapper.call(nextInput, c, h, attentionState);
+      lastOutput = wrapperOutput.output;
+      c = wrapperOutput.c;
+      h = wrapperOutput.h;
+      attentionState = wrapperOutput.attentionState;
     }
     return samples;
   }
