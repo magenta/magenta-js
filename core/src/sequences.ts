@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { tensorflow } from '@magenta/protobuf';
+import {tensorflow} from '@magenta/protobuf';
 import NoteSequence = tensorflow.magenta.NoteSequence;
 import INoteSequence = tensorflow.magenta.INoteSequence;
 import * as constants from './constants';
@@ -74,15 +74,15 @@ export class Sequences {
     return n && (n & (n - 1)) === 0;
   }
 
-  public static clone(ns:INoteSequence) {
+  public static clone(ns: INoteSequence) {
     return NoteSequence.decode(NoteSequence.encode(ns).finish());
   }
 
   /**
    * Calculates steps per second given stepsPerQuarter and a QPM.
    */
-  public static stepsPerQuarterToStepsPerSecond(stepsPerQuarter: number,
-    qpm: number): number {
+  public static stepsPerQuarterToStepsPerSecond(
+      stepsPerQuarter: number, qpm: number): number {
     return stepsPerQuarter * qpm / 60.0;
   }
 
@@ -95,8 +95,9 @@ export class Sequences {
    * @param quantizeCutoff Value to use for quantizing cutoff.
    * @returns the quantized step.
    */
-  public static quantizeToStep(unquantizedSeconds: number,
-    stepsPerSecond: number, quantizeCutoff = QUANTIZE_CUTOFF): number {
+  public static quantizeToStep(
+      unquantizedSeconds: number, stepsPerSecond: number,
+      quantizeCutoff = QUANTIZE_CUTOFF): number {
     const unquantizedSteps = unquantizedSeconds * stepsPerSecond;
     return Math.floor(unquantizedSteps + (1 - quantizeCutoff));
   }
@@ -115,10 +116,9 @@ export class Sequences {
   private static quantizeNotes(ns: INoteSequence, stepsPerSecond: number) {
     for (const note of ns.notes) {
       // Quantize the start and end times of the note.
-      note.quantizedStartStep = this.quantizeToStep(
-        note.startTime, stepsPerSecond);
-      note.quantizedEndStep = this.quantizeToStep(
-        note.endTime, stepsPerSecond);
+      note.quantizedStartStep =
+          this.quantizeToStep(note.startTime, stepsPerSecond);
+      note.quantizedEndStep = this.quantizeToStep(note.endTime, stepsPerSecond);
       if (note.quantizedEndStep === note.quantizedStartStep) {
         note.quantizedEndStep += 1;
       }
@@ -126,9 +126,9 @@ export class Sequences {
       // Do not allow notes to start or end in negative time.
       if (note.quantizedStartStep < 0 || note.quantizedEndStep < 0) {
         throw new NegativeTimeException(
-          `Got negative note time: start_step = ` +
-          `${note.quantizedStartStep}, end_step = ` +
-          `${note.quantizedEndStep}`);
+            `Got negative note time: start_step = ` +
+            `${note.quantizedStartStep}, end_step = ` +
+            `${note.quantizedEndStep}`);
       }
 
       // Extend quantized sequence if necessary.
@@ -143,7 +143,7 @@ export class Sequences {
       event.quantizedStep = this.quantizeToStep(event.time, stepsPerSecond);
       if (event.quantizedStep < 0) {
         throw new NegativeTimeException(
-          `Got negative event time: step = ${event.quantizedStep}`);
+            `Got negative event time: step = ${event.quantizedStep}`);
       }
     }
   }
@@ -175,42 +175,39 @@ export class Sequences {
    * @throws {NegativeTimeException} If a note or chord occurs at a negative
    *    time.
    */
-  public static quantizeNoteSequence(noteSequence: INoteSequence,
-      stepsPerQuarter: number): NoteSequence {
+  public static quantizeNoteSequence(
+      noteSequence: INoteSequence, stepsPerQuarter: number): NoteSequence {
     // Make a copy.
     const qns = this.clone(noteSequence);
 
-    qns.quantizationInfo = NoteSequence.QuantizationInfo.create({
-      stepsPerQuarter
-    });
+    qns.quantizationInfo =
+        NoteSequence.QuantizationInfo.create({stepsPerQuarter});
 
     if (qns.timeSignatures.length > 0) {
-      qns.timeSignatures.sort((a, b) => {
-        return a.time - b.time;
-      });
+      qns.timeSignatures.sort((a, b) => a.time - b.time);
       // There is an implicit 4/4 time signature at 0 time. So if the first time
       // signature is something other than 4/4 and it's at a time other than 0,
       // that's an implicit time signature change.
-      if (qns.timeSignatures[0].time !== 0 && !(
-        qns.timeSignatures[0].numerator === 4 &&
-        qns.timeSignatures[0].denominator === 4)) {
+      if (qns.timeSignatures[0].time !== 0 &&
+          !(qns.timeSignatures[0].numerator === 4 &&
+            qns.timeSignatures[0].denominator === 4)) {
         throw new MultipleTimeSignatureException(
-          'NoteSequence has an implicit change from initial 4/4 time ' +
-          `signature to ${qns.timeSignatures[0].numerator}/` +
-          `${qns.timeSignatures[0].denominator} at ` +
-          `${qns.timeSignatures[0].time} seconds.`);
+            'NoteSequence has an implicit change from initial 4/4 time ' +
+            `signature to ${qns.timeSignatures[0].numerator}/` +
+            `${qns.timeSignatures[0].denominator} at ` +
+            `${qns.timeSignatures[0].time} seconds.`);
       }
 
       for (let i = 1; i < qns.timeSignatures.length; i++) {
         const timeSignature = qns.timeSignatures[i];
         if (timeSignature.numerator !== qns.timeSignatures[0].numerator ||
-          timeSignature.denominator !== qns.timeSignatures[0].denominator) {
+            timeSignature.denominator !== qns.timeSignatures[0].denominator) {
           throw new MultipleTimeSignatureException(
-            'NoteSequence has at least one time signature change from ' +
-            `${qns.timeSignatures[0].numerator}/` +
-            `${qns.timeSignatures[0].denominator} to ` +
-            `${timeSignature.numerator}/${timeSignature.denominator} ` +
-            `at ${timeSignature.time} seconds`);
+              'NoteSequence has at least one time signature change from ' +
+              `${qns.timeSignatures[0].numerator}/` +
+              `${qns.timeSignatures[0].denominator} to ` +
+              `${timeSignature.numerator}/${timeSignature.denominator} ` +
+              `at ${timeSignature.time} seconds`);
         }
       }
 
@@ -219,48 +216,43 @@ export class Sequences {
       qns.timeSignatures[0].time = 0;
       qns.timeSignatures = [qns.timeSignatures[0]];
     } else {
-      const timeSignature = NoteSequence.TimeSignature.create({
-        numerator: 4,
-        denominator: 4,
-        time: 0
-      });
+      const timeSignature = NoteSequence.TimeSignature.create(
+          {numerator: 4, denominator: 4, time: 0});
       qns.timeSignatures.push(timeSignature);
     }
 
     const firstTS = qns.timeSignatures[0];
     if (!this.isPowerOf2(firstTS.denominator)) {
       throw new BadTimeSignatureException(
-        'Denominator is not a power of 2. Time signature: ' +
-        `${firstTS.numerator}/${firstTS.denominator}`);
+          'Denominator is not a power of 2. Time signature: ' +
+          `${firstTS.numerator}/${firstTS.denominator}`);
     }
 
     if (firstTS.numerator === 0) {
       throw new BadTimeSignatureException(
-        'Numerator is 0. Time signature: ' +
-        `${firstTS.numerator}/${firstTS.denominator}`);
+          'Numerator is 0. Time signature: ' +
+          `${firstTS.numerator}/${firstTS.denominator}`);
     }
 
     if (qns.tempos.length > 0) {
-      qns.tempos.sort((a, b) => {
-        return a.time - b.time;
-      });
+      qns.tempos.sort((a, b) => a.time - b.time);
       // There is an implicit 120.0 qpm tempo at 0 time. So if the first tempo
       // is something other that 120.0 and it's at a time other than 0, that's
       // an implicit tempo change.
       if (qns.tempos[0].time !== 0 &&
-        qns.tempos[0].qpm !== constants.DEFAULT_QUARTERS_PER_MINUTE) {
+          qns.tempos[0].qpm !== constants.DEFAULT_QUARTERS_PER_MINUTE) {
         throw new MultipleTempoException(
-          'NoteSequence has an implicit tempo change from initial ' +
-          `${constants.DEFAULT_QUARTERS_PER_MINUTE} qpm to ` +
-          `${qns.tempos[0].qpm} qpm at ${qns.tempos[0].time} seconds.`);
+            'NoteSequence has an implicit tempo change from initial ' +
+            `${constants.DEFAULT_QUARTERS_PER_MINUTE} qpm to ` +
+            `${qns.tempos[0].qpm} qpm at ${qns.tempos[0].time} seconds.`);
       }
 
       for (let i = 1; i < qns.tempos.length; i++) {
         if (qns.tempos[i].qpm !== qns.tempos[0].qpm) {
           throw new MultipleTempoException(
-            'NoteSequence has at least one tempo change from ' +
-            `${qns.tempos[0].qpm} qpm to ${qns.tempos[i].qpm}` +
-            `qpm at ${qns.tempos[i].time} seconds.`);
+              'NoteSequence has at least one tempo change from ' +
+              `${qns.tempos[0].qpm} qpm to ${qns.tempos[i].qpm}` +
+              `qpm at ${qns.tempos[i].time} seconds.`);
         }
       }
 
@@ -268,19 +260,17 @@ export class Sequences {
       qns.tempos[0].time = 0;
       qns.tempos = [qns.tempos[0]];
     } else {
-      const tempo = NoteSequence.Tempo.create({
-        qpm: constants.DEFAULT_QUARTERS_PER_MINUTE,
-        time: 0
-      });
+      const tempo = NoteSequence.Tempo.create(
+          {qpm: constants.DEFAULT_QUARTERS_PER_MINUTE, time: 0});
       qns.tempos.push(tempo);
     }
 
     // Compute quantization steps per second.
     const stepsPerSecond = this.stepsPerQuarterToStepsPerSecond(
-      stepsPerQuarter, qns.tempos[0].qpm);
+        stepsPerQuarter, qns.tempos[0].qpm);
 
-    qns.totalQuantizedSteps = this.quantizeToStep(
-      qns.totalTime, stepsPerSecond);
+    qns.totalQuantizedSteps =
+        this.quantizeToStep(qns.totalTime, stepsPerSecond);
     this.quantizeNotes(qns, stepsPerSecond);
 
     // return qns
@@ -290,16 +280,15 @@ export class Sequences {
   /**
    * Returns whether or not a NoteSequence proto has been quantized.
    */
-  public static isQuantizedSequence(ns:INoteSequence) {
-    return ns.quantizationInfo && (
-      ns.quantizationInfo.stepsPerQuarter > 0  ||
-      ns.quantizationInfo.stepsPerSecond > 0);
+  public static isQuantizedSequence(ns: INoteSequence) {
+    return ns.quantizationInfo && (ns.quantizationInfo.stepsPerQuarter > 0 ||
+                                   ns.quantizationInfo.stepsPerSecond > 0);
   }
 
-  public static assertIsQuantizedSequence(ns:INoteSequence) {
-    if(!this.isQuantizedSequence(ns)) {
+  public static assertIsQuantizedSequence(ns: INoteSequence) {
+    if (!this.isQuantizedSequence(ns)) {
       throw new QuantizationStatusException(
-        `NoteSequence ${ns.id} is not quantized`);
+          `NoteSequence ${ns.id} is not quantized`);
     }
   }
 }

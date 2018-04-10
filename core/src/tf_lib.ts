@@ -22,7 +22,7 @@ export function split(
     axis += t.rank;
   }
   let splitSizes: number[];
-  if (typeof(numOrSizeSplits) === "number") {
+  if (typeof(numOrSizeSplits) === 'number') {
     splitSizes = Array(numOrSizeSplits).fill(t.shape[axis] / numOrSizeSplits);
   } else {
     splitSizes = numOrSizeSplits;

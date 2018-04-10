@@ -16,7 +16,8 @@
   "devDependencies": {
     "@types/tape": "^4.2.31",
     "browserify": "~14.4.0",
-    "clang-format": "^1.2.2",
+    "clang-format": "^1.0.41-c",
+    "fs": "^0.0.1-security",
     "tape": "^4.9.0",
     "ts-node": "^5.0.1",
     "tsify": "~3.0.1",

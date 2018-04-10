@@ -378,9 +378,9 @@ cipher-base@^1.0.0, cipher-base@^1.0.1, cipher-base@^1.0.3:
     inherits "^2.0.1"
     safe-buffer "^5.0.1"
 
-clang-format@^1.2.2:
-  version "1.2.3"
-  resolved "https://registry.yarnpkg.com/clang-format/-/clang-format-1.2.3.tgz#2763561aa7449c43737480f8df3a2b5b66e6cf37"
+clang-format@^1.0.41-c:
+  version "1.0.41-c"
+  resolved "https://registry.yarnpkg.com/clang-format/-/clang-format-1.0.41-c.tgz#af113775968377d11b1315be3e20969b85c450b5"
   dependencies:
     async "^1.5.2"
     glob "^7.0.0"
@@ -631,6 +631,10 @@ foreach@^2.0.5:
 fs.realpath@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/fs.realpath/-/fs.realpath-1.0.0.tgz#1504ad2523158caa40db4a2787cb01411994ea4f"
+
+fs@^0.0.1-security:
+  version "0.0.1-security"
+  resolved "https://registry.yarnpkg.com/fs/-/fs-0.0.1-security.tgz#8a7bd37186b6dddf3813f23858b57ecaaf5e41d4"
 
 function-bind@^1.0.2, function-bind@^1.1.1, function-bind@~1.1.1:
   version "1.1.1"

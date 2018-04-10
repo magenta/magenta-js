@@ -16,11 +16,7 @@
  */
 import {tf} from '@magenta/core';
 
-export {
-  Encoder,
-  Decoder,
-  MusicVAE
-} from './model';
+export {Decoder, Encoder, MusicVAE} from './model';
 
 export const isDeviceSupported = isWebGLSupported();
 

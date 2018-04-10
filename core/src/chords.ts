@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { Chord, Note } from 'tonal';
+import {Chord, Note} from 'tonal';
 
 const CHORD_QUALITY_INTERVALS = [
   ['1P', '3M', '5P'],  // major
@@ -50,7 +50,8 @@ export class ChordSymbols {
   public static pitches(chord: string): number[] {
     if (!Chord.exists(chord)) {
       throw new ChordSymbolException(
-        'Unrecognized chord symbol: ' + `${chord}`);
+          'Unrecognized chord symbol: ' +
+          `${chord}`);
     }
 
     const notes = Chord.notes(chord);
@@ -67,7 +68,8 @@ export class ChordSymbols {
     const root = Chord.tokenize(chord)[0];
     if (!root) {
       throw new ChordSymbolException(
-        'Chord symbol has unknown root: ' + `${chord}`);
+          'Chord symbol has unknown root: ' +
+          `${chord}`);
     }
 
     return Note.chroma(root);
@@ -82,20 +84,20 @@ export class ChordSymbols {
   public static quality(chord: string): ChordQuality {
     if (!Chord.exists(chord)) {
       throw new ChordSymbolException(
-        'Unrecognized chord symbol: ' + `${chord}`);
+          'Unrecognized chord symbol: ' +
+          `${chord}`);
     }
 
     const intervals = Chord.intervals(chord);
     const qualities = CHORD_QUALITY_INTERVALS.map(
-      cqis => cqis.every(cqi => intervals.includes(cqi)));
+        cqis => cqis.every(cqi => intervals.includes(cqi)));
 
     const i = qualities.indexOf(true);
     const j = qualities.lastIndexOf(true);
 
     if (i >= 0 && i === j) {
       return i;
-    }
-    else {
+    } else {
       return ChordQuality.Other;
     }
   }
