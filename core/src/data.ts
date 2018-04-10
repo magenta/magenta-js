@@ -246,7 +246,7 @@ export class DrumsOneHotConverter extends DrumsConverter {
   toTensor(noteSequence: INoteSequence) {
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
     const indexes = this.toOneHotIndexes(noteSequence);
-    const buffer = tf.buffer([numSteps, Math.pow(2, this.pitchClasses.length)]);
+    const buffer = tf.buffer([numSteps, this.depth]);
     indexes.forEach((index, quantizedStartStep) => {
       buffer.set(1, quantizedStartStep, index);
     });
