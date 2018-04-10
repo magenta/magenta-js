@@ -237,9 +237,11 @@ export class DrumRollConverter extends DrumsConverter {
  * classes is used if not provided.
  */
 export class DrumsOneHotConverter extends DrumsConverter {
+  readonly depth: number;
 
   constructor(args: DrumsConverterArgs) {
     super(args);
+    this.depth = 2 ** this.pitchClasses.length;
   }
 
   toTensor(noteSequence: INoteSequence) {
