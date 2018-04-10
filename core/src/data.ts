@@ -217,9 +217,10 @@ export class DrumRollConverter extends DrumsConverter {
  * and the `Tensor` objects used by `MusicRNN`.
  *
  * The `Tensor` output by `toTensor` is a 2D one-hot encoding. Each
- * row is a time step, and each column is a one-hot vector where each drum type
- * is mapped to a single bit of a binary integer representation, where the
- * bit has value 0 if the drum type is not present, and 1 if it is present.
+ * row is a time step, and each column is a one-hot vector where each drum
+ * combination is mapped to a single bit of a binary integer representation,
+ * where the bit has value 0 if the drum type is not present, and 1 if it is
+ * present.
  *
  * The expected `Tensor` in `toNoteSequence` is the same kind of one-hot
  * encoding as the `Tensor` output by `toTensor`.
