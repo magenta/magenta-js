@@ -220,8 +220,8 @@ export class DrumRollConverter extends DrumsConverter {
  * The `Tensor` output by `toTensor` is a 2D one-hot encoding. Each
  * row is a time step, and each column is a one-hot vector where each drum
  * combination is mapped to a single bit of a binary integer representation,
- * where the bit has value 0 if the drum type is not present, and 1 if it is
- * present.
+ * where the bit has value 0 if the drum combination is not present, and 1 if
+ * it is present.
  *
  * The expected `Tensor` in `toNoteSequence` is the same kind of one-hot
  * encoding as the `Tensor` output by `toTensor`.
@@ -229,13 +229,6 @@ export class DrumRollConverter extends DrumsConverter {
  * The output `NoteSequence` uses quantized time and only the first pitch in
  * pitch class are used.
  *
- * @param numSteps The length of each sequence.
- * @param numSegments (Optional) The number of conductor segments, if
- * applicable.
- * @param pitchClasses (Optional) An array of arrays, grouping together MIDI
- * pitches to treat as the same drum. The first pitch in each class will be used
- * in the `NoteSequence` returned by `toNoteSequence`. A default mapping to 9
- * classes is used if not provided.
  */
 export class DrumsOneHotConverter extends DrumsConverter {
   readonly depth: number;
@@ -277,12 +270,12 @@ export class DrumsOneHotConverter extends DrumsConverter {
       const bin = (labels[s] >>> 0).toString(2);
       for (let i = bin.length - 1; i >= 0; i--) {
         if (bin[i] === '1') {
-          noteSequence.notes.push(
-            NoteSequence.Note.create({
-              pitch: this.pitchClasses[bin.length - i - 1][0],
-              quantizedStartStep: s,
-              quantizedEndStep: s + 1,
-            isDrum: true}));
+          noteSequence.notes.push(NoteSequence.Note.create({
+            pitch: this.pitchClasses[bin.length - i - 1][0],
+            quantizedStartStep: s,
+            quantizedEndStep: s + 1,
+            isDrum: true
+          }));
         }
       }
     }
