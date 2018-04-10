@@ -15,7 +15,7 @@
  * =============================================================================
  */
 // Use custom CheckpointLoader until quantization is added to tf.
-import {CheckpointLoader, data, INoteSequence, tf, tflib} from '@magenta/core';
+import {CheckpointLoader, INoteSequence, data, tf, tflib} from '@magenta/core';
 import {isNullOrUndefined} from 'util';
 
 /**
@@ -649,9 +649,7 @@ class MusicVAE {
    * @returns true iff an `Encoder` and `Decoder` have been instantiated for the
    * model.
    */
-  isInitialized() {
-    return (!!this.encoder && !!this.decoder);
-  }
+  isInitialized() { return (!!this.encoder && !!this.decoder); }
 
   /**
    * Interpolates between the input `NoteSequence`s in latent space.
@@ -690,7 +688,6 @@ class MusicVAE {
     return outputSequenes;
   }
 
-
   /**
    * Encodes the input `NoteSequence`s into latent vectors.
    *
@@ -704,8 +701,7 @@ class MusicVAE {
           (inputSequences.length === 1 ?
                this.dataConverter.toTensor(inputSequences[0]).expandDims() :
                tf.stack(inputSequences.map(
-                   t => this.dataConverter.toTensor(t) as tf.Tensor2D))) as
-          tf.Tensor3D;
+                   t => this.dataConverter.toTensor(t)))) as tf.Tensor3D;
 
       // Use the mean `mu` of the latent variable as the best estimate of `z`.
       return this.encoder.encode(inputTensors);

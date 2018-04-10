@@ -246,7 +246,7 @@ export class DrumsOneHotConverter extends DrumsConverter {
   toTensor(noteSequence: INoteSequence) {
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
     const indexes = this.toOneHotIndexes(noteSequence);
-    const buffer = tf.buffer([numSteps, 2 * * this.pitchClasses.length]);
+    const buffer = tf.buffer([numSteps, Math.pow(2, this.pitchClasses.length)]);
     indexes.forEach((index, quantizedStartStep) => {
       buffer.set(1, quantizedStartStep, index);
     });
@@ -312,11 +312,9 @@ export class DrumsOneHotConverter extends DrumsConverter {
  * @param numSegments (Optional) The number of conductor segments, if
  * applicable.
  */
-export interface MelodyConverterArgs {
-  numSteps: number;
+export interface MelodyConverterArgs extends BaseConverterArgs {
   minPitch: number;
   maxPitch: number;
-  numSegments?: number;
 }
 export class MelodyConverter extends DataConverter {
   readonly minPitch: number;  // inclusive
