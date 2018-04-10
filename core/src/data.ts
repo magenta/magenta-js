@@ -312,11 +312,9 @@ export class DrumsOneHotConverter extends DrumsConverter {
  * @param numSegments (Optional) The number of conductor segments, if
  * applicable.
  */
-export interface MelodyConverterArgs {
-  numSteps: number;
+export interface MelodyConverterArgs extends BaseConverterArgs {
   minPitch: number;
   maxPitch: number;
-  numSegments?: number;
 }
 export class MelodyConverter extends DataConverter {
   readonly minPitch: number;  // inclusive
