@@ -247,11 +247,11 @@ export class DrumsOneHotConverter extends DrumsConverter {
   toTensor(noteSequence: INoteSequence) {
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
     const indexes = this.toOneHotIndexes(noteSequence);
-    const drumRoll = tf.buffer([numSteps, 2 ** this.pitchClasses.length]);
+    const buffer = tf.buffer([numSteps, 2 ** this.pitchClasses.length]);
     indexes.forEach((index, quantizedStartStep) => {
-      drumRoll.set(1, quantizedStartStep, index);
+      buffer.set(1, quantizedStartStep, index);
     });
-    return drumRoll.toTensor() as tf.Tensor2D;
+    return buffer.toTensor() as tf.Tensor2D;
   }
 
   private toOneHotIndexes(noteSequence: INoteSequence): Map<number, number> {
