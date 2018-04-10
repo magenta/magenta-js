@@ -654,7 +654,7 @@ class MusicVAE {
   }
 
   /**
-   * Interpolates between the input `NoteSequences` in latent space.
+   * Interpolates between the input `NoteSequence`s in latent space.
    *
    * If 2 sequences are given, a single linear interpolation is computed, with
    * the first output sequence being a reconstruction of sequence A and the
@@ -671,7 +671,7 @@ class MusicVAE {
    * alphabetical order, and there are `numInterps` sequences on each
    * edge for a total of `numInterps`^2 sequences.
    *
-   * @param inputSequences An array of 2 or 4 `NoteSequences` to interpolate
+   * @param inputSequences An array of 2 or 4 `NoteSequence`s to interpolate
    * between.
    * @param numInterps The number of pairwise interpolation sequences to
    * return, including the reconstructions. If 4 inputs are given, the total
@@ -690,6 +690,14 @@ class MusicVAE {
     return outputSequenes;
   }
 
+
+  /**
+   * Encodes the input `NoteSequence`s into latent vectors.
+   *
+   * @param inputSequences An array of `NoteSequence`s to encode.
+   * @returns A `Tensor` containing the batch of latent vectors, sized
+   * `[inputSequences.length, zSize]`.
+   */
   async encode(inputSequences: INoteSequence[]) {
     return tf.tidy(() => {
       const inputTensors =
@@ -704,6 +712,15 @@ class MusicVAE {
     });
   }
 
+  /**
+   * Decodes the input latnet vectors into `NoteSequence`s.
+   *
+   * @param z The latent vectors to decode, sized `[batchSize, zSize]`.
+   * @param temperature (Optional) The softmax temperature to use when sampling.
+   * The argmax is used if not provided.
+   *
+   * @returns The decoded `NoteSequence`s.
+   */
   async decode(z: tf.Tensor2D, temperature?: number) {
     const numSteps = this.dataConverter.numSteps;
 
