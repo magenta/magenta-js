@@ -1,3 +1,4 @@
+
 /**
  * @license
  * Copyright 2018 Google Inc. All Rights Reserved.
@@ -53,7 +54,12 @@ const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
  */
 export interface ConverterSpec {
   type: string;
-  args: DrumsConverterArgs|MelodyConverterArgs|TrioConverterArgs;
+  args: BaseConverterArgs;
+}
+
+export interface BaseConverterArgs {
+  numSteps?: number;
+  numSegments?: number;
 }
 
 /**
@@ -84,12 +90,17 @@ export function converterFromSpec(spec: ConverterSpec) {
  * `NoteSequence` objects.
  */
 export abstract class DataConverter {
-  abstract readonly numSteps: number;     // Total length of sequences.
-  abstract readonly numSegments: number;  // Number of steps for conductor.
-  abstract readonly depth: number;        // Size of final output dimension.
-  abstract readonly NUM_SPLITS: number;   // Const number of conductor splits.
+  readonly numSteps: number;             // Total length of sequences.
+  readonly numSegments: number;          // Number of steps for conductor.
+  abstract readonly depth: number;       // Size of final output dimension.
+  abstract readonly NUM_SPLITS: number;  // Const number of conductor splits.
   abstract toTensor(noteSequence: INoteSequence): tf.Tensor2D;
   abstract async toNoteSequence(tensor: tf.Tensor2D): Promise<INoteSequence>;
+
+  constructor(args: BaseConverterArgs) {
+    this.numSteps = args.numSteps;
+    this.numSegments = args.numSegments;
+  }
 }
 
 /**
@@ -117,25 +128,19 @@ export abstract class DataConverter {
  * in the `NoteSequence` returned by `toNoteSequence`. A default mapping to 9
  * classes is used if not provided.
  */
-export interface DrumsConverterArgs {
-  numSteps: number;
-  numSegments?: number;
+export interface DrumsConverterArgs extends BaseConverterArgs {
   pitchClasses?: number[][];
 }
 export class DrumsConverter extends DataConverter {
-  readonly numSteps: number;
-  readonly numSegments: number;
-  readonly depth: number;
   readonly pitchClasses: number[][];
   readonly pitchToClass: {[pitch: number]: number};
   readonly NUM_SPLITS = 0;  // const
+  depth: number;
 
   constructor(args: DrumsConverterArgs) {
-    super();
+    super(args);
     this.pitchClasses =
         (args.pitchClasses) ? args.pitchClasses : DEFAULT_DRUM_PITCH_CLASSES;
-    this.numSteps = args.numSteps;
-    this.numSegments = args.numSegments;
     this.pitchToClass = {};
     for (let c = 0; c < this.pitchClasses.length; ++c) {  // class
       this.pitchClasses[c].forEach((p) => { this.pitchToClass[p] = c; });
@@ -235,13 +240,13 @@ export class DrumsOneHotConverter extends DrumsConverter {
 
   constructor(args: DrumsConverterArgs) {
     super(args);
-    this.depth = 2 ** this.pitchClasses.length;
+    this.depth = Math.pow(2, this.pitchClasses.length);
   }
 
   toTensor(noteSequence: INoteSequence) {
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
     const indexes = this.toOneHotIndexes(noteSequence);
-    const buffer = tf.buffer([numSteps, 2 ** this.pitchClasses.length]);
+    const buffer = tf.buffer([numSteps, this.depth]);
     indexes.forEach((index, quantizedStartStep) => {
       buffer.set(1, quantizedStartStep, index);
     });
@@ -251,7 +256,7 @@ export class DrumsOneHotConverter extends DrumsConverter {
   private toOneHotIndexes(noteSequence: INoteSequence): Map<number, number> {
     const result = new Map<number, number>();
     for (const {pitch, quantizedStartStep} of noteSequence.notes) {
-      const val = 2 ** this.pitchToClass[pitch];
+      const val = Math.pow(2, this.pitchToClass[pitch]);
       if (result.has(quantizedStartStep)) {
         result.set(quantizedStartStep, result.get(quantizedStartStep) + val);
       } else {
@@ -307,15 +312,11 @@ export class DrumsOneHotConverter extends DrumsConverter {
  * @param numSegments (Optional) The number of conductor segments, if
  * applicable.
  */
-export interface MelodyConverterArgs {
-  numSteps: number;
+export interface MelodyConverterArgs extends BaseConverterArgs {
   minPitch: number;
   maxPitch: number;
-  numSegments?: number;
 }
 export class MelodyConverter extends DataConverter {
-  readonly numSteps: number;
-  readonly numSegments: number;
   readonly minPitch: number;  // inclusive
   readonly maxPitch: number;  // inclusive
   readonly depth: number;
@@ -324,9 +325,7 @@ export class MelodyConverter extends DataConverter {
   readonly FIRST_PITCH = 2;  // const
 
   constructor(args: MelodyConverterArgs) {
-    super();
-    this.numSteps = args.numSteps;
-    this.numSegments = args.numSegments;
+    super(args);
     this.minPitch = args.minPitch;
     this.maxPitch = args.maxPitch;
     this.depth = args.maxPitch - args.minPitch + 1 + this.FIRST_PITCH;
@@ -391,35 +390,29 @@ export class MelodyConverter extends DataConverter {
   }
 }
 
-export interface TrioConverterArgs {
+export interface TrioConverterArgs extends BaseConverterArgs {
   melArgs: MelodyConverterArgs;
   bassArgs: MelodyConverterArgs;
   drumsArgs: DrumsConverterArgs;
-  numSteps: number;
-  numSegments?: number;
 }
 export class TrioConverter extends DataConverter {
   melConverter: MelodyConverter;
   bassConverter: MelodyConverter;
   drumsConverter: DrumsConverter;
-  readonly numSteps: number;
-  readonly numSegments: number;
   readonly depth: number;
   readonly NUM_SPLITS = 3;              // const
   readonly MEL_PROG_RANGE = [0, 31];    // inclusive, const
   readonly BASS_PROG_RANGE = [32, 39];  // inclusive, const
 
   constructor(args: TrioConverterArgs) {
-    super();
+    super(args);
     // Copy numSteps to all converters.
     args.melArgs.numSteps = args.numSteps;
     args.bassArgs.numSteps = args.numSteps;
     args.drumsArgs.numSteps = args.numSteps;
     this.melConverter = new MelodyConverter(args.melArgs);
     this.bassConverter = new MelodyConverter(args.bassArgs);
-    this.drumsConverter = new DrumsConverter(args.drumsArgs);
-    this.numSteps = args.numSteps;
-    this.numSegments = args.numSegments;
+    this.drumsConverter = new DrumsOneHotConverter(args.drumsArgs);
     this.depth =
         (this.melConverter.depth + this.bassConverter.depth +
          this.drumsConverter.depth);

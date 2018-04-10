@@ -28,6 +28,12 @@ class LayerVars {
   kernel: tf.Tensor2D;
   bias: tf.Tensor1D;
   constructor(kernel: tf.Tensor2D, bias: tf.Tensor1D) {
+    if (isNullOrUndefined(kernel)) {
+      throw Error('`kernel` is undefined.');
+    }
+    if (isNullOrUndefined(bias)) {
+      throw Error('`bias` is undefined.');
+    }
     this.kernel = kernel;
     this.bias = bias;
   }
@@ -390,9 +396,9 @@ class ConductorDecoder extends Decoder {
             (currSamples.length > 1) ? tf.concat(currSamples, -1) :
                                        currSamples[0]);
         initialInput = currSamples.map(
-            s => s.slice([0, -1, 0], [batchSize, 1, this.outputDims])
-                     .as2D(batchSize, -1)
-                     .toFloat());
+            s => s.slice([0, -1, 0], [batchSize, 1, s.shape[s.rank - 1]])
+                     .squeeze([1])
+                     .toFloat() as tf.Tensor2D);
       }
       return tf.concat(samples, 1);
     });
@@ -620,13 +626,13 @@ class MusicVAE {
 
     // ConductorDecoder variables.
     if (this.dataConverter.numSegments) {
-      const contfstmLayers =
+      const condLstmLayers =
           this.getLstmLayers(CONDUCTOR_PREFIX + LSTM_CELL_FORMAT, vars);
       const condZtoInitState = new LayerVars(
           vars[CONDUCTOR_PREFIX + 'initial_state/kernel'] as tf.Tensor2D,
           vars[CONDUCTOR_PREFIX + 'initial_state/bias'] as tf.Tensor1D);
       this.decoder = new ConductorDecoder(
-          baseDecoders, contfstmLayers, condZtoInitState,
+          baseDecoders, condLstmLayers, condZtoInitState,
           this.dataConverter.numSegments);
     } else if (baseDecoders.length === 1) {
       this.decoder = baseDecoders[0];
@@ -646,7 +652,7 @@ class MusicVAE {
   isInitialized() { return (!!this.encoder && !!this.decoder); }
 
   /**
-   * Interpolates between the input `NoteSequences` in latent space.
+   * Interpolates between the input `NoteSequence`s in latent space.
    *
    * If 2 sequences are given, a single linear interpolation is computed, with
    * the first output sequence being a reconstruction of sequence A and the
@@ -663,7 +669,7 @@ class MusicVAE {
    * alphabetical order, and there are `numInterps` sequences on each
    * edge for a total of `numInterps`^2 sequences.
    *
-   * @param inputSequences An array of 2 or 4 `NoteSequences` to interpolate
+   * @param inputSequences An array of 2 or 4 `NoteSequence`s to interpolate
    * between.
    * @param numInterps The number of pairwise interpolation sequences to
    * return, including the reconstructions. If 4 inputs are given, the total
@@ -673,39 +679,66 @@ class MusicVAE {
    * above.
    */
   async interpolate(inputSequences: INoteSequence[], numInterps: number) {
+    const inputZs = await this.encode(inputSequences);
+    const interpZs = tf.tidy(() => this.getInterpolatedZs(inputZs, numInterps));
+    inputZs.dispose();
+
+    const outputSequenes = this.decode(interpZs);
+    interpZs.dispose();
+    return outputSequenes;
+  }
+
+  /**
+   * Encodes the input `NoteSequence`s into latent vectors.
+   *
+   * @param inputSequences An array of `NoteSequence`s to encode.
+   * @returns A `Tensor` containing the batch of latent vectors, sized
+   * `[inputSequences.length, zSize]`.
+   */
+  async encode(inputSequences: INoteSequence[]) {
+    return tf.tidy(() => {
+      const inputTensors =
+          (inputSequences.length === 1 ?
+               this.dataConverter.toTensor(inputSequences[0]).expandDims() :
+               tf.stack(inputSequences.map(
+                   t => this.dataConverter.toTensor(t)))) as tf.Tensor3D;
+
+      // Use the mean `mu` of the latent variable as the best estimate of `z`.
+      return this.encoder.encode(inputTensors);
+    });
+  }
+
+  /**
+   * Decodes the input latnet vectors into `NoteSequence`s.
+   *
+   * @param z The latent vectors to decode, sized `[batchSize, zSize]`.
+   * @param temperature (Optional) The softmax temperature to use when sampling.
+   * The argmax is used if not provided.
+   *
+   * @returns The decoded `NoteSequence`s.
+   */
+  async decode(z: tf.Tensor2D, temperature?: number) {
     const numSteps = this.dataConverter.numSteps;
 
-    const oh = tf.tidy(() => {
-      const inputTensors = tf.stack(inputSequences.map(
-          t => this.dataConverter.toTensor(t) as tf.Tensor2D)) as tf.Tensor3D;
-
-      const outputTensors = this.interpolateTensors(inputTensors, numInterps);
-      const result = [];
-      for (let i = 0; i < outputTensors.shape[0]; ++i) {
-        const t = outputTensors
-                      .slice([i, 0, 0], [1, numSteps, outputTensors.shape[2]])
-                      .as2D(numSteps, outputTensors.shape[2]);
-        result.push(t);
-      }
-      return result;
+    const ohSeqs: tf.Tensor2D[] = tf.tidy(() => {
+      const ohSeqs = this.decoder.decode(z, numSteps, undefined, temperature);
+      return tflib.split(ohSeqs, ohSeqs.shape[0], 0)
+          .map(oh => oh.squeeze([0]) as tf.Tensor2D);
     });
 
     const outputSequences: INoteSequence[] = [];
-    for (const tensor of oh) {
-      outputSequences.push(await this.dataConverter.toNoteSequence(tensor));
-      tensor.dispose();
+    for (const oh of ohSeqs) {
+      outputSequences.push(await this.dataConverter.toNoteSequence(oh));
+      oh.dispose();
     }
     return outputSequences;
   }
 
-  private interpolateTensors(sequences: tf.Tensor3D, numInterps: number) {
-    if (sequences.shape[0] !== 2 && sequences.shape[0] !== 4) {
+  private getInterpolatedZs(z: tf.Tensor2D, numInterps: number) {
+    if (z.shape[0] !== 2 && z.shape[0] !== 4) {
       throw new Error(
           'Invalid number of input sequences. Requires length 2, or 4');
     }
-
-    // Use the mean `mu` of the latent variable as the best estimate of `z`.
-    const z = this.encoder.encode(sequences);
 
     // Compute the interpolations of the latent variable.
     const interpolatedZs: tf.Tensor2D = tf.tidy(() => {
@@ -714,10 +747,10 @@ class MusicVAE {
       const z0 = z.slice([0, 0], [1, z.shape[1]]).as1D();
       const z1 = z.slice([1, 0], [1, z.shape[1]]).as1D();
 
-      if (sequences.shape[0] === 2) {
+      if (z.shape[0] === 2) {
         const zDiff = z1.sub(z0) as tf.Tensor1D;
         return tf.outerProduct(rangeArray, zDiff).add(z0) as tf.Tensor2D;
-      } else if (sequences.shape[0] === 4) {
+      } else if (z.shape[0] === 4) {
         const z2 = z.slice([2, 0], [1, z.shape[1]]).as1D();
         const z3 = z.slice([3, 0], [1, z.shape[1]]).as1D();
 
@@ -742,9 +775,7 @@ class MusicVAE {
             'Invalid number of note sequences. Requires length 2, or 4');
       }
     });
-
-    // Decode the interpolated values of `z`.
-    return this.decoder.decode(interpolatedZs, sequences.shape[1]);
+    return interpolatedZs;
   }
 
   /**
@@ -756,36 +787,11 @@ class MusicVAE {
    * @returns An array of sampled `NoteSequence` objects.
    */
   async sample(numSamples: number, temperature = 0.5) {
-    const numSteps = this.dataConverter.numSteps;
-
-    const oh = tf.tidy(() => {
-      const outputTensors =
-          this.sampleTensors(numSamples, numSteps, temperature);
-      const result = [];
-      for (let i = 0; i < numSamples; ++i) {
-        const t = outputTensors
-                      .slice([i, 0, 0], [1, numSteps, outputTensors.shape[2]])
-                      .squeeze([0]) as tf.Tensor2D;
-        result.push(t);
-      }
-      return result;
-    });
-
-    const outputSequences: INoteSequence[] = [];
-    for (const tensor of oh) {
-      outputSequences.push(await this.dataConverter.toNoteSequence(tensor));
-      tensor.dispose();
-    }
-    return outputSequences;
-  }
-
-  private sampleTensors(
-      numSamples: number, numSteps: number, temperature?: number) {
-    return tf.tidy(() => {
-      const randZs: tf.Tensor2D =
-          tf.randomNormal([numSamples, this.decoder.zDims]);
-      return this.decoder.decode(randZs, numSteps, undefined, temperature);
-    });
+    const randZs: tf.Tensor2D =
+        tf.tidy(() => tf.randomNormal([numSamples, this.decoder.zDims]));
+    const outputSequenes = this.decode(randZs, temperature);
+    randZs.dispose();
+    return outputSequenes;
   }
 }
 

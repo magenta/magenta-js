@@ -34,7 +34,6 @@
   "dependencies": {
     "@magenta/core": "^0.0.15",
     "@types/clone": "^0.1.30",
-    "clang-format": "^1.2.2",
     "clone": "^1.0.4",
     "npm": "^5.7.1",
     "tslint": "^5.9.1"

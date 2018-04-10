@@ -12,6 +12,8 @@ const MEL_CKPT =
     'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_vae/dljs/mel_small';
 const MEL_16_CKPT =
     'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_vae/dljs/mel_16bar_small';
+const TRIO_CKPT =
+    'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_vae/dljs/trio_4bar_q16';
 // tslint:enable:max-line-length
 const DRUM_SEQS: INoteSequence[] = [
   {
@@ -108,6 +110,10 @@ const DRUM_SEQS: INoteSequence[] = [
     ]
   }
 ];
+DRUM_SEQS.map(s => s.notes.map(n => {
+  n.isDrum = true;
+  n.quantizedEndStep = n.quantizedStartStep + 1;
+}));
 
 const MEL_TEAPOT: INoteSequence = {
   notes: [
@@ -142,6 +148,28 @@ const MEL_TWINKLE: INoteSequence = {
   ]
 };
 
+const TRIO_EXAMPLE: INoteSequence = {
+  notes: []
+};
+concatNoteSequences([MEL_TWINKLE, MEL_TWINKLE], 32).notes.map(n => {
+  const m = clone(n);
+  m.program = 0;
+  m.instrument = 0;
+  TRIO_EXAMPLE.notes.push(m);
+});
+concatNoteSequences([MEL_TWINKLE, MEL_TWINKLE], 32).notes.map(n => {
+  const m = clone(n);
+  m.pitch -= 36;
+  m.program = 32;
+  m.instrument = 1;
+  TRIO_EXAMPLE.notes.push(m);
+});
+concatNoteSequences([DRUM_SEQS[0], DRUM_SEQS[0]], 32).notes.map(n => {
+  const m = clone(n);
+  m.instrument = 2;
+  TRIO_EXAMPLE.notes.push(m);
+});
+
 function writeTimer(elementId: string, startTime: number) {
   document.getElementById(elementId).innerHTML =
       ((performance.now() - startTime) / 1000.).toString() + 's';
@@ -156,6 +184,9 @@ function writeNoteSeqs(elementId: string, seqs: INoteSequence[]) {
                         let s = '{p:' + n.pitch + ' s:' + n.quantizedStartStep;
                         if (n.quantizedEndStep != null) {
                           s += ' e:' + n.quantizedEndStep;
+                        }
+                        if (n.instrument != null) {
+                          s += ' i:' + n.instrument;
                         }
                         s += '}';
                         return s;
@@ -172,7 +203,6 @@ async function runDrums() {
   writeNoteSeqs('drums-inputs', DRUM_SEQS);
 
   let start = performance.now();
-
   const interp = await mvae.interpolate(DRUM_SEQS, 3);
   writeTimer('drums-interp-time', start);
   writeNoteSeqs('drums-interp', interp);
@@ -222,6 +252,29 @@ async function runMel() {
   const sample = await mvae.sample(5);
   writeTimer('mel-sample-time', start);
   writeNoteSeqs('mel-samples', sample);
+
+  mvae.dispose();
+  console.log(tf.memory());
+}
+
+async function runTrio() {
+  const mvae: MusicVAE = new MusicVAE(TRIO_CKPT);
+  await mvae.initialize();
+
+  const inputs = [TRIO_EXAMPLE];
+  writeNoteSeqs('trio-inputs', inputs);
+
+  let start = performance.now();
+  const z = await mvae.encode(inputs);
+  const recon = await mvae.decode(z);
+  z.dispose();
+  writeTimer('trio-recon-time', start);
+  writeNoteSeqs('trio-recon', recon);
+
+  start = performance.now();
+  const sample = await mvae.sample(1);
+  writeTimer('trio-sample-time', start);
+  writeNoteSeqs('trio-samples', sample);
 
   mvae.dispose();
   console.log(tf.memory());
@@ -282,6 +335,7 @@ try {
   runDrumsNade();
   runMel();
   runMel16();
+  runTrio();
 } catch (err) {
   console.error(err);
 }
