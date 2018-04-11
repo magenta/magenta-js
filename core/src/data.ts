@@ -23,6 +23,7 @@ import * as tflib from './tf_lib';
 
 import NoteSequence = tensorflow.magenta.NoteSequence;
 import INoteSequence = tensorflow.magenta.INoteSequence;
+import {isNullOrUndefined} from 'util';
 
 const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
   // bass drum
@@ -133,17 +134,18 @@ export interface DrumsConverterArgs extends BaseConverterArgs {
 }
 export class DrumsConverter extends DataConverter {
   readonly pitchClasses: number[][];
-  readonly pitchToClass: {[pitch: number]: number};
+  readonly pitchToClass: Map<number, number>;
   readonly NUM_SPLITS = 0;  // const
   depth: number;
 
   constructor(args: DrumsConverterArgs) {
     super(args);
-    this.pitchClasses =
-        (args.pitchClasses) ? args.pitchClasses : DEFAULT_DRUM_PITCH_CLASSES;
-    this.pitchToClass = {};
+    this.pitchClasses = isNullOrUndefined(args.pitchClasses) ?
+        DEFAULT_DRUM_PITCH_CLASSES :
+        args.pitchClasses;
+    this.pitchToClass = new Map<number, number>;
     for (let c = 0; c < this.pitchClasses.length; ++c) {  // class
-      this.pitchClasses[c].forEach((p) => { this.pitchToClass[p] = c; });
+      this.pitchClasses[c].forEach((p) => { this.pitchToClass.set(p, c); });
     }
     this.depth = this.pitchClasses.length;
   }
@@ -156,7 +158,8 @@ export class DrumsConverter extends DataConverter {
       drumRoll.set(1, i, -1);
     }
     noteSequence.notes.forEach((note) => {
-      drumRoll.set(1, note.quantizedStartStep, this.pitchToClass[note.pitch]);
+      drumRoll.set(
+          1, note.quantizedStartStep, this.pitchToClass.get(note.pitch));
       drumRoll.set(0, note.quantizedStartStep, -1);
     });
     return drumRoll.toTensor() as tf.Tensor2D;
