@@ -11,7 +11,7 @@ const DRUMS_NADE_CKPT =
 const MEL_CKPT =
     'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_vae/dljs/mel_small';
 const MEL_16_CKPT =
-    'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_vae/dljs/mel_16bar_small_q16';
+    'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_vae/dljs/mel_16bar_small';
 const TRIO_CKPT =
     'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_vae/dljs/trio_4bar_q16';
 // tslint:enable:max-line-length
