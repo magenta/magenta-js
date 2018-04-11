@@ -216,7 +216,8 @@ async function runDrums() {
   console.log(tf.memory());
 }
 
-async function runDrumsNade() {
+async function
+runDrumsNade() {
   const mvae: MusicVAE = new MusicVAE(DRUMS_NADE_CKPT);
   await mvae.initialize();
 
@@ -236,7 +237,8 @@ async function runDrumsNade() {
   console.log(tf.memory());
 }
 
-async function runMel() {
+async function
+runMel() {
   const mvae: MusicVAE = new MusicVAE(MEL_CKPT);
   await mvae.initialize();
 
@@ -257,7 +259,8 @@ async function runMel() {
   console.log(tf.memory());
 }
 
-async function runTrio() {
+async function
+runTrio() {
   const mvae: MusicVAE = new MusicVAE(TRIO_CKPT);
   await mvae.initialize();
 
@@ -281,8 +284,8 @@ async function runTrio() {
 }
 
 // TODO(adarob): Switch to magenta/core function once implemented.
-function concatNoteSequences(
-    seqs: INoteSequence[], individualDuration: number) {
+function
+concatNoteSequences(seqs: INoteSequence[], individualDuration: number) {
   const concatSeq: INoteSequence = clone(seqs[0]);
   for (let i = 1; i < seqs.length; ++i) {
     Array.prototype.push.apply(concatSeq.notes, seqs[i].notes.map(n => {
@@ -295,7 +298,8 @@ function concatNoteSequences(
   return concatSeq;
 }
 
-async function runMel16() {
+async function
+runMel16() {
   const mvae: MusicVAE = new MusicVAE(MEL_16_CKPT);
   await mvae.initialize();
 
