@@ -17,9 +17,7 @@
  */
 import {tensorflow} from '@magenta/protobuf';
 import * as tf from '@tensorflow/tfjs';
-
 import {Sequences} from './sequences';
-import * as tflib from './tf_lib';
 
 import NoteSequence = tensorflow.magenta.NoteSequence;
 import INoteSequence = tensorflow.magenta.INoteSequence;
@@ -441,7 +439,7 @@ export class TrioConverter extends DataConverter {
   }
 
   async toNoteSequence(th: tf.Tensor2D) {
-    const ohs = tflib.split(
+    const ohs = tf.split(
         th,
         [
           this.melConverter.depth, this.bassConverter.depth,
