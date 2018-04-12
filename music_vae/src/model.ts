@@ -18,7 +18,6 @@
 import {CheckpointLoader, INoteSequence, data, tf} from '@magenta/core';
 import {isNullOrUndefined} from 'util';
 
-
 /**
  * A class for keeping track of the parameters of an affine transformation.
  *
