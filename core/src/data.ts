@@ -141,7 +141,7 @@ export class DrumsConverter extends DataConverter {
     this.pitchClasses = isNullOrUndefined(args.pitchClasses) ?
         DEFAULT_DRUM_PITCH_CLASSES :
         args.pitchClasses;
-    this.pitchToClass = new Map<number, number>;
+    this.pitchToClass = new Map<number, number>();
     for (let c = 0; c < this.pitchClasses.length; ++c) {  // class
       this.pitchClasses[c].forEach((p) => { this.pitchToClass.set(p, c); });
     }
@@ -200,10 +200,10 @@ export class DrumsConverter extends DataConverter {
 export class DrumRollConverter extends DrumsConverter {
   async toNoteSequence(roll: tf.Tensor2D) {
     const noteSequence = NoteSequence.create();
+    const rollSplit = tf.split(roll, roll.shape[0]);
     for (let s = 0; s < roll.shape[0]; ++s) {  // step
-      const rollSlice = roll.slice([s, 0], [1, roll.shape[1]]);
-      const pitches = await rollSlice.data() as Uint8Array;
-      rollSlice.dispose();
+      const pitches = await rollSplit[s].data() as Uint8Array;
+      rollSplit[s].dispose();
       for (let p = 0; p < pitches.length; ++p) {  // pitch class
         if (pitches[p]) {
           noteSequence.notes.push(NoteSequence.Note.create({
@@ -215,6 +215,7 @@ export class DrumRollConverter extends DrumsConverter {
         }
       }
     }
+    roll.dispose();
     return noteSequence;
   }
 }
@@ -246,46 +247,15 @@ export class DrumsOneHotConverter extends DrumsConverter {
 
   toTensor(noteSequence: INoteSequence) {
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
-    const indexes = this.toOneHotIndexes(noteSequence);
-    const buffer = tf.buffer([numSteps, this.depth]);
-    indexes.forEach((index, quantizedStartStep) => {
-      buffer.set(1, quantizedStartStep, index);
-    });
-    return buffer.toTensor() as tf.Tensor2D;
-  }
-
-  private toOneHotIndexes(noteSequence: INoteSequence): Map<number, number> {
-    const result = new Map<number, number>();
+    const indexes = Array<number>(numSteps).fill(0);
     for (const {pitch, quantizedStartStep} of noteSequence.notes) {
-      const val = Math.pow(2, this.pitchToClass[pitch]);
-      if (result.has(quantizedStartStep)) {
-        result.set(quantizedStartStep, result.get(quantizedStartStep) + val);
-      } else {
-        result.set(quantizedStartStep, val);
-      }
+      indexes[quantizedStartStep] += Math.pow(2, this.pitchToClass.get(pitch));
     }
-    return result;
-  }
-
-  async toNoteSequence(oh: tf.Tensor2D) {
-    const noteSequence = NoteSequence.create();
-    const labelsTensor = oh.argMax(1);
-    const labels: Int32Array = await labelsTensor.data() as Int32Array;
-    labelsTensor.dispose();
-    for (let s = 0; s < labels.length; ++s) {  // step
-      const bin = (labels[s] >>> 0).toString(2);
-      for (let i = bin.length - 1; i >= 0; i--) {
-        if (bin[i] === '1') {
-          noteSequence.notes.push(NoteSequence.Note.create({
-            pitch: this.pitchClasses[bin.length - i - 1][0],
-            quantizedStartStep: s,
-            quantizedEndStep: s + 1,
-            isDrum: true
-          }));
-        }
-      }
+    const buffer = tf.buffer([numSteps, this.depth]);
+    for (let i = 0; i < numSteps; ++i) {
+      buffer.set(1, i, indexes[i]);
     }
-    return noteSequence;
+    return buffer.toTensor() as tf.Tensor2D;
   }
 }
 
@@ -450,15 +420,19 @@ export class TrioConverter extends DataConverter {
         ],
         -1);
     const ns = await this.melConverter.toNoteSequence(ohs[0] as tf.Tensor2D);
+    ns.notes.map(n => {
+      n.instrument = 0;
+      n.program = 0;
+    });
     const bassNs =
         await this.bassConverter.toNoteSequence(ohs[1] as tf.Tensor2D);
     ns.notes.push(...bassNs.notes.map(n => {
       n.instrument = 1;
-      n.pitch = this.BASS_PROG_RANGE[0] + 1;  // Electric bass
+      n.program = this.BASS_PROG_RANGE[0];
       return n;
     }));
     const drumsNs =
-        await this.drumsConverter.toNoteSequence(ohs[1] as tf.Tensor2D);
+        await this.drumsConverter.toNoteSequence(ohs[2] as tf.Tensor2D);
     ns.notes.push(...drumsNs.notes.map(n => {
       n.instrument = 2;
       return n;
