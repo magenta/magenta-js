@@ -215,7 +215,6 @@ export class DrumRollConverter extends DrumsConverter {
         }
       }
     }
-    roll.dispose();
     return noteSequence;
   }
 }
@@ -247,15 +246,11 @@ export class DrumsOneHotConverter extends DrumsConverter {
 
   toTensor(noteSequence: INoteSequence) {
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
-    const indexes = Array<number>(numSteps).fill(0);
+    const labels = Array<number>(numSteps).fill(0);
     for (const {pitch, quantizedStartStep} of noteSequence.notes) {
-      indexes[quantizedStartStep] += Math.pow(2, this.pitchToClass.get(pitch));
+      labels[quantizedStartStep] += Math.pow(2, this.pitchToClass.get(pitch));
     }
-    const buffer = tf.buffer([numSteps, this.depth]);
-    for (let i = 0; i < numSteps; ++i) {
-      buffer.set(1, i, indexes[i]);
-    }
-    return buffer.toTensor() as tf.Tensor2D;
+    return tf.tidy(() => tf.oneHot(tf.tensor1d(labels), this.depth));
   }
 }
 
@@ -321,7 +316,7 @@ export class MelodyConverter extends DataConverter {
       mel.set(this.NOTE_OFF, n.quantizedEndStep);
       lastEnd = n.quantizedEndStep;
     });
-    return tf.oneHot(mel.toTensor() as tf.Tensor1D, this.depth) as tf.Tensor2D;
+    return tf.tidy(() => tf.oneHot(mel.toTensor() as tf.Tensor1D, this.depth));
   }
 
   async toNoteSequence(oh: tf.Tensor2D) {
@@ -402,13 +397,14 @@ export class TrioConverter extends DataConverter {
             (!n.isDrum && n.program >= this.BASS_PROG_RANGE[0] &&
              n.program <= this.BASS_PROG_RANGE[1]));
     drumsSeq.notes = noteSequence.notes.filter(n => n.isDrum);
-    return tf.concat(
-        [
-          this.melConverter.toTensor(melSeq),
-          this.bassConverter.toTensor(bassSeq),
-          this.drumsConverter.toTensor(drumsSeq)
-        ],
-        -1);
+    return tf.tidy(
+        () => tf.concat(
+            [
+              this.melConverter.toTensor(melSeq),
+              this.bassConverter.toTensor(bassSeq),
+              this.drumsConverter.toTensor(drumsSeq)
+            ],
+            -1));
   }
 
   async toNoteSequence(th: tf.Tensor2D) {
@@ -437,6 +433,7 @@ export class TrioConverter extends DataConverter {
       n.instrument = 2;
       return n;
     }));
+    ohs.map(oh => oh.dispose());
     return ns;
   }
 }

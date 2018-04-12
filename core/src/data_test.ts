@@ -122,6 +122,7 @@ test('Test TrioConverter', (t: test.Test) => {
 
   const trioTensor = trioConverter.toTensor(TRIO_NS);
   t.deepEqual(trioTensor.shape, [32, 90 + 90 + 512]);
+  t.equal(tf.tidy(() => trioTensor.sum(1).equal(tf.scalar(3)).sum().get()), 32);
 
   trioConverter.toNoteSequence(trioTensor)
       .then(ns => t.deepEqual(ns.toJSON(), TRIO_NS.toJSON()));
