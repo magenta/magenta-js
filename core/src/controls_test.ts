@@ -23,12 +23,12 @@ test('Test Binary Counter', (t: test.Test) => {
   const bc = new BinaryCounter(5, 2);
   t.equal(bc.numSteps, 5);
   t.equal(bc.depth, 2);
-  t.deepEqual(bc.tensor(0).dataSync(), [-1.0, -1.0]);
-  t.deepEqual(bc.tensor(1).dataSync(), [1.0, -1.0]);
-  t.deepEqual(bc.tensor(2).dataSync(), [-1.0, 1.0]);
-  t.deepEqual(bc.tensor(3).dataSync(), [1.0, 1.0]);
-  t.deepEqual(bc.tensor(4).dataSync(), [-1.0, -1.0]);
-  t.throws(() => bc.tensor(5), RangeError);
+  t.deepEqual(bc.getTensor(0).dataSync(), [-1.0, -1.0]);
+  t.deepEqual(bc.getTensor(1).dataSync(), [1.0, -1.0]);
+  t.deepEqual(bc.getTensor(2).dataSync(), [-1.0, 1.0]);
+  t.deepEqual(bc.getTensor(3).dataSync(), [1.0, 1.0]);
+  t.deepEqual(bc.getTensor(4).dataSync(), [-1.0, -1.0]);
+  t.throws(() => bc.getTensor(5), RangeError);
   t.end();
 });
 
@@ -37,10 +37,10 @@ test('Test Chord Progression', (t: test.Test) => {
   const bc = new ChordProgression(4, ['C', 'Dm'], e);
   t.equal(bc.numSteps, 4);
   t.equal(bc.depth, e.depth);
-  t.deepEqual(bc.tensor(0).dataSync(), e.encode('C').dataSync());
-  t.deepEqual(bc.tensor(1).dataSync(), e.encode('C').dataSync());
-  t.deepEqual(bc.tensor(2).dataSync(), e.encode('Dm').dataSync());
-  t.deepEqual(bc.tensor(3).dataSync(), e.encode('Dm').dataSync());
-  t.throws(() => bc.tensor(4), RangeError);
+  t.deepEqual(bc.getTensor(0).dataSync(), e.encode('C').dataSync());
+  t.deepEqual(bc.getTensor(1).dataSync(), e.encode('C').dataSync());
+  t.deepEqual(bc.getTensor(2).dataSync(), e.encode('Dm').dataSync());
+  t.deepEqual(bc.getTensor(3).dataSync(), e.encode('Dm').dataSync());
+  t.throws(() => bc.getTensor(4), RangeError);
   t.end();
 });

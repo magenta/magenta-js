@@ -27,7 +27,7 @@ import {ChordEncoder} from './chords';
 export abstract class ControlSignal {
   readonly numSteps: number;  // Total length of sequences.
   readonly depth: number;     // Size of final output dimension.
-  abstract tensor(step: number): tf.Tensor1D;
+  abstract getTensor(step: number): tf.Tensor1D;
 
   constructor(numSteps: number, depth: number) {
     this.numSteps = numSteps;
@@ -44,7 +44,14 @@ export abstract class ControlSignal {
 export class BinaryCounter extends ControlSignal {
   constructor(numSteps: number, numBits: number) { super(numSteps, numBits); }
 
-  tensor(step: number) {
+  /**
+   * Get the tensor of control values at the specified step. The returned tensor
+   * acts as a binary counter (using -1 instead of 0), with least significant
+   * bit first.
+   *
+   * @param step Step for which to get the binary counter.
+   */
+  getTensor(step: number) {
     if (step >= this.numSteps) {
       throw new RangeError(`Step out of range: ${step} >= ${this.numSteps}`);
     }
@@ -72,7 +79,14 @@ export class ChordProgression extends ControlSignal {
     this.encodedChords = chords.map(chord => encoder.encode(chord));
   }
 
-  tensor(step: number) {
+  /**
+   * Get the tensor of control values at the specified step. The returned tensor
+   * will be the encoded chord at the corresponding position in the chord
+   * progression.
+   *
+   * @param step Step for which to get the encoded chord.
+   */
+  getTensor(step: number) {
     if (step >= this.numSteps) {
       throw new RangeError(`Step out of range: ${step} >= ${this.numSteps}`);
     }
