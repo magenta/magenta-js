@@ -416,6 +416,7 @@ export class TrioConverter extends DataConverter {
         ],
         -1);
     const ns = await this.melConverter.toNoteSequence(ohs[0] as tf.Tensor2D);
+
     ns.notes.forEach(n => {
       n.instrument = 0;
       n.program = 0;
