@@ -21,6 +21,7 @@ import {Sequences} from './sequences';
 
 import NoteSequence = tensorflow.magenta.NoteSequence;
 import INoteSequence = tensorflow.magenta.INoteSequence;
+import {isNullOrUndefined} from 'util';
 
 const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
   // bass drum
@@ -131,17 +132,18 @@ export interface DrumsConverterArgs extends BaseConverterArgs {
 }
 export class DrumsConverter extends DataConverter {
   readonly pitchClasses: number[][];
-  readonly pitchToClass: {[pitch: number]: number};
+  readonly pitchToClass: Map<number, number>;
   readonly NUM_SPLITS = 0;  // const
   depth: number;
 
   constructor(args: DrumsConverterArgs) {
     super(args);
-    this.pitchClasses =
-        (args.pitchClasses) ? args.pitchClasses : DEFAULT_DRUM_PITCH_CLASSES;
-    this.pitchToClass = {};
+    this.pitchClasses = isNullOrUndefined(args.pitchClasses) ?
+        DEFAULT_DRUM_PITCH_CLASSES :
+        args.pitchClasses;
+    this.pitchToClass = new Map<number, number>();
     for (let c = 0; c < this.pitchClasses.length; ++c) {  // class
-      this.pitchClasses[c].forEach((p) => { this.pitchToClass[p] = c; });
+      this.pitchClasses[c].forEach((p) => { this.pitchToClass.set(p, c); });
     }
     this.depth = this.pitchClasses.length;
   }
@@ -154,7 +156,8 @@ export class DrumsConverter extends DataConverter {
       drumRoll.set(1, i, -1);
     }
     noteSequence.notes.forEach((note) => {
-      drumRoll.set(1, note.quantizedStartStep, this.pitchToClass[note.pitch]);
+      drumRoll.set(
+          1, note.quantizedStartStep, this.pitchToClass.get(note.pitch));
       drumRoll.set(0, note.quantizedStartStep, -1);
     });
     return drumRoll.toTensor() as tf.Tensor2D;
@@ -197,10 +200,10 @@ export class DrumsConverter extends DataConverter {
 export class DrumRollConverter extends DrumsConverter {
   async toNoteSequence(roll: tf.Tensor2D) {
     const noteSequence = NoteSequence.create();
+    const rollSplit = tf.split(roll, roll.shape[0]);
     for (let s = 0; s < roll.shape[0]; ++s) {  // step
-      const rollSlice = roll.slice([s, 0], [1, roll.shape[1]]);
-      const pitches = await rollSlice.data() as Uint8Array;
-      rollSlice.dispose();
+      const pitches = await rollSplit[s].data() as Uint8Array;
+      rollSplit[s].dispose();
       for (let p = 0; p < pitches.length; ++p) {  // pitch class
         if (pitches[p]) {
           noteSequence.notes.push(NoteSequence.Note.create({
@@ -243,46 +246,11 @@ export class DrumsOneHotConverter extends DrumsConverter {
 
   toTensor(noteSequence: INoteSequence) {
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
-    const indexes = this.toOneHotIndexes(noteSequence);
-    const buffer = tf.buffer([numSteps, this.depth]);
-    indexes.forEach((index, quantizedStartStep) => {
-      buffer.set(1, quantizedStartStep, index);
-    });
-    return buffer.toTensor() as tf.Tensor2D;
-  }
-
-  private toOneHotIndexes(noteSequence: INoteSequence): Map<number, number> {
-    const result = new Map<number, number>();
+    const labels = Array<number>(numSteps).fill(0);
     for (const {pitch, quantizedStartStep} of noteSequence.notes) {
-      const val = Math.pow(2, this.pitchToClass[pitch]);
-      if (result.has(quantizedStartStep)) {
-        result.set(quantizedStartStep, result.get(quantizedStartStep) + val);
-      } else {
-        result.set(quantizedStartStep, val);
-      }
+      labels[quantizedStartStep] += Math.pow(2, this.pitchToClass.get(pitch));
     }
-    return result;
-  }
-
-  async toNoteSequence(oh: tf.Tensor2D) {
-    const noteSequence = NoteSequence.create();
-    const labelsTensor = oh.argMax(1);
-    const labels: Int32Array = await labelsTensor.data() as Int32Array;
-    labelsTensor.dispose();
-    for (let s = 0; s < labels.length; ++s) {  // step
-      const bin = (labels[s] >>> 0).toString(2);
-      for (let i = bin.length - 1; i >= 0; i--) {
-        if (bin[i] === '1') {
-          noteSequence.notes.push(NoteSequence.Note.create({
-            pitch: this.pitchClasses[bin.length - i - 1][0],
-            quantizedStartStep: s,
-            quantizedEndStep: s + 1,
-            isDrum: true
-          }));
-        }
-      }
-    }
-    return noteSequence;
+    return tf.tidy(() => tf.oneHot(tf.tensor1d(labels), this.depth));
   }
 }
 
@@ -348,7 +316,7 @@ export class MelodyConverter extends DataConverter {
       mel.set(this.NOTE_OFF, n.quantizedEndStep);
       lastEnd = n.quantizedEndStep;
     });
-    return tf.oneHot(mel.toTensor() as tf.Tensor1D, this.depth) as tf.Tensor2D;
+    return tf.tidy(() => tf.oneHot(mel.toTensor() as tf.Tensor1D, this.depth));
   }
 
   async toNoteSequence(oh: tf.Tensor2D) {
@@ -429,13 +397,14 @@ export class TrioConverter extends DataConverter {
             (!n.isDrum && n.program >= this.BASS_PROG_RANGE[0] &&
              n.program <= this.BASS_PROG_RANGE[1]));
     drumsSeq.notes = noteSequence.notes.filter(n => n.isDrum);
-    return tf.concat(
-        [
-          this.melConverter.toTensor(melSeq),
-          this.bassConverter.toTensor(bassSeq),
-          this.drumsConverter.toTensor(drumsSeq)
-        ],
-        -1);
+    return tf.tidy(
+        () => tf.concat(
+            [
+              this.melConverter.toTensor(melSeq),
+              this.bassConverter.toTensor(bassSeq),
+              this.drumsConverter.toTensor(drumsSeq)
+            ],
+            -1));
   }
 
   async toNoteSequence(th: tf.Tensor2D) {
@@ -447,19 +416,24 @@ export class TrioConverter extends DataConverter {
         ],
         -1);
     const ns = await this.melConverter.toNoteSequence(ohs[0] as tf.Tensor2D);
+    ns.notes.foreach(n => {
+      n.instrument = 0;
+      n.program = 0;
+    });
     const bassNs =
         await this.bassConverter.toNoteSequence(ohs[1] as tf.Tensor2D);
     ns.notes.push(...bassNs.notes.map(n => {
       n.instrument = 1;
-      n.pitch = this.BASS_PROG_RANGE[0] + 1;  // Electric bass
+      n.program = this.BASS_PROG_RANGE[0];
       return n;
     }));
     const drumsNs =
-        await this.drumsConverter.toNoteSequence(ohs[1] as tf.Tensor2D);
+        await this.drumsConverter.toNoteSequence(ohs[2] as tf.Tensor2D);
     ns.notes.push(...drumsNs.notes.map(n => {
       n.instrument = 2;
       return n;
     }));
+    ohs.forEach(oh => oh.dispose());
     return ns;
   }
 }

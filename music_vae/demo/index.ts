@@ -213,7 +213,6 @@ async function runDrums() {
   writeNoteSeqs('drums-samples', sample);
 
   mvae.dispose();
-  console.log(tf.memory());
 }
 
 async function
@@ -234,7 +233,6 @@ runDrumsNade() {
   writeNoteSeqs('nade-samples', sample);
 
   mvae.dispose();
-  console.log(tf.memory());
 }
 
 async function
@@ -256,7 +254,6 @@ runMel() {
   writeNoteSeqs('mel-samples', sample);
 
   mvae.dispose();
-  console.log(tf.memory());
 }
 
 async function
@@ -280,7 +277,6 @@ runTrio() {
   writeNoteSeqs('trio-samples', sample);
 
   mvae.dispose();
-  console.log(tf.memory());
 }
 
 // TODO(adarob): Switch to magenta/core function once implemented.
@@ -331,15 +327,11 @@ runMel16() {
   writeNoteSeqs('mel16-samples', sample);
 
   mvae.dispose();
-  console.log(tf.memory());
 }
 
 try {
-  runDrums();
-  runDrumsNade();
-  runMel();
-  runMel16();
-  runTrio();
+  Promise.all([runDrums(), runDrumsNade(), runMel(), runMel16(), runTrio()])
+      .then(() => console.log(tf.memory()));
 } catch (err) {
   console.error(err);
 }
