@@ -25,3 +25,7 @@ export const DEFAULT_STEPS_PER_QUARTER = 4;
 export const DEFAULT_STEPS_PER_SECOND = 100;
 
 export const MIDI_VELOCITIES = 128;
+
+// Pitch-related constants.
+export const NO_CHORD = 'N.C.';
+export const NUM_PITCH_CLASSES = 12;
