@@ -87,7 +87,7 @@ test('Test Chord Quality', (t: test.Test) => {
 });
 
 test('Test Major/Minor Chord Encoder', (t: test.Test) => {
-  const e = new chords.MajorMinorChordEncoder();
+  const e = chords.chordEncoderFromType('MajorMinorChordEncoder');
   t.equal(e.depth, 25);
   t.deepEqual(e.encode('G').shape, [25]);
   t.equal(tf.argMax(e.encode('N.C.')).dataSync()[0], 0);
@@ -101,7 +101,7 @@ test('Test Major/Minor Chord Encoder', (t: test.Test) => {
 });
 
 test('Test Triad Chord Encoder', (t: test.Test) => {
-  const e = new chords.TriadChordEncoder();
+  const e = chords.chordEncoderFromType('TriadChordEncoder');
   t.equal(e.depth, 49);
   t.deepEqual(e.encode('G').shape, [49]);
   t.equal(tf.argMax(e.encode('N.C.')).dataSync()[0], 0);
@@ -115,7 +115,7 @@ test('Test Triad Chord Encoder', (t: test.Test) => {
 });
 
 test('Test Pitch Chord Encoder', (t: test.Test) => {
-  const e = new chords.PitchChordEncoder();
+  const e = chords.chordEncoderFromType('PitchChordEncoder');
   t.equal(e.depth, 37);
   t.deepEqual(e.encode('G').shape, [37]);
   t.deepEqual(e.encode('N.C.').dataSync(), [

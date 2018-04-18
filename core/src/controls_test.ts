@@ -17,10 +17,14 @@
 
 import * as test from 'tape';
 import * as chords from './chords';
-import {BinaryCounter, ChordProgression} from './controls';
+import * as controls from './controls';
 
 test('Test Binary Counter', (t: test.Test) => {
-  const bc = new BinaryCounter(5, 2);
+  const spec : controls.BinaryCounterSpec = {
+    type: 'BinaryCounter',
+    args: {numSteps: 5, numBits: 2}
+  };
+  const bc = controls.controlSignalFromSpec(spec);
   t.equal(bc.numSteps, 5);
   t.equal(bc.depth, 2);
   t.deepEqual(bc.getTensor(0).dataSync(), [-1.0, -1.0]);
@@ -33,14 +37,18 @@ test('Test Binary Counter', (t: test.Test) => {
 });
 
 test('Test Chord Progression', (t: test.Test) => {
+  const spec : controls.ChordProgressionSpec = {
+    type: 'ChordProgression',
+    args: {numSteps: 4, encoderType: 'MajorMinorChordEncoder'}
+  };
+  const cp = controls.controlSignalFromSpec(spec, ['C', 'Dm']);
   const e = new chords.MajorMinorChordEncoder();
-  const bc = new ChordProgression(4, ['C', 'Dm'], e);
-  t.equal(bc.numSteps, 4);
-  t.equal(bc.depth, e.depth);
-  t.deepEqual(bc.getTensor(0).dataSync(), e.encode('C').dataSync());
-  t.deepEqual(bc.getTensor(1).dataSync(), e.encode('C').dataSync());
-  t.deepEqual(bc.getTensor(2).dataSync(), e.encode('Dm').dataSync());
-  t.deepEqual(bc.getTensor(3).dataSync(), e.encode('Dm').dataSync());
-  t.throws(() => bc.getTensor(4), RangeError);
+  t.equal(cp.numSteps, 4);
+  t.equal(cp.depth, e.depth);
+  t.deepEqual(cp.getTensor(0).dataSync(), e.encode('C').dataSync());
+  t.deepEqual(cp.getTensor(1).dataSync(), e.encode('C').dataSync());
+  t.deepEqual(cp.getTensor(2).dataSync(), e.encode('Dm').dataSync());
+  t.deepEqual(cp.getTensor(3).dataSync(), e.encode('Dm').dataSync());
+  t.throws(() => cp.getTensor(4), RangeError);
   t.end();
 });

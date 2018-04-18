@@ -16,7 +16,39 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
-import {ChordEncoder} from './chords';
+import {ChordEncoderType, chordEncoderFromType} from './chords';
+
+export type BinaryCounterArgs = {numSteps: number, numBits: number};
+export interface BinaryCounterSpec {
+  type: 'BinaryCounter';
+  args: BinaryCounterArgs;
+}
+
+export type ChordProgressionArgs = {
+  numSteps: number, encoderType: ChordEncoderType
+};
+export interface ChordProgressionSpec {
+  type: 'ChordProgression';
+  args: ChordProgressionArgs;
+}
+
+export type ControlSignalSpec = BinaryCounterSpec | ChordProgressionSpec;
+
+/**
+ * Creates a `ControlSignal` based on the given `ControlSignalSpec`.
+ *
+ * @param type Specifies the `ControlSignal` to create.
+ * @param chords (Optional) List of chord symbol strings.
+ * @returns A new `ControlSignal` object based on `spec`.
+ */
+export function controlSignalFromSpec(
+    spec: ControlSignalSpec, chords?: string[]) {
+  switch (spec.type) {
+    case 'BinaryCounter': return new BinaryCounter(spec.args);
+    case 'ChordProgression': return new ChordProgression(spec.args, chords!);
+    default: throw new Error(`Unknown control signal: ${spec}`);
+  }
+}
 
 /**
  * Abstract ControlSignal class for producing control tensors.
@@ -42,7 +74,7 @@ export abstract class ControlSignal {
  * @param numBits The number of binary counter bits.
  */
 export class BinaryCounter extends ControlSignal {
-  constructor(numSteps: number, numBits: number) { super(numSteps, numBits); }
+  constructor(args: BinaryCounterArgs) { super(args.numSteps, args.numBits); }
 
   /**
    * Get the tensor of control values at the specified step. The returned tensor
@@ -74,8 +106,9 @@ export class BinaryCounter extends ControlSignal {
 export class ChordProgression extends ControlSignal {
   readonly encodedChords: tf.Tensor1D[];
 
-  constructor(numSteps: number, chords: string[], encoder: ChordEncoder) {
-    super(numSteps, encoder.depth);
+  constructor(args: ChordProgressionArgs, chords: string[]) {
+    const encoder = chordEncoderFromType(args.encoderType);
+    super(args.numSteps, encoder.depth);
     this.encodedChords = chords.map(chord => encoder.encode(chord));
   }
 
