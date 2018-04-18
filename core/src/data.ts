@@ -95,14 +95,15 @@ export function converterFromSpec(spec: ConverterSpec) {
   }
 }
 
-/**
- * Abstract DataConverter class for converting between `Tensor` and
- * `NoteSequence` objects.
- */
 export interface BaseConverterArgs {
   numSteps?: number;
   numSegments?: number;
 }
+
+/**
+ * Abstract DataConverter class for converting between `Tensor` and
+ * `NoteSequence` objects.
+ */
 export abstract class DataConverter {
   readonly numSteps: number;             // Total length of sequences.
   readonly numSegments: number;          // Number of steps for conductor.
