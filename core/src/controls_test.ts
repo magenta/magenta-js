@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+import * as tf from '@tensorflow/tfjs';
 import * as test from 'tape';
 import * as chords from './chords';
 import * as controls from './controls';
@@ -22,33 +23,38 @@ import * as controls from './controls';
 test('Test Binary Counter', (t: test.Test) => {
   const spec : controls.BinaryCounterSpec = {
     type: 'BinaryCounter',
-    args: {numSteps: 5, numBits: 2}
+    args: {numBits: 2}
   };
   const bc = controls.controlSignalFromSpec(spec);
-  t.equal(bc.numSteps, 5);
+  const tensors = bc.getTensors({numSteps: 5});
   t.equal(bc.depth, 2);
-  t.deepEqual(bc.getTensor(0).dataSync(), [-1.0, -1.0]);
-  t.deepEqual(bc.getTensor(1).dataSync(), [1.0, -1.0]);
-  t.deepEqual(bc.getTensor(2).dataSync(), [-1.0, 1.0]);
-  t.deepEqual(bc.getTensor(3).dataSync(), [1.0, 1.0]);
-  t.deepEqual(bc.getTensor(4).dataSync(), [-1.0, -1.0]);
-  t.throws(() => bc.getTensor(5), RangeError);
+  t.deepEqual(tensors.shape, [5, 2]);
+  t.deepEqual(tf.gather(tensors, tf.tensor([0])).dataSync(), [-1.0, -1.0]);
+  t.deepEqual(tf.gather(tensors, tf.tensor([1])).dataSync(), [1.0, -1.0]);
+  t.deepEqual(tf.gather(tensors, tf.tensor([2])).dataSync(), [-1.0, 1.0]);
+  t.deepEqual(tf.gather(tensors, tf.tensor([3])).dataSync(), [1.0, 1.0]);
+  t.deepEqual(tf.gather(tensors, tf.tensor([4])).dataSync(), [-1.0, -1.0]);
   t.end();
 });
 
 test('Test Chord Progression', (t: test.Test) => {
   const spec : controls.ChordProgressionSpec = {
     type: 'ChordProgression',
-    args: {numSteps: 4, encoderType: 'MajorMinorChordEncoder'}
+    args: {encoderType: 'MajorMinorChordEncoder'}
   };
-  const cp = controls.controlSignalFromSpec(spec, ['C', 'Dm']);
+  const cp = controls.controlSignalFromSpec(spec);
+  const args = {chords: ['C', 'Dm'], stepsPerChord: 2};
+  const tensors = cp.getTensors(args);
   const e = new chords.MajorMinorChordEncoder();
-  t.equal(cp.numSteps, 4);
   t.equal(cp.depth, e.depth);
-  t.deepEqual(cp.getTensor(0).dataSync(), e.encode('C').dataSync());
-  t.deepEqual(cp.getTensor(1).dataSync(), e.encode('C').dataSync());
-  t.deepEqual(cp.getTensor(2).dataSync(), e.encode('Dm').dataSync());
-  t.deepEqual(cp.getTensor(3).dataSync(), e.encode('Dm').dataSync());
-  t.throws(() => cp.getTensor(4), RangeError);
+  t.deepEqual(tensors.shape, [4, e.depth]);
+  t.deepEqual(
+      tf.gather(tensors, tf.tensor([0])).dataSync(), e.encode('C').dataSync());
+  t.deepEqual(
+      tf.gather(tensors, tf.tensor([1])).dataSync(), e.encode('C').dataSync());
+  t.deepEqual(
+      tf.gather(tensors, tf.tensor([2])).dataSync(), e.encode('Dm').dataSync());
+  t.deepEqual(
+      tf.gather(tensors, tf.tensor([3])).dataSync(), e.encode('Dm').dataSync());
   t.end();
 });

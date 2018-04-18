@@ -16,36 +16,40 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
-import {ChordEncoderType, chordEncoderFromType} from './chords';
+import {ChordEncoder, ChordEncoderType, chordEncoderFromType} from './chords';
 
-export type BinaryCounterArgs = {numSteps: number, numBits: number};
+export type BinaryCounterArgs = {numBits: number};
 export interface BinaryCounterSpec {
   type: 'BinaryCounter';
   args: BinaryCounterArgs;
 }
+export type BinaryCounterUserArgs = {numSteps:number};
 
-export type ChordProgressionArgs = {
-  numSteps: number, encoderType: ChordEncoderType
-};
+export type ChordProgressionArgs = {encoderType: ChordEncoderType};
 export interface ChordProgressionSpec {
   type: 'ChordProgression';
   args: ChordProgressionArgs;
 }
+export type ChordProgressionUserArgs = {chords:string[], stepsPerChord:number};
 
 export type ControlSignalSpec = BinaryCounterSpec | ChordProgressionSpec;
+export type ControlSignalUserArgs = BinaryCounterUserArgs |
+                                    ChordProgressionUserArgs;
 
 /**
  * Creates a `ControlSignal` based on the given `ControlSignalSpec`.
  *
  * @param type Specifies the `ControlSignal` to create.
- * @param chords (Optional) List of chord symbol strings.
  * @returns A new `ControlSignal` object based on `spec`.
  */
 export function controlSignalFromSpec(
-    spec: ControlSignalSpec, chords?: string[]) {
+    spec: BinaryCounterSpec) : BinaryCounter;
+export function controlSignalFromSpec(
+    spec: ChordProgressionSpec) : ChordProgression;
+export function controlSignalFromSpec(spec: ControlSignalSpec) {
   switch (spec.type) {
     case 'BinaryCounter': return new BinaryCounter(spec.args);
-    case 'ChordProgression': return new ChordProgression(spec.args, chords!);
+    case 'ChordProgression': return new ChordProgression(spec.args);
     default: throw new Error(`Unknown control signal: ${spec}`);
   }
 }
@@ -53,16 +57,13 @@ export function controlSignalFromSpec(
 /**
  * Abstract ControlSignal class for producing control tensors.
  *
- * @param numSteps The length of the control signal.
  * @param depth The size of the control tensor at each step.
  */
-export abstract class ControlSignal {
-  readonly numSteps: number;  // Total length of sequences.
+export abstract class ControlSignal<T> {
   readonly depth: number;     // Size of final output dimension.
-  abstract getTensor(step: number): tf.Tensor1D;
+  abstract getTensors(args: T): tf.Tensor2D;
 
-  constructor(numSteps: number, depth: number) {
-    this.numSteps = numSteps;
+  constructor(depth: number) {
     this.depth = depth;
   }
 }
@@ -70,29 +71,26 @@ export abstract class ControlSignal {
 /**
  * Binary counter control signal.
  *
- * @param numSteps The length of the control signal.
  * @param numBits The number of binary counter bits.
  */
-export class BinaryCounter extends ControlSignal {
-  constructor(args: BinaryCounterArgs) { super(args.numSteps, args.numBits); }
+export class BinaryCounter extends ControlSignal<BinaryCounterUserArgs> {
+  constructor(args: BinaryCounterArgs) { super(args.numBits); }
 
   /**
-   * Get the tensor of control values at the specified step. The returned tensor
-   * acts as a binary counter (using -1 instead of 0), with least significant
-   * bit first.
+   * Get the tensor of control values. The returned tensor acts as a binary
+   * counter (using -1 instead of 0), with least significant bit first.
    *
-   * @param step Step for which to get the binary counter.
+   * @param numSteps Number of steps of binary counter values to return.
+   * @returns A 2D tensor of binary counter values.
    */
-  getTensor(step: number) {
-    if (step >= this.numSteps) {
-      throw new RangeError(`Step out of range: ${step} >= ${this.numSteps}`);
+  getTensors(args: BinaryCounterUserArgs) {
+    const buffer = tf.buffer([args.numSteps, this.depth]);
+    for (let step = 0; step < args.numSteps; ++step) {
+      for (let i = 0; i < this.depth; ++i) {
+        buffer.set(Math.floor(step / Math.pow(2, i)) % 2 ? 1.0 : -1.0, step, i);
+      }
     }
-
-    const buffer = tf.buffer([this.depth]);
-    for (let i = 0; i < this.depth; ++i) {
-      buffer.set(Math.floor(step / Math.pow(2, i)) % 2 ? 1.0 : -1.0, i);
-    }
-    return buffer.toTensor().as1D();
+    return buffer.toTensor().as2D(args.numSteps, this.depth);
   }
 }
 
@@ -100,31 +98,30 @@ export class BinaryCounter extends ControlSignal {
  * Chord progression control signal.
  *
  * @param numSteps The length of the control signal.
- * @param chords An array of chord symbol strings.
- * @param encoder The chord encoder to use.
+ * @param encoderType The chord encoder type to use.
  */
-export class ChordProgression extends ControlSignal {
-  readonly encodedChords: tf.Tensor1D[];
+export class ChordProgression extends ControlSignal<ChordProgressionUserArgs> {
+  readonly encoder: ChordEncoder;
 
-  constructor(args: ChordProgressionArgs, chords: string[]) {
+  constructor(args: ChordProgressionArgs) {
     const encoder = chordEncoderFromType(args.encoderType);
-    super(args.numSteps, encoder.depth);
-    this.encodedChords = chords.map(chord => encoder.encode(chord));
+    super(encoder.depth);
+    this.encoder = encoder;
   }
 
   /**
-   * Get the tensor of control values at the specified step. The returned tensor
-   * will be the encoded chord at the corresponding position in the chord
-   * progression.
+   * Get the tensor of control values. The returned tensor will be the encoded
+   * chord progression with each chord lasting the specified number of steps.
    *
-   * @param step Step for which to get the encoded chord.
+   * @param chords An array of chord symbol strings.
+   * @param stepsPerChord The number of steps each chord lasts.
+   * @returns A 2D tensor containing the encoded chord progression.
    */
-  getTensor(step: number) {
-    if (step >= this.numSteps) {
-      throw new RangeError(`Step out of range: ${step} >= ${this.numSteps}`);
-    }
-
-    const index = Math.floor(step * this.encodedChords.length / this.numSteps);
-    return this.encodedChords[index];
+  getTensors(args: ChordProgressionUserArgs) {
+    const totalSteps = args.chords.length * args.stepsPerChord;
+    const encodedChords = args.chords.map(chord => this.encoder.encode(chord));
+    const repeatedChords = encodedChords.map(ec =>
+        tf.tile(tf.expandDims(ec, 0), [args.stepsPerChord, 1]));
+    return tf.concat(repeatedChords, 0).as2D(totalSteps, this.depth);
   }
 }
