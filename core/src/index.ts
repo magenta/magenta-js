@@ -30,5 +30,8 @@ export {CheckpointLoader} from './checkpoint_loader';
 import * as data from './data';
 export {data};
 
+import * as controls from './controls';
+export {controls};
+
 export * from './midi_io';
 export * from './sequences';

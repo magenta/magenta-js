@@ -18,29 +18,20 @@
 import * as magenta from '@magenta/core';
 import INoteSequence = magenta.INoteSequence;
 import tf = magenta.tf;
-import { MusicRNN } from '../src/index';
+import {MusicRNN} from '../src/index';
 
 // tslint:disable:max-line-length
-const MEL_CHECKPOINT = "https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_rnn/dljs/basic_rnn";
-const DRUMS_CHECKPOINT = "https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_rnn/dljs/drums_rnn";
+const MEL_CHECKPOINT =
+    'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_rnn/dljs/basic_rnn';
+const DRUMS_CHECKPOINT =
+    'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_rnn/dljs/drums_rnn';
 // tslint:enable:max-line-length
 
-const MELODY_NS:INoteSequence = {
+const MELODY_NS: INoteSequence = {
   ticksPerQuarter: 220,
   totalTime: 1.5,
-  timeSignatures: [
-    {
-      time: 0,
-      numerator: 4,
-      denominator: 4
-    }
-  ],
-  tempos: [
-    {
-      time: 0,
-      qpm: 120
-    }
-  ],
+  timeSignatures: [{time: 0, numerator: 4, denominator: 4}],
+  tempos: [{time: 0, qpm: 120}],
   notes: [
     {
       instrument: 0,
@@ -81,30 +72,13 @@ const MELODY_NS:INoteSequence = {
   ]
 };
 
-const DRUMS_NS:INoteSequence = {
+const DRUMS_NS: INoteSequence = {
   ticksPerQuarter: 220,
   totalTime: 1.5,
-  timeSignatures: [
-    {
-      time: 0,
-      numerator: 4,
-      denominator: 4
-    }
-  ],
-  tempos: [
-    {
-      time: 0,
-      qpm: 120
-    }
-  ],
+  timeSignatures: [{time: 0, numerator: 4, denominator: 4}],
+  tempos: [{time: 0, qpm: 120}],
   notes: [
-    {
-      startTime: 0,
-      endTime: 0.5,
-      pitch: 34,
-      velocity: 100,
-      isDrum: true
-    },
+    {startTime: 0, endTime: 0.5, pitch: 34, velocity: 100, isDrum: true},
     {
       instrument: 0,
       startTime: 0.5,
@@ -121,13 +95,7 @@ const DRUMS_NS:INoteSequence = {
       velocity: 100,
       isDrum: true
     },
-    {
-      startTime: 1.0,
-      endTime: 1.5,
-      pitch: 34,
-      velocity: 100,
-      isDrum: true
-    },
+    {startTime: 1.0, endTime: 1.5, pitch: 34, velocity: 100, isDrum: true},
     {
       instrument: 0,
       startTime: 1.5,
@@ -148,20 +116,26 @@ const DRUMS_NS:INoteSequence = {
 };
 
 function writeTimer(elementId: string, startTime: number) {
-  document.getElementById(elementId).innerHTML = (
-  (performance.now() - startTime) / 1000.).toString() + 's';
+  document.getElementById(elementId).innerHTML =
+      ((performance.now() - startTime) / 1000.).toString() + 's';
 }
 
 function writeNoteSeqs(elementId: string, seqs: INoteSequence[]) {
-  document.getElementById(elementId).innerHTML = seqs.map(
-  seq => '[' + seq.notes.map(n => {
-    let s = '{p:' + n.pitch + ' s:' + n.quantizedStartStep;
-    if (n.quantizedEndStep != null) {
-      s += ' e:' +  n.quantizedEndStep;
-    }
-    s += '}';
-    return s;
-  }).join(', ') + ']').join('<br>');
+  document.getElementById(elementId).innerHTML =
+      seqs.map(
+              seq => '[' +
+                  seq.notes
+                      .map(n => {
+                        let s = '{p:' + n.pitch + ' s:' + n.quantizedStartStep;
+                        if (n.quantizedEndStep != null) {
+                          s += ' e:' + n.quantizedEndStep;
+                        }
+                        s += '}';
+                        return s;
+                      })
+                      .join(', ') +
+                  ']')
+          .join('<br>');
 }
 
 async function runMelodyRnn() {
@@ -181,13 +155,15 @@ async function runMelodyRnn() {
 }
 
 async function runDrumsRnn() {
-  const drumsRnn = new MusicRNN(DRUMS_CHECKPOINT);
+  const drumsRnn = new MusicRNN(DRUMS_CHECKPOINT, null, 32);
   await drumsRnn.initialize();
 
   const qns = magenta.Sequences.quantizeNoteSequence(DRUMS_NS, 1);
   writeNoteSeqs('drums-cont-inputs', [qns]);
   const start = performance.now();
-  const continuation = await drumsRnn.continueSequence(qns, 20);
+  const continuation = await drumsRnn.continueSequence(
+      qns, 20, null,
+      new magenta.controls.BinaryCounter(qns.notes.length + 20, 6));
   writeTimer('drums-cont-time', start);
   writeNoteSeqs('drums-cont-results', [continuation]);
   drumsRnn.dispose();
