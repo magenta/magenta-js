@@ -26,7 +26,7 @@ test('Test Binary Counter', (t: test.Test) => {
     args: {numBits: 2}
   };
   const bc = controls.controlSignalFromSpec(spec);
-  const tensors = bc.getTensors({numSteps: 5});
+  const tensors = bc.getTensors(5, {});
   t.equal(bc.depth, 2);
   t.deepEqual(tensors.shape, [5, 2]);
   t.deepEqual(tf.gather(tensors, tf.tensor([0])).dataSync(), [-1.0, -1.0]);
@@ -43,8 +43,7 @@ test('Test Chord Progression', (t: test.Test) => {
     args: {encoderType: 'MajorMinorChordEncoder'}
   };
   const cp = controls.controlSignalFromSpec(spec);
-  const args = {chords: ['C', 'Dm'], stepsPerChord: 2};
-  const tensors = cp.getTensors(args);
+  const tensors = cp.getTensors(4, {chords: ['C', 'Dm']});
   const e = new chords.MajorMinorChordEncoder();
   t.equal(cp.depth, e.depth);
   t.deepEqual(tensors.shape, [4, e.depth]);

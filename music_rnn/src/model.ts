@@ -149,9 +149,11 @@ export class MusicRNN<T extends magenta.controls.ControlSignalUserArgs> {
 
     const oh = tf.tidy(() => {
       const inputs = this.dataConverter.toTensor(sequence);
+      const length: number = inputs.shape[0];
       const outputSize: number = inputs.shape[1];
       const controls = this.controlSignal ?
-                       this.controlSignal.getTensors(controlSignalArgs) :
+                       this.controlSignal.getTensors(
+                          length + steps, controlSignalArgs) :
                        undefined;
       const samples = this.sampleRnn(inputs, steps, temperature, controls);
       return tf.stack(samples).as2D(samples.length, outputSize);
