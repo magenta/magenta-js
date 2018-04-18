@@ -152,9 +152,8 @@ export class MusicRNN<T extends magenta.controls.ControlSignalUserArgs> {
       const length: number = inputs.shape[0];
       const outputSize: number = inputs.shape[1];
       const controls = this.controlSignal ?
-                       this.controlSignal.getTensors(
-                          length + steps, controlSignalArgs) :
-                       undefined;
+          this.controlSignal.getTensors(length + steps, controlSignalArgs) :
+          undefined;
       const samples = this.sampleRnn(inputs, steps, temperature, controls);
       return tf.stack(samples).as2D(samples.length, outputSize);
     });
@@ -200,8 +199,8 @@ export class MusicRNN<T extends magenta.controls.ControlSignalUserArgs> {
       }
 
       if (controls) {
-        const control = controls.slice(
-            [i, 0], [1, controlSize]).as2D(1, controlSize);
+        const control =
+            controls.slice([i, 0], [1, controlSize]).as2D(1, controlSize);
         nextInput = nextInput.concat(control.as2D(1, -1), 1);
       }
 

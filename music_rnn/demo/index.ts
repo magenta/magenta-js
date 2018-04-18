@@ -156,11 +156,9 @@ async function runMelodyRnn() {
 
 async function runDrumsRnn() {
   const drumsRnn = new MusicRNN(
-    DRUMS_CHECKPOINT, null, 32,
-    magenta.controls.controlSignalFromSpec({
-      type: 'BinaryCounter',
-      args: {numBits: 6}
-    }));
+      DRUMS_CHECKPOINT, null, 32,
+      magenta.controls.controlSignalFromSpec(
+          {type: 'BinaryCounter', args: {numBits: 6}}));
   await drumsRnn.initialize();
 
   const qns = magenta.Sequences.quantizeNoteSequence(DRUMS_NS, 1);

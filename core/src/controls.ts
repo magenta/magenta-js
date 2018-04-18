@@ -18,23 +18,29 @@
 import * as tf from '@tensorflow/tfjs';
 import {ChordEncoder, ChordEncoderType, chordEncoderFromType} from './chords';
 
-export type BinaryCounterArgs = {numBits: number};
+export type BinaryCounterArgs = {
+  numBits: number
+};
 export interface BinaryCounterSpec {
   type: 'BinaryCounter';
   args: BinaryCounterArgs;
 }
 export type BinaryCounterUserArgs = {};
 
-export type ChordProgressionArgs = {encoderType: ChordEncoderType};
+export type ChordProgressionArgs = {
+  encoderType: ChordEncoderType
+};
 export interface ChordProgressionSpec {
   type: 'ChordProgression';
   args: ChordProgressionArgs;
 }
-export type ChordProgressionUserArgs = {chords:string[]};
+export type ChordProgressionUserArgs = {
+  chords: string[]
+};
 
 export type ControlSignalSpec = BinaryCounterSpec | ChordProgressionSpec;
-export type ControlSignalUserArgs = BinaryCounterUserArgs |
-                                    ChordProgressionUserArgs;
+export type ControlSignalUserArgs =
+    BinaryCounterUserArgs | ChordProgressionUserArgs;
 
 /**
  * Creates a `ControlSignal` based on the given `ControlSignalSpec`.
@@ -42,15 +48,17 @@ export type ControlSignalUserArgs = BinaryCounterUserArgs |
  * @param type Specifies the `ControlSignal` to create.
  * @returns A new `ControlSignal` object based on `spec`.
  */
-export function controlSignalFromSpec(
-    spec: BinaryCounterSpec) : BinaryCounter;
-export function controlSignalFromSpec(
-    spec: ChordProgressionSpec) : ChordProgression;
+export function controlSignalFromSpec(spec: BinaryCounterSpec): BinaryCounter;
+export function controlSignalFromSpec(spec: ChordProgressionSpec):
+    ChordProgression;
 export function controlSignalFromSpec(spec: ControlSignalSpec) {
   switch (spec.type) {
-    case 'BinaryCounter': return new BinaryCounter(spec.args);
-    case 'ChordProgression': return new ChordProgression(spec.args);
-    default: throw new Error(`Unknown control signal: ${spec}`);
+    case 'BinaryCounter':
+      return new BinaryCounter(spec.args);
+    case 'ChordProgression':
+      return new ChordProgression(spec.args);
+    default:
+      throw new Error(`Unknown control signal: ${spec}`);
   }
 }
 
@@ -60,12 +68,10 @@ export function controlSignalFromSpec(spec: ControlSignalSpec) {
  * @param depth The size of the control tensor at each step.
  */
 export abstract class ControlSignal<T> {
-  readonly depth: number;     // Size of final output dimension.
+  readonly depth: number;  // Size of final output dimension.
   abstract getTensors(numSteps: number, args: T): tf.Tensor2D;
 
-  constructor(depth: number) {
-    this.depth = depth;
-  }
+  constructor(depth: number) { this.depth = depth; }
 }
 
 /**
@@ -118,9 +124,10 @@ export class ChordProgression extends ControlSignal<ChordProgressionUserArgs> {
    */
   getTensors(numSteps: number, args: ChordProgressionUserArgs) {
     const encodedChords = args.chords.map(chord => this.encoder.encode(chord));
-    const indices = Array.from(Array(numSteps).keys()).map(
-        step => Math.floor(step * encodedChords.length / numSteps));
-    return tf.stack(
-        indices.map(i => encodedChords[i])).as2D(numSteps, this.depth);
+    const indices =
+        Array.from(Array(numSteps).keys())
+            .map(step => Math.floor(step * encodedChords.length / numSteps));
+    return tf.stack(indices.map(i => encodedChords[i]))
+        .as2D(numSteps, this.depth);
   }
 }

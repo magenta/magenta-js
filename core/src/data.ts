@@ -72,11 +72,8 @@ export interface DrumsOneHotConverterSpec {
  * @property args Map containing values for argments to the constructor of the
  * `DataConverter` class specified above.
  */
-export type ConverterSpec = MelodyConverterSpec |
-                            DrumsConverterSpec |
-                            DrumRollConverterSpec |
-                            TrioConverterSpec |
-                            DrumsOneHotConverterSpec;
+export type ConverterSpec = MelodyConverterSpec | DrumsConverterSpec |
+    DrumRollConverterSpec | TrioConverterSpec | DrumsOneHotConverterSpec;
 
 /**
  * Builds a `DataConverter` based on the given `ConverterSpec`.
@@ -86,12 +83,18 @@ export type ConverterSpec = MelodyConverterSpec |
  */
 export function converterFromSpec(spec: ConverterSpec) {
   switch (spec.type) {
-    case 'MelodyConverter': return new MelodyConverter(spec.args);
-    case 'DrumsConverter': return new DrumsConverter(spec.args);
-    case 'DrumRollConverter': return new DrumRollConverter(spec.args);
-    case 'TrioConverter': return new TrioConverter(spec.args);
-    case 'DrumsOneHotConverter': return new DrumsOneHotConverter(spec.args);
-    default: throw new Error(`Unknown DataConverter type: ${spec}`);
+    case 'MelodyConverter':
+      return new MelodyConverter(spec.args);
+    case 'DrumsConverter':
+      return new DrumsConverter(spec.args);
+    case 'DrumRollConverter':
+      return new DrumRollConverter(spec.args);
+    case 'TrioConverter':
+      return new TrioConverter(spec.args);
+    case 'DrumsOneHotConverter':
+      return new DrumsOneHotConverter(spec.args);
+    default:
+      throw new Error(`Unknown DataConverter type: ${spec}`);
   }
 }
 

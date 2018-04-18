@@ -21,10 +21,8 @@ import * as chords from './chords';
 import * as controls from './controls';
 
 test('Test Binary Counter', (t: test.Test) => {
-  const spec : controls.BinaryCounterSpec = {
-    type: 'BinaryCounter',
-    args: {numBits: 2}
-  };
+  const spec:
+      controls.BinaryCounterSpec = {type: 'BinaryCounter', args: {numBits: 2}};
   const bc = controls.controlSignalFromSpec(spec);
   const tensors = bc.getTensors(5, {});
   t.equal(bc.depth, 2);
@@ -38,7 +36,7 @@ test('Test Binary Counter', (t: test.Test) => {
 });
 
 test('Test Chord Progression', (t: test.Test) => {
-  const spec : controls.ChordProgressionSpec = {
+  const spec: controls.ChordProgressionSpec = {
     type: 'ChordProgression',
     args: {encoderType: 'MajorMinorChordEncoder'}
   };
