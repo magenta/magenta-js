@@ -97,7 +97,6 @@ export class BinaryCounter extends ControlSignal<BinaryCounterUserArgs> {
 /**
  * Chord progression control signal.
  *
- * @param numSteps The length of the control signal.
  * @param encoderType The chord encoder type to use.
  */
 export class ChordProgression extends ControlSignal<ChordProgressionUserArgs> {
