@@ -19,7 +19,6 @@ import * as magenta from '@magenta/core';
 import tf = magenta.tf;
 import {isNullOrUndefined} from 'util';
 import {ATTENTION_PREFIX, AttentionWrapper} from './attention';
-import {ControlSignal} from '.';
 
 const CELL_FORMAT = 'multi_rnn_cell/cell_%d/basic_lstm_cell/';
 
@@ -138,7 +137,8 @@ export class MusicRNN {
    */
   async continueSequence(
       sequence: magenta.INoteSequence, steps: number, temperature?: number,
-      controlSignal?: ControlSignal): Promise<magenta.INoteSequence> {
+      controlSignal?: magenta.controls.ControlSignal):
+      Promise<magenta.INoteSequence> {
     magenta.Sequences.assertIsQuantizedSequence(sequence);
 
     if (!this.initialized) {
@@ -159,7 +159,7 @@ export class MusicRNN {
 
   private sampleRnn(
       inputs: tf.Tensor2D, steps: number, temperature: number,
-      controlSignal?: ControlSignal) {
+      controlSignal?: magenta.controls.ControlSignal) {
     const length: number = inputs.shape[0];
     const outputSize: number = inputs.shape[1];
 
