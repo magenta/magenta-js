@@ -135,8 +135,8 @@ export class MusicRNN<A extends magenta.controls.ControlSignalUserArgs> {
    *
    * @param sequence The sequence to continue. Must be quantized.
    * @param steps How many steps to continue.
-   * @param temperature The softmax temperature to use when sampling from the
-   *   logits. Argmax is used if not provided.
+   * @param temperature (Optional) The softmax temperature to use when sampling
+   * from the logits. Argmax is used if not provided.
    * @param controlSignalArgs (Optional) Arguments for creating control tensors.
    */
   async continueSequence(
