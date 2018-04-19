@@ -75,17 +75,21 @@ export class MusicRNN<A extends magenta.controls.ControlSignalUserArgs> {
     this.dispose();
 
     if (isNullOrUndefined(this.dataConverter)) {
-      fetch(this.checkpointURL + '/converter.json')
+      fetch(`${this.checkpointURL}/converter.json`)
           .then((response) => response.json())
           .then((converterSpec: magenta.data.ConverterSpec) => {
             this.dataConverter = magenta.data.converterFromSpec(converterSpec);
           });
     }
 
-    const reader = new magenta.CheckpointLoader(this.checkpointURL);
-    const vars = await reader.getAllVariables();
+    const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
+                     .then((response) => response.json())
+                     .then(
+                         (manifest: tf.WeightsManifestConfig) =>
+                             tf.loadWeights(manifest, this.checkpointURL));
+
     const hasAttention = AttentionWrapper.isWrapped(vars);
-    const rnnPrefix = hasAttention ? 'rnn/' + ATTENTION_PREFIX : 'rnn/';
+    const rnnPrefix = hasAttention ? `rnn/${ATTENTION_PREFIX}` : 'rnn/';
 
     this.forgetBias = tf.scalar(1.0);
 
@@ -94,15 +98,15 @@ export class MusicRNN<A extends magenta.controls.ControlSignalUserArgs> {
     let l = 0;
     while (true) {
       const cellPrefix = rnnPrefix + CELL_FORMAT.replace('%d', l.toString());
-      if (!(cellPrefix + 'kernel' in vars)) {
+      if (!(`${cellPrefix}kernel` in vars)) {
         break;
       }
       this.lstmCells.push(
           (data: tf.Tensor2D, c: tf.Tensor2D, h: tf.Tensor2D) =>
               tf.basicLSTMCell(
-                  this.forgetBias, vars[cellPrefix + 'kernel'] as tf.Tensor2D,
-                  vars[cellPrefix + 'bias'] as tf.Tensor1D, data, c, h));
-      this.biasShapes.push((vars[cellPrefix + 'bias'] as tf.Tensor2D).shape[0]);
+                  this.forgetBias, vars[`${cellPrefix}kernel`] as tf.Tensor2D,
+                  vars[`${cellPrefix}bias`] as tf.Tensor1D, data, c, h));
+      this.biasShapes.push((vars[`${cellPrefix}bias`] as tf.Tensor2D).shape[0]);
       ++l;
     }
 
@@ -183,6 +187,7 @@ export class MusicRNN<A extends magenta.controls.ControlSignalUserArgs> {
     let lastOutput: tf.Tensor2D;
 
     // Initialize with input.
+    inputs = inputs.toFloat();
     const samples: tf.Tensor1D[] = [];
     for (let i = 0; i < length + steps; i++) {
       let nextInput: tf.Tensor2D;

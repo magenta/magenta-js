@@ -21,12 +21,11 @@ import tf = magenta.tf;
 import {MusicRNN} from '../src/index';
 
 // tslint:disable:max-line-length
-const MEL_CHECKPOINT =
-    'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_rnn/dljs/basic_rnn';
-const DRUMS_CHECKPOINT =
-    'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_rnn/dljs/drums_rnn';
+// const MEL_CHECKPOINT =
+//    'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_rnn/dljs/basic_rnn';
+const DRUMS_CHECKPOINT = 'checkpoints/drums_rnn';
 // tslint:enable:max-line-length
-
+/*
 const MELODY_NS: INoteSequence = {
   ticksPerQuarter: 220,
   totalTime: 1.5,
@@ -71,7 +70,7 @@ const MELODY_NS: INoteSequence = {
     },
   ]
 };
-
+*/
 const DRUMS_NS: INoteSequence = {
   ticksPerQuarter: 220,
   totalTime: 1.5,
@@ -138,6 +137,7 @@ function writeNoteSeqs(elementId: string, seqs: INoteSequence[]) {
           .join('<br>');
 }
 
+/*
 async function runMelodyRnn() {
   const melodyRnn = new MusicRNN(MEL_CHECKPOINT);
   await melodyRnn.initialize();
@@ -153,6 +153,7 @@ async function runMelodyRnn() {
   console.log(tf.getBackend());
   console.log(tf.memory());
 }
+*/
 
 async function runDrumsRnn() {
   const drumsRnn = new MusicRNN(
@@ -173,5 +174,5 @@ async function runDrumsRnn() {
   console.log(tf.memory());
 }
 
-runMelodyRnn();
+// runMelodyRnn();
 runDrumsRnn();

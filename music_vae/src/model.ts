@@ -118,7 +118,7 @@ class BidirectonalLstmEncoder extends Encoder {
         tf.basicLSTMCell(
             forgetBias, lstmVars.kernel, lstmVars.bias, data, state[0],
             state[1]);
-    const splitInputs = tf.split(inputs, length, 1);
+    const splitInputs = tf.split(inputs.toFloat(), length, 1);
     for (const data of (fw ? splitInputs : splitInputs.reverse())) {
       state = lstm(data.squeeze([1]) as tf.Tensor2D, state);
     }
@@ -532,24 +532,27 @@ class MusicVAE {
     this.dispose();
 
     const LSTM_CELL_FORMAT = 'cell_%d/lstm_cell/';
-    const MUTLI_LSTM_CELL_FORMAT = 'multi_rnn_cell/' + LSTM_CELL_FORMAT;
+    const MUTLI_LSTM_CELL_FORMAT = `multi_rnn_cell/${LSTM_CELL_FORMAT}`;
     const CONDUCTOR_PREFIX = 'decoder/hierarchical_level_0/';
     const BIDI_LSTM_CELL =
         'cell_%d/bidirectional_rnn/%s/multi_rnn_cell/cell_0/lstm_cell/';
-    const ENCODER_FORMAT = 'encoder/' + BIDI_LSTM_CELL;
+    const ENCODER_FORMAT = `encoder/${BIDI_LSTM_CELL}`;
     const HIER_ENCODER_FORMAT =
-        'encoder/hierarchical_level_%d/' + BIDI_LSTM_CELL.replace('%d', '0');
+        `encoder/hierarchical_level_%d/${BIDI_LSTM_CELL.replace('%d', '0')}`;
 
     if (isNullOrUndefined(this.dataConverter)) {
-      fetch(this.checkpointURL + '/converter.json')
+      fetch(`${this.checkpointURL}/converter.json`)
           .then((response) => response.json())
           .then((converterSpec: data.ConverterSpec) => {
             this.dataConverter = data.converterFromSpec(converterSpec);
           });
     }
+    const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
+                     .then((response) => response.json())
+                     .then(
+                         (manifest: tf.WeightsManifestConfig) =>
+                             tf.loadWeights(manifest));
 
-    const reader = new CheckpointLoader(this.checkpointURL);
-    const vars = await reader.getAllVariables();
     this.rawVars = vars;  // Save for disposal.
     // Encoder variables.
     const encMu = new LayerVars(
@@ -594,27 +597,27 @@ class MusicVAE {
     const decVarPrefixes: string[] = [];
     if (this.dataConverter.NUM_SPLITS) {
       for (let i = 0; i < this.dataConverter.NUM_SPLITS; ++i) {
-        decVarPrefixes.push(decVarPrefix + `core_decoder_${i}/decoder/`);
+        decVarPrefixes.push(`${decVarPrefix}core_decoder_${i}/decoder/`);
       }
     } else {
-      decVarPrefixes.push(decVarPrefix + 'decoder/');
+      decVarPrefixes.push(`${decVarPrefix}decoder/`);
     }
 
     const baseDecoders = decVarPrefixes.map((varPrefix) => {
       const decLstmLayers =
           this.getLstmLayers(varPrefix + MUTLI_LSTM_CELL_FORMAT, vars);
       const decZtoInitState = new LayerVars(
-          vars[varPrefix + 'z_to_initial_state/kernel'] as tf.Tensor2D,
-          vars[varPrefix + 'z_to_initial_state/bias'] as tf.Tensor1D);
+          vars[`${varPrefix}z_to_initial_state/kernel`] as tf.Tensor2D,
+          vars[`${varPrefix}z_to_initial_state/bias`] as tf.Tensor1D);
       const decOutputProjection = new LayerVars(
-          vars[varPrefix + 'output_projection/kernel'] as tf.Tensor2D,
-          vars[varPrefix + 'output_projection/bias'] as tf.Tensor1D);
+          vars[`${varPrefix}output_projection/kernel`] as tf.Tensor2D,
+          vars[`${varPrefix}output_projection/bias`] as tf.Tensor1D);
       // Optional NADE for the BaseDecoder.
       const nade =
-          ((varPrefix + 'nade/w_enc' in vars) ?
+          ((`${varPrefix}nade/w_enc` in vars) ?
                new Nade(
-                   vars[varPrefix + 'nade/w_enc'] as tf.Tensor3D,
-                   vars[varPrefix + 'nade/w_dec_t'] as tf.Tensor3D) :
+                   vars[`${varPrefix}nade/w_enc`] as tf.Tensor3D,
+                   vars[`${varPrefix}nade/w_dec_t`] as tf.Tensor3D) :
                null);
       return new BaseDecoder(
           decLstmLayers, decZtoInitState, decOutputProjection, nade);
@@ -625,8 +628,8 @@ class MusicVAE {
       const condLstmLayers =
           this.getLstmLayers(CONDUCTOR_PREFIX + LSTM_CELL_FORMAT, vars);
       const condZtoInitState = new LayerVars(
-          vars[CONDUCTOR_PREFIX + 'initial_state/kernel'] as tf.Tensor2D,
-          vars[CONDUCTOR_PREFIX + 'initial_state/bias'] as tf.Tensor1D);
+          vars[`${CONDUCTOR_PREFIX}initial_state/kernel`] as tf.Tensor2D,
+          vars[`${CONDUCTOR_PREFIX}initial_state/bias`] as tf.Tensor1D);
       this.decoder = new ConductorDecoder(
           baseDecoders, condLstmLayers, condZtoInitState,
           this.dataConverter.numSegments);
