@@ -24,7 +24,7 @@ import INoteSequence = tensorflow.magenta.INoteSequence;
  * Start a new note.
  */
 export interface NoteOn {
-  kind: 'note-on';
+  type: 'note-on';
   pitch: number;
 }
 
@@ -32,7 +32,7 @@ export interface NoteOn {
  * End an active note.
  */
 export interface NoteOff {
-  kind: 'note-off';
+  type: 'note-off';
   pitch: number;
 }
 
@@ -40,7 +40,7 @@ export interface NoteOff {
  * Move current time forward.
  */
 export interface TimeShift {
-  kind: 'time-shift';
+  type: 'time-shift';
   steps: number;
 }
 
@@ -48,7 +48,7 @@ export interface TimeShift {
  * Change velocity applied to subsequent notes.
  */
 export interface VelocityChange {
-  kind: 'velocity-change';
+  type: 'velocity-change';
   velocityBin: number;
 }
 
@@ -59,50 +59,136 @@ export type PerformanceEvent = NoteOn | NoteOff | TimeShift | VelocityChange;
  * of `NoteOn`, `NoteOff`, `TimeShift`, and `VelocityChange` events.
  *
  * @param events An array of performance events.
- * @param numVelocityBins (Optional) The number of quantized MIDI velocity bins
- * to use. If not specified, velocities will be ignored.
+ * @param maxShiftSteps Number of steps in the maximum time shift.
+ * @param numVelocityBins The number of quantized MIDI velocity bins to use.
+ * If zero, velocities will be ignored.
  * @param program (Optional) The MIDI program to use for these events.
  * @param isDrum (Optional) Whether or not these are drum events.
  */
 export class Performance {
   readonly events: PerformanceEvent[];
 
-  readonly numVelocityBins?: number;
-  readonly velocityBinSize?: number;
-  readonly velocityToBin?: (v: number) => number;
-  readonly binToVelocity?: (b: number) => number;
+  readonly maxShiftSteps: number;
+  readonly numVelocityBins: number;
 
   readonly program?: number;
   readonly isDrum?: boolean;
 
   constructor(
-      events: PerformanceEvent[], numVelocityBins?: number, program?: number,
-      isDrum?: boolean) {
+      events: PerformanceEvent[], maxShiftSteps: number,
+      numVelocityBins: number, program?: number, isDrum?: boolean) {
     this.events = events;
-
-    if (numVelocityBins) {
-      this.numVelocityBins = numVelocityBins;
-      this.velocityBinSize =
-          Math.ceil((constants.MIDI_VELOCITIES - 1) / this.numVelocityBins);
-      this.velocityToBin = v =>
-          Math.floor(
-              (v - constants.MIN_MIDI_VELOCITY - 1) / this.velocityBinSize) +
-          1;
-      this.binToVelocity = b =>
-          constants.MIN_MIDI_VELOCITY + (b - 1) * this.velocityBinSize + 1;
-    }
+    this.maxShiftSteps = maxShiftSteps;
+    this.numVelocityBins = numVelocityBins;
 
     this.program = program;
     this.isDrum = isDrum;
   }
 
   /**
+   * Extract a performance from a `NoteSequence`.
+   *
+   * @param noteSequence `NoteSequence` from which to extract a performance.
+   * @param maxShiftSteps Number of steps in maximum time shift.
+   * @param numVelocityBins Number of velocity bins to use. If zero, ignore note
+   * velocities.
+   * @param instrument (Optional) Instrument to extract. If not specified,
+   * extract all instruments.
+   * @returns A `Performance` created from the `NoteSequence`.
+   */
+  static fromNoteSequence(
+      noteSequence: INoteSequence, maxShiftSteps: number,
+      numVelocityBins: number, instrument?: number) {
+    // First extract all desired notes and sort by increasing start time and
+    // (secondarily) pitch.
+    const notes = noteSequence.notes.filter(
+        (note, _) =>
+            instrument !== undefined ? note.instrument === instrument : true);
+    const sortedNotes = notes.sort(
+        (a, b) => a.startTime === b.startTime ? a.pitch - b.pitch :
+                                                a.startTime - b.startTime);
+
+    // Now sort all note start and end events by quantized time step and
+    // position of the note in the above list.
+    const onsets = sortedNotes.map(
+        (note, i) => ({step: note.quantizedStartStep, index: i, isOffset: 0}));
+    const offsets = sortedNotes.map(
+        (note, i) => ({step: note.quantizedEndStep, index: i, isOffset: 1}));
+    const noteEvents = onsets.concat(offsets).sort(
+        (a, b) => a.step === b.step ?
+            (a.index === b.index ? a.isOffset - b.isOffset :
+                                   a.index - b.index) :
+            a.step - b.step);
+
+    const velocityBinSize = numVelocityBins ?
+        Math.ceil((constants.MIDI_VELOCITIES - 1) / numVelocityBins) :
+        undefined;
+
+    const events: PerformanceEvent[] = [];
+
+    let currentStep = 0;
+    let currentVelocityBin = numVelocityBins;
+
+    for (const e of noteEvents) {
+      if (e.step > currentStep) {
+        // The next note event requires a time shift.
+        while (e.step > currentStep + maxShiftSteps) {
+          events.push({type: 'time-shift', steps: maxShiftSteps});
+          currentStep += maxShiftSteps;
+        }
+        events.push({type: 'time-shift', steps: e.step - currentStep});
+        currentStep = e.step;
+      }
+
+      if (e.isOffset) {
+        // Turn off the note.
+        events.push({type: 'note-off', pitch: sortedNotes[e.index].pitch});
+      } else {
+        // Before we turn on the note, we may need to change the current
+        // velocity bin.
+        if (velocityBinSize) {
+          const velocityBin = Math.floor(
+                                  (sortedNotes[e.index].velocity -
+                                   constants.MIN_MIDI_VELOCITY - 1) /
+                                  velocityBinSize) +
+              1;
+          if (velocityBin !== currentVelocityBin) {
+            events.push({type: 'velocity-change', velocityBin});
+            currentVelocityBin = velocityBin;
+          }
+        }
+
+        // Now turn on the note.
+        events.push({type: 'note-on', pitch: sortedNotes[e.index].pitch});
+      }
+    }
+
+    // Determine the drum status, if consistent.
+    const isDrum = notes.some(note => note.isDrum) ?
+        (notes.some(note => !note.isDrum) ? undefined : true) :
+        false;
+
+    // Determine the program used, if consistent.
+    const programs =
+        notes.map(note => note.program).filter((p, i, a) => a.indexOf(p) === i);
+    const program =
+        (!isDrum && programs.length === 1) ? programs[0] : undefined;
+
+    return new Performance(
+        events, maxShiftSteps, numVelocityBins, program, isDrum);
+  }
+
+  /**
    * Convert this performance representation to `NoteSequence`.
    *
-   * @param instrument MIDI instrument to give each note.
+   * @param instrument Instrument value to give each note.
    * @returns A `NoteSequence` corresponding to these performance events.
    */
   toNoteSequence(instrument?: number): INoteSequence {
+    const velocityBinSize = this.numVelocityBins ?
+        Math.ceil((constants.MIDI_VELOCITIES - 1) / this.numVelocityBins) :
+        undefined;
+
     const noteSequence = NoteSequence.create();
 
     let currentStep = 0;
@@ -118,7 +204,7 @@ export class Performance {
     }
 
     for (const event of this.events) {
-      switch (event.kind) {
+      switch (event.type) {
         case 'note-on':
           // Start a new note.
           pitchStartStepsAndVelocities.get(event.pitch).push([
@@ -158,14 +244,15 @@ export class Performance {
           break;
         case 'velocity-change':
           // Change current velocity.
-          if (this.binToVelocity) {
-            currentVelocity = this.binToVelocity(event.velocityBin);
+          if (velocityBinSize) {
+            currentVelocity = constants.MIN_MIDI_VELOCITY +
+                (event.velocityBin - 1) * velocityBinSize + 1;
           } else {
-            throw new TypeError(`Unexpected velocity change event: ${event}`);
+            throw new Error(`Unexpected velocity change event: ${event}`);
           }
           break;
         default:
-          throw new TypeError(`Unrecognized performance event: ${event}`);
+          throw new Error(`Unrecognized performance event: ${event}`);
       }
     }
 
