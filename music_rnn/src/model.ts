@@ -199,9 +199,14 @@ export class MusicRNN<A extends magenta.controls.ControlSignalUserArgs> {
         samples.push(nextInput.as1D().toBool());
       }
 
+      // No need to run an RNN step once we have all our samples.
+      if (i === length + steps - 1) {
+        break;
+      }
+
       if (controls) {
         const control =
-            controls.slice([i, 0], [1, controlSize]).as2D(1, controlSize);
+            controls.slice([i + 1, 0], [1, controlSize]).as2D(1, controlSize);
         nextInput = nextInput.concat(control.as2D(1, -1), 1);
       }
 
