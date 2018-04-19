@@ -25,7 +25,7 @@ export interface BinaryCounterSpec {
   type: 'BinaryCounter';
   args: BinaryCounterArgs;
 }
-export type BinaryCounterUserArgs = {};
+export type BinaryCounterUserArgs = void;
 
 export type ChordProgressionArgs = {
   encoderType: ChordEncoderType
@@ -67,9 +67,9 @@ export function controlSignalFromSpec(spec: ControlSignalSpec) {
  *
  * @param depth The size of the control tensor at each step.
  */
-export abstract class ControlSignal<T> {
+export abstract class ControlSignal<A extends ControlSignalUserArgs> {
   readonly depth: number;  // Size of final output dimension.
-  abstract getTensors(numSteps: number, args: T): tf.Tensor2D;
+  abstract getTensors(numSteps: number, args: A): tf.Tensor2D;
 
   constructor(depth: number) { this.depth = depth; }
 }

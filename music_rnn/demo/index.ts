@@ -164,7 +164,7 @@ async function runDrumsRnn() {
   const qns = magenta.Sequences.quantizeNoteSequence(DRUMS_NS, 1);
   writeNoteSeqs('drums-cont-inputs', [qns]);
   const start = performance.now();
-  const continuation = await drumsRnn.continueSequence(qns, 20, null, {});
+  const continuation = await drumsRnn.continueSequence(qns, 20, null);
   writeTimer('drums-cont-time', start);
   writeNoteSeqs('drums-cont-results', [continuation]);
   drumsRnn.dispose();

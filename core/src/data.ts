@@ -98,6 +98,13 @@ export function converterFromSpec(spec: ConverterSpec) {
   }
 }
 
+/**
+ * Constructor arguments shared by all `DataConverter`s.
+ *
+ * @param numSteps The length of each sequence.
+ * @param numSegments (Optional) The number of conductor segments, if
+ * applicable.
+ */
 export interface BaseConverterArgs {
   numSteps?: number;
   numSegments?: number;

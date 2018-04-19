@@ -27,11 +27,11 @@ const CELL_FORMAT = 'multi_rnn_cell/cell_%d/basic_lstm_cell/';
  *
  * A MusicRNN is an LSTM-based language model for musical notes.
  */
-export class MusicRNN<T extends magenta.controls.ControlSignalUserArgs> {
+export class MusicRNN<A extends magenta.controls.ControlSignalUserArgs> {
   checkpointURL: string;
   dataConverter: magenta.data.DataConverter;
   attentionLength?: number;
-  controlSignal: magenta.controls.ControlSignal<T>;
+  controlSignal: magenta.controls.ControlSignal<A>;
 
   lstmCells: tf.LSTMCellFunc[];
   lstmFcB: tf.Tensor1D;
@@ -56,7 +56,7 @@ export class MusicRNN<T extends magenta.controls.ControlSignalUserArgs> {
   constructor(
       checkpointURL: string, dataConverter?: magenta.data.DataConverter,
       attentionLength?: number,
-      controlSignal?: magenta.controls.ControlSignal<T>) {
+      controlSignal?: magenta.controls.ControlSignal<A>) {
     this.checkpointURL = checkpointURL;
     this.initialized = false;
     this.rawVars = {};
@@ -137,10 +137,11 @@ export class MusicRNN<T extends magenta.controls.ControlSignalUserArgs> {
    * @param steps How many steps to continue.
    * @param temperature The softmax temperature to use when sampling from the
    *   logits. Argmax is used if not provided.
+   * @param controlSignalArgs (Optional) Arguments for creating control tensors.
    */
   async continueSequence(
       sequence: magenta.INoteSequence, steps: number, temperature?: number,
-      controlSignalArgs?: T): Promise<magenta.INoteSequence> {
+      controlSignalArgs?: A): Promise<magenta.INoteSequence> {
     magenta.Sequences.assertIsQuantizedSequence(sequence);
 
     if (!this.initialized) {
