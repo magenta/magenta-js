@@ -118,7 +118,7 @@ class BidirectonalLstmEncoder extends Encoder {
         tf.basicLSTMCell(
             forgetBias, lstmVars.kernel, lstmVars.bias, data, state[0],
             state[1]);
-    const splitInputs = tf.split(inputs, length, 1);
+    const splitInputs = tf.split(inputs.toFloat(), length, 1);
     for (const data of (fw ? splitInputs : splitInputs.reverse())) {
       state = lstm(data.squeeze([1]) as tf.Tensor2D, state);
     }
