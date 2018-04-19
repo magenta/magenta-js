@@ -8,7 +8,7 @@
   "unpkg": "dist/magenta.js",
   "dependencies": {
     "@magenta/protobuf": "^0.0.4",
-    "@tensorflow/tfjs": "^0.9.0",
+    "@tensorflow/tfjs-core": "^0.8.0",
     "midiconvert": "^0.4.4",
     "tonal": "^1.1.3",
     "util": "^0.10.3"

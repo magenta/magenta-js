@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import * as tf from '@tensorflow/tfjs';
+import * as tf from '@tensorflow/tfjs-core';
 import {Chord, Note} from 'tonal';
 import * as constants from './constants';
 
