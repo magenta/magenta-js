@@ -44,6 +44,27 @@ const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
   [51, 52, 53, 59, 82]
 ];
 
+export interface MelodyConverterSpec {
+  type: 'MelodyConverter';
+  args: MelodyConverterArgs;
+}
+export interface DrumsConverterSpec {
+  type: 'DrumsConverter';
+  args: DrumsConverterArgs;
+}
+export interface DrumRollConverterSpec {
+  type: 'DrumRollConverter';
+  args: DrumsConverterArgs;
+}
+export interface TrioConverterSpec {
+  type: 'TrioConverter';
+  args: TrioConverterArgs;
+}
+export interface DrumsOneHotConverterSpec {
+  type: 'DrumsOneHotConverter';
+  args: DrumsConverterArgs;
+}
+
 /**
  * Interface for JSON specification of a `DataConverter`.
  *
@@ -51,37 +72,42 @@ const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
  * @property args Map containing values for argments to the constructor of the
  * `DataConverter` class specified above.
  */
-export interface ConverterSpec {
-  type: string;
-  args: BaseConverterArgs;
-}
-
-export interface BaseConverterArgs {
-  numSteps?: number;
-  numSegments?: number;
-}
+export type ConverterSpec = MelodyConverterSpec | DrumsConverterSpec |
+    DrumRollConverterSpec | TrioConverterSpec | DrumsOneHotConverterSpec;
 
 /**
  * Builds a `DataConverter` based on the given `ConverterSpec`.
  *
  * @param spec Specifies the `DataConverter` to build.
  * @returns A new `DataConverter` object based on `spec`.
- * @throws Error if the specified type is not recognized.
  */
 export function converterFromSpec(spec: ConverterSpec) {
-  if (spec.type === 'MelodyConverter') {
-    return new MelodyConverter(spec.args as MelodyConverterArgs);
-  } else if (spec.type === 'DrumsConverter') {
-    return new DrumsConverter(spec.args as DrumsConverterArgs);
-  } else if (spec.type === 'DrumRollConverter') {
-    return new DrumRollConverter(spec.args as DrumsConverterArgs);
-  } else if (spec.type === 'TrioConverter') {
-    return new TrioConverter(spec.args as TrioConverterArgs);
-  } else if (spec.type === 'DrumsOneHotConverter') {
-    return new DrumsOneHotConverter(spec.args as DrumsConverterArgs);
-  } else {
-    throw new Error('Unknown DataConverter type in spec: ' + spec.type);
+  switch (spec.type) {
+    case 'MelodyConverter':
+      return new MelodyConverter(spec.args);
+    case 'DrumsConverter':
+      return new DrumsConverter(spec.args);
+    case 'DrumRollConverter':
+      return new DrumRollConverter(spec.args);
+    case 'TrioConverter':
+      return new TrioConverter(spec.args);
+    case 'DrumsOneHotConverter':
+      return new DrumsOneHotConverter(spec.args);
+    default:
+      throw new Error(`Unknown DataConverter type: ${spec}`);
   }
+}
+
+/**
+ * Constructor arguments shared by all `DataConverter`s.
+ *
+ * @param numSteps The length of each sequence.
+ * @param numSegments (Optional) The number of conductor segments, if
+ * applicable.
+ */
+export interface BaseConverterArgs {
+  numSteps?: number;
+  numSegments?: number;
 }
 
 /**

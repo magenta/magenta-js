@@ -114,6 +114,28 @@ export abstract class ChordEncoder {
   abstract encode(chord: string): tf.Tensor1D;
 }
 
+export type ChordEncoderType =
+    'MajorMinorChordEncoder' | 'TriadChordEncoder' | 'PitchChordEncoder';
+
+/**
+ * Creates a `ChordEncoder` based on the given `ChordEncoderType`.
+ *
+ * @param type Specifies the `ChordEncoder` to create.
+ * @returns A new `ChordEncoder` object based on `type`.
+ */
+export function chordEncoderFromType(type: ChordEncoderType) {
+  switch (type) {
+    case 'MajorMinorChordEncoder':
+      return new MajorMinorChordEncoder();
+    case 'TriadChordEncoder':
+      return new TriadChordEncoder();
+    case 'PitchChordEncoder':
+      return new PitchChordEncoder();
+    default:
+      throw new Error(`Unknown chord encoder type: ${type}`);
+  }
+}
+
 /**
  * ChordEncoder that outputs a one-hot encoding over major and minor triads.
  */

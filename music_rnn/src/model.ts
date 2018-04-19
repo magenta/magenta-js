@@ -27,10 +27,11 @@ const CELL_FORMAT = 'multi_rnn_cell/cell_%d/basic_lstm_cell/';
  *
  * A MusicRNN is an LSTM-based language model for musical notes.
  */
-export class MusicRNN {
+export class MusicRNN<A extends magenta.controls.ControlSignalUserArgs> {
   checkpointURL: string;
   dataConverter: magenta.data.DataConverter;
   attentionLength?: number;
+  controlSignal: magenta.controls.ControlSignal<A>;
 
   lstmCells: tf.LSTMCellFunc[];
   lstmFcB: tf.Tensor1D;
@@ -54,7 +55,8 @@ export class MusicRNN {
    */
   constructor(
       checkpointURL: string, dataConverter?: magenta.data.DataConverter,
-      attentionLength?: number) {
+      attentionLength?: number,
+      controlSignal?: magenta.controls.ControlSignal<A>) {
     this.checkpointURL = checkpointURL;
     this.initialized = false;
     this.rawVars = {};
@@ -62,6 +64,7 @@ export class MusicRNN {
     this.lstmCells = [];
     this.dataConverter = dataConverter;
     this.attentionLength = attentionLength;
+    this.controlSignal = controlSignal;
   }
 
   /**
@@ -132,13 +135,13 @@ export class MusicRNN {
    *
    * @param sequence The sequence to continue. Must be quantized.
    * @param steps How many steps to continue.
-   * @param temperature The softmax temperature to use when sampling from the
-   *   logits. Argmax is used if not provided.
+   * @param temperature (Optional) The softmax temperature to use when sampling
+   * from the logits. Argmax is used if not provided.
+   * @param controlSignalArgs (Optional) Arguments for creating control tensors.
    */
   async continueSequence(
       sequence: magenta.INoteSequence, steps: number, temperature?: number,
-      controlSignal?: magenta.controls.ControlSignal):
-      Promise<magenta.INoteSequence> {
+      controlSignalArgs?: A): Promise<magenta.INoteSequence> {
     magenta.Sequences.assertIsQuantizedSequence(sequence);
 
     if (!this.initialized) {
@@ -147,8 +150,12 @@ export class MusicRNN {
 
     const oh = tf.tidy(() => {
       const inputs = this.dataConverter.toTensor(sequence);
+      const length: number = inputs.shape[0];
       const outputSize: number = inputs.shape[1];
-      const samples = this.sampleRnn(inputs, steps, temperature, controlSignal);
+      const controls = this.controlSignal ?
+          this.controlSignal.getTensors(length + steps, controlSignalArgs) :
+          undefined;
+      const samples = this.sampleRnn(inputs, steps, temperature, controls);
       return tf.stack(samples).as2D(samples.length, outputSize);
     });
 
@@ -159,9 +166,10 @@ export class MusicRNN {
 
   private sampleRnn(
       inputs: tf.Tensor2D, steps: number, temperature: number,
-      controlSignal?: magenta.controls.ControlSignal) {
+      controls?: tf.Tensor2D) {
     const length: number = inputs.shape[0];
     const outputSize: number = inputs.shape[1];
+    const controlSize: number = controls ? controls.shape[1] : 0;
 
     let c: tf.Tensor2D[] = [];
     let h: tf.Tensor2D[] = [];
@@ -191,8 +199,14 @@ export class MusicRNN {
         samples.push(nextInput.as1D().toBool());
       }
 
-      if (controlSignal) {
-        const control = controlSignal.getTensor(i + 1);
+      // No need to run an RNN step once we have all our samples.
+      if (i === length + steps - 1) {
+        break;
+      }
+
+      if (controls) {
+        const control =
+            controls.slice([i + 1, 0], [1, controlSize]).as2D(1, controlSize);
         nextInput = nextInput.concat(control.as2D(1, -1), 1);
       }
 

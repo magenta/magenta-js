@@ -155,15 +155,16 @@ async function runMelodyRnn() {
 }
 
 async function runDrumsRnn() {
-  const drumsRnn = new MusicRNN(DRUMS_CHECKPOINT, null, 32);
+  const drumsRnn = new MusicRNN(
+      DRUMS_CHECKPOINT, null, 32,
+      magenta.controls.controlSignalFromSpec(
+          {type: 'BinaryCounter', args: {numBits: 6}}));
   await drumsRnn.initialize();
 
   const qns = magenta.Sequences.quantizeNoteSequence(DRUMS_NS, 1);
   writeNoteSeqs('drums-cont-inputs', [qns]);
   const start = performance.now();
-  const continuation = await drumsRnn.continueSequence(
-      qns, 20, null,
-      new magenta.controls.BinaryCounter(qns.notes.length + 20, 6));
+  const continuation = await drumsRnn.continueSequence(qns, 20);
   writeTimer('drums-cont-time', start);
   writeNoteSeqs('drums-cont-results', [continuation]);
   drumsRnn.dispose();
@@ -171,7 +172,6 @@ async function runDrumsRnn() {
   console.log(tf.getBackend());
   console.log(tf.memory());
 }
-
 
 runMelodyRnn();
 runDrumsRnn();
