@@ -207,7 +207,7 @@ export class MusicRNN<A extends magenta.controls.ControlSignalUserArgs> {
       }
 
       if (splitControls) {
-        const control = splitControls[i] as tf.Tensor2D;
+        const control = splitControls[i + 1] as tf.Tensor2D;
         nextInput = nextInput.concat(control, 1);
       }
 
