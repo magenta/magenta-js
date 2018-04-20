@@ -14,8 +14,13 @@
  * limitations under the License.
  * =============================================================================
  */
+
+import * as magenta from '@magenta/core';
+import data = magenta.data;
+import INoteSequence = magenta.INoteSequence;
+import tf = magenta.tf;
 // Use custom CheckpointLoader until quantization is added to tf.
-import {CheckpointLoader, INoteSequence, data, tf} from '@magenta/core';
+import CheckpointLoader = magenta.CheckpointLoader;
 import {isNullOrUndefined} from 'util';
 
 /**
@@ -214,7 +219,7 @@ abstract class Decoder {
 
   abstract decode(
       z: tf.Tensor2D, length: number, initialInput?: tf.Tensor2D,
-      temperature?: number): tf.Tensor3D;
+      temperature?: number, controls?: tf.Tensor2D): tf.Tensor3D;
 }
 
 /**
@@ -267,15 +272,17 @@ class BaseDecoder extends Decoder {
    *
    * @param z A batch of latent vectors to decode, sized `[batchSize, zDims]`.
    * @param length The length of decoded sequences.
-   * @param temperature The softmax temperature to use when sampling from the
-   * logits. Argmax is used if not provided.
+   * @param temperature (Optional) The softmax temperature to use when sampling
+   * from the logits. Argmax is used if not provided.
+   * @param controls (Optional) Control tensors to use for conditioning, sized
+   * `[length, controlDepth]`.
    *
    * @returns A boolean tensor containing the decoded sequences, shaped
    * `[batchSize, length, depth]`.
    */
   decode(
       z: tf.Tensor2D, length: number, initialInput?: tf.Tensor2D,
-      temperature?: number) {
+      temperature?: number, controls?: tf.Tensor2D) {
     const batchSize = z.shape[0];
 
     return tf.tidy(() => {
@@ -288,10 +295,15 @@ class BaseDecoder extends Decoder {
       let nextInput = initialInput ?
           initialInput :
           tf.zeros([batchSize, this.outputDims]) as tf.Tensor2D;
+      const splitControls =
+          controls ? tf.split(controls, controls.shape[0]) : undefined;
       for (let i = 0; i < length; ++i) {
+        const nextControl =
+            (splitControls ? tf.tile(splitControls[i], [batchSize, 1]) :
+                             tf.zeros([batchSize, 0])) as tf.Tensor2D;
         [lstmCell.c, lstmCell.h] = tf.multiRNNCell(
-            lstmCell.cell, tf.concat([nextInput, z], 1), lstmCell.c,
-            lstmCell.h);
+            lstmCell.cell, tf.concat([nextInput, z, nextControl], 1),
+            lstmCell.c, lstmCell.h);
         const logits =
             dense(this.outputProjectVars, lstmCell.h[lstmCell.h.length - 1]);
 
@@ -361,15 +373,17 @@ class ConductorDecoder extends Decoder {
    *
    * @param z A batch of latent vectors to decode, sized `[batchSize, zDims]`.
    * @param length The length of decoded sequences.
-   * @param temperature The softmax temperature to use when sampling from the
-   * logits. Argmax is used if not provided.
+   * @param temperature (Optional) The softmax temperature to use when sampling
+   * from the logits. Argmax is used if not provided.
+   * @param controls (Optional) Control tensors to use for conditioning, sized
+   * `[length, controlDepth]`.
    *
    * @returns A boolean tensor containing the decoded sequences, shaped
    * `[batchSize, length, depth]`.
    */
   decode(
       z: tf.Tensor2D, length: number, initialInput?: tf.Tensor2D,
-      temperature?: number) {
+      temperature?: number, controls?: tf.Tensor2D) {
     const batchSize = z.shape[0];
 
     return tf.tidy(() => {
@@ -475,9 +489,11 @@ class Nade {
  *
  * Exposes methods for interpolation and sampling of musical sequences.
  */
-class MusicVAE {
+class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
   private checkpointURL: string;
   private dataConverter: data.DataConverter;
+  private controlSignal?: magenta.controls.ControlSignal<A>;
+
   private encoder: Encoder;
   private decoder: Decoder;
   private rawVars: {[varName: string]: tf.Tensor};  // Store for disposal.
@@ -489,10 +505,16 @@ class MusicVAE {
    * `NoteSequence` and `Tensor` objects. If not provided, a `converter.json`
    * file must exist within the checkpoint directory specifying the type and
    * args for the correct `DataConverter`.
+   * @param controlSignal (Optional) A `ControlSignal` object that produces
+   * control tensors that will be appended to model inputs for both encoding and
+   * decoding.
    */
-  constructor(checkpointURL: string, dataConverter?: data.DataConverter) {
+  constructor(
+      checkpointURL: string, dataConverter?: data.DataConverter,
+      controlSignal?: magenta.controls.ControlSignal<A>) {
     this.checkpointURL = checkpointURL;
     this.dataConverter = dataConverter;
+    this.controlSignal = controlSignal;
   }
 
   /**
@@ -648,7 +670,9 @@ class MusicVAE {
    * @returns true iff an `Encoder` and `Decoder` have been instantiated for the
    * model.
    */
-  isInitialized() { return (!!this.encoder && !!this.decoder); }
+  isInitialized() {
+    return (!!this.encoder && !!this.decoder);
+  }
 
   /**
    * Interpolates between the input `NoteSequence`s in latent space.
@@ -673,16 +697,19 @@ class MusicVAE {
    * @param numInterps The number of pairwise interpolation sequences to
    * return, including the reconstructions. If 4 inputs are given, the total
    * number of sequences will be `numInterps`^2.
+   * @param controlSignalArgs (Optional) Arguments for creating control tensors.
    *
    * @returns An array of interpolation `NoteSequence` objects, as described
    * above.
    */
-  async interpolate(inputSequences: INoteSequence[], numInterps: number) {
-    const inputZs = await this.encode(inputSequences);
+  async interpolate(
+      inputSequences: INoteSequence[], numInterps: number,
+      controlSignalArgs?: A) {
+    const inputZs = await this.encode(inputSequences, controlSignalArgs);
     const interpZs = tf.tidy(() => this.getInterpolatedZs(inputZs, numInterps));
     inputZs.dispose();
 
-    const outputSequenes = this.decode(interpZs);
+    const outputSequenes = this.decode(interpZs, controlSignalArgs);
     interpZs.dispose();
     return outputSequenes;
   }
@@ -691,13 +718,28 @@ class MusicVAE {
    * Encodes the input `NoteSequence`s into latent vectors.
    *
    * @param inputSequences An array of `NoteSequence`s to encode.
+   * @param controlSignalArgs (Optional) Arguments for creating control tensors.
    * @returns A `Tensor` containing the batch of latent vectors, sized
    * `[inputSequences.length, zSize]`.
    */
-  async encode(inputSequences: INoteSequence[]) {
+  async encode(inputSequences: INoteSequence[], controlSignalArgs?: A) {
+    const numSteps = this.dataConverter.numSteps;
+
     return tf.tidy(() => {
-      const inputTensors = tf.stack(inputSequences.map(
-          t => this.dataConverter.toTensor(t) as tf.Tensor2D)) as tf.Tensor3D;
+      let inputTensors =
+          tf.stack(inputSequences.map(
+              t => this.dataConverter.toTensor(t) as tf.Tensor2D)) as
+          tf.Tensor3D;
+
+      if (this.controlSignal) {
+        const controls =
+            tf.tile(
+                tf.expandDims(
+                    this.controlSignal.getTensors(numSteps, controlSignalArgs),
+                    0),
+                [inputSequences.length, 1]) as tf.Tensor3D;
+        inputTensors = inputTensors.concat(controls, 2);
+      }
 
       // Use the mean `mu` of the latent variable as the best estimate of `z`.
       return this.encoder.encode(inputTensors);
@@ -709,15 +751,20 @@ class MusicVAE {
    *
    * @param z The latent vectors to decode, sized `[batchSize, zSize]`.
    * @param temperature (Optional) The softmax temperature to use when sampling.
+   * @param controlSignalArgs (Optional) Arguments for creating control tensors.
    * The argmax is used if not provided.
    *
    * @returns The decoded `NoteSequence`s.
    */
-  async decode(z: tf.Tensor2D, temperature?: number) {
+  async decode(z: tf.Tensor2D, temperature?: number, controlSignalArgs?: A) {
     const numSteps = this.dataConverter.numSteps;
 
     const ohSeqs: tf.Tensor2D[] = tf.tidy(() => {
-      const ohSeqs = this.decoder.decode(z, numSteps, undefined, temperature);
+      const controls = this.controlSignal ?
+          this.controlSignal.getTensors(numSteps, controlSignalArgs) :
+          undefined;
+      const ohSeqs =
+          this.decoder.decode(z, numSteps, undefined, temperature, controls);
       return tf.split(ohSeqs, ohSeqs.shape[0])
           .map(oh => oh.squeeze([0]) as tf.Tensor2D);
     });
@@ -779,13 +826,14 @@ class MusicVAE {
    *
    * @param numSamples The number of samples to return.
    * @param temperature The softmax temperature to use when sampling.
+   * @param controlSignalArgs (Optional) Arguments for creating control tensors.
    *
    * @returns An array of sampled `NoteSequence` objects.
    */
-  async sample(numSamples: number, temperature = 0.5) {
+  async sample(numSamples: number, temperature = 0.5, controlSignalArgs?: A) {
     const randZs: tf.Tensor2D =
         tf.tidy(() => tf.randomNormal([numSamples, this.decoder.zDims]));
-    const outputSequenes = this.decode(randZs, temperature);
+    const outputSequenes = this.decode(randZs, temperature, controlSignalArgs);
     randZs.dispose();
     return outputSequenes;
   }
