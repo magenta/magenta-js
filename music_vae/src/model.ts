@@ -554,24 +554,24 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
     this.dispose();
 
     const LSTM_CELL_FORMAT = 'cell_%d/lstm_cell/';
-    const MUTLI_LSTM_CELL_FORMAT = 'multi_rnn_cell/' + LSTM_CELL_FORMAT;
+    const MUTLI_LSTM_CELL_FORMAT = `multi_rnn_cell/${LSTM_CELL_FORMAT}`;
     const CONDUCTOR_PREFIX = 'decoder/hierarchical_level_0/';
     const BIDI_LSTM_CELL =
         'cell_%d/bidirectional_rnn/%s/multi_rnn_cell/cell_0/lstm_cell/';
-    const ENCODER_FORMAT = 'encoder/' + BIDI_LSTM_CELL;
+    const ENCODER_FORMAT = `encoder/${BIDI_LSTM_CELL}`;
     const HIER_ENCODER_FORMAT =
-        'encoder/hierarchical_level_%d/' + BIDI_LSTM_CELL.replace('%d', '0');
+        `encoder/hierarchical_level_%d/${BIDI_LSTM_CELL.replace('%d', '0')}`;
 
     if (isNullOrUndefined(this.dataConverter)) {
-      fetch(this.checkpointURL + '/converter.json')
+      fetch(`${this.checkpointURL}/converter.json`)
           .then((response) => response.json())
           .then((converterSpec: data.ConverterSpec) => {
             this.dataConverter = data.converterFromSpec(converterSpec);
           });
     }
-
     const reader = new CheckpointLoader(this.checkpointURL);
     const vars = await reader.getAllVariables();
+
     this.rawVars = vars;  // Save for disposal.
     // Encoder variables.
     const encMu = new LayerVars(
@@ -616,27 +616,27 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
     const decVarPrefixes: string[] = [];
     if (this.dataConverter.NUM_SPLITS) {
       for (let i = 0; i < this.dataConverter.NUM_SPLITS; ++i) {
-        decVarPrefixes.push(decVarPrefix + `core_decoder_${i}/decoder/`);
+        decVarPrefixes.push(`${decVarPrefix}core_decoder_${i}/decoder/`);
       }
     } else {
-      decVarPrefixes.push(decVarPrefix + 'decoder/');
+      decVarPrefixes.push(`${decVarPrefix}decoder/`);
     }
 
     const baseDecoders = decVarPrefixes.map((varPrefix) => {
       const decLstmLayers =
           this.getLstmLayers(varPrefix + MUTLI_LSTM_CELL_FORMAT, vars);
       const decZtoInitState = new LayerVars(
-          vars[varPrefix + 'z_to_initial_state/kernel'] as tf.Tensor2D,
-          vars[varPrefix + 'z_to_initial_state/bias'] as tf.Tensor1D);
+          vars[`${varPrefix}z_to_initial_state/kernel`] as tf.Tensor2D,
+          vars[`${varPrefix}z_to_initial_state/bias`] as tf.Tensor1D);
       const decOutputProjection = new LayerVars(
-          vars[varPrefix + 'output_projection/kernel'] as tf.Tensor2D,
-          vars[varPrefix + 'output_projection/bias'] as tf.Tensor1D);
+          vars[`${varPrefix}output_projection/kernel`] as tf.Tensor2D,
+          vars[`${varPrefix}output_projection/bias`] as tf.Tensor1D);
       // Optional NADE for the BaseDecoder.
       const nade =
-          ((varPrefix + 'nade/w_enc' in vars) ?
+          ((`${varPrefix}nade/w_enc` in vars) ?
                new Nade(
-                   vars[varPrefix + 'nade/w_enc'] as tf.Tensor3D,
-                   vars[varPrefix + 'nade/w_dec_t'] as tf.Tensor3D) :
+                   vars[`${varPrefix}nade/w_enc`] as tf.Tensor3D,
+                   vars[`${varPrefix}nade/w_dec_t`] as tf.Tensor3D) :
                null);
       return new BaseDecoder(
           decLstmLayers, decZtoInitState, decOutputProjection, nade);
@@ -647,8 +647,8 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
       const condLstmLayers =
           this.getLstmLayers(CONDUCTOR_PREFIX + LSTM_CELL_FORMAT, vars);
       const condZtoInitState = new LayerVars(
-          vars[CONDUCTOR_PREFIX + 'initial_state/kernel'] as tf.Tensor2D,
-          vars[CONDUCTOR_PREFIX + 'initial_state/bias'] as tf.Tensor1D);
+          vars[`${CONDUCTOR_PREFIX}initial_state/kernel`] as tf.Tensor2D,
+          vars[`${CONDUCTOR_PREFIX}initial_state/bias`] as tf.Tensor1D);
       this.decoder = new ConductorDecoder(
           baseDecoders, condLstmLayers, condZtoInitState,
           this.dataConverter.numSegments);
@@ -667,9 +667,7 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
    * @returns true iff an `Encoder` and `Decoder` have been instantiated for the
    * model.
    */
-  isInitialized() {
-    return (!!this.encoder && !!this.decoder);
-  }
+  isInitialized() { return (!!this.encoder && !!this.decoder); }
 
   /**
    * Interpolates between the input `NoteSequence`s in latent space.
@@ -723,18 +721,16 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
     const numSteps = this.dataConverter.numSteps;
 
     return tf.tidy(() => {
-      let inputTensors =
-          tf.stack(inputSequences.map(
-              t => this.dataConverter.toTensor(t) as tf.Tensor2D)) as
-          tf.Tensor3D;
+      let inputTensors = tf.stack(inputSequences.map(
+          t => this.dataConverter.toTensor(t) as tf.Tensor2D)) as tf.Tensor3D;
 
       if (this.controlSignal) {
-        const controls =
-            tf.tile(
-                tf.expandDims(
-                    this.controlSignal.getTensors(numSteps, controlSignalArgs),
-                    0),
-                [inputSequences.length, 1]) as tf.Tensor3D;
+        const controls = tf.tile(
+                               tf.expandDims(
+                                   this.controlSignal.getTensors(
+                                       numSteps, controlSignalArgs),
+                                   0),
+                               [inputSequences.length, 1]) as tf.Tensor3D;
         inputTensors = inputTensors.concat(controls, 2);
       }
 
