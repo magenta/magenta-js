@@ -569,11 +569,8 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
             this.dataConverter = data.converterFromSpec(converterSpec);
           });
     }
-    const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
-                     .then((response) => response.json())
-                     .then(
-                         (manifest: tf.WeightsManifestConfig) =>
-                             tf.loadWeights(manifest));
+    const reader = new CheckpointLoader(this.checkpointURL);
+    const vars = await reader.getAllVariables();
 
     this.rawVars = vars;  // Save for disposal.
     // Encoder variables.
@@ -670,9 +667,7 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
    * @returns true iff an `Encoder` and `Decoder` have been instantiated for the
    * model.
    */
-  isInitialized() {
-    return (!!this.encoder && !!this.decoder);
-  }
+  isInitialized() { return (!!this.encoder && !!this.decoder); }
 
   /**
    * Interpolates between the input `NoteSequence`s in latent space.
@@ -726,18 +721,16 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
     const numSteps = this.dataConverter.numSteps;
 
     return tf.tidy(() => {
-      let inputTensors =
-          tf.stack(inputSequences.map(
-              t => this.dataConverter.toTensor(t) as tf.Tensor2D)) as
-          tf.Tensor3D;
+      let inputTensors = tf.stack(inputSequences.map(
+          t => this.dataConverter.toTensor(t) as tf.Tensor2D)) as tf.Tensor3D;
 
       if (this.controlSignal) {
-        const controls =
-            tf.tile(
-                tf.expandDims(
-                    this.controlSignal.getTensors(numSteps, controlSignalArgs),
-                    0),
-                [inputSequences.length, 1]) as tf.Tensor3D;
+        const controls = tf.tile(
+                               tf.expandDims(
+                                   this.controlSignal.getTensors(
+                                       numSteps, controlSignalArgs),
+                                   0),
+                               [inputSequences.length, 1]) as tf.Tensor3D;
         inputTensors = inputTensors.concat(controls, 2);
       }
 
