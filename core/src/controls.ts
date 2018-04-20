@@ -69,7 +69,7 @@ export function controlSignalFromSpec(spec: ControlSignalSpec) {
  */
 export abstract class ControlSignal<A extends ControlSignalUserArgs> {
   readonly depth: number;  // Size of final output dimension.
-  abstract getTensors(numSteps: number, args?: A): tf.Tensor2D;
+  abstract getTensors(numSteps: number, args: A): tf.Tensor2D;
 
   constructor(depth: number) { this.depth = depth; }
 }
@@ -89,7 +89,7 @@ export class BinaryCounter extends ControlSignal<BinaryCounterUserArgs> {
    * @param numSteps Number of steps of binary counter values to return.
    * @returns A 2D tensor of binary counter values.
    */
-  getTensors(numSteps: number) {
+  getTensors(numSteps: number, args: BinaryCounterUserArgs) {
     const buffer = tf.buffer([numSteps, this.depth]);
     for (let step = 0; step < numSteps; ++step) {
       for (let i = 0; i < this.depth; ++i) {

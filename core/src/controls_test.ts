@@ -24,7 +24,7 @@ test('Test Binary Counter', (t: test.Test) => {
   const spec:
       controls.BinaryCounterSpec = {type: 'BinaryCounter', args: {numBits: 2}};
   const bc = controls.controlSignalFromSpec(spec);
-  const tensors = bc.getTensors(5);
+  const tensors = bc.getTensors(5, undefined);
   t.equal(bc.depth, 2);
   t.deepEqual(tensors.shape, [5, 2]);
   const splitTensors = tf.split(tensors, 5);
