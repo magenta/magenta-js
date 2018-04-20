@@ -48,10 +48,10 @@ export class MusicRNN<A extends magenta.controls.ControlSignalUserArgs> {
    * `MusicRNN` constructor.
    *
    * @param checkpointURL Path to the checkpoint directory.
-   * @param dataConverter A `DataConverter` object to use for converting between
-   * `NoteSequence` and `Tensor` objects. If not provided, a `converter.json`
-   * file must exist within the checkpoint directory specifying the type and
-   * args for the correct `DataConverter`.
+   * @param dataConverter (Optional) A `DataConverter` object to use for
+   * converting between `NoteSequence` and `Tensor` objects. If not provided, a
+   * `converter.json` file must exist within the checkpoint directory specifying
+   * the type and args for the correct `DataConverter`.
    * @param controlSignal (Optional) A `ControlSignal` object that produces
    * control tensors that will be appended to model inputs.
    */
