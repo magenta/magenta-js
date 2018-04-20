@@ -22,7 +22,7 @@ import INote = NoteSequence.INote;
 
 export {NoteSequence, INoteSequence, INote};
 
-import * as tf from '@tensorflow/tfjs-core';
+import * as tf from '@tensorflow/tfjs';
 export {tf};
 
 import * as data from './data';
