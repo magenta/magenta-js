@@ -20,10 +20,11 @@ import INoteSequence = magenta.INoteSequence;
 import tf = magenta.tf;
 import {MusicRNN} from '../src/index';
 
-// tslint:disable:max-line-length
-const MEL_CHECKPOINT = 'checkpoints/basic_rnn';
-const DRUMS_CHECKPOINT = 'checkpoints/drums_rnn';
-// tslint:enable:max-line-length
+const CHECKPOINT_DIR =
+    // tslint:disable-next-line:max-line-length
+    'https://storage.googleapis.com/download.magenta.tensorflow.org/tfjs_checkpoints/music_rnn/';
+const MEL_CHECKPOINT = `${CHECKPOINT_DIR}basic_rnn`;
+const DRUMS_CHECKPOINT = `${CHECKPOINT_DIR}drums_rnn`;
 
 const MELODY_NS: INoteSequence = {
   ticksPerQuarter: 220,
