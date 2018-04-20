@@ -3,7 +3,9 @@ import * as clone from 'clone';
 
 import {MusicVAE} from '../src/index';
 
-const CHECKPOINTS_DIR = 'checkpoints/';
+const CHECKPOINTS_DIR =
+    // tslint:disable-next-line:max-line-length
+    'https://storage.googleapis.com/download.magenta.tensorflow.org/tfjs_checkpoints/music_vae/';
 const DRUMS_CKPT = `${CHECKPOINTS_DIR}drums_hikl_small`;
 const DRUMS_NADE_CKPT = `${CHECKPOINTS_DIR}drums_nade_9`;
 const MEL_CKPT = `${CHECKPOINTS_DIR}mel_small`;
