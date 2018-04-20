@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import * as tf from '@tensorflow/tfjs';
+import * as tf from '@tensorflow/tfjs-core';
 import {Chord, Note} from 'tonal';
 import * as constants from './constants';
 
@@ -160,7 +160,8 @@ export class MajorMinorChordEncoder extends ChordEncoder {
   }
 
   encode(chord: string) {
-    return tf.oneHot(tf.tensor1d([this.index(chord)]), this.depth).as1D();
+    return tf.oneHot(tf.tensor1d([this.index(chord)], 'int32'), this.depth)
+        .as1D();
   }
 }
 
@@ -189,7 +190,8 @@ export class TriadChordEncoder extends ChordEncoder {
   }
 
   encode(chord: string) {
-    return tf.oneHot(tf.tensor1d([this.index(chord)]), this.depth).as1D();
+    return tf.oneHot(tf.tensor1d([this.index(chord)], 'int32'), this.depth)
+        .as1D();
   }
 }
 
@@ -203,12 +205,13 @@ export class PitchChordEncoder extends ChordEncoder {
 
   encode(chord: string) {
     if (chord === constants.NO_CHORD) {
-      return tf.oneHot(tf.tensor1d([0]), this.depth).as1D();
+      return tf.oneHot(tf.tensor1d([0], 'int32'), this.depth).as1D();
     }
 
     const root = ChordSymbols.root(chord);
     const rootEncoding =
-        tf.oneHot(tf.tensor1d([root]), constants.NUM_PITCH_CLASSES).as1D();
+        tf.oneHot(tf.tensor1d([root], 'int32'), constants.NUM_PITCH_CLASSES)
+            .as1D();
 
     const pitchBuffer = tf.buffer([constants.NUM_PITCH_CLASSES]);
     ChordSymbols.pitches(chord).forEach(pitch => pitchBuffer.set(1.0, pitch));

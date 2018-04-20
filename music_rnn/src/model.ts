@@ -169,7 +169,6 @@ export class MusicRNN<A extends magenta.controls.ControlSignalUserArgs> {
       controls?: tf.Tensor2D) {
     const length: number = inputs.shape[0];
     const outputSize: number = inputs.shape[1];
-    const controlSize: number = controls ? controls.shape[1] : 0;
 
     let c: tf.Tensor2D[] = [];
     let h: tf.Tensor2D[] = [];
@@ -184,10 +183,13 @@ export class MusicRNN<A extends magenta.controls.ControlSignalUserArgs> {
 
     // Initialize with input.
     const samples: tf.Tensor1D[] = [];
+    const splitInputs = tf.split(inputs.toFloat(), length);
+    const splitControls =
+        controls ? tf.split(controls, controls.shape[0]) : undefined;
     for (let i = 0; i < length + steps; i++) {
       let nextInput: tf.Tensor2D;
       if (i < length) {
-        nextInput = inputs.slice([i, 0], [1, outputSize]).as2D(1, outputSize);
+        nextInput = splitInputs[i] as tf.Tensor2D;
       } else {
         const logits = lastOutput.matMul(this.lstmFcW).add(this.lstmFcB);
         const sampledOutput =
@@ -204,10 +206,9 @@ export class MusicRNN<A extends magenta.controls.ControlSignalUserArgs> {
         break;
       }
 
-      if (controls) {
-        const control =
-            controls.slice([i + 1, 0], [1, controlSize]).as2D(1, controlSize);
-        nextInput = nextInput.concat(control.as2D(1, -1), 1);
+      if (splitControls) {
+        const control = splitControls[i + 1] as tf.Tensor2D;
+        nextInput = nextInput.concat(control, 1);
       }
 
       if (this.attentionWrapper) {
