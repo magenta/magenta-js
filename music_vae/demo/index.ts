@@ -197,7 +197,7 @@ function writeNoteSeqs(elementId: string, seqs: INoteSequence[]) {
 }
 
 async function runDrums() {
-  const mvae: MusicVAE = new MusicVAE(DRUMS_CKPT);
+  const mvae = new MusicVAE(DRUMS_CKPT);
   await mvae.initialize();
 
   writeNoteSeqs('drums-inputs', DRUM_SEQS);
@@ -217,7 +217,7 @@ async function runDrums() {
 
 async function
 runDrumsNade() {
-  const mvae: MusicVAE = new MusicVAE(DRUMS_NADE_CKPT);
+  const mvae = new MusicVAE(DRUMS_NADE_CKPT);
   await mvae.initialize();
 
   writeNoteSeqs('nade-inputs', DRUM_SEQS);
@@ -237,7 +237,7 @@ runDrumsNade() {
 
 async function
 runMel() {
-  const mvae: MusicVAE = new MusicVAE(MEL_CKPT);
+  const mvae = new MusicVAE(MEL_CKPT);
   await mvae.initialize();
 
   const inputs = [MEL_TEAPOT, MEL_TWINKLE];
@@ -258,7 +258,7 @@ runMel() {
 
 async function
 runTrio() {
-  const mvae: MusicVAE = new MusicVAE(TRIO_CKPT);
+  const mvae = new MusicVAE(TRIO_CKPT);
   await mvae.initialize();
 
   const inputs = [TRIO_EXAMPLE];
@@ -296,7 +296,7 @@ concatNoteSequences(seqs: INoteSequence[], individualDuration: number) {
 
 async function
 runMel16() {
-  const mvae: MusicVAE = new MusicVAE(MEL_16_CKPT);
+  const mvae = new MusicVAE(MEL_16_CKPT);
   await mvae.initialize();
 
   const inputs: INoteSequence[] = [

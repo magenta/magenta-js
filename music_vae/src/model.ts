@@ -298,12 +298,14 @@ class BaseDecoder extends Decoder {
       const splitControls =
           controls ? tf.split(controls, controls.shape[0]) : undefined;
       for (let i = 0; i < length; ++i) {
-        const nextControl =
-            (splitControls ? tf.tile(splitControls[i], [batchSize, 1]) :
-                             tf.zeros([batchSize, 0])) as tf.Tensor2D;
-        [lstmCell.c, lstmCell.h] = tf.multiRNNCell(
-            lstmCell.cell, tf.concat([nextInput, z, nextControl], 1),
-            lstmCell.c, lstmCell.h);
+        nextInput = nextInput.concat(z, 1);
+        if (splitControls) {
+          const nextControl =
+              tf.tile(splitControls[i], [batchSize, 1]) as tf.Tensor2D;
+          nextInput = nextInput.concat(nextControl, 1);
+        }
+        [lstmCell.c, lstmCell.h] =
+            tf.multiRNNCell(lstmCell.cell, nextInput, lstmCell.c, lstmCell.h);
         const logits =
             dense(this.outputProjectVars, lstmCell.h[lstmCell.h.length - 1]);
 
@@ -692,19 +694,21 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
    * @param numInterps The number of pairwise interpolation sequences to
    * return, including the reconstructions. If 4 inputs are given, the total
    * number of sequences will be `numInterps`^2.
+   * @param temperature (Optional) The softmax temperature to use when sampling.
    * @param controlSignalArgs (Optional) Arguments for creating control tensors.
    *
    * @returns An array of interpolation `NoteSequence` objects, as described
    * above.
    */
   async interpolate(
-      inputSequences: INoteSequence[], numInterps: number,
+      inputSequences: INoteSequence[], numInterps: number, temperature?: number,
       controlSignalArgs?: A) {
     const inputZs = await this.encode(inputSequences, controlSignalArgs);
     const interpZs = tf.tidy(() => this.getInterpolatedZs(inputZs, numInterps));
     inputZs.dispose();
 
-    const outputSequenes = this.decode(interpZs, controlSignalArgs);
+    const outputSequenes =
+        this.decode(interpZs, temperature, controlSignalArgs);
     interpZs.dispose();
     return outputSequenes;
   }
@@ -740,7 +744,7 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
   }
 
   /**
-   * Decodes the input latnet vectors into `NoteSequence`s.
+   * Decodes the input latent vectors into `NoteSequence`s.
    *
    * @param z The latent vectors to decode, sized `[batchSize, zSize]`.
    * @param temperature (Optional) The softmax temperature to use when sampling.
