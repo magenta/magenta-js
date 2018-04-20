@@ -16,7 +16,7 @@
  * =============================================================================
  */
 import {tensorflow} from '@magenta/protobuf';
-import * as tf from '@tensorflow/tfjs';
+import * as tf from '@tensorflow/tfjs-core';
 import {Sequences} from './sequences';
 
 import NoteSequence = tensorflow.magenta.NoteSequence;
@@ -276,7 +276,7 @@ export class DrumsOneHotConverter extends DrumsConverter {
     for (const {pitch, quantizedStartStep} of noteSequence.notes) {
       labels[quantizedStartStep] += Math.pow(2, this.pitchToClass.get(pitch));
     }
-    return tf.tidy(() => tf.oneHot(tf.tensor1d(labels), this.depth));
+    return tf.tidy(() => tf.oneHot(tf.tensor1d(labels, 'int32'), this.depth));
   }
 }
 
@@ -327,7 +327,7 @@ export class MelodyConverter extends DataConverter {
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
     const sortedNotes: NoteSequence.INote[] = noteSequence.notes.sort(
         (n1, n2) => n1.quantizedStartStep - n2.quantizedStartStep);
-    const mel = tf.buffer([numSteps]);
+    const mel = tf.buffer([numSteps], 'int32');
     let lastEnd = -1;
     sortedNotes.forEach(n => {
       if (n.quantizedStartStep < lastEnd) {

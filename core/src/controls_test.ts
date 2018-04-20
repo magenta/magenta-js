@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import * as tf from '@tensorflow/tfjs';
+import * as tf from '@tensorflow/tfjs-core';
 import * as test from 'tape';
 import * as chords from './chords';
 import * as controls from './controls';
@@ -24,14 +24,15 @@ test('Test Binary Counter', (t: test.Test) => {
   const spec:
       controls.BinaryCounterSpec = {type: 'BinaryCounter', args: {numBits: 2}};
   const bc = controls.controlSignalFromSpec(spec);
-  const tensors = bc.getTensors(5, {});
+  const tensors = bc.getTensors(5, undefined);
   t.equal(bc.depth, 2);
   t.deepEqual(tensors.shape, [5, 2]);
-  t.deepEqual(tf.gather(tensors, tf.tensor([0])).dataSync(), [-1.0, -1.0]);
-  t.deepEqual(tf.gather(tensors, tf.tensor([1])).dataSync(), [1.0, -1.0]);
-  t.deepEqual(tf.gather(tensors, tf.tensor([2])).dataSync(), [-1.0, 1.0]);
-  t.deepEqual(tf.gather(tensors, tf.tensor([3])).dataSync(), [1.0, 1.0]);
-  t.deepEqual(tf.gather(tensors, tf.tensor([4])).dataSync(), [-1.0, -1.0]);
+  const splitTensors = tf.split(tensors, 5);
+  t.deepEqual(splitTensors[0].dataSync(), [-1.0, -1.0]);
+  t.deepEqual(splitTensors[1].dataSync(), [1.0, -1.0]);
+  t.deepEqual(splitTensors[2].dataSync(), [-1.0, 1.0]);
+  t.deepEqual(splitTensors[3].dataSync(), [1.0, 1.0]);
+  t.deepEqual(splitTensors[4].dataSync(), [-1.0, -1.0]);
   t.end();
 });
 
@@ -45,13 +46,10 @@ test('Test Chord Progression', (t: test.Test) => {
   const e = new chords.MajorMinorChordEncoder();
   t.equal(cp.depth, e.depth);
   t.deepEqual(tensors.shape, [4, e.depth]);
-  t.deepEqual(
-      tf.gather(tensors, tf.tensor([0])).dataSync(), e.encode('C').dataSync());
-  t.deepEqual(
-      tf.gather(tensors, tf.tensor([1])).dataSync(), e.encode('C').dataSync());
-  t.deepEqual(
-      tf.gather(tensors, tf.tensor([2])).dataSync(), e.encode('Dm').dataSync());
-  t.deepEqual(
-      tf.gather(tensors, tf.tensor([3])).dataSync(), e.encode('Dm').dataSync());
+  const splitTensors = tf.split(tensors, 4);
+  t.deepEqual(splitTensors[0].dataSync(), e.encode('C').dataSync());
+  t.deepEqual(splitTensors[1].dataSync(), e.encode('C').dataSync());
+  t.deepEqual(splitTensors[2].dataSync(), e.encode('Dm').dataSync());
+  t.deepEqual(splitTensors[3].dataSync(), e.encode('Dm').dataSync());
   t.end();
 });

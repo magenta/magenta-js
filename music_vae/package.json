@@ -1,6 +1,6 @@
 {
   "name": "@magenta/music-vae",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "A machine learning model for exploring latent spaces of musical scores",
   "main": "es5/index.js",
   "types": "es5/index.d.ts",
@@ -32,7 +32,7 @@
     "typescript": "^2.6.2"
   },
   "dependencies": {
-    "@magenta/core": "^0.0.15",
+    "@magenta/core": "^0.0.17",
     "@types/clone": "^0.1.30",
     "clone": "^1.0.4",
     "npm": "^5.7.1",
