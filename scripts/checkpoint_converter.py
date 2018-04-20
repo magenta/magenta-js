@@ -31,8 +31,8 @@ from __future__ import print_function
 import argparse
 import os
 import re
-from tensorflowjs.write_weights import write_weights
 import tensorflow as tf
+from tensorflowjs.write_weights import write_weights
 
 
 def dump_checkpoint(checkpoint_file, output_dir, remove_variables_regex=None):
@@ -40,8 +40,7 @@ def dump_checkpoint(checkpoint_file, output_dir, remove_variables_regex=None):
   var_to_shape_map = reader.get_variable_to_shape_map()
 
   remove_variables_regex_re = (
-    re.compile(remove_variables_regex) if remove_variables_regex else None)
-
+      re.compile(remove_variables_regex) if remove_variables_regex else None)
 
   entries = []
   for var_name in var_to_shape_map:
@@ -82,6 +81,6 @@ if __name__ == '__main__':
   checkpoint_file = os.path.expanduser(FLAGS.checkpoint_file)
   output_dir = os.path.expanduser(FLAGS.output_dir)
   if not os.path.exists(output_dir):
-      os.makedirs(output_dir)
+    os.makedirs(output_dir)
 
   dump_checkpoint(checkpoint_file, output_dir, FLAGS.remove_variables_regex)
