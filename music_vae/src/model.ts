@@ -19,8 +19,6 @@ import * as magenta from '@magenta/core';
 import data = magenta.data;
 import INoteSequence = magenta.INoteSequence;
 import tf = magenta.tf;
-// Use custom CheckpointLoader until quantization is added to tf.
-import CheckpointLoader = magenta.CheckpointLoader;
 import {isNullOrUndefined} from 'util';
 
 /**
@@ -295,15 +293,15 @@ class BaseDecoder extends Decoder {
       let nextInput = initialInput ?
           initialInput :
           tf.zeros([batchSize, this.outputDims]) as tf.Tensor2D;
-      const splitControls =
-          controls ? tf.split(controls, controls.shape[0]) : undefined;
+      const splitControls = controls ?
+          tf.split(tf.tile(controls, [batchSize, 1]), controls.shape[0]) :
+          undefined;
       for (let i = 0; i < length; ++i) {
-        const nextControl =
-            (splitControls ? tf.tile(splitControls[i], [batchSize, 1]) :
-                             tf.zeros([batchSize, 0])) as tf.Tensor2D;
+        const toConat = splitControls ?
+            [nextInput, z, splitControls[i] as tf.Tensor2D] :
+            [nextInput, z];
         [lstmCell.c, lstmCell.h] = tf.multiRNNCell(
-            lstmCell.cell, tf.concat([nextInput, z, nextControl], 1),
-            lstmCell.c, lstmCell.h);
+            lstmCell.cell, tf.concat(toConat, 1), lstmCell.c, lstmCell.h);
         const logits =
             dense(this.outputProjectVars, lstmCell.h[lstmCell.h.length - 1]);
 
@@ -569,10 +567,13 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
             this.dataConverter = data.converterFromSpec(converterSpec);
           });
     }
-    const reader = new CheckpointLoader(this.checkpointURL);
-    const vars = await reader.getAllVariables();
-
+    const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
+                     .then((response) => response.json())
+                     .then(
+                         (manifest: tf.WeightsManifestConfig) =>
+                             tf.loadWeights(manifest, this.checkpointURL));
     this.rawVars = vars;  // Save for disposal.
+
     // Encoder variables.
     const encMu = new LayerVars(
         vars['encoder/mu/kernel'] as tf.Tensor2D,
@@ -704,7 +705,7 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
     const interpZs = tf.tidy(() => this.getInterpolatedZs(inputZs, numInterps));
     inputZs.dispose();
 
-    const outputSequenes = this.decode(interpZs, controlSignalArgs);
+    const outputSequenes = this.decode(interpZs, undefined, controlSignalArgs);
     interpZs.dispose();
     return outputSequenes;
   }
@@ -724,7 +725,7 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
       let inputTensors = tf.stack(inputSequences.map(
           t => this.dataConverter.toTensor(t) as tf.Tensor2D)) as tf.Tensor3D;
 
-      if (this.controlSignal) {
+      if (!isNullOrUndefined(this.controlSignal)) {
         const controls = tf.tile(
                                tf.expandDims(
                                    this.controlSignal.getTensors(

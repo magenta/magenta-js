@@ -3,18 +3,13 @@ import * as clone from 'clone';
 
 import {MusicVAE} from '../src/index';
 
-// tslint:disable:max-line-length
-const DRUMS_CKPT =
-    'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_vae/dljs/drums_hikl_q16';
-const DRUMS_NADE_CKPT =
-    'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_vae/dljs/drums_nade_9';
-const MEL_CKPT =
-    'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_vae/dljs/mel_small';
-const MEL_16_CKPT =
-    'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_vae/dljs/mel_16bar_small';
-const TRIO_CKPT =
-    'https://storage.googleapis.com/download.magenta.tensorflow.org/models/music_vae/dljs/trio_4bar_q16';
-// tslint:enable:max-line-length
+const CHECKPOINTS_DIR = 'checkpoints/';
+const DRUMS_CKPT = `${CHECKPOINTS_DIR}drums_hikl_small`;
+const DRUMS_NADE_CKPT = `${CHECKPOINTS_DIR}drums_nade_9`;
+const MEL_CKPT = `${CHECKPOINTS_DIR}mel_small`;
+const MEL_16_CKPT = `${CHECKPOINTS_DIR}mel_16bar_small`;
+const TRIO_CKPT = `${CHECKPOINTS_DIR}trio_4bar_small`;
+
 const DRUM_SEQS: INoteSequence[] = [
   {
     notes: [
@@ -197,7 +192,7 @@ function writeNoteSeqs(elementId: string, seqs: INoteSequence[]) {
 }
 
 async function runDrums() {
-  const mvae: MusicVAE = new MusicVAE(DRUMS_CKPT);
+  const mvae = new MusicVAE(DRUMS_CKPT);
   await mvae.initialize();
 
   writeNoteSeqs('drums-inputs', DRUM_SEQS);
@@ -217,7 +212,7 @@ async function runDrums() {
 
 async function
 runDrumsNade() {
-  const mvae: MusicVAE = new MusicVAE(DRUMS_NADE_CKPT);
+  const mvae = new MusicVAE(DRUMS_NADE_CKPT);
   await mvae.initialize();
 
   writeNoteSeqs('nade-inputs', DRUM_SEQS);
@@ -237,7 +232,7 @@ runDrumsNade() {
 
 async function
 runMel() {
-  const mvae: MusicVAE = new MusicVAE(MEL_CKPT);
+  const mvae = new MusicVAE(MEL_CKPT);
   await mvae.initialize();
 
   const inputs = [MEL_TEAPOT, MEL_TWINKLE];
@@ -258,7 +253,7 @@ runMel() {
 
 async function
 runTrio() {
-  const mvae: MusicVAE = new MusicVAE(TRIO_CKPT);
+  const mvae = new MusicVAE(TRIO_CKPT);
   await mvae.initialize();
 
   const inputs = [TRIO_EXAMPLE];
@@ -296,7 +291,7 @@ concatNoteSequences(seqs: INoteSequence[], individualDuration: number) {
 
 async function
 runMel16() {
-  const mvae: MusicVAE = new MusicVAE(MEL_16_CKPT);
+  const mvae = new MusicVAE(MEL_16_CKPT);
   await mvae.initialize();
 
   const inputs: INoteSequence[] = [
