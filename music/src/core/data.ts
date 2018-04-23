@@ -15,12 +15,9 @@
  * limitations under the License.
  * =============================================================================
  */
-import {tensorflow} from '@magenta/protobuf';
-import * as tf from '@tensorflow/tfjs';
 import * as sequences from './sequences';
-
-import NoteSequence = tensorflow.magenta.NoteSequence;
-import INoteSequence = tensorflow.magenta.INoteSequence;
+import * as tf from '@tensorflow/tfjs';
+import {NoteSequence, INoteSequence} from '../protobuf/index';
 import {isNullOrUndefined} from 'util';
 
 const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [

@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 
-import {tensorflow} from '@magenta/protobuf';
-import * as test from 'tape';
-
-import NoteSequence = tensorflow.magenta.NoteSequence;
 import * as sequences from './sequences';
+import * as test from 'tape';
+import {NoteSequence} from '../protobuf/index';
 
 const STEPS_PER_QUARTER = 4;
 

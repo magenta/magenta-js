@@ -15,12 +15,10 @@
  * limitations under the License.
  */
 
-import {tensorflow} from '@magenta/protobuf';
-import * as test from 'tape';
-
-import NoteSequence = tensorflow.magenta.NoteSequence;
-import {MidiIO} from './midi_io';
 import * as fs from 'fs';
+import * as test from 'tape';
+import {MidiIO} from './midi_io';
+import {NoteSequence} from '../protobuf/index';
 
 test('Parse Simple MIDI', (t: test.Test) => {
   const midi = fs.readFileSync('../testdata/melody.mid', 'binary');

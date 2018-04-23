@@ -15,14 +15,11 @@
  * limitations under the License.
  */
 
-import {tensorflow} from '@magenta/protobuf';
-import * as tf from '@tensorflow/tfjs';
-import * as test from 'tape';
-
 import * as data from './data';
 import * as sequences from './sequences';
-
-import NoteSequence = tensorflow.magenta.NoteSequence;
+import * as test from 'tape';
+import * as tf from '@tensorflow/tfjs';
+import {NoteSequence} from '../protobuf/index';
 
 const MEL_NS = NoteSequence.create({
   notes: [

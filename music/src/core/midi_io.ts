@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 
-import {tensorflow} from '@magenta/protobuf';
-import NoteSequence = tensorflow.magenta.NoteSequence;
-import INoteSequence = tensorflow.magenta.INoteSequence;
-import * as midiconvert from 'midiconvert';
 import * as constants from './constants';
+import * as midiconvert from 'midiconvert';
+import {NoteSequence, INoteSequence} from '../protobuf/index';
 
 export class MidiConversionError extends Error {
   constructor(message?: string) {
