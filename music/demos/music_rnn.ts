@@ -15,10 +15,8 @@
  * limitations under the License.
  */
 
-import * as magenta from '@magenta/core';
-import INoteSequence = magenta.INoteSequence;
-import tf = magenta.tf;
-import {MusicRNN} from '../src/index';
+import * as mm from '../src/index';
+import * as tf from '@tensorflow/tfjs';
 
 const CHECKPOINTS_DIR =
     // tslint:disable-next-line:max-line-length
@@ -26,7 +24,7 @@ const CHECKPOINTS_DIR =
 const MEL_CHECKPOINT = `${CHECKPOINTS_DIR}basic_rnn`;
 const DRUMS_CHECKPOINT = `${CHECKPOINTS_DIR}drums_rnn`;
 
-const MELODY_NS: INoteSequence = {
+const MELODY_NS: mm.protobuf.INoteSequence = {
   ticksPerQuarter: 220,
   totalTime: 1.5,
   timeSignatures: [{time: 0, numerator: 4, denominator: 4}],
@@ -71,7 +69,7 @@ const MELODY_NS: INoteSequence = {
   ]
 };
 
-const DRUMS_NS: INoteSequence = {
+const DRUMS_NS: mm.protobuf.INoteSequence = {
   ticksPerQuarter: 220,
   totalTime: 1.5,
   timeSignatures: [{time: 0, numerator: 4, denominator: 4}],
@@ -119,7 +117,7 @@ function writeTimer(elementId: string, startTime: number) {
       ((performance.now() - startTime) / 1000.).toString() + 's';
 }
 
-function writeNoteSeqs(elementId: string, seqs: INoteSequence[]) {
+function writeNoteSeqs(elementId: string, seqs: mm.protobuf.INoteSequence[]) {
   document.getElementById(elementId).innerHTML =
       seqs.map(
               seq => '[' +
@@ -138,10 +136,10 @@ function writeNoteSeqs(elementId: string, seqs: INoteSequence[]) {
 }
 
 async function runMelodyRnn() {
-  const melodyRnn = new MusicRNN(MEL_CHECKPOINT);
+  const melodyRnn = new mm.music_rnn.MusicRNN(MEL_CHECKPOINT);
   await melodyRnn.initialize();
 
-  const qns = magenta.Sequences.quantizeNoteSequence(MELODY_NS, 1);
+  const qns = mm.core.sequences.quantizeNoteSequence(MELODY_NS, 1);
   writeNoteSeqs('melody-cont-inputs', [qns]);
   const start = performance.now();
   const continuation = await melodyRnn.continueSequence(qns, 20);
@@ -154,13 +152,13 @@ async function runMelodyRnn() {
 }
 
 async function runDrumsRnn() {
-  const drumsRnn = new MusicRNN(
+  const drumsRnn = new mm.music_rnn.MusicRNN(
       DRUMS_CHECKPOINT, null, 32,
-      magenta.controls.controlSignalFromSpec(
+      mm.core.controls.controlSignalFromSpec(
           {type: 'BinaryCounter', args: {numBits: 6}}));
   await drumsRnn.initialize();
 
-  const qns = magenta.Sequences.quantizeNoteSequence(DRUMS_NS, 1);
+  const qns = mm.core.sequences.quantizeNoteSequence(DRUMS_NS, 1);
   writeNoteSeqs('drums-cont-inputs', [qns]);
   const start = performance.now();
   const continuation = await drumsRnn.continueSequence(qns, 20);

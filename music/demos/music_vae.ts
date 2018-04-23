@@ -1,7 +1,23 @@
-import {INoteSequence, tf} from '@magenta/core';
-import * as clone from 'clone';
+/**
+ * @license
+ * Copyright 2018 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import {MusicVAE} from '../src/index';
+import * as mm from '../src/index';
+import * as tf from '@tensorflow/tfjs';
+import * as clone from 'clone';
 
 const CHECKPOINTS_DIR =
     // tslint:disable-next-line:max-line-length
@@ -12,7 +28,7 @@ const MEL_CKPT = `${CHECKPOINTS_DIR}mel_small`;
 const MEL_16_CKPT = `${CHECKPOINTS_DIR}mel_16bar_small`;
 const TRIO_CKPT = `${CHECKPOINTS_DIR}trio_4bar_small`;
 
-const DRUM_SEQS: INoteSequence[] = [
+const DRUM_SEQS: mm.protobuf.INoteSequence[] = [
   {
     notes: [
       {pitch: 36, quantizedStartStep: 0}, {pitch: 42, quantizedStartStep: 2},
@@ -112,7 +128,7 @@ DRUM_SEQS.map(s => s.notes.map(n => {
   n.quantizedEndStep = n.quantizedStartStep + 1;
 }));
 
-const MEL_TEAPOT: INoteSequence = {
+const MEL_TEAPOT: mm.protobuf.INoteSequence = {
   notes: [
     {pitch: 69, quantizedStartStep: 0, quantizedEndStep: 2},
     {pitch: 71, quantizedStartStep: 2, quantizedEndStep: 4},
@@ -126,7 +142,7 @@ const MEL_TEAPOT: INoteSequence = {
   ]
 };
 
-const MEL_TWINKLE: INoteSequence = {
+const MEL_TWINKLE: mm.protobuf.INoteSequence = {
   notes: [
     {pitch: 60, quantizedStartStep: 0, quantizedEndStep: 2},
     {pitch: 60, quantizedStartStep: 2, quantizedEndStep: 4},
@@ -145,7 +161,7 @@ const MEL_TWINKLE: INoteSequence = {
   ]
 };
 
-const TRIO_EXAMPLE: INoteSequence = {
+const TRIO_EXAMPLE: mm.protobuf.INoteSequence = {
   notes: []
 };
 concatNoteSequences([MEL_TWINKLE, MEL_TWINKLE], 32).notes.map(n => {
@@ -172,7 +188,7 @@ function writeTimer(elementId: string, startTime: number) {
       ((performance.now() - startTime) / 1000.).toString() + 's';
 }
 
-function writeNoteSeqs(elementId: string, seqs: INoteSequence[]) {
+function writeNoteSeqs(elementId: string, seqs: mm.protobuf.INoteSequence[]) {
   document.getElementById(elementId).innerHTML =
       seqs.map(
               seq => '[' +
@@ -194,7 +210,7 @@ function writeNoteSeqs(elementId: string, seqs: INoteSequence[]) {
 }
 
 async function runDrums() {
-  const mvae = new MusicVAE(DRUMS_CKPT);
+  const mvae = new mm.music_vae.MusicVAE(DRUMS_CKPT);
   await mvae.initialize();
 
   writeNoteSeqs('drums-inputs', DRUM_SEQS);
@@ -214,7 +230,7 @@ async function runDrums() {
 
 async function
 runDrumsNade() {
-  const mvae = new MusicVAE(DRUMS_NADE_CKPT);
+  const mvae = new mm.music_vae.MusicVAE(DRUMS_NADE_CKPT);
   await mvae.initialize();
 
   writeNoteSeqs('nade-inputs', DRUM_SEQS);
@@ -234,7 +250,7 @@ runDrumsNade() {
 
 async function
 runMel() {
-  const mvae = new MusicVAE(MEL_CKPT);
+  const mvae = new mm.music_vae.MusicVAE(MEL_CKPT);
   await mvae.initialize();
 
   const inputs = [MEL_TEAPOT, MEL_TWINKLE];
@@ -255,7 +271,7 @@ runMel() {
 
 async function
 runTrio() {
-  const mvae = new MusicVAE(TRIO_CKPT);
+  const mvae = new mm.music_vae.MusicVAE(TRIO_CKPT);
   await mvae.initialize();
 
   const inputs = [TRIO_EXAMPLE];
@@ -277,9 +293,9 @@ runTrio() {
 }
 
 // TODO(adarob): Switch to magenta/core function once implemented.
-function
-concatNoteSequences(seqs: INoteSequence[], individualDuration: number) {
-  const concatSeq: INoteSequence = clone(seqs[0]);
+function concatNoteSequences(seqs: mm.protobuf.INoteSequence[],
+    individualDuration: number) {
+  const concatSeq: mm.protobuf.INoteSequence = clone(seqs[0]);
   for (let i = 1; i < seqs.length; ++i) {
     Array.prototype.push.apply(concatSeq.notes, seqs[i].notes.map(n => {
       const newN = clone(n);
@@ -293,10 +309,10 @@ concatNoteSequences(seqs: INoteSequence[], individualDuration: number) {
 
 async function
 runMel16() {
-  const mvae = new MusicVAE(MEL_16_CKPT);
+  const mvae = new mm.music_vae.MusicVAE(MEL_16_CKPT);
   await mvae.initialize();
 
-  const inputs: INoteSequence[] = [
+  const inputs: mm.protobuf.INoteSequence[] = [
     concatNoteSequences(
         [
           MEL_TEAPOT, MEL_TWINKLE, MEL_TEAPOT, MEL_TWINKLE, MEL_TEAPOT,
