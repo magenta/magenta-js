@@ -8,6 +8,13 @@ missing, or feel free to submit a Pull Request!
 
 For the Python TensorFlow implementations, see the [main Magenta repo](https://github.com/tensorflow/magenta).
 
+## Available Models
+### MusicRNN
+[MusicRNN](./music_rnn) implements Magenta's LSTM-based language models. These include [MelodyRNN][melody-rnn], [DrumsRNN][drums-rnn], [ImprovRNN][improv-rnn], and [PerformanceRNN][performance-rnn].
+
+### MusicVAE
+[MusicVAE](./music_vae) implements several configurations of Magenta's variational autoencoder model called [MusicVAE][music-vae] including melody and drum "loop" models, 4- and 16-bar "trio" models, and chord-conditioned "multi-track" models.
+
 ## Getting started
 
 There are two main ways to get MagentaMusic.js in your JavaScript project:
@@ -59,10 +66,38 @@ const sample = model.sample();
 See our [demos](./demos) for more details. 
 
 
+#### Example Commands
+
+`yarn install` to install dependencies.
+
+`yarn test` to run tests.
+
+`yarn bundle` to produce a bundled version in `dist/`.
+
+`yarn run-demo` to build and run the demo.
+
 ## Pre-trained Checkpoints
-Several pre-trained MusicRNN and MusicVAE checkpoints are hosted on GCS. While we do not plan to remove any of the current checkpoints, we will be adding more in the future, so your applications should reference the checkpoints.json file to see which checkpoints are available.
+Since MagentaMusic.js does not support training models, you must use weights from a model trained with the Python-based [Magenta models][magenta-models]. We are also making available our own hosted pre-trained checkpoints.
+
+### Magenta-Hosted Checkpoints
+Several pre-trained MusicRNN and MusicVAE checkpoints are hosted on GCS. You can access a JSON index available checkpoints at https://goo.gl/magenta/js-checkpoints.
+
+The JSON is formatted as a list of entries with the the following interface:
+
+```ts
+interface Checkpoint {
+  model: 'MusicRNN'|'MusicVAE';  // The model class.
+  description: string;  // A short human-readable description of the trained model.
+  url: string;  // Path to the checkpoint directory.
+}
+```
+
+While we do not plan to remove any of the current checkpoints, we will be adding more in the future, so your applications should reference the checkpoints.json file to see which checkpoints are available.
 
 If your application has a high QPS, you must mirror these files on your own server.
+
+### Your Own Checkpoints
+
 
 ## Example Applications
 
@@ -71,12 +106,10 @@ If your application has a high QPS, you must mirror these files on your own serv
 * [Latent Loops](https://goo.gl/magenta/latent-loops) by [Google Pie Shop](https://github.com/teampieshop)
 * [Neural Drum Machine](https://codepen.io/teropa/pen/RMGxOQ) by [Tero Parviainen](https://github.com/teropa)
 
-## Example Commands
-
-`yarn install` to install dependencies.
-
-`yarn build` to produce a commonjs version with typescript definitions for MusicVAE in the `es5/` folder that can then be consumed by others over NPM.
-
-`yarn bundle` to produce a bundled version in `dist/`.
-
-`yarn run-demo` to build and run the demo.
+<!-- links -->
+[melody-rnn]: https://github.com/tensorflow/magenta/tree/master/magenta/models/melody_rnn
+[drums-rnn]: https://github.com/tensorflow/magenta/tree/master/magenta/models/drums_rnn
+[improv-rnn]: https://github.com/tensorflow/magenta/tree/master/magenta/models/improv_rnn
+[performance-rnn]: https://github.com/tensorflow/magenta/tree/master/magenta/models/performance_rnn
+[magenta-models]: https://github.com/tensorflow/magenta/tree/master/magenta/models
+[music-vae]: https://g.co/musicvae
