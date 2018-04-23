@@ -693,19 +693,22 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
    * @param numInterps The number of pairwise interpolation sequences to
    * return, including the reconstructions. If 4 inputs are given, the total
    * number of sequences will be `numInterps`^2.
+   * @param temperature (Optional) The softmax temperature to use when sampling
+   * from the logits. Argmax is used if not provided.
    * @param controlSignalArgs (Optional) Arguments for creating control tensors.
    *
    * @returns An array of interpolation `NoteSequence` objects, as described
    * above.
    */
   async interpolate(
-      inputSequences: INoteSequence[], numInterps: number,
+      inputSequences: INoteSequence[], numInterps: number, temperature?: number,
       controlSignalArgs?: A) {
     const inputZs = await this.encode(inputSequences, controlSignalArgs);
     const interpZs = tf.tidy(() => this.getInterpolatedZs(inputZs, numInterps));
     inputZs.dispose();
 
-    const outputSequenes = this.decode(interpZs, undefined, controlSignalArgs);
+    const outputSequenes =
+        this.decode(interpZs, temperature, controlSignalArgs);
     interpZs.dispose();
     return outputSequenes;
   }
@@ -725,7 +728,7 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
       let inputTensors = tf.stack(inputSequences.map(
           t => this.dataConverter.toTensor(t) as tf.Tensor2D)) as tf.Tensor3D;
 
-      if (!isNullOrUndefined(this.controlSignal)) {
+      if (this.controlSignal) {
         const controls = tf.tile(
                                tf.expandDims(
                                    this.controlSignal.getTensors(
@@ -744,9 +747,9 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
    * Decodes the input latnet vectors into `NoteSequence`s.
    *
    * @param z The latent vectors to decode, sized `[batchSize, zSize]`.
-   * @param temperature (Optional) The softmax temperature to use when sampling.
+   * @param temperature (Optional) The softmax temperature to use when
+   * sampling. The argmax is used if not provided.
    * @param controlSignalArgs (Optional) Arguments for creating control tensors.
-   * The argmax is used if not provided.
    *
    * @returns The decoded `NoteSequence`s.
    */
