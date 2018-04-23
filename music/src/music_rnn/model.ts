@@ -15,10 +15,13 @@
  * =============================================================================
  */
 
-import * as magenta from '@magenta/core';
-import tf = magenta.tf;
-import {isNullOrUndefined} from 'util';
+import * as controls from '../core/controls';
+import * as data from '../core/data';
+import * as sequences from '../core/sequences'
+import * as tf from '@tensorflow/tfjs';
 import {ATTENTION_PREFIX, AttentionWrapper} from './attention';
+import {INoteSequence} from '../protobuf/notesequence';
+import {isNullOrUndefined} from 'util';
 
 const CELL_FORMAT = 'multi_rnn_cell/cell_%d/basic_lstm_cell/';
 
@@ -27,11 +30,11 @@ const CELL_FORMAT = 'multi_rnn_cell/cell_%d/basic_lstm_cell/';
  *
  * A MusicRNN is an LSTM-based language model for musical notes.
  */
-export class MusicRNN<A extends magenta.controls.ControlSignalUserArgs> {
+export class MusicRNN<A extends controls.ControlSignalUserArgs> {
   checkpointURL: string;
-  dataConverter: magenta.data.DataConverter;
+  dataConverter: data.DataConverter;
   attentionLength?: number;
-  controlSignal: magenta.controls.ControlSignal<A>;
+  controlSignal: controls.ControlSignal<A>;
 
   lstmCells: tf.LSTMCellFunc[];
   lstmFcB: tf.Tensor1D;
@@ -56,9 +59,9 @@ export class MusicRNN<A extends magenta.controls.ControlSignalUserArgs> {
    * control tensors that will be appended to model inputs.
    */
   constructor(
-      checkpointURL: string, dataConverter?: magenta.data.DataConverter,
+      checkpointURL: string, dataConverter?: data.DataConverter,
       attentionLength?: number,
-      controlSignal?: magenta.controls.ControlSignal<A>) {
+      controlSignal?: controls.ControlSignal<A>) {
     this.checkpointURL = checkpointURL;
     this.initialized = false;
     this.rawVars = {};
@@ -79,8 +82,8 @@ export class MusicRNN<A extends magenta.controls.ControlSignalUserArgs> {
     if (isNullOrUndefined(this.dataConverter)) {
       fetch(`${this.checkpointURL}/converter.json`)
           .then((response) => response.json())
-          .then((converterSpec: magenta.data.ConverterSpec) => {
-            this.dataConverter = magenta.data.converterFromSpec(converterSpec);
+          .then((converterSpec: data.ConverterSpec) => {
+            this.dataConverter = data.converterFromSpec(converterSpec);
           });
     }
 
@@ -146,9 +149,9 @@ export class MusicRNN<A extends magenta.controls.ControlSignalUserArgs> {
    * @param controlSignalArgs (Optional) Arguments for creating control tensors.
    */
   async continueSequence(
-      sequence: magenta.INoteSequence, steps: number, temperature?: number,
-      controlSignalArgs?: A): Promise<magenta.INoteSequence> {
-    magenta.Sequences.assertIsQuantizedSequence(sequence);
+      sequence: INoteSequence, steps: number, temperature?: number,
+      controlSignalArgs?: A): Promise<INoteSequence> {
+    sequences.assertIsQuantizedSequence(sequence);
 
     if (!this.initialized) {
       await this.initialize();

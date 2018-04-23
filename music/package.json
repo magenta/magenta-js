@@ -29,7 +29,8 @@
     "build": "tsc",
     "bundle": "browserify --standalone magenta src/index.ts -p [tsify] > dist/magenta.js",
     "lint": "tslint -c ../tslint.json -p . -t verbose",
-    "test": "ts-node node_modules/tape/bin/tape src/**/*_test.ts"
+    "test": "ts-node node_modules/tape/bin/tape src/**/*_test.ts",
+    "proto": "pbjs --force-number -t static-module -w commonjs -o src/protobuf/proto.js ../../protobuf/music.proto && pbts -o src/protobuf/proto.d.ts src/protobuf/proto.js"
   },
   "author": "Magenta",
   "license": "Apache-2.0",

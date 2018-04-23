@@ -1,4 +1,4 @@
-import {tf} from '@magenta/core';
+import * as tf from '@tensorflow/tfjs';
 
 export const ATTENTION_PREFIX = 'attention_cell_wrapper/';
 

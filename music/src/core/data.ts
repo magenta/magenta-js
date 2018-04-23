@@ -17,7 +17,7 @@
  */
 import {tensorflow} from '@magenta/protobuf';
 import * as tf from '@tensorflow/tfjs';
-import {Sequences} from './sequences';
+import * as sequences from './sequences';
 
 import NoteSequence = tensorflow.magenta.NoteSequence;
 import INoteSequence = tensorflow.magenta.INoteSequence;
@@ -411,9 +411,9 @@ export class TrioConverter extends DataConverter {
   }
 
   toTensor(noteSequence: INoteSequence) {
-    const melSeq = Sequences.clone(noteSequence);
-    const bassSeq = Sequences.clone(noteSequence);
-    const drumsSeq = Sequences.clone(noteSequence);
+    const melSeq = sequences.clone(noteSequence);
+    const bassSeq = sequences.clone(noteSequence);
+    const drumsSeq = sequences.clone(noteSequence);
     melSeq.notes = noteSequence.notes.filter(
         n =>
             (!n.isDrum && n.program >= this.MEL_PROG_RANGE[0] &&

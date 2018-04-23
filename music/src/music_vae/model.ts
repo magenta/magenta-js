@@ -15,10 +15,10 @@
  * =============================================================================
  */
 
-import * as magenta from '@magenta/core';
-import data = magenta.data;
-import INoteSequence = magenta.INoteSequence;
-import tf = magenta.tf;
+import * as controls from '../core/controls';
+import * as data from '../core/data';
+import * as tf from '@tensorflow/tfjs';
+import {INoteSequence} from '../protobuf/notesequence';
 import {isNullOrUndefined} from 'util';
 
 /**
@@ -487,10 +487,10 @@ class Nade {
  *
  * Exposes methods for interpolation and sampling of musical sequences.
  */
-class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
+class MusicVAE<A extends controls.ControlSignalUserArgs> {
   private checkpointURL: string;
   private dataConverter: data.DataConverter;
-  private controlSignal?: magenta.controls.ControlSignal<A>;
+  private controlSignal?:controls.ControlSignal<A>;
 
   private encoder: Encoder;
   private decoder: Decoder;
@@ -509,7 +509,7 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
    */
   constructor(
       checkpointURL: string, dataConverter?: data.DataConverter,
-      controlSignal?: magenta.controls.ControlSignal<A>) {
+      controlSignal?: controls.ControlSignal<A>) {
     this.checkpointURL = checkpointURL;
     this.dataConverter = dataConverter;
     this.controlSignal = controlSignal;

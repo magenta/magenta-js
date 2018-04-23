@@ -14,16 +14,9 @@
  * limitations under the License.
  * =============================================================================
  */
-import {tf} from '@magenta/core';
 
-export {Decoder, Encoder, MusicVAE} from './model';
+import {tensorflow} from '@magenta/protobuf';
+import NoteSequence = tensorflow.magenta.NoteSequence;
+import INoteSequence = tensorflow.magenta.INoteSequence;
 
-export const isDeviceSupported = isWebGLSupported();
-
-////////////
-// pulled from deeplearnjs/demos/utils.ts
-// ideally could be retrieved from NPM modules or internally from deeplearn via
-// NPM
-function isWebGLSupported(): boolean {
-  return tf.ENV.get('WEBGL_VERSION') >= 1;
-}
+export {NoteSequence, INoteSequence};

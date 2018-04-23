@@ -20,7 +20,7 @@ import * as tf from '@tensorflow/tfjs';
 import * as test from 'tape';
 
 import * as data from './data';
-import {Sequences} from './sequences';
+import * as sequences from './sequences';
 
 import NoteSequence = tensorflow.magenta.NoteSequence;
 
@@ -50,22 +50,22 @@ const DRUM_NS = NoteSequence.create({
 });
 DRUM_NS.notes.forEach(n => {
   n.isDrum = true;
-  n.quantizedEndStep = n.quantizedStartStep + 1;
+  n.quantizedEndStep = (n.quantizedStartStep as number) + 1;
 });
 
 const TRIO_NS = NoteSequence.create();
-Sequences.clone(MEL_NS).notes.forEach(n => {
+sequences.clone(MEL_NS).notes.forEach(n => {
   n.program = 0;
   n.instrument = 0;
   TRIO_NS.notes.push((n));
 });
-Sequences.clone(MEL_NS).notes.forEach(n => {
+sequences.clone(MEL_NS).notes.forEach(n => {
   n.pitch -= 36;
   n.program = 32;
   n.instrument = 1;
   TRIO_NS.notes.push(n);
 });
-Sequences.clone(DRUM_NS).notes.forEach(n => {
+sequences.clone(DRUM_NS).notes.forEach(n => {
   n.instrument = 2;
   TRIO_NS.notes.push(n);
 });
