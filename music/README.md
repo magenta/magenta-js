@@ -107,6 +107,7 @@ If your application has a high QPS, you must mirror these files on your own serv
 
 ### Your Own Checkpoints
 
+#### Dumping Your Weights
 To use your own checkpoints with one of our models, you must first convert the weights to the appropriate format using the provided [checkpoint_converter](../scripts/checkpoint_converter.py) script. 
 
 This tool is dependent on [tfjs-converter](https://github.com/tensorflow/tfjs-converter), which you must first install using `pip install tensorflowjs`. Once installed, you can execute the script as follows:
@@ -116,6 +117,10 @@ This tool is dependent on [tfjs-converter](https://github.com/tensorflow/tfjs-co
 ```
 
 There are additonal flags available to reduce the size of the output by removing unused (training) variables or using weight quantization. Call `../scripts/checkpoint_converter.py -h` to list the avilable options.
+
+#### Specifying the Model Configuration
+
+TODO(iansimon): This will be dependent on how we end up setting up the model instantiation and config.
 
 <!-- links -->
 [melody-rnn]: https://github.com/tensorflow/magenta/tree/master/magenta/models/melody_rnn
