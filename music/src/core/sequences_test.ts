@@ -20,7 +20,6 @@ import * as test from 'tape';
 
 import NoteSequence = tensorflow.magenta.NoteSequence;
 import * as sequences from './sequences';
-import Sequences = sequences.Sequences;
 
 const STEPS_PER_QUARTER = 4;
 
@@ -122,7 +121,7 @@ test('Quantize NoteSequence', (t: test.Test) => {
   addControlChangesToSequence(ns, 0, [[2.0, 64, 127], [4.0, 64, 0]]);
 
   // Make a copy.
-  const expectedQuantizedSequence = Sequences.clone(ns);
+  const expectedQuantizedSequence = sequences.clone(ns);
   expectedQuantizedSequence.quantizationInfo =
       NoteSequence.QuantizationInfo.create(
           {stepsPerQuarter: STEPS_PER_QUARTER});
@@ -134,7 +133,7 @@ test('Quantize NoteSequence', (t: test.Test) => {
   addQuantizedChordStepsToSequence(expectedQuantizedSequence, [1, 16]);
   addQuantizedControlStepsToSequence(expectedQuantizedSequence, [8, 16]);
 
-  const qns = Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
+  const qns = sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
 
   t.deepEqual(
       NoteSequence.toObject(qns),
@@ -152,23 +151,23 @@ test('Quantize NoteSequence, Time Signature Change', (t: test.Test) => {
   ]);
   ns.timeSignatures.length = 0;
 
-  Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
+  sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
 
   // Single time signature.
   ns.timeSignatures.push(NoteSequence.TimeSignature.create(
       {numerator: 4, denominator: 4, time: 0}));
-  Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
+  sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
 
   // Multiple time signatures with no change.
   ns.timeSignatures.push(NoteSequence.TimeSignature.create(
       {numerator: 4, denominator: 4, time: 1}));
-  Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
+  sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
 
   // Time signature change.
   ns.timeSignatures.push(NoteSequence.TimeSignature.create(
       {numerator: 2, denominator: 4, time: 2}));
   t.throws(
-      () => Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER),
+      () => sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER),
       sequences.MultipleTimeSignatureException);
 
   t.end();
@@ -185,13 +184,13 @@ test(
       ns.timeSignatures.length = 0;
 
       // No time signature.
-      Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
+      sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
 
       // Implicit time signature change.
       ns.timeSignatures.push(NoteSequence.TimeSignature.create(
           {numerator: 2, denominator: 4, time: 2}));
       t.throws(
-          () => Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER),
+          () => sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER),
           sequences.MultipleTimeSignatureException);
 
       t.end();
@@ -209,7 +208,7 @@ test(
       ns.timeSignatures.length = 0;
 
       // No time signature.
-      Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
+      sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
 
       // No implicit time signature change, but time signatures are added out of
       // order.
@@ -217,22 +216,22 @@ test(
           {numerator: 2, denominator: 4, time: 2}));
       ns.timeSignatures.push(NoteSequence.TimeSignature.create(
           {numerator: 2, denominator: 4, time: 0}));
-      Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
+      sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
       t.pass();
 
       t.end();
     });
 
 test('StepsPerQuarterToStepsPerSecond', (t: test.Test) => {
-  t.equal(Sequences.stepsPerQuarterToStepsPerSecond(4, 60.0), 4.0);
+  t.equal(sequences.stepsPerQuarterToStepsPerSecond(4, 60.0), 4.0);
 
   t.end();
 });
 
 test('QuantizeToStep', (t: test.Test) => {
-  t.equal(Sequences.quantizeToStep(8.0001, 4), 32);
-  t.equal(Sequences.quantizeToStep(8.4999, 4), 34);
-  t.equal(Sequences.quantizeToStep(8.4999, 4, 1.0), 33);
+  t.equal(sequences.quantizeToStep(8.0001, 4), 32);
+  t.equal(sequences.quantizeToStep(8.4999, 4), 34);
+  t.equal(sequences.quantizeToStep(8.4999, 4, 1.0), 33);
   t.end();
 });
 
@@ -246,20 +245,20 @@ test('Quantize NoteSequence, Tempo Change', (t: test.Test) => {
   ns.tempos.length = 0;
 
   // No tempos.
-  Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
+  sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
 
   // Single tempo.
   ns.tempos.push(NoteSequence.Tempo.create({qpm: 60, time: 0}));
-  Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
+  sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
 
   // Multiple tempos with no change.
   ns.tempos.push(NoteSequence.Tempo.create({qpm: 60, time: 1}));
-  Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
+  sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
 
   // Tempo change.
   ns.tempos.push(NoteSequence.Tempo.create({qpm: 120, time: 2}));
   t.throws(
-      () => Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER),
+      () => sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER),
       sequences.MultipleTempoException);
 
   t.end();
@@ -275,12 +274,12 @@ test('Quantize NoteSequence, Implicit Tempo Change', (t: test.Test) => {
   ns.tempos.length = 0;
 
   // No tempos.
-  Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
+  sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
 
   // Implicit tempo change.
   ns.tempos.push(NoteSequence.Tempo.create({qpm: 60, time: 2}));
   t.throws(
-      () => Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER),
+      () => sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER),
       sequences.MultipleTempoException);
 
   t.end();
@@ -298,12 +297,12 @@ test(
       ns.tempos.length = 0;
 
       // No tempos.
-      Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
+      sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
 
       // No implicit tempo change, but tempos are added out of order.
       ns.tempos.push(NoteSequence.Tempo.create({qpm: 60, time: 2}));
       ns.tempos.push(NoteSequence.Tempo.create({qpm: 60, time: 0}));
-      Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
+      sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
       t.pass();
 
       t.end();
@@ -318,7 +317,7 @@ test('Quantize NoteSequence, Rounding', (t: test.Test) => {
   ]);
 
   // Make a copy.
-  const expectedQuantizedSequence = Sequences.clone(ns);
+  const expectedQuantizedSequence = sequences.clone(ns);
   expectedQuantizedSequence.quantizationInfo =
       NoteSequence.QuantizationInfo.create(
           {stepsPerQuarter: STEPS_PER_QUARTER});
@@ -328,7 +327,7 @@ test('Quantize NoteSequence, Rounding', (t: test.Test) => {
       [[0, 1], [1, 2], [2, 3], [3, 5], [5, 7], [16, 17]]);
 
   const quantizedSequence =
-      Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
+      sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
 
   t.deepEqual(
       NoteSequence.toObject(quantizedSequence),
@@ -346,7 +345,7 @@ test('Quantize NoteSequence, MultiTrack', (t: test.Test) => {
       ns, 7, [[12, 100, 1.0, 5.0], [19, 100, 2.0, 4.0], [24, 100, 3.0, 3.5]]);
 
   // Make a copy.
-  const expectedQuantizedSequence = Sequences.clone(ns);
+  const expectedQuantizedSequence = sequences.clone(ns);
   expectedQuantizedSequence.quantizationInfo =
       NoteSequence.QuantizationInfo.create(
           {stepsPerQuarter: STEPS_PER_QUARTER});
@@ -356,7 +355,7 @@ test('Quantize NoteSequence, MultiTrack', (t: test.Test) => {
       [[4, 16], [4, 12], [4, 16], [8, 20], [4, 20], [8, 16], [12, 14]]);
 
   const quantizedSequence =
-      Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
+      sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
 
   t.deepEqual(
       NoteSequence.toObject(quantizedSequence),
@@ -374,11 +373,11 @@ test('Assert isQuantizedNoteSequence', (t: test.Test) => {
   ]);
 
   t.throws(
-      () => Sequences.assertIsQuantizedSequence(ns),
+      () => sequences.assertIsQuantizedSequence(ns),
       sequences.QuantizationStatusException);
 
-  const qns = Sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
-  Sequences.assertIsQuantizedSequence(qns);
+  const qns = sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
+  sequences.assertIsQuantizedSequence(qns);
 
   t.end();
 });

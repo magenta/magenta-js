@@ -17,7 +17,7 @@
 
 import * as controls from '../core/controls';
 import * as data from '../core/data';
-import * as sequences from '../core/sequences'
+import * as sequences from '../core/sequences';
 import * as tf from '@tensorflow/tfjs';
 import {ATTENTION_PREFIX, AttentionWrapper} from './attention';
 import {INoteSequence} from '../protobuf/notesequence';
