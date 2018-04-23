@@ -7,6 +7,14 @@ missing, or feel free to submit a Pull Request!
 
 For the Python TensorFlow implementations, see the [main Magenta repo](https://github.com/tensorflow/magenta).
 
+## Example Applications
+Here are a few applications built with MagentaMusic.js:
+
+* [Beat Blender](https://g.co/beatblender) by [Google Creative Lab](https://github.com/googlecreativelab)
+* [Melody Mixer](https://g.co/melodymixer) by [Google Creative Lab](https://github.com/googlecreativelab)
+* [Latent Loops](https://goo.gl/magenta/latent-loops) by [Google Pie Shop](https://github.com/teampieshop)
+* [Neural Drum Machine](https://codepen.io/teropa/pen/RMGxOQ) by [Tero Parviainen](https://github.com/teropa)
+
 ## Available Models
 ### MusicRNN
 [MusicRNN](./music_rnn) implements Magenta's LSTM-based language models. These include [MelodyRNN][melody-rnn], [DrumsRNN][drums-rnn], [ImprovRNN][improv-rnn], and [PerformanceRNN][performance-rnn].
@@ -108,13 +116,6 @@ This tool is dependent on [tfjs-converter](https://github.com/tensorflow/tfjs-co
 ```
 
 There are additonal flags available to reduce the size of the output by removing unused (training) variables or using weight quantization. Call `../scripts/checkpoint_converter.py -h` to list the avilable options.
-
-## Example Applications
-
-* [Beat Blender](https://g.co/beatblender) by [Google Creative Lab](https://github.com/googlecreativelab)
-* [Melody Mixer](https://g.co/melodymixer) by [Google Creative Lab](https://github.com/googlecreativelab)
-* [Latent Loops](https://goo.gl/magenta/latent-loops) by [Google Pie Shop](https://github.com/teampieshop)
-* [Neural Drum Machine](https://codepen.io/teropa/pen/RMGxOQ) by [Tero Parviainen](https://github.com/teropa)
 
 <!-- links -->
 [melody-rnn]: https://github.com/tensorflow/magenta/tree/master/magenta/models/melody_rnn
