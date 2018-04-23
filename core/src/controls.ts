@@ -18,40 +18,37 @@
 import * as tf from '@tensorflow/tfjs';
 import {ChordEncoder, ChordEncoderType, chordEncoderFromType} from './chords';
 
-export type BinaryCounterArgs = {
-  numBits: number
-};
 export interface BinaryCounterSpec {
   type: 'BinaryCounter';
   args: BinaryCounterArgs;
 }
-export type BinaryCounterUserArgs = void;
 
-export type ChordProgressionArgs = {
-  encoderType: ChordEncoderType
-};
 export interface ChordProgressionSpec {
   type: 'ChordProgression';
   args: ChordProgressionArgs;
 }
-export type ChordProgressionUserArgs = {
-  chords: string[]
-};
 
 export type ControlSignalSpec = BinaryCounterSpec | ChordProgressionSpec;
 export type ControlSignalUserArgs =
     BinaryCounterUserArgs | ChordProgressionUserArgs;
 
 /**
+ * Type mapping from control signal type to "user" arguments type needed to
+ * construct the tensors for the control signal at runtime.
+ */
+export interface UserArgsMap {
+  BinaryCounter: BinaryCounterUserArgs;
+  ChordProgression: ChordProgressionUserArgs;
+}
+
+/**
  * Creates a `ControlSignal` based on the given `ControlSignalSpec`.
  *
- * @param type Specifies the `ControlSignal` to create.
+ * @param spec Specifies the `ControlSignal` to create.
  * @returns A new `ControlSignal` object based on `spec`.
  */
-export function controlSignalFromSpec(spec: BinaryCounterSpec): BinaryCounter;
-export function controlSignalFromSpec(spec: ChordProgressionSpec):
-    ChordProgression;
-export function controlSignalFromSpec(spec: ControlSignalSpec) {
+export function controlSignalFromSpec<T extends ControlSignalSpec['type']>(
+    spec: ControlSignalSpec): ControlSignal<UserArgsMap[T]> {
   switch (spec.type) {
     case 'BinaryCounter':
       return new BinaryCounter(spec.args);
@@ -79,6 +76,10 @@ export abstract class ControlSignal<A extends ControlSignalUserArgs> {
  *
  * @param numBits The number of binary counter bits.
  */
+export type BinaryCounterArgs = {
+  numBits: number
+};
+export type BinaryCounterUserArgs = void;
 export class BinaryCounter extends ControlSignal<BinaryCounterUserArgs> {
   constructor(args: BinaryCounterArgs) { super(args.numBits); }
 
@@ -105,6 +106,12 @@ export class BinaryCounter extends ControlSignal<BinaryCounterUserArgs> {
  *
  * @param encoderType The chord encoder type to use.
  */
+export type ChordProgressionArgs = {
+  encoderType: ChordEncoderType
+};
+export type ChordProgressionUserArgs = {
+  chords: string[]
+};
 export class ChordProgression extends ControlSignal<ChordProgressionUserArgs> {
   readonly encoder: ChordEncoder;
 
