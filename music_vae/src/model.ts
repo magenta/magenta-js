@@ -19,8 +19,6 @@ import * as magenta from '@magenta/core';
 import data = magenta.data;
 import INoteSequence = magenta.INoteSequence;
 import tf = magenta.tf;
-// Use custom CheckpointLoader until quantization is added to tf.
-import CheckpointLoader = magenta.CheckpointLoader;
 import {isNullOrUndefined} from 'util';
 
 /**
@@ -295,15 +293,15 @@ class BaseDecoder extends Decoder {
       let nextInput = initialInput ?
           initialInput :
           tf.zeros([batchSize, this.outputDims]) as tf.Tensor2D;
-      const splitControls =
-          controls ? tf.split(controls, controls.shape[0]) : undefined;
+      const splitControls = controls ?
+          tf.split(tf.tile(controls, [batchSize, 1]), controls.shape[0]) :
+          undefined;
       for (let i = 0; i < length; ++i) {
-        const nextControl =
-            (splitControls ? tf.tile(splitControls[i], [batchSize, 1]) :
-                             tf.zeros([batchSize, 0])) as tf.Tensor2D;
+        const toConat = splitControls ?
+            [nextInput, z, splitControls[i] as tf.Tensor2D] :
+            [nextInput, z];
         [lstmCell.c, lstmCell.h] = tf.multiRNNCell(
-            lstmCell.cell, tf.concat([nextInput, z, nextControl], 1),
-            lstmCell.c, lstmCell.h);
+            lstmCell.cell, tf.concat(toConat, 1), lstmCell.c, lstmCell.h);
         const logits =
             dense(this.outputProjectVars, lstmCell.h[lstmCell.h.length - 1]);
 
@@ -569,10 +567,13 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
             this.dataConverter = data.converterFromSpec(converterSpec);
           });
     }
-    const reader = new CheckpointLoader(this.checkpointURL);
-    const vars = await reader.getAllVariables();
-
+    const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
+                     .then((response) => response.json())
+                     .then(
+                         (manifest: tf.WeightsManifestConfig) =>
+                             tf.loadWeights(manifest, this.checkpointURL));
     this.rawVars = vars;  // Save for disposal.
+
     // Encoder variables.
     const encMu = new LayerVars(
         vars['encoder/mu/kernel'] as tf.Tensor2D,
@@ -692,19 +693,22 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
    * @param numInterps The number of pairwise interpolation sequences to
    * return, including the reconstructions. If 4 inputs are given, the total
    * number of sequences will be `numInterps`^2.
+   * @param temperature (Optional) The softmax temperature to use when sampling
+   * from the logits. Argmax is used if not provided.
    * @param controlSignalArgs (Optional) Arguments for creating control tensors.
    *
    * @returns An array of interpolation `NoteSequence` objects, as described
    * above.
    */
   async interpolate(
-      inputSequences: INoteSequence[], numInterps: number,
+      inputSequences: INoteSequence[], numInterps: number, temperature?: number,
       controlSignalArgs?: A) {
     const inputZs = await this.encode(inputSequences, controlSignalArgs);
     const interpZs = tf.tidy(() => this.getInterpolatedZs(inputZs, numInterps));
     inputZs.dispose();
 
-    const outputSequenes = this.decode(interpZs, controlSignalArgs);
+    const outputSequenes =
+        this.decode(interpZs, temperature, controlSignalArgs);
     interpZs.dispose();
     return outputSequenes;
   }
@@ -743,9 +747,9 @@ class MusicVAE<A extends magenta.controls.ControlSignalUserArgs> {
    * Decodes the input latnet vectors into `NoteSequence`s.
    *
    * @param z The latent vectors to decode, sized `[batchSize, zSize]`.
-   * @param temperature (Optional) The softmax temperature to use when sampling.
+   * @param temperature (Optional) The softmax temperature to use when
+   * sampling. The argmax is used if not provided.
    * @param controlSignalArgs (Optional) Arguments for creating control tensors.
-   * The argmax is used if not provided.
    *
    * @returns The decoded `NoteSequence`s.
    */
