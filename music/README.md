@@ -3,7 +3,7 @@
 This JavaScript implementation of MusicVAE uses [TensorFlow.js](https://js.tensorflow.org) for GPU-accelerated inference 
 with Magenta's note-based music models.
 
-We have made an effort to port what we think are our most useful models, but please file an issue if you think something is
+We have made an effort to port what we our most useful models, but please file an issue if you think something is
 missing, or feel free to submit a Pull Request!
 
 For the Python TensorFlow implementations, see the [main Magenta repo](https://github.com/tensorflow/magenta).
@@ -92,12 +92,21 @@ interface Checkpoint {
 }
 ```
 
-While we do not plan to remove any of the current checkpoints, we will be adding more in the future, so your applications should reference the checkpoints.json file to see which checkpoints are available.
+While we do not plan to remove any of the current checkpoints, we will be adding more in the future.
 
 If your application has a high QPS, you must mirror these files on your own server.
 
 ### Your Own Checkpoints
 
+To use your own checkpoints with one of our models, you must first convert the weights to the appropriate format using the provided [checkpoint_converter](../scripts/checkpoint_converter.py) script. 
+
+This tool is dependent on [tfjs-converter](https://github.com/tensorflow/tfjs-converter), which you must first install using `pip install tensorflowjs`. Once installed, you can execute the script as follows:
+
+```bash
+../scripts/checkpoint_converter.py /path/to/model.ckpt /path/to/output_dir 
+```
+
+There are additonal flags available to reduce the size of the output by removing unused (training) variables or using weight quantization. Call `../scripts/checkpoint_converter.py -h` to list the avilable options.
 
 ## Example Applications
 
