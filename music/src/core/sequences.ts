@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {NoteSequence, INoteSequence} from '../protobuf/notesequence';
+import {NoteSequence, INoteSequence} from '../protobuf/index';
 import * as constants from './constants';
 
 // Set the quantization cutoff.

@@ -15,4 +15,4 @@
  * =============================================================================
  */
 
-export {MusicRNN} from './model';
+export {Decoder, Encoder, MusicVAE} from './model';

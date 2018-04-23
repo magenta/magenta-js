@@ -18,7 +18,7 @@
 import * as controls from '../core/controls';
 import * as data from '../core/data';
 import * as tf from '@tensorflow/tfjs';
-import {INoteSequence} from '../protobuf/notesequence';
+import {INoteSequence} from '../protobuf/index';
 import {isNullOrUndefined} from 'util';
 
 /**

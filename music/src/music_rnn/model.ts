@@ -20,7 +20,7 @@ import * as data from '../core/data';
 import * as sequences from '../core/sequences';
 import * as tf from '@tensorflow/tfjs';
 import {ATTENTION_PREFIX, AttentionWrapper} from './attention';
-import {INoteSequence} from '../protobuf/notesequence';
+import {INoteSequence} from '../protobuf/index';
 import {isNullOrUndefined} from 'util';
 
 const CELL_FORMAT = 'multi_rnn_cell/cell_%d/basic_lstm_cell/';
