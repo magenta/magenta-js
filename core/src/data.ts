@@ -81,7 +81,7 @@ export type ConverterSpec = MelodyConverterSpec | DrumsConverterSpec |
  * @param spec Specifies the `DataConverter` to build.
  * @returns A new `DataConverter` object based on `spec`.
  */
-export function converterFromSpec(spec: ConverterSpec) {
+export function converterFromSpec(spec: ConverterSpec): DataConverter {
   switch (spec.type) {
     case 'MelodyConverter':
       return new MelodyConverter(spec.args);
