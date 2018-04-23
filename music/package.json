@@ -27,7 +27,7 @@
     "typescript": "2.7.2"
   },
   "scripts": {
-    "prepublish": "yarn lint && yarn test && yarn build && yarn bundle",
+    "prepublish": "yarn lint && yarn test && yarn build && yarn build-demos && yarn bundle",
     "build": "tsc",
     "bundle": "browserify --standalone magenta src/index.ts -p [tsify] > dist/magenta.js",
     "lint": "tslint -c ../tslint.json -p . -t verbose",

@@ -28,7 +28,7 @@ const MEL_CKPT = `${CHECKPOINTS_DIR}mel_small`;
 const MEL_16_CKPT = `${CHECKPOINTS_DIR}mel_16bar_small`;
 const TRIO_CKPT = `${CHECKPOINTS_DIR}trio_4bar_small`;
 
-const DRUM_SEQS: mm.protobuf.INoteSequence[] = [
+const DRUM_SEQS: mm.INoteSequence[] = [
   {
     notes: [
       {pitch: 36, quantizedStartStep: 0}, {pitch: 42, quantizedStartStep: 2},
@@ -128,7 +128,7 @@ DRUM_SEQS.map(s => s.notes.map(n => {
   n.quantizedEndStep = n.quantizedStartStep + 1;
 }));
 
-const MEL_TEAPOT: mm.protobuf.INoteSequence = {
+const MEL_TEAPOT: mm.INoteSequence = {
   notes: [
     {pitch: 69, quantizedStartStep: 0, quantizedEndStep: 2},
     {pitch: 71, quantizedStartStep: 2, quantizedEndStep: 4},
@@ -142,7 +142,7 @@ const MEL_TEAPOT: mm.protobuf.INoteSequence = {
   ]
 };
 
-const MEL_TWINKLE: mm.protobuf.INoteSequence = {
+const MEL_TWINKLE: mm.INoteSequence = {
   notes: [
     {pitch: 60, quantizedStartStep: 0, quantizedEndStep: 2},
     {pitch: 60, quantizedStartStep: 2, quantizedEndStep: 4},
@@ -161,7 +161,7 @@ const MEL_TWINKLE: mm.protobuf.INoteSequence = {
   ]
 };
 
-const TRIO_EXAMPLE: mm.protobuf.INoteSequence = {
+const TRIO_EXAMPLE: mm.INoteSequence = {
   notes: []
 };
 concatNoteSequences([MEL_TWINKLE, MEL_TWINKLE], 32).notes.map(n => {
@@ -188,7 +188,7 @@ function writeTimer(elementId: string, startTime: number) {
       ((performance.now() - startTime) / 1000.).toString() + 's';
 }
 
-function writeNoteSeqs(elementId: string, seqs: mm.protobuf.INoteSequence[]) {
+function writeNoteSeqs(elementId: string, seqs: mm.INoteSequence[]) {
   document.getElementById(elementId).innerHTML =
       seqs.map(
               seq => '[' +
@@ -210,7 +210,7 @@ function writeNoteSeqs(elementId: string, seqs: mm.protobuf.INoteSequence[]) {
 }
 
 async function runDrums() {
-  const mvae = new mm.music_vae.MusicVAE(DRUMS_CKPT);
+  const mvae = new mm.MusicVAE(DRUMS_CKPT);
   await mvae.initialize();
 
   writeNoteSeqs('drums-inputs', DRUM_SEQS);
@@ -230,7 +230,7 @@ async function runDrums() {
 
 async function
 runDrumsNade() {
-  const mvae = new mm.music_vae.MusicVAE(DRUMS_NADE_CKPT);
+  const mvae = new mm.MusicVAE(DRUMS_NADE_CKPT);
   await mvae.initialize();
 
   writeNoteSeqs('nade-inputs', DRUM_SEQS);
@@ -250,7 +250,7 @@ runDrumsNade() {
 
 async function
 runMel() {
-  const mvae = new mm.music_vae.MusicVAE(MEL_CKPT);
+  const mvae = new mm.MusicVAE(MEL_CKPT);
   await mvae.initialize();
 
   const inputs = [MEL_TEAPOT, MEL_TWINKLE];
@@ -271,7 +271,7 @@ runMel() {
 
 async function
 runTrio() {
-  const mvae = new mm.music_vae.MusicVAE(TRIO_CKPT);
+  const mvae = new mm.MusicVAE(TRIO_CKPT);
   await mvae.initialize();
 
   const inputs = [TRIO_EXAMPLE];
@@ -293,9 +293,9 @@ runTrio() {
 }
 
 // TODO(adarob): Switch to magenta/core function once implemented.
-function concatNoteSequences(seqs: mm.protobuf.INoteSequence[],
+function concatNoteSequences(seqs: mm.INoteSequence[],
     individualDuration: number) {
-  const concatSeq: mm.protobuf.INoteSequence = clone(seqs[0]);
+  const concatSeq: mm.INoteSequence = clone(seqs[0]);
   for (let i = 1; i < seqs.length; ++i) {
     Array.prototype.push.apply(concatSeq.notes, seqs[i].notes.map(n => {
       const newN = clone(n);
@@ -309,10 +309,10 @@ function concatNoteSequences(seqs: mm.protobuf.INoteSequence[],
 
 async function
 runMel16() {
-  const mvae = new mm.music_vae.MusicVAE(MEL_16_CKPT);
+  const mvae = new mm.MusicVAE(MEL_16_CKPT);
   await mvae.initialize();
 
-  const inputs: mm.protobuf.INoteSequence[] = [
+  const inputs: mm.INoteSequence[] = [
     concatNoteSequences(
         [
           MEL_TEAPOT, MEL_TWINKLE, MEL_TEAPOT, MEL_TWINKLE, MEL_TEAPOT,

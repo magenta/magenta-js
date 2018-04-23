@@ -15,8 +15,7 @@
  * =============================================================================
  */
 
- import * as core from './core/index';
- import * as music_rnn from './music_rnn/index';
- import * as music_vae from './music_vae/index';
- import * as protobuf from './protobuf/index';
- export {core, music_rnn, music_vae, protobuf};
+export * from './core/index';
+export * from './music_rnn/index';
+export * from './music_vae/index';
+export * from './protobuf/index';

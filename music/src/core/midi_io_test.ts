@@ -16,13 +16,13 @@
  */
 
 import * as fs from 'fs';
+import * as midi_io from './midi_io';
 import * as test from 'tape';
-import {MidiIO} from './midi_io';
 import {NoteSequence} from '../protobuf/index';
 
 test('Parse Simple MIDI', (t: test.Test) => {
   const midi = fs.readFileSync('../testdata/melody.mid', 'binary');
-  const ns = MidiIO.midiToSequenceProto(midi);
+  const ns = midi_io.midiToSequenceProto(midi);
 
   const expectedNs = NoteSequence.create({
     ticksPerQuarter: 220,
@@ -149,7 +149,7 @@ test('Parse Simple MIDI', (t: test.Test) => {
   t.deepEqual(ns, expectedNs);
 
   const nsRoundTrip =
-      MidiIO.midiToSequenceProto(MidiIO.SequenceProtoToMidi(ns));
+      midi_io.midiToSequenceProto(midi_io.SequenceProtoToMidi(ns));
 
   t.deepEqual(nsRoundTrip, expectedNs);
 
