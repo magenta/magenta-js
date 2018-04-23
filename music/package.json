@@ -1,6 +1,6 @@
 {
-  "name": "@magenta/core",
-  "version": "0.0.17",
+  "name": "@magenta/music",
+  "version": "0.0.1",
   "description": "",
   "main": "es5/index.js",
   "types": "es5/index.d.ts",
@@ -29,8 +29,7 @@
     "build": "tsc",
     "bundle": "browserify --standalone magenta src/index.ts -p [tsify] > dist/magenta.js",
     "lint": "tslint -c ../tslint.json -p . -t verbose",
-    "test": "ts-node node_modules/tape/bin/tape src/**/*_test.ts",
-    "proto": "pbjs -t static-module -w commonjs -o src/proto.js ../protobuf/music.proto && pbts -o src/proto.d.ts src/proto.js"
+    "test": "ts-node node_modules/tape/bin/tape src/**/*_test.ts"
   },
   "author": "Magenta",
   "license": "Apache-2.0",

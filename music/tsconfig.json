@@ -2,11 +2,12 @@
   "compilerOptions": {
     "module": "commonjs",
     "noImplicitAny": true,
-    "sourceMap": true,
     "removeComments": true,
     "preserveConstEnums": true,
     "declaration": true,
     "target": "es5",
+    "allowJs": false,
+    "sourceMap": true,
     "lib": ["es2015", "dom"],
     "outDir": "./es5",
     "noUnusedLocals": true,
@@ -16,9 +17,8 @@
     "noUnusedParameters": false,
     "pretty": true,
     "noFallthroughCasesInSwitch": true,
-    "allowUnreachableCode": false
+    "allowUnreachableCode": false,
+    "experimentalDecorators": true
   },
-  "include": [
-    "src/index.ts"
-  ]
+  "include": [ "src/" ],
 }
