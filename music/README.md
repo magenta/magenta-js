@@ -1,9 +1,8 @@
 # MagentaMusic.js API
 
-This JavaScript implementation of MusicVAE uses [TensorFlow.js](https://js.tensorflow.org) for GPU-accelerated inference 
-with Magenta's note-based music models.
+This JavaScript implementation of Magenta's musical note-based models uses [TensorFlow.js](https://js.tensorflow.org) for GPU-accelerated inference.
 
-We have made an effort to port what we our most useful models, but please file an issue if you think something is
+We have made an effort to port what our most useful models, but please file an issue if you think something is
 missing, or feel free to submit a Pull Request!
 
 For the Python TensorFlow implementations, see the [main Magenta repo](https://github.com/tensorflow/magenta).
@@ -50,6 +49,8 @@ Add the following code to an HTML file:
 
 Open up that html file in your browser and the code should run!
 
+See INSERT TERO DEMO LINK for a complete example application with code.
+
 ### via NPM
 
 Add MagentaMusic.js to your project using [yarn](https://yarnpkg.com/en/) **or** [npm](https://docs.npmjs.com/cli/npm).
@@ -63,7 +64,7 @@ const sample = model.sample();
 // TODO(adarob, teropa) Add code to play back sample.
 ```
 
-See our [demos](./demos) for more details. 
+See our [demos](./demos) for example usage. 
 
 
 #### Example Commands
