@@ -15,16 +15,17 @@
  * limitations under the License.
  */
 
-import * as mm from '../src/index';
 import * as tf from '@tensorflow/tfjs';
 import * as clone from 'clone';
+
+import * as mm from '../src/index';
 
 const CHECKPOINTS_DIR =
     // tslint:disable-next-line:max-line-length
     'https://storage.googleapis.com/download.magenta.tensorflow.org/tfjs_checkpoints/music_vae/';
-const DRUMS_CKPT = `${CHECKPOINTS_DIR}drums_hikl_small`;
-const DRUMS_NADE_CKPT = `${CHECKPOINTS_DIR}drums_nade_9`;
-const MEL_CKPT = `${CHECKPOINTS_DIR}mel_small`;
+const DRUMS_CKPT = `${CHECKPOINTS_DIR}drums_2bar_hikl_small`;
+const DRUMS_NADE_CKPT = `${CHECKPOINTS_DIR}drums_2bar_nade_9`;
+const MEL_CKPT = `${CHECKPOINTS_DIR}mel_2bar_small`;
 const MEL_16_CKPT = `${CHECKPOINTS_DIR}mel_16bar_small`;
 const TRIO_CKPT = `${CHECKPOINTS_DIR}trio_4bar_small`;
 
@@ -228,8 +229,7 @@ async function runDrums() {
   mvae.dispose();
 }
 
-async function
-runDrumsNade() {
+async function runDrumsNade() {
   const mvae = new mm.MusicVAE(DRUMS_NADE_CKPT);
   await mvae.initialize();
 
@@ -248,8 +248,7 @@ runDrumsNade() {
   mvae.dispose();
 }
 
-async function
-runMel() {
+async function runMel() {
   const mvae = new mm.MusicVAE(MEL_CKPT);
   await mvae.initialize();
 
@@ -269,8 +268,7 @@ runMel() {
   mvae.dispose();
 }
 
-async function
-runTrio() {
+async function runTrio() {
   const mvae = new mm.MusicVAE(TRIO_CKPT);
   await mvae.initialize();
 
@@ -293,8 +291,8 @@ runTrio() {
 }
 
 // TODO(adarob): Switch to magenta/core function once implemented.
-function concatNoteSequences(seqs: mm.INoteSequence[],
-    individualDuration: number) {
+function concatNoteSequences(
+    seqs: mm.INoteSequence[], individualDuration: number) {
   const concatSeq: mm.INoteSequence = clone(seqs[0]);
   for (let i = 1; i < seqs.length; ++i) {
     Array.prototype.push.apply(concatSeq.notes, seqs[i].notes.map(n => {
@@ -307,8 +305,7 @@ function concatNoteSequences(seqs: mm.INoteSequence[],
   return concatSeq;
 }
 
-async function
-runMel16() {
+async function runMel16() {
   const mvae = new mm.MusicVAE(MEL_16_CKPT);
   await mvae.initialize();
 
