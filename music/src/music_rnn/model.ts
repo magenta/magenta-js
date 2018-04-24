@@ -33,21 +33,21 @@ const CELL_FORMAT = 'multi_rnn_cell/cell_%d/basic_lstm_cell/';
  * A MusicRNN is an LSTM-based language model for musical notes.
  */
 export class MusicRNN<A extends controls.ControlSignalUserArgs> {
-  checkpointURL: string;
-  dataConverter: data.DataConverter;
-  attentionLength?: number;
-  controlSignal: controls.ControlSignal<A>;
+  private checkpointURL: string;
+  private dataConverter: data.DataConverter;
+  private attentionLength?: number;
+  private controlSignal: controls.ControlSignal<A>;
 
-  lstmCells: tf.LSTMCellFunc[];
-  lstmFcB: tf.Tensor1D;
-  lstmFcW: tf.Tensor2D;
-  forgetBias: tf.Scalar;
-  biasShapes: number[];
-  attentionWrapper?: AttentionWrapper;
+  private lstmCells: tf.LSTMCellFunc[];
+  private lstmFcB: tf.Tensor1D;
+  private lstmFcW: tf.Tensor2D;
+  private forgetBias: tf.Scalar;
+  private biasShapes: number[];
+  private attentionWrapper?: AttentionWrapper;
 
-  rawVars: {[varName: string]: tf.Tensor};  // Store for disposal.
+  private rawVars: {[varName: string]: tf.Tensor};  // Store for disposal.
 
-  initialized: boolean;
+  private initialized: boolean;
 
   /**
    * `MusicRNN` constructor.
@@ -71,6 +71,13 @@ export class MusicRNN<A extends controls.ControlSignalUserArgs> {
     this.dataConverter = dataConverter;
     this.attentionLength = attentionLength;
     this.controlSignal = controlSignal;
+  }
+
+  /**
+   * Returns true iff model is intialized.
+   */
+  isInitialized() {
+    return this.initialized;
   }
 
   /**
@@ -127,6 +134,7 @@ export class MusicRNN<A extends controls.ControlSignalUserArgs> {
 
     this.rawVars = vars;
     this.initialized = true;
+    console.log('Initialized MusicRNN.');
   }
 
   dispose() {

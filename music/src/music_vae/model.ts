@@ -15,11 +15,12 @@
  * =============================================================================
  */
 
+import * as tf from '@tensorflow/tfjs-core';
+import {isNullOrUndefined} from 'util';
+
 import * as controls from '../core/controls';
 import * as data from '../core/data';
-import * as tf from '@tensorflow/tfjs-core';
 import {INoteSequence} from '../protobuf/index';
-import {isNullOrUndefined} from 'util';
 
 /**
  * A class for keeping track of the parameters of an affine transformation.
@@ -490,11 +491,14 @@ class Nade {
 class MusicVAE<A extends controls.ControlSignalUserArgs> {
   private checkpointURL: string;
   private dataConverter: data.DataConverter;
-  private controlSignal?:controls.ControlSignal<A>;
+  private controlSignal?: controls.ControlSignal<A>;
 
   private encoder: Encoder;
   private decoder: Decoder;
   private rawVars: {[varName: string]: tf.Tensor};  // Store for disposal.
+
+  initialized = false;
+
   /**
    * `MusicVAE` constructor.
    *
@@ -525,6 +529,7 @@ class MusicVAE<A extends controls.ControlSignalUserArgs> {
     this.encoder = undefined;
     this.decoder = undefined;
     this.dataConverter = undefined;
+    this.initialized = false;
   }
 
   private getLstmLayers(
@@ -661,14 +666,16 @@ class MusicVAE<A extends controls.ControlSignalUserArgs> {
           `${baseDecoders.length}`);
     }
 
-    return this;
+    this.initialized = true;
+    console.log('Initialized MusicVAE.');
   }
 
   /**
-   * @returns true iff an `Encoder` and `Decoder` have been instantiated for the
-   * model.
+   * Returns true iff model is intialized.
    */
-  isInitialized() { return (!!this.encoder && !!this.decoder); }
+  isInitialized() {
+    return this.initialized;
+  }
 
   /**
    * Interpolates between the input `NoteSequence`s in latent space.
@@ -703,6 +710,10 @@ class MusicVAE<A extends controls.ControlSignalUserArgs> {
   async interpolate(
       inputSequences: INoteSequence[], numInterps: number, temperature?: number,
       controlSignalArgs?: A) {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
     const inputZs = await this.encode(inputSequences, controlSignalArgs);
     const interpZs = tf.tidy(() => this.getInterpolatedZs(inputZs, numInterps));
     inputZs.dispose();
@@ -722,19 +733,25 @@ class MusicVAE<A extends controls.ControlSignalUserArgs> {
    * `[inputSequences.length, zSize]`.
    */
   async encode(inputSequences: INoteSequence[], controlSignalArgs?: A) {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
     const numSteps = this.dataConverter.numSteps;
 
     return tf.tidy(() => {
-      let inputTensors = tf.stack(inputSequences.map(
-          t => this.dataConverter.toTensor(t) as tf.Tensor2D)) as tf.Tensor3D;
+      let inputTensors =
+          tf.stack(inputSequences.map(
+              t => this.dataConverter.toTensor(t) as tf.Tensor2D)) as
+          tf.Tensor3D;
 
       if (this.controlSignal) {
-        const controls = tf.tile(
-                               tf.expandDims(
-                                   this.controlSignal.getTensors(
-                                       numSteps, controlSignalArgs),
-                                   0),
-                               [inputSequences.length, 1]) as tf.Tensor3D;
+        const controls =
+            tf.tile(
+                tf.expandDims(
+                    this.controlSignal.getTensors(numSteps, controlSignalArgs),
+                    0),
+                [inputSequences.length, 1]) as tf.Tensor3D;
         inputTensors = inputTensors.concat(controls, 2);
       }
 
@@ -754,6 +771,10 @@ class MusicVAE<A extends controls.ControlSignalUserArgs> {
    * @returns The decoded `NoteSequence`s.
    */
   async decode(z: tf.Tensor2D, temperature?: number, controlSignalArgs?: A) {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
     const numSteps = this.dataConverter.numSteps;
 
     const ohSeqs: tf.Tensor2D[] = tf.tidy(() => {
@@ -828,6 +849,9 @@ class MusicVAE<A extends controls.ControlSignalUserArgs> {
    * @returns An array of sampled `NoteSequence` objects.
    */
   async sample(numSamples: number, temperature = 0.5, controlSignalArgs?: A) {
+    if (!this.initialized) {
+      await this.initialize();
+    }
     const randZs: tf.Tensor2D =
         tf.tidy(() => tf.randomNormal([numSamples, this.decoder.zDims]));
     const outputSequenes = this.decode(randZs, temperature, controlSignalArgs);
