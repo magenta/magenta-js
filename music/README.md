@@ -36,7 +36,7 @@ Add the following code to an HTML file:
 <html>
   <head>
     <!-- Load MagentaMusic.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@magenta/music"> </script>
+    <script src="https://cdn.jsdelivr.net/npm/@magenta/music@0.0.5"> </script>
 
     <!-- Place your code in the script tag below. You can also use an external .js file -->
     <script>
