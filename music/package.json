@@ -1,11 +1,11 @@
 {
   "name": "@magenta/music",
-  "version": "0.0.2",
+  "version": "0.0.5",
   "description": "",
   "main": "es5/index.js",
   "types": "es5/index.d.ts",
-  "jsdelivr": "dist/magenta.js",
-  "unpkg": "dist/magenta.js",
+  "jsdelivr": "dist/magentamusic.js",
+  "unpkg": "dist/magentamusic.js",
   "dependencies": {
     "@tensorflow/tfjs-core": "^0.8.4",
     "midiconvert": "^0.4.4",
@@ -31,7 +31,7 @@
   "scripts": {
     "prepublish": "yarn lint && yarn test && yarn build && yarn build-demos && yarn bundle",
     "build": "tsc",
-    "bundle": "browserify --standalone magenta src/index.ts -p [tsify] > dist/magenta.js",
+    "bundle": "browserify --standalone mm src/index.ts -p [tsify] > dist/magentamusic.js",
     "lint": "tslint -c ../tslint.json -p . -t verbose",
     "test": "ts-node node_modules/tape/bin/tape src/**/*_test.ts",
     "build-demos": "cd demos && ./build-demos.sh",

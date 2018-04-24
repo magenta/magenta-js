@@ -7,4 +7,4 @@ Learn more about the Magenta project at our [blog](https://magenta.tensorflow.or
 
 ## Libraries
 
-* [music](music): Contains [TensorFlow.js](https://js.tensorflow.org) implementations and support libraries for Magenta's musical note-based models. 
+* [music](music): Contains [TensorFlow.js](https://js.tensorflow.org) implementations and support libraries for Magenta's musical note-based models including MusicVAE, MelodyRNN, DrumsRNN, PerformanceRNN, and ImprovRNN.
