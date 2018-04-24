@@ -18,7 +18,6 @@
 import * as tf from '@tensorflow/tfjs-core';
 import * as clone from 'clone';
 
-import {Player} from '../src/core/player';
 import * as mm from '../src/index';
 
 const CHECKPOINTS_DIR =
@@ -217,7 +216,7 @@ function writeNoteSeqs(elementId: string, seqs: mm.INoteSequence[]) {
 }
 
 function createPlayer(seq: mm.INoteSequence) {
-  const player = new Player();
+  const player = new mm.Player();
   const button = document.createElement('button');
   button.textContent = 'Play';
   button.addEventListener('click', () => {
