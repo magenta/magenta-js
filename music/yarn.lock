@@ -45,24 +45,11 @@
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@protobufjs/utf8/-/utf8-1.1.0.tgz#a777360b5b39a1a2e5106f8e858f2fd2d060c570"
 
-"@tensorflow/tfjs-core@0.7.1":
-  version "0.7.1"
-  resolved "https://registry.yarnpkg.com/@tensorflow/tfjs-core/-/tfjs-core-0.7.1.tgz#fb8f9c4790d4413ab523537d54d3bd44bc26fdbd"
+"@tensorflow/tfjs-core@^0.8.4":
+  version "0.8.4"
+  resolved "https://registry.yarnpkg.com/@tensorflow/tfjs-core/-/tfjs-core-0.8.4.tgz#20c5bf017cb57486ca77cc01a92d6df85c2e38ff"
   dependencies:
     seedrandom "~2.4.3"
-
-"@tensorflow/tfjs-layers@0.4.1":
-  version "0.4.1"
-  resolved "https://registry.yarnpkg.com/@tensorflow/tfjs-layers/-/tfjs-layers-0.4.1.tgz#298ccf77126f7e902939b77b5eda8d68f67219fc"
-  dependencies:
-    underscore "~1.8.3"
-
-"@tensorflow/tfjs@^0.9.1":
-  version "0.9.1"
-  resolved "https://registry.yarnpkg.com/@tensorflow/tfjs/-/tfjs-0.9.1.tgz#e1d9902f0d1f6e814ed3da4a35ecf0343320028f"
-  dependencies:
-    "@tensorflow/tfjs-core" "0.7.1"
-    "@tensorflow/tfjs-layers" "0.4.1"
 
 "@types/clone@^0.1.30":
   version "0.1.30"
@@ -1559,10 +1546,6 @@ typescript@2.7.2:
 umd@^3.0.0:
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/umd/-/umd-3.0.3.tgz#aa9fe653c42b9097678489c01000acb69f0b26cf"
-
-underscore@~1.8.3:
-  version "1.8.3"
-  resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.8.3.tgz#4f3fb53b106e6097fcf9cb4109f2a5e9bdfa5022"
 
 union@~0.4.3:
   version "0.4.6"

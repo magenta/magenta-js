@@ -15,11 +15,13 @@
  * limitations under the License.
  */
 
+import * as tf from '@tensorflow/tfjs-core';
+import * as test from 'tape';
+
+import {NoteSequence} from '../protobuf/index';
+
 import * as data from './data';
 import * as sequences from './sequences';
-import * as test from 'tape';
-import * as tf from '@tensorflow/tfjs';
-import {NoteSequence} from '../protobuf/index';
 
 const MEL_NS = NoteSequence.create({
   notes: [
@@ -86,7 +88,9 @@ test('Test DrumConverters', (t: test.Test) => {
   const drumRollConverter = new data.DrumRollConverter({'numSteps': 32});
 
   const drumRollTensor = drumsConverter.toTensor(DRUM_NS);
-  t.deepEqual(drumRollTensor.get(), drumRollConverter.toTensor(DRUM_NS).get());
+  t.deepEqual(
+      drumRollTensor.dataSync(),
+      drumRollConverter.toTensor(DRUM_NS).dataSync());
   t.deepEqual(drumRollTensor.shape, [32, 10]);
 
   const drumOneHotTensor = drumsOneHotConverter.toTensor(DRUM_NS);

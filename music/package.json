@@ -7,7 +7,7 @@
   "jsdelivr": "dist/magenta.js",
   "unpkg": "dist/magenta.js",
   "dependencies": {
-    "@tensorflow/tfjs": "^0.9.1",
+    "@tensorflow/tfjs-core": "^0.8.4",
     "clang-format": "^1.2.3",
     "midiconvert": "^0.4.4",
     "protobufjs": "^6.8.6",

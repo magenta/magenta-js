@@ -15,10 +15,12 @@
  * limitations under the License.
  * =============================================================================
  */
-import * as sequences from './sequences';
-import * as tf from '@tensorflow/tfjs';
-import {NoteSequence, INoteSequence} from '../protobuf/index';
+import * as tf from '@tensorflow/tfjs-core';
 import {isNullOrUndefined} from 'util';
+
+import {INoteSequence, NoteSequence} from '../protobuf/index';
+
+import * as sequences from './sequences';
 
 const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
   // bass drum
@@ -69,8 +71,8 @@ export interface DrumsOneHotConverterSpec {
  * @property args Map containing values for argments to the constructor of the
  * `DataConverter` class specified above.
  */
-export type ConverterSpec = MelodyConverterSpec | DrumsConverterSpec |
-    DrumRollConverterSpec | TrioConverterSpec | DrumsOneHotConverterSpec;
+export type ConverterSpec = MelodyConverterSpec|DrumsConverterSpec|
+    DrumRollConverterSpec|TrioConverterSpec|DrumsOneHotConverterSpec;
 
 /**
  * Builds a `DataConverter` based on the given `ConverterSpec`.
@@ -166,7 +168,9 @@ export class DrumsConverter extends DataConverter {
         args.pitchClasses;
     this.pitchToClass = new Map<number, number>();
     for (let c = 0; c < this.pitchClasses.length; ++c) {  // class
-      this.pitchClasses[c].forEach((p) => { this.pitchToClass.set(p, c); });
+      this.pitchClasses[c].forEach((p) => {
+        this.pitchToClass.set(p, c);
+      });
     }
     this.depth = this.pitchClasses.length;
   }
@@ -438,21 +442,19 @@ export class TrioConverter extends DataConverter {
           this.drumsConverter.depth
         ],
         -1);
-    const ns = await this.melConverter.toNoteSequence(ohs[0] as tf.Tensor2D);
+    const ns = await this.melConverter.toNoteSequence(ohs[0]);
 
     ns.notes.forEach(n => {
       n.instrument = 0;
       n.program = 0;
     });
-    const bassNs =
-        await this.bassConverter.toNoteSequence(ohs[1] as tf.Tensor2D);
+    const bassNs = await this.bassConverter.toNoteSequence(ohs[1]);
     ns.notes.push(...bassNs.notes.map(n => {
       n.instrument = 1;
       n.program = this.BASS_PROG_RANGE[0];
       return n;
     }));
-    const drumsNs =
-        await this.drumsConverter.toNoteSequence(ohs[2] as tf.Tensor2D);
+    const drumsNs = await this.drumsConverter.toNoteSequence(ohs[2]);
     ns.notes.push(...drumsNs.notes.map(n => {
       n.instrument = 2;
       return n;
