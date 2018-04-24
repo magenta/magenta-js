@@ -24,8 +24,13 @@ export const DEFAULT_STEPS_PER_QUARTER = 4;
 // Default absolute quantization.
 export const DEFAULT_STEPS_PER_SECOND = 100;
 
-export const MIDI_VELOCITIES = 128;
+// Velocity-related constants.
+export const MIN_MIDI_VELOCITY = 0;
+export const MAX_MIDI_VELOCITY = 127;
+export const MIDI_VELOCITIES = MAX_MIDI_VELOCITY - MIN_MIDI_VELOCITY + 1;
 
 // Pitch-related constants.
 export const NO_CHORD = 'N.C.';
 export const NUM_PITCH_CLASSES = 12;
+export const MIN_MIDI_PITCH = 0;
+export const MAX_MIDI_PITCH = 127;
