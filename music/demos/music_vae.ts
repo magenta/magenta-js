@@ -229,8 +229,7 @@ async function runDrums() {
   mvae.dispose();
 }
 
-async function
-runDrumsNade() {
+async function runDrumsNade() {
   const mvae = new mm.MusicVAE(DRUMS_NADE_CKPT);
   await mvae.initialize();
 
@@ -249,8 +248,7 @@ runDrumsNade() {
   mvae.dispose();
 }
 
-async function
-runMel() {
+async function runMel() {
   const mvae = new mm.MusicVAE(MEL_CKPT);
   await mvae.initialize();
 
@@ -270,8 +268,7 @@ runMel() {
   mvae.dispose();
 }
 
-async function
-runTrio() {
+async function runTrio() {
   const mvae = new mm.MusicVAE(TRIO_CKPT);
   await mvae.initialize();
 
@@ -294,8 +291,8 @@ runTrio() {
 }
 
 // TODO(adarob): Switch to magenta/core function once implemented.
-function
-concatNoteSequences(seqs: mm.INoteSequence[], individualDuration: number) {
+function concatNoteSequences(
+    seqs: mm.INoteSequence[], individualDuration: number) {
   const concatSeq: mm.INoteSequence = clone(seqs[0]);
   for (let i = 1; i < seqs.length; ++i) {
     Array.prototype.push.apply(concatSeq.notes, seqs[i].notes.map(n => {
@@ -308,8 +305,7 @@ concatNoteSequences(seqs: mm.INoteSequence[], individualDuration: number) {
   return concatSeq;
 }
 
-async function
-runMel16() {
+async function runMel16() {
   const mvae = new mm.MusicVAE(MEL_16_CKPT);
   await mvae.initialize();
 

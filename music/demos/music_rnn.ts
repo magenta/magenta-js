@@ -152,8 +152,7 @@ async function runMelodyRnn() {
   console.log(tf.memory());
 }
 
-async function
-runDrumsRnn() {
+async function runDrumsRnn() {
   const drumsRnn = new mm.MusicRNN(
       DRUMS_CHECKPOINT, null, 32,
       mm.controls.controlSignalFromSpec(
