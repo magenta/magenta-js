@@ -15,13 +15,15 @@
  * =============================================================================
  */
 
+import * as tf from '@tensorflow/tfjs-core';
+import {isNullOrUndefined} from 'util';
+
 import * as controls from '../core/controls';
 import * as data from '../core/data';
 import * as sequences from '../core/sequences';
-import * as tf from '@tensorflow/tfjs';
-import {ATTENTION_PREFIX, AttentionWrapper} from './attention';
 import {INoteSequence} from '../protobuf/index';
-import {isNullOrUndefined} from 'util';
+
+import {ATTENTION_PREFIX, AttentionWrapper} from './attention';
 
 const CELL_FORMAT = 'multi_rnn_cell/cell_%d/basic_lstm_cell/';
 
@@ -60,8 +62,7 @@ export class MusicRNN<A extends controls.ControlSignalUserArgs> {
    */
   constructor(
       checkpointURL: string, dataConverter?: data.DataConverter,
-      attentionLength?: number,
-      controlSignal?: controls.ControlSignal<A>) {
+      attentionLength?: number, controlSignal?: controls.ControlSignal<A>) {
     this.checkpointURL = checkpointURL;
     this.initialized = false;
     this.rawVars = {};
@@ -199,7 +200,7 @@ export class MusicRNN<A extends controls.ControlSignalUserArgs> {
     for (let i = 0; i < length + steps; i++) {
       let nextInput: tf.Tensor2D;
       if (i < length) {
-        nextInput = splitInputs[i] as tf.Tensor2D;
+        nextInput = splitInputs[i];
       } else {
         const logits = lastOutput.matMul(this.lstmFcW).add(this.lstmFcB);
         const sampledOutput =
@@ -217,8 +218,7 @@ export class MusicRNN<A extends controls.ControlSignalUserArgs> {
       }
 
       if (splitControls) {
-        const control = splitControls[i + 1] as tf.Tensor2D;
-        nextInput = nextInput.concat(control, 1);
+        nextInput = nextInput.concat(splitControls[i + 1], 1);
       }
 
       if (this.attentionWrapper) {
