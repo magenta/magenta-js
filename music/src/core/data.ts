@@ -22,7 +22,7 @@ import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import * as sequences from './sequences';
 
-const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
+export const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
   // bass drum
   [36, 35],
   // snare drum

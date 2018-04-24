@@ -17,6 +17,7 @@
 
 import * as tf from '@tensorflow/tfjs-core';
 
+import {Player} from '../src/core/player';
 import * as mm from '../src/index';
 
 const CHECKPOINTS_DIR =
@@ -66,7 +67,7 @@ const MELODY_NS: mm.INoteSequence = {
       pitch: 67,
       velocity: 100,
       isDrum: false
-    },
+    }
   ]
 };
 
@@ -76,8 +77,7 @@ const DRUMS_NS: mm.INoteSequence = {
   timeSignatures: [{time: 0, numerator: 4, denominator: 4}],
   tempos: [{time: 0, qpm: 120}],
   notes: [
-    {startTime: 0, endTime: 0.5, pitch: 34, velocity: 100, isDrum: true},
-    {
+    {startTime: 0, endTime: 0.5, pitch: 35, velocity: 100, isDrum: true}, {
       instrument: 0,
       startTime: 0.5,
       endTime: 1.0,
@@ -93,8 +93,7 @@ const DRUMS_NS: mm.INoteSequence = {
       velocity: 100,
       isDrum: true
     },
-    {startTime: 1.0, endTime: 1.5, pitch: 34, velocity: 100, isDrum: true},
-    {
+    {startTime: 1.0, endTime: 1.5, pitch: 35, velocity: 100, isDrum: true}, {
       instrument: 0,
       startTime: 1.5,
       endTime: 2.0,
@@ -109,31 +108,55 @@ const DRUMS_NS: mm.INoteSequence = {
       pitch: 43,
       velocity: 100,
       isDrum: true
-    },
+    }
   ]
 };
 
 function writeTimer(elementId: string, startTime: number) {
   document.getElementById(elementId).innerHTML =
-      ((performance.now() - startTime) / 1000.).toString() + 's';
+      ((performance.now() - startTime) / 1000).toString() + 's';
 }
 
 function writeNoteSeqs(elementId: string, seqs: mm.INoteSequence[]) {
-  document.getElementById(elementId).innerHTML =
-      seqs.map(
-              seq => '[' +
-                  seq.notes
-                      .map(n => {
-                        let s = '{p:' + n.pitch + ' s:' + n.quantizedStartStep;
-                        if (n.quantizedEndStep != null) {
-                          s += ' e:' + n.quantizedEndStep;
-                        }
-                        s += '}';
-                        return s;
-                      })
-                      .join(', ') +
-                  ']')
-          .join('<br>');
+  const element = document.getElementById(elementId);
+  while (element.firstChild) {
+    element.removeChild(element.firstChild);
+  }
+  seqs.forEach(seq => {
+    const seqWrap = document.createElement('div');
+    const seqText = document.createElement('span');
+    seqText.innerHTML = '[' +
+        seq.notes
+            .map(n => {
+              let s = '{p:' + n.pitch + ' s:' + n.quantizedStartStep;
+              if (n.quantizedEndStep != null) {
+                s += ' e:' + n.quantizedEndStep;
+              }
+              s += '}';
+              return s;
+            })
+            .join(', ') +
+        ']';
+    seqWrap.appendChild(seqText);
+    seqWrap.appendChild(createPlayer(seq));
+    element.appendChild(seqWrap);
+  });
+}
+
+function createPlayer(seq: mm.INoteSequence) {
+  const player = new Player();
+  const button = document.createElement('button');
+  button.textContent = 'Play';
+  button.addEventListener('click', () => {
+    if (player.isPlaying()) {
+      player.stop();
+      button.textContent = 'Play';
+    } else {
+      player.start(seq).then(() => (button.textContent = 'Play'));
+      button.textContent = 'Stop';
+    }
+  });
+  return button;
 }
 
 async function runMelodyRnn() {

@@ -18,6 +18,7 @@
 import * as tf from '@tensorflow/tfjs-core';
 import * as clone from 'clone';
 
+import {Player} from '../src/core/player';
 import * as mm from '../src/index';
 
 const CHECKPOINTS_DIR =
@@ -186,28 +187,49 @@ concatNoteSequences([DRUM_SEQS[0], DRUM_SEQS[0]], 32).notes.map(n => {
 
 function writeTimer(elementId: string, startTime: number) {
   document.getElementById(elementId).innerHTML =
-      ((performance.now() - startTime) / 1000.).toString() + 's';
+      ((performance.now() - startTime) / 1000).toString() + 's';
 }
 
 function writeNoteSeqs(elementId: string, seqs: mm.INoteSequence[]) {
-  document.getElementById(elementId).innerHTML =
-      seqs.map(
-              seq => '[' +
-                  seq.notes
-                      .map(n => {
-                        let s = '{p:' + n.pitch + ' s:' + n.quantizedStartStep;
-                        if (n.quantizedEndStep != null) {
-                          s += ' e:' + n.quantizedEndStep;
-                        }
-                        if (n.instrument != null) {
-                          s += ' i:' + n.instrument;
-                        }
-                        s += '}';
-                        return s;
-                      })
-                      .join(', ') +
-                  ']')
-          .join('<br>');
+  const element = document.getElementById(elementId);
+  while (element.firstChild) {
+    element.removeChild(element.firstChild);
+  }
+  seqs.forEach(seq => {
+    const seqWrap = document.createElement('div');
+    const seqText = document.createElement('span');
+    seqText.innerHTML = '[' +
+        seq.notes
+            .map(n => {
+              let s = '{p:' + n.pitch + ' s:' + n.quantizedStartStep;
+              if (n.quantizedEndStep != null) {
+                s += ' e:' + n.quantizedEndStep;
+              }
+              s += '}';
+              return s;
+            })
+            .join(', ') +
+        ']';
+    seqWrap.appendChild(seqText);
+    seqWrap.appendChild(createPlayer(seq));
+    element.appendChild(seqWrap);
+  });
+}
+
+function createPlayer(seq: mm.INoteSequence) {
+  const player = new Player();
+  const button = document.createElement('button');
+  button.textContent = 'Play';
+  button.addEventListener('click', () => {
+    if (player.isPlaying()) {
+      player.stop();
+      button.textContent = 'Play';
+    } else {
+      player.start(seq).then(() => (button.textContent = 'Play'));
+      button.textContent = 'Stop';
+    }
+  });
+  return button;
 }
 
 async function runDrums() {
