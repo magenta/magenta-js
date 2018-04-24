@@ -18,7 +18,9 @@
 import * as tf from '@tensorflow/tfjs-core';
 import {isNullOrUndefined} from 'util';
 
-import * as controls from '../core/controls';
+import * as aux_inputs from '../core/aux_inputs';
+import * as chords from '../core/chords';
+import * as constants from '../core/constants';
 import * as data from '../core/data';
 import * as sequences from '../core/sequences';
 import {INoteSequence} from '../protobuf/index';
@@ -32,11 +34,12 @@ const CELL_FORMAT = 'multi_rnn_cell/cell_%d/basic_lstm_cell/';
  *
  * A MusicRNN is an LSTM-based language model for musical notes.
  */
-export class MusicRNN<A extends controls.ControlSignalUserArgs> {
+export class MusicRNN {
   private checkpointURL: string;
   private dataConverter: data.DataConverter;
   private attentionLength?: number;
-  private controlSignal: controls.ControlSignal<A>;
+  private chordEncoder: chords.ChordEncoder;
+  private auxInputs: aux_inputs.AuxiliaryInput[];
 
   private lstmCells: tf.LSTMCellFunc[];
   private lstmFcB: tf.Tensor1D;
@@ -57,12 +60,15 @@ export class MusicRNN<A extends controls.ControlSignalUserArgs> {
    * converting between `NoteSequence` and `Tensor` objects. If not provided, a
    * `converter.json` file must exist within the checkpoint directory specifying
    * the type and args for the correct `DataConverter`.
-   * @param controlSignal (Optional) A `ControlSignal` object that produces
-   * control tensors that will be appended to model inputs.
+   * @param chordEncoder (Optional) A `ChordEncoder` object that converts chord
+   * symbol strings to model input tensors.
+   * @param auxInputs (Optional) An array of `AuxiliaryInput` objects that
+   * produce auxiliary input tensors.
    */
   constructor(
       checkpointURL: string, dataConverter?: data.DataConverter,
-      attentionLength?: number, controlSignal?: controls.ControlSignal<A>) {
+      attentionLength?: number, chordEncoder?: chords.ChordEncoder,
+      auxInputs?: aux_inputs.AuxiliaryInput[]) {
     this.checkpointURL = checkpointURL;
     this.initialized = false;
     this.rawVars = {};
@@ -70,7 +76,8 @@ export class MusicRNN<A extends controls.ControlSignalUserArgs> {
     this.lstmCells = [];
     this.dataConverter = dataConverter;
     this.attentionLength = attentionLength;
-    this.controlSignal = controlSignal;
+    this.chordEncoder = chordEncoder;
+    this.auxInputs = auxInputs;
   }
 
   /**
@@ -155,11 +162,12 @@ export class MusicRNN<A extends controls.ControlSignalUserArgs> {
    * @param steps How many steps to continue.
    * @param temperature (Optional) The softmax temperature to use when sampling
    * from the logits. Argmax is used if not provided.
-   * @param controlSignalArgs (Optional) Arguments for creating control tensors.
+   * @param chordProgression (Optional) Chord progression to use as
+   * conditioning.
    */
   async continueSequence(
       sequence: INoteSequence, steps: number, temperature?: number,
-      controlSignalArgs?: A): Promise<INoteSequence> {
+      chordProgression = [constants.NO_CHORD]): Promise<INoteSequence> {
     sequences.assertIsQuantizedSequence(sequence);
 
     if (!this.initialized) {
@@ -170,10 +178,18 @@ export class MusicRNN<A extends controls.ControlSignalUserArgs> {
       const inputs = this.dataConverter.toTensor(sequence);
       const length: number = inputs.shape[0];
       const outputSize: number = inputs.shape[1];
-      const controls = this.controlSignal ?
-          this.controlSignal.getTensors(length + steps, controlSignalArgs) :
+      const controls = this.chordEncoder ?
+          this.chordEncoder.encodeProgression(
+              chordProgression, length + steps) :
           undefined;
-      const samples = this.sampleRnn(inputs, steps, temperature, controls);
+      const auxInputs = this.auxInputs ?
+          tf.concat(
+              this.auxInputs.map(
+                  auxInput => auxInput.getTensors(length + steps)),
+              1) :
+          undefined;
+      const samples =
+          this.sampleRnn(inputs, steps, temperature, controls, auxInputs);
       return tf.stack(samples).as2D(samples.length, outputSize);
     });
 
@@ -184,7 +200,7 @@ export class MusicRNN<A extends controls.ControlSignalUserArgs> {
 
   private sampleRnn(
       inputs: tf.Tensor2D, steps: number, temperature: number,
-      controls?: tf.Tensor2D) {
+      controls?: tf.Tensor2D, auxInputs?: tf.Tensor2D) {
     const length: number = inputs.shape[0];
     const outputSize: number = inputs.shape[1];
 
@@ -205,6 +221,8 @@ export class MusicRNN<A extends controls.ControlSignalUserArgs> {
     const splitInputs = tf.split(inputs.toFloat(), length);
     const splitControls =
         controls ? tf.split(controls, controls.shape[0]) : undefined;
+    const splitAuxInputs =
+        auxInputs ? tf.split(auxInputs, auxInputs.shape[0]) : undefined;
     for (let i = 0; i < length + steps; i++) {
       let nextInput: tf.Tensor2D;
       if (i < length) {
@@ -226,7 +244,10 @@ export class MusicRNN<A extends controls.ControlSignalUserArgs> {
       }
 
       if (splitControls) {
-        nextInput = nextInput.concat(splitControls[i + 1], 1);
+        nextInput = tf.concat([splitControls[i + 1], nextInput], 1);
+      }
+      if (splitAuxInputs) {
+        nextInput = nextInput.concat(splitAuxInputs[i], 1);
       }
 
       if (this.attentionWrapper) {

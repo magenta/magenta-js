@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 
-import * as controls from './controls';
+import * as aux_inputs from './aux_inputs';
+import * as chords from './chords';
 import * as data from './data';
 import * as sequences from './sequences';
-export {controls, data, sequences};
+export {aux_inputs, chords, data, sequences};
 
 export * from './midi_io';
 export * from './player';

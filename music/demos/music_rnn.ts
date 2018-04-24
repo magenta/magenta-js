@@ -176,9 +176,9 @@ async function runMelodyRnn() {
 
 async function runDrumsRnn() {
   const drumsRnn = new mm.MusicRNN(
-      DRUMS_CHECKPOINT, null, 32,
-      mm.controls.controlSignalFromSpec(
-          {type: 'BinaryCounter', args: {numBits: 6}}));
+      DRUMS_CHECKPOINT, null, 32, null,
+      [mm.aux_inputs.auxiliaryInputFromSpec(
+          {type: 'BinaryCounter', args: {numBits: 6}})]);
   await drumsRnn.initialize();
 
   const qns = mm.sequences.quantizeNoteSequence(DRUMS_NS, 1);
