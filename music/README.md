@@ -57,7 +57,7 @@ Add the following code to an HTML file:
 
 Open up that html file in your browser and the code should run!
 
-See INSERT TERO DEMO LINK for a complete example application with code.
+See *TODO(adarob, teropa): INSERT DEMO LINK* for a complete example application with code.
 
 ### via NPM
 
@@ -95,6 +95,7 @@ The JSON is formatted as a list of entries with the the following interface:
 
 ```ts
 interface Checkpoint {
+  id: string;  // A unique id for this checkpoint.
   model: 'MusicRNN'|'MusicVAE';  // The model class.
   description: string;  // A short human-readable description of the trained model.
   url: string;  // Path to the checkpoint directory.
