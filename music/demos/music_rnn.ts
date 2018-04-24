@@ -15,14 +15,15 @@
  * limitations under the License.
  */
 
-import * as mm from '../src/index';
 import * as tf from '@tensorflow/tfjs';
+
+import * as mm from '../src/index';
 
 const CHECKPOINTS_DIR =
     // tslint:disable-next-line:max-line-length
     'https://storage.googleapis.com/download.magenta.tensorflow.org/tfjs_checkpoints/music_rnn/';
 const MEL_CHECKPOINT = `${CHECKPOINTS_DIR}basic_rnn`;
-const DRUMS_CHECKPOINT = `${CHECKPOINTS_DIR}drums_rnn`;
+const DRUMS_CHECKPOINT = `${CHECKPOINTS_DIR}drum_kit_rnn`;
 
 const MELODY_NS: mm.INoteSequence = {
   ticksPerQuarter: 220,
@@ -151,7 +152,8 @@ async function runMelodyRnn() {
   console.log(tf.memory());
 }
 
-async function runDrumsRnn() {
+async function
+runDrumsRnn() {
   const drumsRnn = new mm.MusicRNN(
       DRUMS_CHECKPOINT, null, 32,
       mm.controls.controlSignalFromSpec(

@@ -26,7 +26,7 @@
 if [[ -n $1 ]]; then
   demos=( "${1}" )
 else
-  demos=( *.html )
+  demos=( *.ts )
 fi
 
 echo "Building ${demos[@]}..."
@@ -35,5 +35,5 @@ set -e
 set -x
 
 for demo in ${demos[@]}; do
-  browserify "${demo/.html/.ts}" -p [tsify] > "${demo/.html/_bundle.js}"
+  browserify "${demo}" -p [tsify] > "${demo/.ts/_bundle.js}"
 done
