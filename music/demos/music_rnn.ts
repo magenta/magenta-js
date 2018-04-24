@@ -17,8 +17,8 @@
 
 import * as tf from '@tensorflow/tfjs';
 
+import {Player} from '../src/core/player';
 import * as mm from '../src/index';
-import {Player} from './player';
 
 const CHECKPOINTS_DIR =
     // tslint:disable-next-line:max-line-length

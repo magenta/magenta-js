@@ -1,8 +1,7 @@
-/// <reference path="./tone.d.ts" />
-
-import * as mm from '../src/index';
-import DEFAULT_DRUM_PITCH_CLASSES = mm.data.DEFAULT_DRUM_PITCH_CLASSES;
 import * as Tone from 'tone';
+
+import {INoteSequence, NoteSequence} from '../protobuf/index';
+import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
 
 const EIGHTH = new Tone.Time('8n').toSeconds();
 
@@ -65,7 +64,7 @@ const snare =
         })
         .toMaster();
 
-const drumKit: ((time: number) => void)[] = [
+const drumKit: Array<(time: number) => void> = [
   time => kick.triggerAttackRelease('C2', '8n', time),
   time => snare.triggerAttackRelease('16n', time),
   time => closedHihat.triggerAttack(time, 0.3),
@@ -77,19 +76,21 @@ const drumKit: ((time: number) => void)[] = [
 ];
 
 export class Player {
+  /* tslint:disable:no-any */
   private currentPart: any;
   private scheduledStop: number;
   private synths = new Map<number, any>();
+  /* tslint:enable */
 
   /**
    * Start playing the note sequence, and return a Promisee
    * that resolves when it is done playing.
    */
-  start(seq: mm.INoteSequence): Promise<void> {
+  start(seq: INoteSequence): Promise<void> {
     const events =
         seq.notes.map(note => [note.quantizedStartStep * EIGHTH, note]);
     this.currentPart = new Tone.Part(
-        (t: number, n: mm.NoteSequence.INote) => this.playNote(t, n), events);
+        (t: number, n: NoteSequence.INote) => this.playNote(t, n), events);
     this.currentPart.start();
     if (Tone.Transport.state !== 'started') {
       Tone.Transport.start();
@@ -98,11 +99,11 @@ export class Player {
       this.scheduledStop = Tone.Transport.schedule(() => {
         this.stop();
         resolve();
-      }, '+' + events[events.length - 1][0]);
+      }, `+${events[events.length - 1][0]}`);
     });
   }
 
-  private playNote(time: number, n: mm.NoteSequence.INote) {
+  private playNote(time: number, n: NoteSequence.INote) {
     if (n.isDrum) {
       const drumClass = DEFAULT_DRUM_PITCH_CLASSES.findIndex(
           classes => classes.indexOf(n.pitch) >= 0);
