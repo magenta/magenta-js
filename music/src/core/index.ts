@@ -21,3 +21,4 @@ import * as sequences from './sequences';
 export {controls, data, sequences};
 
 export * from './midi_io';
+export * from './player';
