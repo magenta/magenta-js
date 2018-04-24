@@ -83,7 +83,7 @@ See our [demos](./demos) for example usage.
 
 `yarn bundle` to produce a bundled version in `dist/`.
 
-`yarn run-demo` to build and run the demo.
+`yarn run-demos` to build and run the demo.
 
 ## Pre-trained Checkpoints
 Since MagentaMusic.js does not support training models, you must use weights from a model trained with the Python-based [Magenta models][magenta-models]. We are also making available our own hosted pre-trained checkpoints.
