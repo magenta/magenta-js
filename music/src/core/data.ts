@@ -15,7 +15,7 @@
  * limitations under the License.
  * =============================================================================
  */
-import * as tf from '@tensorflow/tfjs';
+import * as tf from '@tensorflow/tfjs-core';
 import {isNullOrUndefined} from 'util';
 
 import {INoteSequence, NoteSequence} from '../protobuf/index';
@@ -442,21 +442,19 @@ export class TrioConverter extends DataConverter {
           this.drumsConverter.depth
         ],
         -1);
-    const ns = await this.melConverter.toNoteSequence(ohs[0] as tf.Tensor2D);
+    const ns = await this.melConverter.toNoteSequence(ohs[0]);
 
     ns.notes.forEach(n => {
       n.instrument = 0;
       n.program = 0;
     });
-    const bassNs =
-        await this.bassConverter.toNoteSequence(ohs[1] as tf.Tensor2D);
+    const bassNs = await this.bassConverter.toNoteSequence(ohs[1]);
     ns.notes.push(...bassNs.notes.map(n => {
       n.instrument = 1;
       n.program = this.BASS_PROG_RANGE[0];
       return n;
     }));
-    const drumsNs =
-        await this.drumsConverter.toNoteSequence(ohs[2] as tf.Tensor2D);
+    const drumsNs = await this.drumsConverter.toNoteSequence(ohs[2]);
     ns.notes.push(...drumsNs.notes.map(n => {
       n.instrument = 2;
       return n;
