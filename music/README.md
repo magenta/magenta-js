@@ -1,0 +1,132 @@
+# MagentaMusic.js API
+
+This JavaScript implementation of Magenta's musical note-based models uses [TensorFlow.js](https://js.tensorflow.org) for GPU-accelerated inference.
+
+We have made an effort to port our most useful models, but please file an issue if you think something is
+missing, or feel free to submit a Pull Request!
+
+For the Python TensorFlow implementations, see the [main Magenta repo](https://github.com/tensorflow/magenta).
+
+## Example Applications
+Here are a few applications built with MagentaMusic.js:
+
+* [Beat Blender](https://g.co/beatblender) by [Google Creative Lab](https://github.com/googlecreativelab)
+* [Melody Mixer](https://g.co/melodymixer) by [Google Creative Lab](https://github.com/googlecreativelab)
+* [Latent Loops](https://goo.gl/magenta/latent-loops) by [Google Pie Shop](https://github.com/teampieshop)
+* [Neural Drum Machine](https://codepen.io/teropa/pen/RMGxOQ) by [Tero Parviainen](https://github.com/teropa)
+
+## Available Models
+### MusicRNN
+[MusicRNN](./music_rnn) implements Magenta's LSTM-based language models. These include [MelodyRNN][melody-rnn], [DrumsRNN][drums-rnn], [ImprovRNN][improv-rnn], and [PerformanceRNN][performance-rnn].
+
+### MusicVAE
+[MusicVAE](./music_vae) implements several configurations of Magenta's variational autoencoder model called [MusicVAE][music-vae] including melody and drum "loop" models, 4- and 16-bar "trio" models, and chord-conditioned "multi-track" models.
+
+## Getting started
+
+There are two main ways to get MagentaMusic.js in your JavaScript project:
+via [script tags](https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_JavaScript_within_a_webpage) **or** by installing it from [NPM](https://www.npmjs.com/)
+and using a build tool like [yarn](https://yarnpkg.com/en/).
+
+### via Script Tag
+      
+Add the following code to an HTML file:
+
+```html
+<html>
+  <head>
+    <!-- Load MagentaMusic.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@magenta/music"> </script>
+
+    <!-- Place your code in the script tag below. You can also use an external .js file -->
+    <script>
+      // Notice there is no 'import' statement. 'mm' is available on the index-page
+      // because of the script tag above.
+      const model = mm.MusicVAE('/path/to/checkpoint');
+      const sample = model.sample();
+      
+      <!-- TODO(adarob, teropa) Add code to play back sample. -->
+
+    </script>
+  </head>
+
+  <body>
+  </body>
+</html>
+```
+
+Open up that html file in your browser and the code should run!
+
+See *TODO(adarob, teropa): INSERT DEMO LINK* for a complete example application with code.
+
+### via NPM
+
+Add MagentaMusic.js to your project using [yarn](https://yarnpkg.com/en/) **or** [npm](https://docs.npmjs.com/cli/npm).
+
+```js
+import * as mm from '@magenta/music';
+
+const model = mm.MusicVAE('/path/to/checkpoint');
+const sample = model.sample();
+
+// TODO(adarob, teropa) Add code to play back sample.
+```
+
+See our [demos](./demos) for example usage. 
+
+
+#### Example Commands
+
+`yarn install` to install dependencies.
+
+`yarn test` to run tests.
+
+`yarn bundle` to produce a bundled version in `dist/`.
+
+`yarn run-demos` to build and run the demo.
+
+## Pre-trained Checkpoints
+Since MagentaMusic.js does not support training models, you must use weights from a model trained with the Python-based [Magenta models][magenta-models]. We are also making available our own hosted pre-trained checkpoints.
+
+### Magenta-Hosted Checkpoints
+Several pre-trained MusicRNN and MusicVAE checkpoints are hosted on GCS. You can access a JSON index available checkpoints at https://goo.gl/magenta/js-checkpoints.
+
+The JSON is formatted as a list of entries with the the following interface:
+
+```ts
+interface Checkpoint {
+  id: string;  // A unique id for this checkpoint.
+  model: 'MusicRNN'|'MusicVAE';  // The model class.
+  description: string;  // A short human-readable description of the trained model.
+  url: string;  // Path to the checkpoint directory.
+}
+```
+
+While we do not plan to remove any of the current checkpoints, we will be adding more in the future.
+
+If your application has a high QPS, you must mirror these files on your own server.
+
+### Your Own Checkpoints
+
+#### Dumping Your Weights
+To use your own checkpoints with one of our models, you must first convert the weights to the appropriate format using the provided [checkpoint_converter](../scripts/checkpoint_converter.py) script. 
+
+This tool is dependent on [tfjs-converter](https://github.com/tensorflow/tfjs-converter), which you must first install using `pip install tensorflowjs`. Once installed, you can execute the script as follows:
+
+```bash
+../scripts/checkpoint_converter.py /path/to/model.ckpt /path/to/output_dir 
+```
+
+There are additonal flags available to reduce the size of the output by removing unused (training) variables or using weight quantization. Call `../scripts/checkpoint_converter.py -h` to list the avilable options.
+
+#### Specifying the Model Configuration
+
+TODO(iansimon): This will be dependent on how we end up setting up the model instantiation and config.
+
+<!-- links -->
+[melody-rnn]: https://github.com/tensorflow/magenta/tree/master/magenta/models/melody_rnn
+[drums-rnn]: https://github.com/tensorflow/magenta/tree/master/magenta/models/drums_rnn
+[improv-rnn]: https://github.com/tensorflow/magenta/tree/master/magenta/models/improv_rnn
+[performance-rnn]: https://github.com/tensorflow/magenta/tree/master/magenta/models/performance_rnn
+[magenta-models]: https://github.com/tensorflow/magenta/tree/master/magenta/models
+[music-vae]: https://g.co/musicvae
