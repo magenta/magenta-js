@@ -20,7 +20,7 @@ import * as tf from '@tensorflow/tfjs';
 import {NoteSequence, INoteSequence} from '../protobuf/index';
 import {isNullOrUndefined} from 'util';
 
-const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
+export const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
   // bass drum
   [36, 35],
   // snare drum
