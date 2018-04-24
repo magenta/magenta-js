@@ -15,10 +15,12 @@
  * limitations under the License.
  * =============================================================================
  */
-import * as sequences from './sequences';
 import * as tf from '@tensorflow/tfjs';
-import {NoteSequence, INoteSequence} from '../protobuf/index';
 import {isNullOrUndefined} from 'util';
+
+import {INoteSequence, NoteSequence} from '../protobuf/index';
+
+import * as sequences from './sequences';
 
 export const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
   // bass drum
@@ -69,8 +71,8 @@ export interface DrumsOneHotConverterSpec {
  * @property args Map containing values for argments to the constructor of the
  * `DataConverter` class specified above.
  */
-export type ConverterSpec = MelodyConverterSpec | DrumsConverterSpec |
-    DrumRollConverterSpec | TrioConverterSpec | DrumsOneHotConverterSpec;
+export type ConverterSpec = MelodyConverterSpec|DrumsConverterSpec|
+    DrumRollConverterSpec|TrioConverterSpec|DrumsOneHotConverterSpec;
 
 /**
  * Builds a `DataConverter` based on the given `ConverterSpec`.
@@ -166,7 +168,9 @@ export class DrumsConverter extends DataConverter {
         args.pitchClasses;
     this.pitchToClass = new Map<number, number>();
     for (let c = 0; c < this.pitchClasses.length; ++c) {  // class
-      this.pitchClasses[c].forEach((p) => { this.pitchToClass.set(p, c); });
+      this.pitchClasses[c].forEach((p) => {
+        this.pitchToClass.set(p, c);
+      });
     }
     this.depth = this.pitchClasses.length;
   }

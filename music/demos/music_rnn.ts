@@ -18,19 +18,19 @@
 import * as tf from '@tensorflow/tfjs';
 
 import * as mm from '../src/index';
-import { Player } from './player';
+import {Player} from './player';
 
 const CHECKPOINTS_DIR =
-  // tslint:disable-next-line:max-line-length
-  'https://storage.googleapis.com/download.magenta.tensorflow.org/tfjs_checkpoints/music_rnn/';
+    // tslint:disable-next-line:max-line-length
+    'https://storage.googleapis.com/download.magenta.tensorflow.org/tfjs_checkpoints/music_rnn/';
 const MEL_CHECKPOINT = `${CHECKPOINTS_DIR}basic_rnn`;
 const DRUMS_CHECKPOINT = `${CHECKPOINTS_DIR}drum_kit_rnn`;
 
 const MELODY_NS: mm.INoteSequence = {
   ticksPerQuarter: 220,
   totalTime: 1.5,
-  timeSignatures: [{ time: 0, numerator: 4, denominator: 4 }],
-  tempos: [{ time: 0, qpm: 120 }],
+  timeSignatures: [{time: 0, numerator: 4, denominator: 4}],
+  tempos: [{time: 0, qpm: 120}],
   notes: [
     {
       instrument: 0,
@@ -74,11 +74,10 @@ const MELODY_NS: mm.INoteSequence = {
 const DRUMS_NS: mm.INoteSequence = {
   ticksPerQuarter: 220,
   totalTime: 1.5,
-  timeSignatures: [{ time: 0, numerator: 4, denominator: 4 }],
-  tempos: [{ time: 0, qpm: 120 }],
+  timeSignatures: [{time: 0, numerator: 4, denominator: 4}],
+  tempos: [{time: 0, qpm: 120}],
   notes: [
-    { startTime: 0, endTime: 0.5, pitch: 35, velocity: 100, isDrum: true },
-    {
+    {startTime: 0, endTime: 0.5, pitch: 35, velocity: 100, isDrum: true}, {
       instrument: 0,
       startTime: 0.5,
       endTime: 1.0,
@@ -94,8 +93,7 @@ const DRUMS_NS: mm.INoteSequence = {
       velocity: 100,
       isDrum: true
     },
-    { startTime: 1.0, endTime: 1.5, pitch: 35, velocity: 100, isDrum: true },
-    {
+    {startTime: 1.0, endTime: 1.5, pitch: 35, velocity: 100, isDrum: true}, {
       instrument: 0,
       startTime: 1.5,
       endTime: 2.0,
@@ -116,7 +114,7 @@ const DRUMS_NS: mm.INoteSequence = {
 
 function writeTimer(elementId: string, startTime: number) {
   document.getElementById(elementId).innerHTML =
-    ((performance.now() - startTime) / 1000).toString() + 's';
+      ((performance.now() - startTime) / 1000).toString() + 's';
 }
 
 function writeNoteSeqs(elementId: string, seqs: mm.INoteSequence[]) {
@@ -127,19 +125,18 @@ function writeNoteSeqs(elementId: string, seqs: mm.INoteSequence[]) {
   seqs.forEach(seq => {
     const seqWrap = document.createElement('div');
     const seqText = document.createElement('span');
-    seqText.innerHTML =
-      '[' +
-      seq.notes
-        .map(n => {
-          let s = '{p:' + n.pitch + ' s:' + n.quantizedStartStep;
-          if (n.quantizedEndStep != null) {
-            s += ' e:' + n.quantizedEndStep;
-          }
-          s += '}';
-          return s;
-        })
-        .join(', ') +
-      ']';
+    seqText.innerHTML = '[' +
+        seq.notes
+            .map(n => {
+              let s = '{p:' + n.pitch + ' s:' + n.quantizedStartStep;
+              if (n.quantizedEndStep != null) {
+                s += ' e:' + n.quantizedEndStep;
+              }
+              s += '}';
+              return s;
+            })
+            .join(', ') +
+        ']';
     seqWrap.appendChild(seqText);
     seqWrap.appendChild(createPlayer(seq));
     element.appendChild(seqWrap);
@@ -180,14 +177,9 @@ async function runMelodyRnn() {
 
 async function runDrumsRnn() {
   const drumsRnn = new mm.MusicRNN(
-    DRUMS_CHECKPOINT,
-    null,
-    32,
-    mm.controls.controlSignalFromSpec({
-      type: 'BinaryCounter',
-      args: { numBits: 6 }
-    })
-  );
+      DRUMS_CHECKPOINT, null, 32,
+      mm.controls.controlSignalFromSpec(
+          {type: 'BinaryCounter', args: {numBits: 6}}));
   await drumsRnn.initialize();
 
   const qns = mm.sequences.quantizeNoteSequence(DRUMS_NS, 1);
