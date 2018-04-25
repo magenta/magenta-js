@@ -23,6 +23,8 @@ COLUMNS = ['ID', 'Model', 'Description', 'Size MB', 'URL']
 HEADER_TEXT = '''
 # Hosted Checkpoints
 
+Short link: https://goo.gl/magenta/js-checkpoints
+
 ## JSON Index
 
 A JSON index of available checkpoints is at
