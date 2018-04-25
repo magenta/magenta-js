@@ -18,7 +18,7 @@
 import * as tf from '@tensorflow/tfjs-core';
 import {isNullOrUndefined} from 'util';
 
-import * as controls from '../core/controls';
+import * as chords from '../core/chords';
 import * as data from '../core/data';
 import {INoteSequence} from '../protobuf/index';
 
@@ -488,10 +488,10 @@ class Nade {
  *
  * Exposes methods for interpolation and sampling of musical sequences.
  */
-class MusicVAE<A extends controls.ControlSignalUserArgs> {
+class MusicVAE {
   private checkpointURL: string;
   private dataConverter: data.DataConverter;
-  private controlSignal?: controls.ControlSignal<A>;
+  private chordEncoder?: chords.ChordEncoder;
 
   private encoder: Encoder;
   private decoder: Decoder;
@@ -507,16 +507,15 @@ class MusicVAE<A extends controls.ControlSignalUserArgs> {
    * `NoteSequence` and `Tensor` objects. If not provided, a `converter.json`
    * file must exist within the checkpoint directory specifying the type and
    * args for the correct `DataConverter`.
-   * @param controlSignal (Optional) A `ControlSignal` object that produces
-   * control tensors that will be appended to model inputs for both encoding and
-   * decoding.
+   * @param chordEncoder (Optional) A `ChordEncoder` object that converts chord
+   * symbol strings to model input tensors.
    */
   constructor(
       checkpointURL: string, dataConverter?: data.DataConverter,
-      controlSignal?: controls.ControlSignal<A>) {
+      chordEncoder?: chords.ChordEncoder) {
     this.checkpointURL = checkpointURL;
     this.dataConverter = dataConverter;
-    this.controlSignal = controlSignal;
+    this.chordEncoder = chordEncoder;
   }
 
   /**
@@ -702,24 +701,31 @@ class MusicVAE<A extends controls.ControlSignalUserArgs> {
    * number of sequences will be `numInterps`^2.
    * @param temperature (Optional) The softmax temperature to use when sampling
    * from the logits. Argmax is used if not provided.
-   * @param controlSignalArgs (Optional) Arguments for creating control tensors.
+   * @param chordProgression (Optional) Chord progression to use as
+   * conditioning.
    *
    * @returns An array of interpolation `NoteSequence` objects, as described
    * above.
    */
   async interpolate(
       inputSequences: INoteSequence[], numInterps: number, temperature?: number,
-      controlSignalArgs?: A) {
+      chordProgression?: string[]) {
+    if (this.chordEncoder && !chordProgression) {
+      throw new Error('Chord progression expected but not provided.');
+    }
+    if (!this.chordEncoder && chordProgression) {
+      throw new Error('Unexpected chord progression provided.')
+    }
+
     if (!this.initialized) {
       await this.initialize();
     }
 
-    const inputZs = await this.encode(inputSequences, controlSignalArgs);
+    const inputZs = await this.encode(inputSequences, chordProgression);
     const interpZs = tf.tidy(() => this.getInterpolatedZs(inputZs, numInterps));
     inputZs.dispose();
 
-    const outputSequenes =
-        this.decode(interpZs, temperature, controlSignalArgs);
+    const outputSequenes = this.decode(interpZs, temperature, chordProgression);
     interpZs.dispose();
     return outputSequenes;
   }
@@ -728,11 +734,19 @@ class MusicVAE<A extends controls.ControlSignalUserArgs> {
    * Encodes the input `NoteSequence`s into latent vectors.
    *
    * @param inputSequences An array of `NoteSequence`s to encode.
-   * @param controlSignalArgs (Optional) Arguments for creating control tensors.
+   * @param chordProgression (Optional) Chord progression to use as
+   * conditioning.
    * @returns A `Tensor` containing the batch of latent vectors, sized
    * `[inputSequences.length, zSize]`.
    */
-  async encode(inputSequences: INoteSequence[], controlSignalArgs?: A) {
+  async encode(inputSequences: INoteSequence[], chordProgression?: string[]) {
+    if (this.chordEncoder && !chordProgression) {
+      throw new Error('Chord progression expected but not provided.');
+    }
+    if (!this.chordEncoder && chordProgression) {
+      throw new Error('Unexpected chord progression provided.')
+    }
+
     if (!this.initialized) {
       await this.initialize();
     }
@@ -745,13 +759,13 @@ class MusicVAE<A extends controls.ControlSignalUserArgs> {
               t => this.dataConverter.toTensor(t) as tf.Tensor2D)) as
           tf.Tensor3D;
 
-      if (this.controlSignal) {
-        const controls =
-            tf.tile(
-                tf.expandDims(
-                    this.controlSignal.getTensors(numSteps, controlSignalArgs),
-                    0),
-                [inputSequences.length, 1]) as tf.Tensor3D;
+      if (this.chordEncoder) {
+        const controls = tf.tile(
+                             tf.expandDims(
+                                 this.chordEncoder.encodeProgression(
+                                     chordProgression, numSteps),
+                                 0),
+                             [inputSequences.length, 1]) as tf.Tensor3D;
         inputTensors = inputTensors.concat(controls, 2);
       }
 
@@ -766,11 +780,20 @@ class MusicVAE<A extends controls.ControlSignalUserArgs> {
    * @param z The latent vectors to decode, sized `[batchSize, zSize]`.
    * @param temperature (Optional) The softmax temperature to use when
    * sampling. The argmax is used if not provided.
-   * @param controlSignalArgs (Optional) Arguments for creating control tensors.
+   * @param chordProgression (Optional) Chord progression to use as
+   * conditioning.
    *
    * @returns The decoded `NoteSequence`s.
    */
-  async decode(z: tf.Tensor2D, temperature?: number, controlSignalArgs?: A) {
+  async decode(
+      z: tf.Tensor2D, temperature?: number, chordProgression?: string[]) {
+    if (this.chordEncoder && !chordProgression) {
+      throw new Error('Chord progression expected but not provided.');
+    }
+    if (!this.chordEncoder && chordProgression) {
+      throw new Error('Unexpected chord progression provided.')
+    }
+
     if (!this.initialized) {
       await this.initialize();
     }
@@ -778,8 +801,8 @@ class MusicVAE<A extends controls.ControlSignalUserArgs> {
     const numSteps = this.dataConverter.numSteps;
 
     const ohSeqs: tf.Tensor2D[] = tf.tidy(() => {
-      const controls = this.controlSignal ?
-          this.controlSignal.getTensors(numSteps, controlSignalArgs) :
+      const controls = this.chordEncoder ?
+          this.chordEncoder.encodeProgression(chordProgression, numSteps) :
           undefined;
       const ohSeqs =
           this.decoder.decode(z, numSteps, undefined, temperature, controls);
@@ -844,17 +867,26 @@ class MusicVAE<A extends controls.ControlSignalUserArgs> {
    *
    * @param numSamples The number of samples to return.
    * @param temperature The softmax temperature to use when sampling.
-   * @param controlSignalArgs (Optional) Arguments for creating control tensors.
+   * @param chordProgression (Optional) Chord progression to use as
+   * conditioning.
    *
    * @returns An array of sampled `NoteSequence` objects.
    */
-  async sample(numSamples: number, temperature = 0.5, controlSignalArgs?: A) {
+  async sample(
+      numSamples: number, temperature = 0.5, chordProgression?: string[]) {
+    if (this.chordEncoder && !chordProgression) {
+      throw new Error('Chord progression expected but not provided.');
+    }
+    if (!this.chordEncoder && chordProgression) {
+      throw new Error('Unexpected chord progression provided.')
+    }
+
     if (!this.initialized) {
       await this.initialize();
     }
     const randZs: tf.Tensor2D =
         tf.tidy(() => tf.randomNormal([numSamples, this.decoder.zDims]));
-    const outputSequenes = this.decode(randZs, temperature, controlSignalArgs);
+    const outputSequenes = this.decode(randZs, temperature, chordProgression);
     randZs.dispose();
     return outputSequenes;
   }

@@ -145,3 +145,15 @@ test('Test Pitch Chord Encoder', (t: test.Test) => {
   ]);
   t.end();
 });
+
+test('Test Encode Progression', (t: test.Test) => {
+  const e = chords.chordEncoderFromType('MajorMinorChordEncoder');
+  const tensors = e.encodeProgression(['C', 'Dm'], 4);
+  const splitTensors = tf.split(tensors, 4);
+  t.deepEqual(tensors.shape, [4, e.depth]);
+  t.deepEqual(splitTensors[0].dataSync(), e.encode('C').dataSync());
+  t.deepEqual(splitTensors[1].dataSync(), e.encode('C').dataSync());
+  t.deepEqual(splitTensors[2].dataSync(), e.encode('Dm').dataSync());
+  t.deepEqual(splitTensors[3].dataSync(), e.encode('Dm').dataSync());
+  t.end();
+});

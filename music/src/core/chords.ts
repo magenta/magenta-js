@@ -15,6 +15,11 @@
  * limitations under the License.
  */
 
+/**
+ * This file contains functionality for encoding chord symbol strings as tensors
+ * for input to models, typically as a conditioning variable.
+ */
+
 import * as tf from '@tensorflow/tfjs-core';
 import {Chord, Note} from 'tonal';
 import * as constants from './constants';
@@ -48,6 +53,11 @@ export class ChordEncodingException extends Error {
   }
 }
 
+/**
+ * Class containing static methods related to chord symbol interpretation. These
+ * functions make use of the Tonal.js music theory library, and are used when
+ * converting chord symbols to model inputs.
+ */
 export class ChordSymbols {
   /**
    * Returns an array containing integers (0-11) representing the pitch classes
@@ -112,10 +122,25 @@ export class ChordSymbols {
 export abstract class ChordEncoder {
   abstract depth: number;
   abstract encode(chord: string): tf.Tensor1D;
+
+  /**
+   * Encode a chord progression over a specified number of steps.
+   *
+   * @param chords An array of chord symbol strings.
+   * @param numSteps Number of steps to use.
+   * @returns A 2D tensor containing the encoded chord progression.
+   */
+  encodeProgression(chords: string[], numSteps: number) {
+    const encodedChords = chords.map(chord => this.encode(chord));
+    const indices =
+        Array.from(Array(numSteps).keys())
+            .map(step => Math.floor(step * encodedChords.length / numSteps));
+    return tf.stack(indices.map(i => encodedChords[i])) as tf.Tensor2D;
+  }
 }
 
 export type ChordEncoderType =
-    'MajorMinorChordEncoder' | 'TriadChordEncoder' | 'PitchChordEncoder';
+    'MajorMinorChordEncoder'|'TriadChordEncoder'|'PitchChordEncoder';
 
 /**
  * Creates a `ChordEncoder` based on the given `ChordEncoderType`.
