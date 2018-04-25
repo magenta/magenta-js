@@ -22,6 +22,13 @@ import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import * as sequences from './sequences';
 
+/**
+ * This file contains functionality for creating and using `DataConverter`
+ * objects that convert between tensors and `NoteSequence`s. A `DataConverter`
+ * is created from a `ConverterSpec` (typically read from JSON) that specifies
+ * the converter type and optional arguments.
+ */
+
 export const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
   // bass drum
   [36, 35],
@@ -111,7 +118,9 @@ export interface BaseConverterArgs {
 
 /**
  * Abstract DataConverter class for converting between `Tensor` and
- * `NoteSequence` objects.
+ * `NoteSequence` objects. Each subclass handles a particular type of musical
+ * sequence e.g. monophonic melody or (a few different representations of) drum
+ * track.
  */
 export abstract class DataConverter {
   readonly numSteps: number;             // Total length of sequences.

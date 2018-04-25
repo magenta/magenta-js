@@ -19,6 +19,11 @@ import * as tf from '@tensorflow/tfjs-core';
 import {Chord, Note} from 'tonal';
 import * as constants from './constants';
 
+/**
+ * This file contains functionality for encoding chord symbol strings as tensors
+ * for input to models, typically as a conditioning variable.
+ */
+
 const CHORD_QUALITY_INTERVALS = [
   ['1P', '3M', '5P'],  // major
   ['1P', '3m', '5P'],  // minor
@@ -48,6 +53,11 @@ export class ChordEncodingException extends Error {
   }
 }
 
+/**
+ * Class containing static methods related to chord symbol interpretation. These
+ * functions make use of the Tonal.js music theory library, and are used when
+ * converting chord symbols to model inputs.
+ */
 export class ChordSymbols {
   /**
    * Returns an array containing integers (0-11) representing the pitch classes

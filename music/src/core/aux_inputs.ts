@@ -17,6 +17,12 @@
 
 import * as tf from '@tensorflow/tfjs-core';
 
+/**
+ * This file contains "auxiliary" model inputs, which can be appended to the
+ * main input tensors extracted from a `NoteSequence`. Currently the only such
+ * auxiliary input type is a binary counter.
+ */
+
 export interface BinaryCounterSpec {
   type: 'BinaryCounter';
   args: BinaryCounterArgs;
