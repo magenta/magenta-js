@@ -110,7 +110,7 @@ Since MagentaMusic.js does not support training models, you must use weights fro
 
 Several pre-trained MusicRNN and MusicVAE checkpoints are hosted on GCS. The full list can is available in [this table](checkpoints/README.md#table) and can be accessed programmatically via a JSON index at https://goo.gl/magenta/js-checkpoints-json.
 
-More information is available at https://goog.gl/magenta/js-checkpoints.
+More information is available at https://goo.gl/magenta/js-checkpoints.
 
 ### Your Own Checkpoints
 
