@@ -33,7 +33,7 @@ following interface:
 interface Checkpoint {
   id: string;  // A unique id for this checkpoint.
   model: 'MusicRNN'|'MusicVAE';  // The model class.
-  sizeMb: number  // The size of the weights in megabytes.
+  sizeMb: number;  // The size of the weights in megabytes.
   description: string;  // A short human-readable description of the trained model.
   url: string;  // Path to the checkpoint directory.
 }
