@@ -174,6 +174,9 @@ export class MusicRNN {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
     }
+    if (!this.chordEncoder && chordProgression) {
+      throw new Error('Unexpected chord progression provided.')
+    }
 
     if (!this.initialized) {
       await this.initialize();

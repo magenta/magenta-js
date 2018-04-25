@@ -713,6 +713,9 @@ class MusicVAE {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
     }
+    if (!this.chordEncoder && chordProgression) {
+      throw new Error('Unexpected chord progression provided.')
+    }
 
     if (!this.initialized) {
       await this.initialize();
@@ -739,6 +742,9 @@ class MusicVAE {
   async encode(inputSequences: INoteSequence[], chordProgression?: string[]) {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
+    }
+    if (!this.chordEncoder && chordProgression) {
+      throw new Error('Unexpected chord progression provided.')
     }
 
     if (!this.initialized) {
@@ -783,6 +789,9 @@ class MusicVAE {
       z: tf.Tensor2D, temperature?: number, chordProgression?: string[]) {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
+    }
+    if (!this.chordEncoder && chordProgression) {
+      throw new Error('Unexpected chord progression provided.')
     }
 
     if (!this.initialized) {
@@ -867,6 +876,9 @@ class MusicVAE {
       numSamples: number, temperature = 0.5, chordProgression?: string[]) {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
+    }
+    if (!this.chordEncoder && chordProgression) {
+      throw new Error('Unexpected chord progression provided.')
     }
 
     if (!this.initialized) {
