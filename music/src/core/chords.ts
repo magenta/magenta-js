@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-import * as tf from '@tensorflow/tfjs-core';
-import {Chord, Note} from 'tonal';
-import * as constants from './constants';
-
 /**
  * This file contains functionality for encoding chord symbol strings as tensors
  * for input to models, typically as a conditioning variable.
  */
+
+import * as tf from '@tensorflow/tfjs-core';
+import {Chord, Note} from 'tonal';
+import * as constants from './constants';
 
 const CHORD_QUALITY_INTERVALS = [
   ['1P', '3M', '5P'],  // major

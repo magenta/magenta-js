@@ -20,7 +20,6 @@ import {isNullOrUndefined} from 'util';
 
 import * as aux_inputs from '../core/aux_inputs';
 import * as chords from '../core/chords';
-import * as constants from '../core/constants';
 import * as data from '../core/data';
 import * as sequences from '../core/sequences';
 import {INoteSequence} from '../protobuf/index';
@@ -61,9 +60,11 @@ export class MusicRNN {
    * `converter.json` file must exist within the checkpoint directory specifying
    * the type and args for the correct `DataConverter`.
    * @param chordEncoder (Optional) A `ChordEncoder` object that converts chord
-   * symbol strings to model input tensors.
+   * symbol strings to model input tensors. These are prepended to the main
+   * input tensors.
    * @param auxInputs (Optional) An array of `AuxiliaryInput` objects that
-   * produce auxiliary input tensors.
+   * produce auxiliary input tensors. These are appended to the main input
+   * tensors.
    */
   constructor(
       checkpointURL: string, dataConverter?: data.DataConverter,
@@ -167,8 +168,12 @@ export class MusicRNN {
    */
   async continueSequence(
       sequence: INoteSequence, steps: number, temperature?: number,
-      chordProgression = [constants.NO_CHORD]): Promise<INoteSequence> {
+      chordProgression?: string[]): Promise<INoteSequence> {
     sequences.assertIsQuantizedSequence(sequence);
+
+    if (this.chordEncoder && !chordProgression) {
+      throw new Error('Chord progression expected but not provided.');
+    }
 
     if (!this.initialized) {
       await this.initialize();
@@ -243,12 +248,15 @@ export class MusicRNN {
         break;
       }
 
+      const tensors = [];
       if (splitControls) {
-        nextInput = tf.concat([splitControls[i + 1], nextInput], 1);
+        tensors.push(splitControls[i + 1]);
       }
+      tensors.push(nextInput);
       if (splitAuxInputs) {
-        nextInput = nextInput.concat(splitAuxInputs[i], 1);
+        tensors.push(splitAuxInputs[i]);
       }
+      nextInput = tf.concat(tensors, 1);
 
       if (this.attentionWrapper) {
         const wrapperOutput =

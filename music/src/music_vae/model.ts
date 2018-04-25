@@ -19,7 +19,6 @@ import * as tf from '@tensorflow/tfjs-core';
 import {isNullOrUndefined} from 'util';
 
 import * as chords from '../core/chords';
-import * as constants from '../core/constants';
 import * as data from '../core/data';
 import {INoteSequence} from '../protobuf/index';
 
@@ -710,7 +709,11 @@ class MusicVAE {
    */
   async interpolate(
       inputSequences: INoteSequence[], numInterps: number, temperature?: number,
-      chordProgression = [constants.NO_CHORD]) {
+      chordProgression?: string[]) {
+    if (this.chordEncoder && !chordProgression) {
+      throw new Error('Chord progression expected but not provided.');
+    }
+
     if (!this.initialized) {
       await this.initialize();
     }
@@ -733,9 +736,11 @@ class MusicVAE {
    * @returns A `Tensor` containing the batch of latent vectors, sized
    * `[inputSequences.length, zSize]`.
    */
-  async encode(inputSequences: INoteSequence[], chordProgression = [
-    constants.NO_CHORD
-  ]) {
+  async encode(inputSequences: INoteSequence[], chordProgression?: string[]) {
+    if (this.chordEncoder && !chordProgression) {
+      throw new Error('Chord progression expected but not provided.');
+    }
+
     if (!this.initialized) {
       await this.initialize();
     }
@@ -774,9 +779,12 @@ class MusicVAE {
    *
    * @returns The decoded `NoteSequence`s.
    */
-  async decode(z: tf.Tensor2D, temperature?: number, chordProgression = [
-    constants.NO_CHORD
-  ]) {
+  async decode(
+      z: tf.Tensor2D, temperature?: number, chordProgression?: string[]) {
+    if (this.chordEncoder && !chordProgression) {
+      throw new Error('Chord progression expected but not provided.');
+    }
+
     if (!this.initialized) {
       await this.initialize();
     }
@@ -855,9 +863,12 @@ class MusicVAE {
    *
    * @returns An array of sampled `NoteSequence` objects.
    */
-  async sample(numSamples: number, temperature = 0.5, chordProgression = [
-    constants.NO_CHORD
-  ]) {
+  async sample(
+      numSamples: number, temperature = 0.5, chordProgression?: string[]) {
+    if (this.chordEncoder && !chordProgression) {
+      throw new Error('Chord progression expected but not provided.');
+    }
+
     if (!this.initialized) {
       await this.initialize();
     }
