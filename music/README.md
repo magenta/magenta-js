@@ -2,9 +2,6 @@
 
 This JavaScript implementation of Magenta's musical note-based models uses [TensorFlow.js](https://js.tensorflow.org) for GPU-accelerated inference.
 
-We have made an effort to port our most useful models, but please file an issue if you think something is
-missing, or feel free to submit a Pull Request!
-
 For the Python TensorFlow implementations, see the [main Magenta repo](https://github.com/tensorflow/magenta).
 
 ## Contents
@@ -15,6 +12,7 @@ For the Python TensorFlow implementations, see the [main Magenta repo](https://g
 * [Model Checkpoints](#model-checkpoints)
 
 ## Example Applications
+
 Here are a few applications built with MagentaMusic.js:
 
 * [Beat Blender](https://g.co/beatblender) by [Google Creative Lab](https://github.com/googlecreativelab)
@@ -23,6 +21,9 @@ Here are a few applications built with MagentaMusic.js:
 * [Neural Drum Machine](https://codepen.io/teropa/pen/RMGxOQ) by [Tero Parviainen](https://github.com/teropa)
 
 ## Supported Models
+
+We have made an effort to port our most useful models, but please file an issue if you think something is
+missing, or feel free to submit a Pull Request!
 
 ### MusicRNN
 [MusicRNN](./music_rnn) implements Magenta's LSTM-based language models. These include [MelodyRNN][melody-rnn], [DrumsRNN][drums-rnn], [ImprovRNN][improv-rnn], and [PerformanceRNN][performance-rnn].
