@@ -26,8 +26,8 @@ HEADER_TEXT = '''
 ## JSON Index
 
 A JSON index of available checkpoints is at
-https://goo.gl/magenta/js-checkpoints, formatted as a list of entries with the
-following interface:
+https://goo.gl/magenta/js-checkpoints-json, formatted as a list of entries with
+the following interface:
 
 ```ts
 interface Checkpoint {
