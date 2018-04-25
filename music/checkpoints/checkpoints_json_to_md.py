@@ -13,12 +13,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""Convert checkpoints.json to README.md."""
 
-"""Convert checkpoints.json to checkpoints.md."""
 import argparse
 import json
 
 COLUMNS = ['ID', 'Model', 'Description', 'URL']
+
+HEADER_TEXT = '''
+# Hosted Checkpoints
+
+## JSON Index
+
+A JSON index of available checkpoints is at
+https://goo.gl/magenta/js-checkpoints, formatted as a list of entries with the
+following interface:
+
+```ts
+interface Checkpoint {
+  id: string;  // A unique id for this checkpoint.
+  model: 'MusicRNN'|'MusicVAE';  // The model class.
+  description: string;  // A short human-readable description of the trained model.
+  url: string;  // Path to the checkpoint directory.
+}
+```
+
+While we do not plan to remove any of the current checkpoints, we will be adding more in the future.
+
+If your application has a high QPS, you must mirror these files on your own server.
+
+## Table
+
+'''
 
 def json_to_md(json_checkpoints):
   s = '|'.join(COLUMNS) + '\n'
@@ -39,7 +65,7 @@ if __name__ == '__main__':
       '--output_md',
       type=str,
       help='Path to output Markdown file.',
-      default='checkpoints.md')
+      default='README.md')
   FLAGS, unparsed = parser.parse_known_args()
 
   if unparsed:
@@ -48,7 +74,4 @@ if __name__ == '__main__':
     exit(-1)
 
   json_checkpoints = json.loads(open(FLAGS.input_json, 'r').read())
-  md_checkpoints = ('# Hosted Checkpoints\n\n' +
-                    'JSON file: https://goo.gl/magenta/tfjs-checkpoints\n\n' +
-                    json_to_md(json_checkpoints))
-  open(FLAGS.output_md, 'w').write(md_checkpoints)
+  open(FLAGS.output_md, 'w').write(HEADER_TEXT + json_to_md(json_checkpoints))

@@ -1,6 +1,26 @@
+
 # Hosted Checkpoints
 
-JSON file: https://goo.gl/magenta/tfjs-checkpoints
+## JSON Index
+
+A JSON index of available checkpoints is at
+https://goo.gl/magenta/js-checkpoints, formatted as a list of entries with the
+following interface:
+
+```ts
+interface Checkpoint {
+  id: string;  // A unique id for this checkpoint.
+  model: 'MusicRNN'|'MusicVAE';  // The model class.
+  description: string;  // A short human-readable description of the trained model.
+  url: string;  // Path to the checkpoint directory.
+}
+```
+
+While we do not plan to remove any of the current checkpoints, we will be adding more in the future.
+
+If your application has a high QPS, you must mirror these files on your own server.
+
+## Table
 
 ID|Model|Description|URL
 ---|---|---|---
