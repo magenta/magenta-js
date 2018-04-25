@@ -18,7 +18,7 @@
 import argparse
 import json
 
-COLUMNS = ['ID', 'Model', 'Description', 'URL']
+COLUMNS = ['ID', 'Model', 'Description', 'Size MB', 'URL']
 
 HEADER_TEXT = '''
 # Hosted Checkpoints
@@ -33,6 +33,7 @@ following interface:
 interface Checkpoint {
   id: string;  // A unique id for this checkpoint.
   model: 'MusicRNN'|'MusicVAE';  // The model class.
+  sizeMb: number  // The size of the weights in megabytes.
   description: string;  // A short human-readable description of the trained model.
   url: string;  // Path to the checkpoint directory.
 }
@@ -50,7 +51,8 @@ def json_to_md(json_checkpoints):
   s = '|'.join(COLUMNS) + '\n'
   s += '|'.join(['---'] * len(COLUMNS)) + '\n'
   for ckpt in json_checkpoints:
-    s += '|'.join([ckpt[c.lower()] for c in COLUMNS[:-1]])
+    s += '|'.join(
+        [str(ckpt[c.lower().replace(' ', '_')]) for c in COLUMNS[:-1]])
     s += '|[Right Click to Copy](' + ckpt[COLUMNS[-1].lower()] + ')\n'
   return s
 
