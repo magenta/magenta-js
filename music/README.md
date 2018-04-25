@@ -7,6 +7,13 @@ missing, or feel free to submit a Pull Request!
 
 For the Python TensorFlow implementations, see the [main Magenta repo](https://github.com/tensorflow/magenta).
 
+## Contents
+
+* [Example Applcations](#example-applications)
+* [Supported Models](#supported-models)
+* [Getting Started](#getting-started)
+* [Model Checkpoints](#model-checkpoints)
+
 ## Example Applications
 Here are a few applications built with MagentaMusic.js:
 
@@ -15,7 +22,8 @@ Here are a few applications built with MagentaMusic.js:
 * [Latent Loops](https://goo.gl/magenta/latent-loops) by [Google Pie Shop](https://github.com/teampieshop)
 * [Neural Drum Machine](https://codepen.io/teropa/pen/RMGxOQ) by [Tero Parviainen](https://github.com/teropa)
 
-## Available Models
+## Supported Models
+
 ### MusicRNN
 [MusicRNN](./music_rnn) implements Magenta's LSTM-based language models. These include [MelodyRNN][melody-rnn], [DrumsRNN][drums-rnn], [ImprovRNN][improv-rnn], and [PerformanceRNN][performance-rnn].
 
@@ -93,15 +101,15 @@ See our [demos](./demos) for example usage.
 
 `yarn run-demos` to build and run the demo.
 
-## Pre-trained Checkpoints
+## Model Checkpoints
 
 Since MagentaMusic.js does not support training models, you must use weights from a model trained with the Python-based [Magenta models][magenta-models]. We are also making available our own hosted pre-trained checkpoints.
 
 ### Magenta-Hosted Checkpoints
 
-Several pre-trained MusicRNN and MusicVAE checkpoints are hosted on GCS. The full list can is available in a [table](checkpoints/README.md#table) and can be accessed programmatically via a JSON index at https://goo.gl/magenta/js-checkpoints.
+Several pre-trained MusicRNN and MusicVAE checkpoints are hosted on GCS. The full list can is available in [this table](checkpoints/README.md#table) and can be accessed programmatically via a JSON index at https://goo.gl/magenta/js-checkpoints.
 
-More information is available in the [checkpoints readme](checkpoints/README.md).
+More information is available in the [checkpoints README](checkpoints/README.md).
 
 ### Your Own Checkpoints
 
