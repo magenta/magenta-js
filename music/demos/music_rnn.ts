@@ -24,6 +24,7 @@ const CHECKPOINTS_DIR =
     'https://storage.googleapis.com/download.magenta.tensorflow.org/tfjs_checkpoints/music_rnn/';
 const MEL_CHECKPOINT = `${CHECKPOINTS_DIR}basic_rnn`;
 const DRUMS_CHECKPOINT = `${CHECKPOINTS_DIR}drum_kit_rnn`;
+const IMPROV_CHECKPOINT = `${CHECKPOINTS_DIR}chord_pitches_improv`;
 
 const MELODY_NS: mm.INoteSequence = {
   ticksPerQuarter: 220,
@@ -193,5 +194,23 @@ async function runDrumsRnn() {
   console.log(tf.memory());
 }
 
+async function runImprovRnn() {
+  const improvRnn = new mm.MusicRNN(
+      IMPROV_CHECKPOINT, null, null, new mm.chords.PitchChordEncoder());
+  await improvRnn.initialize();
+
+  const qns = mm.sequences.quantizeNoteSequence(MELODY_NS, 1);
+  writeNoteSeqs('improv-cont-inputs', [qns]);
+  const start = performance.now();
+  const continuation = await improvRnn.continueSequence(qns, 20, 1.0, ['Cm']);
+  writeTimer('improv-cont-time', start);
+  writeNoteSeqs('improv-cont-results', [continuation]);
+  improvRnn.dispose();
+
+  console.log(tf.getBackend());
+  console.log(tf.memory());
+}
+
 runMelodyRnn();
 runDrumsRnn();
+runImprovRnn();
