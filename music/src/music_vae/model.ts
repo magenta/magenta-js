@@ -714,7 +714,7 @@ class MusicVAE {
       throw new Error('Chord progression expected but not provided.');
     }
     if (!this.chordEncoder && chordProgression) {
-      throw new Error('Unexpected chord progression provided.')
+      throw new Error('Unexpected chord progression provided.');
     }
 
     if (!this.initialized) {
@@ -744,7 +744,7 @@ class MusicVAE {
       throw new Error('Chord progression expected but not provided.');
     }
     if (!this.chordEncoder && chordProgression) {
-      throw new Error('Unexpected chord progression provided.')
+      throw new Error('Unexpected chord progression provided.');
     }
 
     if (!this.initialized) {
@@ -791,7 +791,7 @@ class MusicVAE {
       throw new Error('Chord progression expected but not provided.');
     }
     if (!this.chordEncoder && chordProgression) {
-      throw new Error('Unexpected chord progression provided.')
+      throw new Error('Unexpected chord progression provided.');
     }
 
     if (!this.initialized) {
@@ -878,7 +878,7 @@ class MusicVAE {
       throw new Error('Chord progression expected but not provided.');
     }
     if (!this.chordEncoder && chordProgression) {
-      throw new Error('Unexpected chord progression provided.')
+      throw new Error('Unexpected chord progression provided.');
     }
 
     if (!this.initialized) {
