@@ -16,7 +16,6 @@
  */
 
 import * as tf from '@tensorflow/tfjs-core';
-import {isNullOrUndefined} from 'util';
 
 import * as aux_inputs from '../core/aux_inputs';
 import * as chords from '../core/chords';
@@ -27,6 +26,26 @@ import {INoteSequence} from '../protobuf/index';
 import {ATTENTION_PREFIX, AttentionWrapper} from './attention';
 
 const CELL_FORMAT = 'multi_rnn_cell/cell_%d/basic_lstm_cell/';
+
+/**
+ * Interface for JSON specification of a `MusicRNN` model.
+ *
+ * @property type The type of the model, `MusicRNN`.
+ * @property dataConverter: A `DataConverterSpec` specifying the data converter
+ * to use.
+ * @property attentionLength: (Optional) Size of attention vector to use.
+ * @property chordEncoder: (Optional) Type of chord encoder to use when
+ * conditioning on chords.
+ * @property auxInputs: (Optional) An array of `AuxiliaryInputSpec`s for any
+ * auxiliary inputs.
+ */
+export interface MusicRNNSpec {
+  type: 'MusicRNN';
+  dataConverter: data.ConverterSpec;
+  attentionLength?: number;
+  chordEncoder?: chords.ChordEncoderType;
+  auxInputs?: aux_inputs.AuxiliaryInputSpec[];
+}
 
 /**
  * Main MusicRNN model class.
@@ -52,13 +71,41 @@ export class MusicRNN {
   private initialized: boolean;
 
   /**
+   * Create a `MusicRNN` object from URL. If `spec` not provided, loads a
+   * `config.json` file containing model specification from the URL directory.
+   * Does not initialize the model weights.
+   *
+   * @param url Path to a checkpoint directory.
+   * @param spec (Optional) `MusicRNNSpec` object. If undefined, will be loaded
+   * from a `config.json` file in the checkpoint directory.
+   */
+  static async fromURL(url: string, spec?: MusicRNNSpec) {
+    function modelFromSpec(spec: MusicRNNSpec) {
+      const dataConverter = data.converterFromSpec(spec.dataConverter);
+      const chordEncoder = spec.chordEncoder ?
+          chords.chordEncoderFromType(spec.chordEncoder) :
+          undefined;
+      const auxInputs = spec.auxInputs ?
+          spec.auxInputs.map(s => aux_inputs.auxiliaryInputFromSpec(s)) :
+          undefined;
+      return new MusicRNN(
+          url, dataConverter, spec.attentionLength, chordEncoder, auxInputs);
+    }
+    if (spec) {
+      return modelFromSpec(spec);
+    } else {
+      return await fetch(`${url}/config.json`)
+          .then((response) => response.json())
+          .then((spec: MusicRNNSpec) => modelFromSpec(spec));
+    }
+  }
+
+  /**
    * `MusicRNN` constructor.
    *
    * @param checkpointURL Path to the checkpoint directory.
-   * @param dataConverter (Optional) A `DataConverter` object to use for
-   * converting between `NoteSequence` and `Tensor` objects. If not provided, a
-   * `converter.json` file must exist within the checkpoint directory specifying
-   * the type and args for the correct `DataConverter`.
+   * @param dataConverter A `DataConverter` object to use for converting between
+   * `NoteSequence` and `Tensor` objects.
    * @param chordEncoder (Optional) A `ChordEncoder` object that converts chord
    * symbol strings to model input tensors. These are prepended to the main
    * input tensors.
@@ -67,7 +114,7 @@ export class MusicRNN {
    * tensors.
    */
   constructor(
-      checkpointURL: string, dataConverter?: data.DataConverter,
+      checkpointURL: string, dataConverter: data.DataConverter,
       attentionLength?: number, chordEncoder?: chords.ChordEncoder,
       auxInputs?: aux_inputs.AuxiliaryInput[]) {
     this.checkpointURL = checkpointURL;
@@ -94,14 +141,6 @@ export class MusicRNN {
    */
   async initialize() {
     this.dispose();
-
-    if (isNullOrUndefined(this.dataConverter)) {
-      fetch(`${this.checkpointURL}/converter.json`)
-          .then((response) => response.json())
-          .then((converterSpec: data.ConverterSpec) => {
-            this.dataConverter = data.converterFromSpec(converterSpec);
-          });
-    }
 
     const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
                      .then((response) => response.json())
@@ -152,7 +191,6 @@ export class MusicRNN {
       this.forgetBias.dispose();
       this.forgetBias = undefined;
     }
-    this.dataConverter = undefined;
     this.initialized = false;
   }
 

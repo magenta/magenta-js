@@ -232,7 +232,11 @@ function createPlayer(seq: mm.INoteSequence) {
 }
 
 async function runDrums() {
-  const mvae = new mm.MusicVAE(DRUMS_CKPT);
+  const mvae = await mm.MusicVAE.fromURL(DRUMS_CKPT, {
+    type: 'MusicVAE',
+    dataConverter:
+        {type: 'DrumsConverter', args: {numSteps: 32, pitchClasses: null}}
+  });
   await mvae.initialize();
 
   writeNoteSeqs('drums-inputs', DRUM_SEQS);
@@ -251,7 +255,11 @@ async function runDrums() {
 }
 
 async function runDrumsNade() {
-  const mvae = new mm.MusicVAE(DRUMS_NADE_CKPT);
+  const mvae = await mm.MusicVAE.fromURL(DRUMS_NADE_CKPT, {
+    type: 'MusicVAE',
+    dataConverter:
+        {type: 'DrumRollConverter', args: {numSteps: 32, pitchClasses: null}}
+  });
   await mvae.initialize();
 
   writeNoteSeqs('nade-inputs', DRUM_SEQS);
@@ -270,7 +278,13 @@ async function runDrumsNade() {
 }
 
 async function runMel() {
-  const mvae = new mm.MusicVAE(MEL_CKPT);
+  const mvae = await mm.MusicVAE.fromURL(MEL_CKPT, {
+    type: 'MusicVAE',
+    dataConverter: {
+      type: 'MelodyConverter',
+      args: {minPitch: 21, maxPitch: 108, numSteps: 32}
+    }
+  });
   await mvae.initialize();
 
   const inputs = [MEL_TEAPOT, MEL_TWINKLE];
@@ -290,7 +304,19 @@ async function runMel() {
 }
 
 async function runTrio() {
-  const mvae = new mm.MusicVAE(TRIO_CKPT);
+  const mvae = await mm.MusicVAE.fromURL(TRIO_CKPT, {
+    type: 'MusicVAE',
+    dataConverter: {
+      type: 'TrioConverter',
+      args: {
+        numSteps: 64,
+        numSegments: 4,
+        melArgs: {minPitch: 21, maxPitch: 108},
+        bassArgs: {minPitch: 21, maxPitch: 108},
+        drumsArgs: {pitchClasses: null}
+      }
+    }
+  });
   await mvae.initialize();
 
   const inputs = [TRIO_EXAMPLE];
@@ -327,7 +353,13 @@ function concatNoteSequences(
 }
 
 async function runMel16() {
-  const mvae = new mm.MusicVAE(MEL_16_CKPT);
+  const mvae = await mm.MusicVAE.fromURL(MEL_16_CKPT, {
+    type: 'MusicVAE',
+    dataConverter: {
+      type: 'MelodyConverter',
+      args: {numSteps: 256, numSegments: 16, minPitch: 21, maxPitch: 108}
+    }
+  });
   await mvae.initialize();
 
   const inputs: mm.INoteSequence[] = [
