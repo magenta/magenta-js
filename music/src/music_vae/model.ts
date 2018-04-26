@@ -574,8 +574,8 @@ class MusicVAE {
     const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
                      .then((response) => response.json())
                      .then(
-                         (manifest: tf.WeightsManifestConfig) =>
-                             tf.loadWeights(manifest, this.checkpointURL));
+                         (manifest: tf.io.WeightsManifestConfig) =>
+                             tf.io.loadWeights(manifest, this.checkpointURL));
     this.rawVars = vars;  // Save for disposal.
 
     // Encoder variables.
