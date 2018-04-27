@@ -96,6 +96,7 @@ export class Player {
   private currentPart: any;
   private scheduledStop: number;
   private synths = new Map<number, any>();
+  static context = Tone.context;
   /* tslint:enable */
 
   /**
@@ -103,6 +104,7 @@ export class Player {
    * that resolves when it is done playing.
    */
   start(seq: INoteSequence): Promise<void> {
+    Tone.context.resume();
     const events =
         seq.notes.map(note => [note.quantizedStartStep * EIGHTH, note]);
     this.currentPart = new Tone.Part(
