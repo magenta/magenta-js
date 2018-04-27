@@ -160,11 +160,7 @@ function createPlayer(seq: mm.INoteSequence) {
 }
 
 async function runMelodyRnn() {
-  const melodyRnn = await mm.MusicRNN.fromURL(MEL_CHECKPOINT, {
-    type: 'MusicRNN',
-    dataConverter:
-        {type: 'MelodyConverter', args: {minPitch: 48, maxPitch: 83}}
-  });
+  const melodyRnn = await mm.MusicRNN.fromURL(MEL_CHECKPOINT);
   await melodyRnn.initialize();
 
   const qns = mm.sequences.quantizeNoteSequence(MELODY_NS, 1);
@@ -180,15 +176,7 @@ async function runMelodyRnn() {
 }
 
 async function runDrumsRnn() {
-  const drumsRnn = await mm.MusicRNN.fromURL(DRUMS_CHECKPOINT, {
-    type: 'MusicRNN',
-    dataConverter: {
-      type: 'DrumsOneHotConverter',
-      args: {pitchClasses: null, numSteps: null}
-    },
-    attentionLength: 32,
-    auxInputs: [{type: 'BinaryCounter', args: {numBits: 6}}]
-  });
+  const drumsRnn = await mm.MusicRNN.fromURL(DRUMS_CHECKPOINT);
   await drumsRnn.initialize();
 
   const qns = mm.sequences.quantizeNoteSequence(DRUMS_NS, 1);
@@ -204,12 +192,7 @@ async function runDrumsRnn() {
 }
 
 async function runImprovRnn() {
-  const improvRnn = await mm.MusicRNN.fromURL(IMPROV_CHECKPOINT, {
-    type: 'MusicRNN',
-    dataConverter:
-        {type: 'MelodyConverter', args: {minPitch: 48, maxPitch: 83}},
-    chordEncoder: 'PitchChordEncoder'
-  });
+  const improvRnn = await mm.MusicRNN.fromURL(IMPROV_CHECKPOINT);
   await improvRnn.initialize();
 
   const qns = mm.sequences.quantizeNoteSequence(MELODY_NS, 1);
