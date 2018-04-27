@@ -103,13 +103,19 @@ export class Player {
   /**
    * Start playing a quantized note sequence, and return a Promise
    * that resolves when it is done playing.
+   * @param seq The `NoteSequence` to play.
+   * @param qpm (Optional) If specified, will play back at this qpm. If not
+   * specified, will use either the qpm specified in the sequence or the default
+   * of 120.
    */
-  start(seq: INoteSequence): Promise<void> {
+  start(seq: INoteSequence, qpm?: number): Promise<void> {
     sequences.assertIsQuantizedSequence(seq);
 
     Tone.context.resume();
 
-    if (seq.tempos && seq.tempos.length > 0) {
+    if (qpm) {
+      Tone.Transport.bpm.value = qpm;
+    } else if (seq.tempos && seq.tempos.length > 0) {
       // TODO(fjord): support tempo changes.
       Tone.Transport.bpm.value = seq.tempos[0].qpm;
     } else {

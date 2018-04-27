@@ -826,7 +826,7 @@ class MusicVAE {
    */
   async decode(
       z: tf.Tensor2D, temperature?: number, chordProgression?: string[],
-      stepsPerQuarter = 2) {
+      stepsPerQuarter = 4) {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
     }
@@ -917,7 +917,7 @@ class MusicVAE {
    */
   async sample(
       numSamples: number, temperature = 0.5, chordProgression?: string[],
-      stepsPerQuarter = 2) {
+      stepsPerQuarter = 4) {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
     }
