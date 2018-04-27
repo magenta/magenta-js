@@ -95,7 +95,11 @@ export class MusicRNN {
     return this.initialized;
   }
 
-  private initializeFromSpec() {
+  /**
+   * Instantiates data converter, attention length, chord encoder, and auxiliary
+   * inputs from the `MusicRNNSpec`.
+   */
+  private instantiateFromSpec() {
     this.dataConverter = data.converterFromSpec(this.spec.dataConverter);
     this.attentionLength = this.spec.attentionLength;
     this.chordEncoder = this.spec.chordEncoder ?
@@ -126,7 +130,7 @@ export class MusicRNN {
           });
     }
 
-    this.initializeFromSpec();
+    this.instantiateFromSpec();
 
     const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
                      .then((response) => response.json())

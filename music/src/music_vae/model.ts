@@ -528,7 +528,11 @@ class MusicVAE {
     this.spec = spec;
   }
 
-  private initializeFromSpec() {
+  /**
+   * Instantiates data converter, attention length, chord encoder, and auxiliary
+   * inputs from the `MusicVAESpec`.
+   */
+  private instantiateFromSpec() {
     this.dataConverter = data.converterFromSpec(this.spec.dataConverter);
     this.chordEncoder = this.spec.chordEncoder ?
         chords.chordEncoderFromType(this.spec.chordEncoder) :
@@ -584,7 +588,7 @@ class MusicVAE {
           });
     }
 
-    this.initializeFromSpec();
+    this.instantiateFromSpec();
 
     const LSTM_CELL_FORMAT = 'cell_%d/lstm_cell/';
     const MUTLI_LSTM_CELL_FORMAT = `multi_rnn_cell/${LSTM_CELL_FORMAT}`;
