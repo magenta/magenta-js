@@ -536,7 +536,14 @@ class MusicVAE {
     } else {
       return await fetch(`${url}/config.json`)
           .then((response) => response.json())
-          .then((spec: MusicVAESpec) => modelFromSpec(spec));
+          .then((spec) => {
+            if (spec.type !== 'MusicVAE') {
+              throw new Error(
+                  `Attempted to instantiate MusicVAE model with incorrect type:
+                  ${spec.type}`);
+            }
+            return modelFromSpec(spec);
+          });
     }
   }
 

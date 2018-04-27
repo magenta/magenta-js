@@ -96,7 +96,14 @@ export class MusicRNN {
     } else {
       return await fetch(`${url}/config.json`)
           .then((response) => response.json())
-          .then((spec: MusicRNNSpec) => modelFromSpec(spec));
+          .then((spec) => {
+            if (spec.type !== 'MusicRNN') {
+              throw new Error(
+                  `Attempted to instantiate MusicRNN model with incorrect type:
+                  ${spec.type}`);
+            }
+            return modelFromSpec(spec);
+          });
     }
   }
 
