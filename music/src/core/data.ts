@@ -201,7 +201,7 @@ export class DrumsConverter extends DataConverter {
     return drumRoll.toTensor() as tf.Tensor2D;
   }
 
-  async toNoteSequence(oh: tf.Tensor2D, stepsPerQuarter = 2) {
+  async toNoteSequence(oh: tf.Tensor2D, stepsPerQuarter = 4) {
     const noteSequence = NoteSequence.create();
     noteSequence.quantizationInfo =
         NoteSequence.QuantizationInfo.create({stepsPerQuarter});
@@ -238,7 +238,7 @@ export class DrumsConverter extends DataConverter {
  * pitch class are used.
  */
 export class DrumRollConverter extends DrumsConverter {
-  async toNoteSequence(roll: tf.Tensor2D, stepsPerQuarter = 2) {
+  async toNoteSequence(roll: tf.Tensor2D, stepsPerQuarter = 4) {
     const noteSequence = NoteSequence.create();
     noteSequence.quantizationInfo =
         NoteSequence.QuantizationInfo.create({stepsPerQuarter});
@@ -363,7 +363,7 @@ export class MelodyConverter extends DataConverter {
     return tf.tidy(() => tf.oneHot(mel.toTensor() as tf.Tensor1D, this.depth));
   }
 
-  async toNoteSequence(oh: tf.Tensor2D, stepsPerQuarter = 2) {
+  async toNoteSequence(oh: tf.Tensor2D, stepsPerQuarter = 4) {
     const noteSequence = NoteSequence.create();
     noteSequence.quantizationInfo =
         NoteSequence.QuantizationInfo.create({stepsPerQuarter});
@@ -454,7 +454,7 @@ export class TrioConverter extends DataConverter {
             -1));
   }
 
-  async toNoteSequence(th: tf.Tensor2D, stepsPerQuarter = 2) {
+  async toNoteSequence(th: tf.Tensor2D, stepsPerQuarter = 4) {
     const ohs = tf.split(
         th,
         [
