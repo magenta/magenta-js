@@ -128,7 +128,8 @@ export abstract class DataConverter {
   abstract readonly depth: number;       // Size of final output dimension.
   abstract readonly NUM_SPLITS: number;  // Const number of conductor splits.
   abstract toTensor(noteSequence: INoteSequence): tf.Tensor2D;
-  abstract async toNoteSequence(tensor: tf.Tensor2D): Promise<INoteSequence>;
+  abstract async toNoteSequence(tensor: tf.Tensor2D, stepsPerQuarter: number):
+      Promise<INoteSequence>;
 
   constructor(args: BaseConverterArgs) {
     this.numSteps = args.numSteps;
@@ -185,6 +186,7 @@ export class DrumsConverter extends DataConverter {
   }
 
   toTensor(noteSequence: INoteSequence) {
+    sequences.assertIsQuantizedSequence(noteSequence);
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
     const drumRoll = tf.buffer([numSteps, this.pitchClasses.length + 1]);
     // Set final values to 1 and change to 0 later if the column gets a note.
@@ -199,8 +201,10 @@ export class DrumsConverter extends DataConverter {
     return drumRoll.toTensor() as tf.Tensor2D;
   }
 
-  async toNoteSequence(oh: tf.Tensor2D) {
+  async toNoteSequence(oh: tf.Tensor2D, stepsPerQuarter = 2) {
     const noteSequence = NoteSequence.create();
+    noteSequence.quantizationInfo =
+        NoteSequence.QuantizationInfo.create({stepsPerQuarter});
     const labelsTensor = oh.argMax(1);
     const labels: Int32Array = await labelsTensor.data() as Int32Array;
     labelsTensor.dispose();
@@ -234,8 +238,10 @@ export class DrumsConverter extends DataConverter {
  * pitch class are used.
  */
 export class DrumRollConverter extends DrumsConverter {
-  async toNoteSequence(roll: tf.Tensor2D) {
+  async toNoteSequence(roll: tf.Tensor2D, stepsPerQuarter = 2) {
     const noteSequence = NoteSequence.create();
+    noteSequence.quantizationInfo =
+        NoteSequence.QuantizationInfo.create({stepsPerQuarter});
     const rollSplit = tf.split(roll, roll.shape[0]);
     for (let s = 0; s < roll.shape[0]; ++s) {  // step
       const pitches = await rollSplit[s].data() as Uint8Array;
@@ -281,6 +287,7 @@ export class DrumsOneHotConverter extends DrumsConverter {
   }
 
   toTensor(noteSequence: INoteSequence) {
+    sequences.assertIsQuantizedSequence(noteSequence);
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
     const labels = Array<number>(numSteps).fill(0);
     for (const {pitch, quantizedStartStep} of noteSequence.notes) {
@@ -334,6 +341,7 @@ export class MelodyConverter extends DataConverter {
   }
 
   toTensor(noteSequence: INoteSequence) {
+    sequences.assertIsQuantizedSequence(noteSequence);
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
     const sortedNotes: NoteSequence.INote[] = noteSequence.notes.sort(
         (n1, n2) => n1.quantizedStartStep - n2.quantizedStartStep);
@@ -355,8 +363,10 @@ export class MelodyConverter extends DataConverter {
     return tf.tidy(() => tf.oneHot(mel.toTensor() as tf.Tensor1D, this.depth));
   }
 
-  async toNoteSequence(oh: tf.Tensor2D) {
+  async toNoteSequence(oh: tf.Tensor2D, stepsPerQuarter = 2) {
     const noteSequence = NoteSequence.create();
+    noteSequence.quantizationInfo =
+        NoteSequence.QuantizationInfo.create({stepsPerQuarter});
     const labelsTensor = oh.argMax(1);
     const labels: Int32Array = await labelsTensor.data() as Int32Array;
     labelsTensor.dispose();
@@ -421,6 +431,7 @@ export class TrioConverter extends DataConverter {
   }
 
   toTensor(noteSequence: INoteSequence) {
+    sequences.assertIsQuantizedSequence(noteSequence);
     const melSeq = sequences.clone(noteSequence);
     const bassSeq = sequences.clone(noteSequence);
     const drumsSeq = sequences.clone(noteSequence);
@@ -443,7 +454,7 @@ export class TrioConverter extends DataConverter {
             -1));
   }
 
-  async toNoteSequence(th: tf.Tensor2D) {
+  async toNoteSequence(th: tf.Tensor2D, stepsPerQuarter = 2) {
     const ohs = tf.split(
         th,
         [
@@ -451,7 +462,7 @@ export class TrioConverter extends DataConverter {
           this.drumsConverter.depth
         ],
         -1);
-    const ns = await this.melConverter.toNoteSequence(ohs[0]);
+    const ns = await this.melConverter.toNoteSequence(ohs[0], stepsPerQuarter);
 
     ns.notes.forEach(n => {
       n.instrument = 0;

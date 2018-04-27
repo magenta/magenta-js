@@ -17,9 +17,10 @@
 import * as Tone from 'tone';
 
 import {INoteSequence, NoteSequence} from '../protobuf/index';
-import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
 
-const EIGHTH = new Tone.Time('8n').toSeconds();
+import {sequences} from '.';
+import * as constants from './constants';
+import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
 
 const kick = new Tone.MembraneSynth().toMaster();
 const tomLow = new Tone
@@ -100,13 +101,26 @@ export class Player {
   /* tslint:enable */
 
   /**
-   * Start playing the note sequence, and return a Promisee
+   * Start playing a quantized note sequence, and return a Promise
    * that resolves when it is done playing.
    */
   start(seq: INoteSequence): Promise<void> {
+    sequences.assertIsQuantizedSequence(seq);
+
     Tone.context.resume();
-    const events =
-        seq.notes.map(note => [note.quantizedStartStep * EIGHTH, note]);
+
+    if (seq.tempos && seq.tempos.length > 0) {
+      // TODO(fjord): support tempo changes.
+      Tone.Transport.bpm.value = seq.tempos[0].qpm;
+    } else {
+      Tone.Transport.bpm.value = constants.DEFAULT_QUARTERS_PER_MINUTE;
+    }
+
+    const events = seq.notes.map(
+        note =>
+            [note.quantizedStartStep / seq.quantizationInfo.stepsPerQuarter *
+                 (60 / Tone.Transport.bpm.value),
+             note]);
     this.currentPart = new Tone.Part(
         (t: number, n: NoteSequence.INote) => this.playNote(t, n), events);
     this.currentPart.start();
@@ -128,7 +142,8 @@ export class Player {
       drumKit[drumClass](time);
     } else {
       const freq = new Tone.Frequency(n.pitch, 'midi');
-      const dur = (n.quantizedEndStep - n.quantizedStartStep) * EIGHTH;
+      const dur = (n.quantizedEndStep - n.quantizedStartStep) *
+          (60 / Tone.Transport.bpm.value);
       this.getSynth(n.instrument).triggerAttackRelease(freq, dur, time);
     }
   }

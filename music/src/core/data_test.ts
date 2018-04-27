@@ -34,7 +34,8 @@ const MEL_NS = NoteSequence.create({
     {pitch: 77, quantizedStartStep: 16, quantizedEndStep: 20},
     {pitch: 80, quantizedStartStep: 20, quantizedEndStep: 24},
     {pitch: 75, quantizedStartStep: 24, quantizedEndStep: 28}
-  ]
+  ],
+  quantizationInfo: {stepsPerQuarter: 2}
 });
 
 const DRUM_NS = NoteSequence.create({
@@ -45,7 +46,9 @@ const DRUM_NS = NoteSequence.create({
     {pitch: 36, quantizedStartStep: 12}, {pitch: 42, quantizedStartStep: 14},
     {pitch: 36, quantizedStartStep: 16}, {pitch: 36, quantizedStartStep: 24},
     {pitch: 36, quantizedStartStep: 28}, {pitch: 42, quantizedStartStep: 30}
-  ]
+
+  ],
+  quantizationInfo: {stepsPerQuarter: 2}
 });
 DRUM_NS.notes.forEach(n => {
   n.isDrum = true;
@@ -53,6 +56,8 @@ DRUM_NS.notes.forEach(n => {
 });
 
 const TRIO_NS = NoteSequence.create();
+TRIO_NS.quantizationInfo =
+    NoteSequence.QuantizationInfo.create({stepsPerQuarter: 2});
 sequences.clone(MEL_NS).notes.forEach(n => {
   n.program = 0;
   n.instrument = 0;

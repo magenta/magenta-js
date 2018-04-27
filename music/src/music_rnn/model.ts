@@ -246,7 +246,8 @@ export class MusicRNN {
       return tf.stack(samples).as2D(samples.length, outputSize);
     });
 
-    const result = this.dataConverter.toNoteSequence(await oh);
+    const result = this.dataConverter.toNoteSequence(
+        await oh, sequence.quantizationInfo.stepsPerQuarter);
     oh.dispose();
     return result;
   }

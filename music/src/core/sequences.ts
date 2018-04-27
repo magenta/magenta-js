@@ -285,6 +285,6 @@ export function isQuantizedSequence(ns: INoteSequence) {
 export function assertIsQuantizedSequence(ns: INoteSequence) {
   if (!isQuantizedSequence(ns)) {
     throw new QuantizationStatusException(
-        `NoteSequence ${ns.id} is not quantized`);
+        `NoteSequence ${ns.id} is not quantized (missing quantizationInfo)`);
   }
 }
