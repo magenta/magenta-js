@@ -39,7 +39,7 @@ const DRUM_SEQS: mm.INoteSequence[] = [
       {pitch: 36, quantizedStartStep: 16}, {pitch: 36, quantizedStartStep: 24},
       {pitch: 36, quantizedStartStep: 28}, {pitch: 42, quantizedStartStep: 30}
     ],
-    quantizationInfo: {stepsPerQuarter: 2}
+    quantizationInfo: {stepsPerQuarter: 4}
   },
   {
     notes: [
@@ -69,7 +69,7 @@ const DRUM_SEQS: mm.INoteSequence[] = [
       {pitch: 38, quantizedStartStep: 28}, {pitch: 42, quantizedStartStep: 28},
       {pitch: 42, quantizedStartStep: 30}, {pitch: 48, quantizedStartStep: 30}
     ],
-    quantizationInfo: {stepsPerQuarter: 2}
+    quantizationInfo: {stepsPerQuarter: 4}
   },
   {
     notes: [
@@ -92,13 +92,13 @@ const DRUM_SEQS: mm.INoteSequence[] = [
       {pitch: 36, quantizedStartStep: 30}, {pitch: 42, quantizedStartStep: 30},
       {pitch: 45, quantizedStartStep: 30}
     ],
-    quantizationInfo: {stepsPerQuarter: 2}
+    quantizationInfo: {stepsPerQuarter: 4}
   },
   {
     notes: [
       {pitch: 50, quantizedStartStep: 4}, {pitch: 50, quantizedStartStep: 20}
     ],
-    quantizationInfo: {stepsPerQuarter: 2}
+    quantizationInfo: {stepsPerQuarter: 4}
   }
 ];
 DRUM_SEQS.map(s => s.notes.map(n => {
@@ -118,7 +118,7 @@ const MEL_TEAPOT: mm.INoteSequence = {
     {pitch: 80, quantizedStartStep: 20, quantizedEndStep: 24},
     {pitch: 75, quantizedStartStep: 24, quantizedEndStep: 32}
   ],
-  quantizationInfo: {stepsPerQuarter: 2}
+  quantizationInfo: {stepsPerQuarter: 4}
 };
 
 const MEL_TWINKLE: mm.INoteSequence = {
@@ -138,12 +138,12 @@ const MEL_TWINKLE: mm.INoteSequence = {
     {pitch: 62, quantizedStartStep: 26, quantizedEndStep: 28},
     {pitch: 60, quantizedStartStep: 28, quantizedEndStep: 32}
   ],
-  quantizationInfo: {stepsPerQuarter: 2}
+  quantizationInfo: {stepsPerQuarter: 4}
 };
 
 const TRIO_EXAMPLE: mm.INoteSequence = {
   notes: [],
-  quantizationInfo: {stepsPerQuarter: 2}
+  quantizationInfo: {stepsPerQuarter: 4}
 };
 concatNoteSequences([MEL_TWINKLE, MEL_TWINKLE], 32).notes.map(n => {
   const m = clone(n);
