@@ -480,6 +480,21 @@ class Nade {
 }
 
 /**
+ * Interface for JSON specification of a `MusicVAE` model.
+ *
+ * @property type The type of the model, `MusicVAE`.
+ * @property dataConverter: A `DataConverterSpec` specifying the data converter
+ * to use.
+ * @property chordEncoder: (Optional) Type of chord encoder to use when
+ * conditioning on chords.
+ */
+export interface MusicVAESpec {
+  type: 'MusicVAE';
+  dataConverter: data.ConverterSpec;
+  chordEncoder?: chords.ChordEncoderType;
+}
+
+/**
  * Main MusicVAE model class.
  *
  * A MusicVAE is a variational autoencoder made up of an `Encoder` and
@@ -500,18 +515,49 @@ class MusicVAE {
   initialized = false;
 
   /**
+   * Create a `MusicVAE` object from URL. If `spec` not provided, loads a
+   * `config.json` file containing model specification from the URL directory.
+   * Does not initialize the model weights.
+   *
+   * @param url Path to a checkpoint directory.
+   * @param spec (Optional) `MusicVAESpec` object. If undefined, will be loaded
+   * from a `config.json` file in the checkpoint directory.
+   */
+  static async fromURL(url: string, spec?: MusicVAESpec) {
+    function modelFromSpec(spec: MusicVAESpec) {
+      const dataConverter = data.converterFromSpec(spec.dataConverter);
+      const chordEncoder = spec.chordEncoder ?
+          chords.chordEncoderFromType(spec.chordEncoder) :
+          undefined;
+      return new MusicVAE(url, dataConverter, chordEncoder);
+    }
+    if (spec) {
+      return modelFromSpec(spec);
+    } else {
+      return await fetch(`${url}/config.json`)
+          .then((response) => response.json())
+          .then((spec) => {
+            if (spec.type !== 'MusicVAE') {
+              throw new Error(
+                  `Attempted to instantiate MusicVAE model with incorrect type:
+                  ${spec.type}`);
+            }
+            return modelFromSpec(spec);
+          });
+    }
+  }
+
+  /**
    * `MusicVAE` constructor.
    *
    * @param checkpointURL Path to the checkpoint directory.
    * @param dataConverter A `DataConverter` object to use for converting between
-   * `NoteSequence` and `Tensor` objects. If not provided, a `converter.json`
-   * file must exist within the checkpoint directory specifying the type and
-   * args for the correct `DataConverter`.
+   * `NoteSequence` and `Tensor` objects.
    * @param chordEncoder (Optional) A `ChordEncoder` object that converts chord
    * symbol strings to model input tensors.
    */
   constructor(
-      checkpointURL: string, dataConverter?: data.DataConverter,
+      checkpointURL: string, dataConverter: data.DataConverter,
       chordEncoder?: chords.ChordEncoder) {
     this.checkpointURL = checkpointURL;
     this.dataConverter = dataConverter;
@@ -527,7 +573,6 @@ class MusicVAE {
     }
     this.encoder = undefined;
     this.decoder = undefined;
-    this.dataConverter = undefined;
     this.initialized = false;
   }
 
@@ -564,13 +609,6 @@ class MusicVAE {
     const HIER_ENCODER_FORMAT =
         `encoder/hierarchical_level_%d/${BIDI_LSTM_CELL.replace('%d', '0')}`;
 
-    if (isNullOrUndefined(this.dataConverter)) {
-      fetch(`${this.checkpointURL}/converter.json`)
-          .then((response) => response.json())
-          .then((converterSpec: data.ConverterSpec) => {
-            this.dataConverter = data.converterFromSpec(converterSpec);
-          });
-    }
     const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
                      .then((response) => response.json())
                      .then(

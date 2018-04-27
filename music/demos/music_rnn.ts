@@ -160,7 +160,7 @@ function createPlayer(seq: mm.INoteSequence) {
 }
 
 async function runMelodyRnn() {
-  const melodyRnn = new mm.MusicRNN(MEL_CHECKPOINT);
+  const melodyRnn = await mm.MusicRNN.fromURL(MEL_CHECKPOINT);
   await melodyRnn.initialize();
 
   const qns = mm.sequences.quantizeNoteSequence(MELODY_NS, 1);
@@ -176,10 +176,7 @@ async function runMelodyRnn() {
 }
 
 async function runDrumsRnn() {
-  const drumsRnn = new mm.MusicRNN(
-      DRUMS_CHECKPOINT, null, 32, null,
-      [mm.aux_inputs.auxiliaryInputFromSpec(
-          {type: 'BinaryCounter', args: {numBits: 6}})]);
+  const drumsRnn = await mm.MusicRNN.fromURL(DRUMS_CHECKPOINT);
   await drumsRnn.initialize();
 
   const qns = mm.sequences.quantizeNoteSequence(DRUMS_NS, 1);
@@ -195,8 +192,7 @@ async function runDrumsRnn() {
 }
 
 async function runImprovRnn() {
-  const improvRnn = new mm.MusicRNN(
-      IMPROV_CHECKPOINT, null, null, new mm.chords.PitchChordEncoder());
+  const improvRnn = await mm.MusicRNN.fromURL(IMPROV_CHECKPOINT);
   await improvRnn.initialize();
 
   const qns = mm.sequences.quantizeNoteSequence(MELODY_NS, 1);
