@@ -163,7 +163,7 @@ async function runMelodyRnn() {
   const melodyRnn = await mm.MusicRNN.fromURL(MEL_CHECKPOINT);
   await melodyRnn.initialize();
 
-  const qns = mm.sequences.quantizeNoteSequence(MELODY_NS, 1);
+  const qns = mm.sequences.quantizeNoteSequence(MELODY_NS, 4);
   writeNoteSeqs('melody-cont-inputs', [qns]);
   const start = performance.now();
   const continuation = await melodyRnn.continueSequence(qns, 20);
@@ -179,7 +179,7 @@ async function runDrumsRnn() {
   const drumsRnn = await mm.MusicRNN.fromURL(DRUMS_CHECKPOINT);
   await drumsRnn.initialize();
 
-  const qns = mm.sequences.quantizeNoteSequence(DRUMS_NS, 1);
+  const qns = mm.sequences.quantizeNoteSequence(DRUMS_NS, 4);
   writeNoteSeqs('drums-cont-inputs', [qns]);
   const start = performance.now();
   const continuation = await drumsRnn.continueSequence(qns, 20);
@@ -195,7 +195,7 @@ async function runImprovRnn() {
   const improvRnn = await mm.MusicRNN.fromURL(IMPROV_CHECKPOINT);
   await improvRnn.initialize();
 
-  const qns = mm.sequences.quantizeNoteSequence(MELODY_NS, 1);
+  const qns = mm.sequences.quantizeNoteSequence(MELODY_NS, 4);
   writeNoteSeqs('improv-cont-inputs', [qns]);
   const start = performance.now();
   const continuation = await improvRnn.continueSequence(qns, 20, 1.0, ['Cm']);

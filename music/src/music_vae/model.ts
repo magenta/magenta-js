@@ -19,6 +19,7 @@ import * as tf from '@tensorflow/tfjs-core';
 import {isNullOrUndefined} from 'util';
 
 import * as chords from '../core/chords';
+import * as constants from '../core/constants';
 import * as data from '../core/data';
 import {INoteSequence} from '../protobuf/index';
 
@@ -820,11 +821,13 @@ class MusicVAE {
    * sampling. The argmax is used if not provided.
    * @param chordProgression (Optional) Chord progression to use as
    * conditioning.
+   * @param stepsPerQuarter The step resolution of the resulting `NoteSequence`.
    *
    * @returns The decoded `NoteSequence`s.
    */
   async decode(
-      z: tf.Tensor2D, temperature?: number, chordProgression?: string[]) {
+      z: tf.Tensor2D, temperature?: number, chordProgression?: string[],
+      stepsPerQuarter = 4) {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
     }
@@ -850,7 +853,8 @@ class MusicVAE {
 
     const outputSequences: INoteSequence[] = [];
     for (const oh of ohSeqs) {
-      outputSequences.push(await this.dataConverter.toNoteSequence(oh));
+      outputSequences.push(
+          await this.dataConverter.toNoteSequence(oh, stepsPerQuarter));
       oh.dispose();
     }
     return outputSequences;
@@ -907,11 +911,14 @@ class MusicVAE {
    * @param temperature The softmax temperature to use when sampling.
    * @param chordProgression (Optional) Chord progression to use as
    * conditioning.
+   * @param stepsPerQuarter The step resolution of the resulting
+   * `NoteSequence`s.
    *
    * @returns An array of sampled `NoteSequence` objects.
    */
   async sample(
-      numSamples: number, temperature = 0.5, chordProgression?: string[]) {
+      numSamples: number, temperature = 0.5, chordProgression?: string[],
+      stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER) {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
     }
@@ -924,7 +931,8 @@ class MusicVAE {
     }
     const randZs: tf.Tensor2D =
         tf.tidy(() => tf.randomNormal([numSamples, this.decoder.zDims]));
-    const outputSequenes = this.decode(randZs, temperature, chordProgression);
+    const outputSequenes =
+        this.decode(randZs, temperature, chordProgression, stepsPerQuarter);
     randZs.dispose();
     return outputSequenes;
   }
