@@ -160,7 +160,7 @@ function createPlayer(seq: mm.INoteSequence) {
 }
 
 async function runMelodyRnn() {
-  const melodyRnn = await mm.MusicRNN.fromURL(MEL_CHECKPOINT);
+  const melodyRnn = new mm.MusicRNN(MEL_CHECKPOINT);
   await melodyRnn.initialize();
 
   const qns = mm.sequences.quantizeNoteSequence(MELODY_NS, 1);
@@ -176,7 +176,7 @@ async function runMelodyRnn() {
 }
 
 async function runDrumsRnn() {
-  const drumsRnn = await mm.MusicRNN.fromURL(DRUMS_CHECKPOINT);
+  const drumsRnn = new mm.MusicRNN(DRUMS_CHECKPOINT);
   await drumsRnn.initialize();
 
   const qns = mm.sequences.quantizeNoteSequence(DRUMS_NS, 1);
@@ -192,7 +192,7 @@ async function runDrumsRnn() {
 }
 
 async function runImprovRnn() {
-  const improvRnn = await mm.MusicRNN.fromURL(IMPROV_CHECKPOINT);
+  const improvRnn = new mm.MusicRNN(IMPROV_CHECKPOINT);
   await improvRnn.initialize();
 
   const qns = mm.sequences.quantizeNoteSequence(MELODY_NS, 1);

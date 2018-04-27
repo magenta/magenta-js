@@ -505,6 +505,8 @@ export interface MusicVAESpec {
  */
 class MusicVAE {
   private checkpointURL: string;
+  private spec: MusicVAESpec;
+
   private dataConverter: data.DataConverter;
   private chordEncoder?: chords.ChordEncoder;
 
@@ -515,53 +517,22 @@ class MusicVAE {
   initialized = false;
 
   /**
-   * Create a `MusicVAE` object from URL. If `spec` not provided, loads a
-   * `config.json` file containing model specification from the URL directory.
-   * Does not initialize the model weights.
-   *
-   * @param url Path to a checkpoint directory.
-   * @param spec (Optional) `MusicVAESpec` object. If undefined, will be loaded
-   * from a `config.json` file in the checkpoint directory.
-   */
-  static async fromURL(url: string, spec?: MusicVAESpec) {
-    function modelFromSpec(spec: MusicVAESpec) {
-      const dataConverter = data.converterFromSpec(spec.dataConverter);
-      const chordEncoder = spec.chordEncoder ?
-          chords.chordEncoderFromType(spec.chordEncoder) :
-          undefined;
-      return new MusicVAE(url, dataConverter, chordEncoder);
-    }
-    if (spec) {
-      return modelFromSpec(spec);
-    } else {
-      return await fetch(`${url}/config.json`)
-          .then((response) => response.json())
-          .then((spec) => {
-            if (spec.type !== 'MusicVAE') {
-              throw new Error(
-                  `Attempted to instantiate MusicVAE model with incorrect type:
-                  ${spec.type}`);
-            }
-            return modelFromSpec(spec);
-          });
-    }
-  }
-
-  /**
    * `MusicVAE` constructor.
    *
    * @param checkpointURL Path to the checkpoint directory.
-   * @param dataConverter A `DataConverter` object to use for converting between
-   * `NoteSequence` and `Tensor` objects.
-   * @param chordEncoder (Optional) A `ChordEncoder` object that converts chord
-   * symbol strings to model input tensors.
+   * @param spec (Optional) `MusicVAESpec` object. If undefined, will be loaded
+   * from a `config.json` file in the checkpoint directory.
    */
-  constructor(
-      checkpointURL: string, dataConverter: data.DataConverter,
-      chordEncoder?: chords.ChordEncoder) {
+  constructor(checkpointURL: string, spec?: MusicVAESpec) {
     this.checkpointURL = checkpointURL;
-    this.dataConverter = dataConverter;
-    this.chordEncoder = chordEncoder;
+    this.spec = spec;
+  }
+
+  private initializeFromSpec() {
+    this.dataConverter = data.converterFromSpec(this.spec.dataConverter);
+    this.chordEncoder = this.spec.chordEncoder ?
+        chords.chordEncoderFromType(this.spec.chordEncoder) :
+        undefined;
   }
 
   /**
@@ -599,6 +570,21 @@ class MusicVAE {
    */
   async initialize() {
     this.dispose();
+
+    if (!this.spec) {
+      await fetch(`${this.checkpointURL}/config.json`)
+          .then((response) => response.json())
+          .then((spec) => {
+            if (spec.type !== 'MusicVAE') {
+              throw new Error(
+                  `Attempted to instantiate MusicVAE model with incorrect type:
+                  ${spec.type}`);
+            }
+            this.spec = spec;
+          });
+    }
+
+    this.initializeFromSpec();
 
     const LSTM_CELL_FORMAT = 'cell_%d/lstm_cell/';
     const MUTLI_LSTM_CELL_FORMAT = `multi_rnn_cell/${LSTM_CELL_FORMAT}`;
