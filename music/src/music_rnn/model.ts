@@ -54,6 +54,8 @@ export interface MusicRNNSpec {
  */
 export class MusicRNN {
   private checkpointURL: string;
+  private spec: MusicRNNSpec;
+
   private dataConverter: data.DataConverter;
   private attentionLength?: number;
   private chordEncoder: chords.ChordEncoder;
@@ -71,68 +73,19 @@ export class MusicRNN {
   private initialized: boolean;
 
   /**
-   * Create a `MusicRNN` object from URL. If `spec` not provided, loads a
-   * `config.json` file containing model specification from the URL directory.
-   * Does not initialize the model weights.
-   *
-   * @param url Path to a checkpoint directory.
-   * @param spec (Optional) `MusicRNNSpec` object. If undefined, will be loaded
-   * from a `config.json` file in the checkpoint directory.
-   */
-  static async fromURL(url: string, spec?: MusicRNNSpec) {
-    function modelFromSpec(spec: MusicRNNSpec) {
-      const dataConverter = data.converterFromSpec(spec.dataConverter);
-      const chordEncoder = spec.chordEncoder ?
-          chords.chordEncoderFromType(spec.chordEncoder) :
-          undefined;
-      const auxInputs = spec.auxInputs ?
-          spec.auxInputs.map(s => aux_inputs.auxiliaryInputFromSpec(s)) :
-          undefined;
-      return new MusicRNN(
-          url, dataConverter, spec.attentionLength, chordEncoder, auxInputs);
-    }
-    if (spec) {
-      return modelFromSpec(spec);
-    } else {
-      return await fetch(`${url}/config.json`)
-          .then((response) => response.json())
-          .then((spec) => {
-            if (spec.type !== 'MusicRNN') {
-              throw new Error(
-                  `Attempted to instantiate MusicRNN model with incorrect type:
-                  ${spec.type}`);
-            }
-            return modelFromSpec(spec);
-          });
-    }
-  }
-
-  /**
    * `MusicRNN` constructor.
    *
    * @param checkpointURL Path to the checkpoint directory.
-   * @param dataConverter A `DataConverter` object to use for converting between
-   * `NoteSequence` and `Tensor` objects.
-   * @param chordEncoder (Optional) A `ChordEncoder` object that converts chord
-   * symbol strings to model input tensors. These are prepended to the main
-   * input tensors.
-   * @param auxInputs (Optional) An array of `AuxiliaryInput` objects that
-   * produce auxiliary input tensors. These are appended to the main input
-   * tensors.
+   * @param spec (Optional) `MusicRNNSpec` object. If undefined, will be loaded
+   * from a `config.json` file in the checkpoint directory.
    */
-  constructor(
-      checkpointURL: string, dataConverter: data.DataConverter,
-      attentionLength?: number, chordEncoder?: chords.ChordEncoder,
-      auxInputs?: aux_inputs.AuxiliaryInput[]) {
+  constructor(checkpointURL: string, spec?: MusicRNNSpec) {
     this.checkpointURL = checkpointURL;
+    this.spec = spec;
     this.initialized = false;
     this.rawVars = {};
     this.biasShapes = [];
     this.lstmCells = [];
-    this.dataConverter = dataConverter;
-    this.attentionLength = attentionLength;
-    this.chordEncoder = chordEncoder;
-    this.auxInputs = auxInputs;
   }
 
   /**
@@ -143,11 +96,41 @@ export class MusicRNN {
   }
 
   /**
+   * Instantiates data converter, attention length, chord encoder, and auxiliary
+   * inputs from the `MusicRNNSpec`.
+   */
+  private instantiateFromSpec() {
+    this.dataConverter = data.converterFromSpec(this.spec.dataConverter);
+    this.attentionLength = this.spec.attentionLength;
+    this.chordEncoder = this.spec.chordEncoder ?
+        chords.chordEncoderFromType(this.spec.chordEncoder) :
+        undefined;
+    this.auxInputs = this.spec.auxInputs ?
+        this.spec.auxInputs.map(s => aux_inputs.auxiliaryInputFromSpec(s)) :
+        undefined;
+  }
+
+  /**
    * Loads variables from the checkpoint and instantiates the `Encoder` and
    * `Decoder`.
    */
   async initialize() {
     this.dispose();
+
+    if (!this.spec) {
+      await fetch(`${this.checkpointURL}/config.json`)
+          .then((response) => response.json())
+          .then((spec) => {
+            if (spec.type !== 'MusicRNN') {
+              throw new Error(
+                  `Attempted to instantiate MusicRNN model with incorrect type:
+                  ${spec.type}`);
+            }
+            this.spec = spec;
+          });
+    }
+
+    this.instantiateFromSpec();
 
     const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
                      .then((response) => response.json())
