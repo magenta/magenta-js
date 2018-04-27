@@ -19,6 +19,7 @@ import * as tf from '@tensorflow/tfjs-core';
 import {isNullOrUndefined} from 'util';
 
 import * as chords from '../core/chords';
+import * as constants from '../core/constants';
 import * as data from '../core/data';
 import {INoteSequence} from '../protobuf/index';
 
@@ -917,7 +918,7 @@ class MusicVAE {
    */
   async sample(
       numSamples: number, temperature = 0.5, chordProgression?: string[],
-      stepsPerQuarter = 4) {
+      stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER) {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
     }
