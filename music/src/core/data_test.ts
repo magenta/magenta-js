@@ -81,7 +81,7 @@ test('Test MelodyConverter', (t: test.Test) => {
   const melTensor = melConverter.toTensor(MEL_NS);
   t.deepEqual(melTensor.shape, [32, 90]);
 
-  melConverter.toNoteSequence(melTensor).then(ns => t.deepEqual(ns, MEL_NS));
+  melConverter.toNoteSequence(melTensor, 2).then(ns => t.deepEqual(ns, MEL_NS));
 
   melTensor.dispose();
   t.end();
@@ -105,11 +105,11 @@ test('Test DrumConverters', (t: test.Test) => {
       32);
 
   const drumRollTensorOutput = drumRollTensor.slice([0, 0], [32, 9]);
-  drumRollConverter.toNoteSequence(drumRollTensorOutput)
+  drumRollConverter.toNoteSequence(drumRollTensorOutput, 2)
       .then(ns => t.deepEqual(ns, DRUM_NS));
-  drumsConverter.toNoteSequence(drumOneHotTensor)
+  drumsConverter.toNoteSequence(drumOneHotTensor, 2)
       .then(ns => t.deepEqual(ns, DRUM_NS));
-  drumsOneHotConverter.toNoteSequence(drumOneHotTensor)
+  drumsOneHotConverter.toNoteSequence(drumOneHotTensor, 2)
       .then(ns => t.deepEqual(ns, DRUM_NS));
 
   drumRollTensor.dispose();
@@ -130,7 +130,7 @@ test('Test TrioConverter', (t: test.Test) => {
   t.deepEqual(trioTensor.shape, [32, 90 + 90 + 512]);
   t.equal(tf.tidy(() => trioTensor.sum(1).equal(tf.scalar(3)).sum().get()), 32);
 
-  trioConverter.toNoteSequence(trioTensor)
+  trioConverter.toNoteSequence(trioTensor, 2)
       .then(ns => t.deepEqual(ns.toJSON(), TRIO_NS.toJSON()));
 
   trioTensor.dispose();
