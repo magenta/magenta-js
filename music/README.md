@@ -45,32 +45,27 @@ Add the following code to an HTML file:
 <html>
   <head>
     <!-- Load MagentaMusic.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@magenta/music@0.0.6"> </script>
+    <script src="https://cdn.jsdelivr.net/npm/@magenta/music@0.0.8"> </script>
 
     <!-- Place your code in the script tag below. You can also use an external .js file -->
     <script>
-      // Notice there is no 'import' statement. 'mm' is available on the index-page
-      // because of the script tag above.
-
       // Instantiate the model by loading the desired checkpoint.
       const model = new mm.MusicVAE(
           'https://storage.googleapis.com/download.magenta.tensorflow.org/' +
           'tfjs_checkpoints/music_vae/trio_4bar_lokl_small_q1');
       const player = new mm.Player();
 
-      // Endlessly sample and play back the result.
-      Promise.resolve().then(
-        function sampleAndPlay() {
-          return model.sample(1)
-              .then((samples) => player.start(samples[0]))
-              .then(sampleAndPlay);
-        });
-    </script>
+      model.initialize().then(
+          // Endlessly sample and play back the result.
+          function sampleAndPlay() {
+            return model.sample(1)
+                .then((samples) => player.start(samples[0]))
+                .then(sampleAndPlay);
+          });
+      </script>
   </head>
-
   <body></body>
 </html>
-
 ```
 
 Open up that html file in your browser (or [click here](https://codepen.io/adarob/pen/gzwJZL/) for a hosted version)
@@ -84,7 +79,7 @@ See the [Neural Drum Machine](https://codepen.io/teropa/pen/RMGxOQ) by [@teropa]
 Add [MagentaMusic.js][mm-npm] to your project using [yarn](https://yarnpkg.com/en/) **or** [npm](https://docs.npmjs.com/cli/npm).
 For example, with yarn you can simply call `yarn add @magenta/music`.
 
-Then, you can use the library in your own code as in the folliwng example:
+Then, you can use the library in your own code as in the following example:
 
 ```js
 import * as mm from '@magenta/music';
