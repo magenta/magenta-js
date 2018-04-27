@@ -24,10 +24,10 @@ const CHECKPOINTS_DIR =
     // tslint:disable-next-line:max-line-length
     'https://storage.googleapis.com/download.magenta.tensorflow.org/tfjs_checkpoints/music_vae/';
 const DRUMS_CKPT = `${CHECKPOINTS_DIR}drums_2bar_hikl_small`;
-const DRUMS_NADE_CKPT = `${CHECKPOINTS_DIR}drums_2bar_nade_9`;
+const DRUMS_NADE_CKPT = `${CHECKPOINTS_DIR}drums_2bar_nade_9_q2`;
 const MEL_CKPT = `${CHECKPOINTS_DIR}mel_2bar_small`;
-const MEL_16_CKPT = `${CHECKPOINTS_DIR}mel_16bar_small`;
-const TRIO_CKPT = `${CHECKPOINTS_DIR}trio_4bar_small`;
+const MEL_16_CKPT = `${CHECKPOINTS_DIR}mel_16bar_small_q2`;
+const TRIO_CKPT = `${CHECKPOINTS_DIR}trio_4bar_lokl_small_q1`;
 
 const DRUM_SEQS: mm.INoteSequence[] = [
   {
@@ -243,7 +243,7 @@ async function runDrums() {
   writeNoteSeqs('drums-interp', interp);
 
   start = performance.now();
-  const sample = await mvae.sample(5);
+  const sample = await mvae.sample(4);
   writeTimer('drums-sample-time', start);
   writeNoteSeqs('drums-samples', sample);
 
@@ -262,7 +262,7 @@ async function runDrumsNade() {
   writeNoteSeqs('nade-interp', interp);
 
   start = performance.now();
-  const sample = await mvae.sample(5);
+  const sample = await mvae.sample(4);
   writeTimer('nade-sample-time', start);
   writeNoteSeqs('nade-samples', sample);
 
@@ -282,7 +282,7 @@ async function runMel() {
   writeNoteSeqs('mel-interp', interp);
 
   start = performance.now();
-  const sample = await mvae.sample(5);
+  const sample = await mvae.sample(4);
   writeTimer('mel-sample-time', start);
   writeNoteSeqs('mel-samples', sample);
 
@@ -304,7 +304,7 @@ async function runTrio() {
   writeNoteSeqs('trio-recon', recon);
 
   start = performance.now();
-  const sample = await mvae.sample(1);
+  const sample = await mvae.sample(4);
   writeTimer('trio-sample-time', start);
   writeNoteSeqs('trio-samples', sample);
 
@@ -353,7 +353,7 @@ async function runMel16() {
   writeNoteSeqs('mel16-interp', interp);
 
   start = performance.now();
-  const sample = await mvae.sample(5);
+  const sample = await mvae.sample(4);
   writeTimer('mel16-sample-time', start);
   writeNoteSeqs('mel16-samples', sample);
 

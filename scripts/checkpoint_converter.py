@@ -33,10 +33,13 @@ import argparse
 import os
 import re
 import tensorflow as tf
+from tensorflowjs.quantization import QUANTIZATION_BYTES_TO_DTYPES
 from tensorflowjs.write_weights import write_weights
 
 
-def dump_checkpoint(checkpoint_file, output_dir, remove_variables_regex=None):
+def dump_checkpoint(
+    checkpoint_file, output_dir, remove_variables_regex=None,
+    quantization_dtype=None):
   reader = tf.train.NewCheckpointReader(checkpoint_file)
   var_to_shape_map = reader.get_variable_to_shape_map()
 
@@ -54,7 +57,7 @@ def dump_checkpoint(checkpoint_file, output_dir, remove_variables_regex=None):
     entries.append({'name': var_name, 'data': tensor})
     print('Dumping ' + var_name)
 
-  write_weights([entries], output_dir)
+  write_weights([entries], output_dir, quantization_dtype=quantization_dtype)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
@@ -72,6 +75,13 @@ if __name__ == '__main__':
       default='',
       help='A regular expression to match against variable names that should '
       'not be included')
+  parser.add_argument(
+      '--quantization_bytes',
+      type=int,
+      choices=QUANTIZATION_BYTES_TO_DTYPES.keys(),
+      help='How many bytes to optionally quantize/compress the weights to. 1- '
+      'and 2-byte quantizaton is supported. The default (unquantized) size is '
+      '4 bytes.')
   FLAGS, unparsed = parser.parse_known_args()
 
   if unparsed:
@@ -84,4 +94,9 @@ if __name__ == '__main__':
   if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
-  dump_checkpoint(checkpoint_file, output_dir, FLAGS.remove_variables_regex)
+  quantization_dtype = (
+      QUANTIZATION_BYTES_TO_DTYPES[FLAGS.quantization_bytes]
+      if FLAGS.quantization_bytes else None)
+  dump_checkpoint(
+      checkpoint_file, output_dir, FLAGS.remove_variables_regex,
+      quantization_dtype)

@@ -106,8 +106,8 @@ export class MusicRNN {
     const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
                      .then((response) => response.json())
                      .then(
-                         (manifest: tf.WeightsManifestConfig) =>
-                             tf.loadWeights(manifest, this.checkpointURL));
+                         (manifest: tf.io.WeightsManifestConfig) =>
+                             tf.io.loadWeights(manifest, this.checkpointURL));
 
     const hasAttention = AttentionWrapper.isWrapped(vars);
     const rnnPrefix = hasAttention ? `rnn/${ATTENTION_PREFIX}` : 'rnn/';

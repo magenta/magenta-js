@@ -1,13 +1,13 @@
 {
   "name": "@magenta/music",
-  "version": "0.0.5",
-  "description": "",
+  "version": "0.0.6",
+  "description": "Make music in the browser with machine learning.",
   "main": "es5/index.js",
   "types": "es5/index.d.ts",
   "jsdelivr": "dist/magentamusic.js",
   "unpkg": "dist/magentamusic.js",
   "dependencies": {
-    "@tensorflow/tfjs-core": "^0.8.4",
+    "@tensorflow/tfjs-core": "^0.8.5",
     "midiconvert": "^0.4.4",
     "protobufjs": "^6.8.6",
     "tonal": "^1.1.3",
