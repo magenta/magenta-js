@@ -15,6 +15,7 @@
  * =============================================================================
  */
 import * as Tone from 'tone';
+import {isNullOrUndefined} from 'util';
 
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
@@ -97,7 +98,7 @@ export class Player {
   private currentPart: any;
   private scheduledStop: number;
   private synths = new Map<number, any>();
-  static context = Tone.context;
+  static tone = Tone;
   /* tslint:enable */
 
   constructor() {
@@ -149,12 +150,20 @@ export class Player {
     } else {
       const freq = new Tone.Frequency(n.pitch, 'midi');
       const dur = (n.quantizedEndStep - n.quantizedStartStep) * (60 / qpm);
-      this.getSynth(n.instrument).triggerAttackRelease(freq, dur, time);
+      this.getSynth(n.instrument, n.program)
+          .triggerAttackRelease(freq, dur, time);
     }
   }
 
-  private getSynth(instrument: number) {
-    if (!this.synths.has(instrument)) {
+  private getSynth(instrument: number, program?: number) {
+    if (this.synths.has(instrument)) {
+      return this.synths.get(instrument);
+    } else if (!isNullOrUndefined(program) && program >= 32 && program <= 39) {
+      const bass = new Tone.Synth({oscillator: {type: 'triangle'}}).toMaster();
+      // Gotta have that bass.
+      bass.volume.value = 5;
+      this.synths.set(instrument, bass);
+    } else {
       this.synths.set(instrument, new Tone.Synth().toMaster());
     }
     return this.synths.get(instrument);
