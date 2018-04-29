@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 
-import {NoteSequence, INoteSequence} from '../protobuf/index';
+import {INoteSequence, NoteSequence} from '../protobuf/index';
+
 import * as constants from './constants';
 
 // Set the quantization cutoff.
@@ -113,8 +114,7 @@ export function quantizeToStep(
 function quantizeNotes(ns: INoteSequence, stepsPerSecond: number) {
   for (const note of ns.notes) {
     // Quantize the start and end times of the note.
-    note.quantizedStartStep =
-        quantizeToStep(note.startTime, stepsPerSecond);
+    note.quantizedStartStep = quantizeToStep(note.startTime, stepsPerSecond);
     note.quantizedEndStep = quantizeToStep(note.endTime, stepsPerSecond);
     if (note.quantizedEndStep === note.quantizedStartStep) {
       note.quantizedEndStep += 1;
@@ -263,11 +263,10 @@ export function quantizeNoteSequence(
   }
 
   // Compute quantization steps per second.
-  const stepsPerSecond = stepsPerQuarterToStepsPerSecond(
-      stepsPerQuarter, qns.tempos[0].qpm);
+  const stepsPerSecond =
+      stepsPerQuarterToStepsPerSecond(stepsPerQuarter, qns.tempos[0].qpm);
 
-  qns.totalQuantizedSteps =
-      quantizeToStep(qns.totalTime, stepsPerSecond);
+  qns.totalQuantizedSteps = quantizeToStep(qns.totalTime, stepsPerSecond);
   quantizeNotes(qns, stepsPerSecond);
 
   // return qns
@@ -278,8 +277,9 @@ export function quantizeNoteSequence(
  * Returns whether or not a NoteSequence proto has been quantized.
  */
 export function isQuantizedSequence(ns: INoteSequence) {
-  return ns.quantizationInfo && (ns.quantizationInfo.stepsPerQuarter > 0 ||
-                                  ns.quantizationInfo.stepsPerSecond > 0);
+  return ns.quantizationInfo &&
+      (ns.quantizationInfo.stepsPerQuarter > 0 ||
+       ns.quantizationInfo.stepsPerSecond > 0);
 }
 
 export function assertIsQuantizedSequence(ns: INoteSequence) {
@@ -287,4 +287,33 @@ export function assertIsQuantizedSequence(ns: INoteSequence) {
     throw new QuantizationStatusException(
         `NoteSequence ${ns.id} is not quantized (missing quantizationInfo)`);
   }
+}
+
+export function unquantizeSequence(qns: INoteSequence, qpm?: number) {
+  assertIsQuantizedSequence(qns);
+
+  const ns = clone(qns);
+
+  qpm = qpm ? qpm :
+              (qns.tempos && qns.tempos.length > 0) ?
+              qns.tempos[0].qpm :
+              constants.DEFAULT_QUARTERS_PER_MINUTE;
+
+  const stepToSeconds = (step: number) =>
+      step / qns.quantizationInfo.stepsPerQuarter * (60 / qpm);
+  let maxEnd = 0;
+  ns.notes.forEach(n => {
+    n.startTime = stepToSeconds(n.quantizedStartStep);
+    n.endTime = stepToSeconds(n.quantizedEndStep);
+    maxEnd = Math.max(maxEnd, n.endTime);
+    n.quantizedStartStep = undefined;
+    n.quantizedEndStep = undefined;
+  })
+  ns.totalTime = (qns.totalQuantizedSteps) ?
+      stepToSeconds(qns.totalQuantizedSteps) :
+      maxEnd;
+  ns.totalQuantizedSteps = undefined;
+  ns.quantizationInfo = undefined;
+
+  return ns;
 }

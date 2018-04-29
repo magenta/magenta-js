@@ -20,8 +20,14 @@ import {isNullOrUndefined} from 'util';
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import {sequences} from '.';
-import * as constants from './constants';
 import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
+
+const DRUM_PITCH_TO_CLASSS = new Map<number, number>();
+for (let c = 0; c < DEFAULT_DRUM_PITCH_CLASSES.length; ++c) {  // class
+  DEFAULT_DRUM_PITCH_CLASSES[c].forEach((p) => {
+    DRUM_PITCH_TO_CLASSS.set(p, c);
+  });
+}
 
 const kick = new Tone.MembraneSynth().toMaster();
 const tomLow = new Tone
@@ -108,28 +114,26 @@ export class Player {
   }
 
   /**
-   * Start playing a quantized note sequence, and return a Promise
-   * that resolves when it is done playing.
+   * Starts playing a `NoteSequence` (either quantized or unquantized), and
+   * returns a Promise that resolves when it is done playing.
    * @param seq The `NoteSequence` to play.
    * @param qpm (Optional) If specified, will play back at this qpm. If not
    * specified, will use either the qpm specified in the sequence or the default
-   * of 120.
+   * of 120. Only valid for quantized sequences.
+   * @returns a Promise that resolves when playback is complete.
    */
   start(seq: INoteSequence, qpm?: number): Promise<void> {
     sequences.assertIsQuantizedSequence(seq);
 
-    qpm = qpm ? qpm :
-                (seq.tempos && seq.tempos.length > 0) ?
-                seq.tempos[0].qpm :
-                constants.DEFAULT_QUARTERS_PER_MINUTE;
+    if (sequences.isQuantizedSequence(seq)) {
+      seq = sequences.unquantizeSequence(seq, qpm);
+    } else if (qpm) {
+      throw new Error('Cannot specify a `qpm` for a non-quantized sequence.');
+    }
 
-    const events = seq.notes.map(
-        note =>
-            [note.quantizedStartStep / seq.quantizationInfo.stepsPerQuarter *
-                 (60 / qpm),
-             note]);
     this.currentPart = new Tone.Part(
-        (t: number, n: NoteSequence.INote) => this.playNote(t, n, qpm), events);
+        (t: number, n: NoteSequence.INote) => this.playNote(t, n),
+        seq.notes.map(n => [n.startTime, n]));
     this.currentPart.start();
     if (Tone.Transport.state !== 'started') {
       Tone.Transport.start();
@@ -138,19 +142,18 @@ export class Player {
       this.scheduledStop = Tone.Transport.schedule(() => {
         this.stop();
         resolve();
-      }, `+${events[events.length - 1][0]}`);
+      }, `+${seq.totalTime}`);
     });
   }
 
-  private playNote(time: number, n: NoteSequence.INote, qpm: number) {
-    if (n.isDrum) {
-      const drumClass = DEFAULT_DRUM_PITCH_CLASSES.findIndex(
-          classes => classes.indexOf(n.pitch) >= 0);
+  private playNote(time: number, note: NoteSequence.INote) {
+    if (note.isDrum) {
+      const drumClass = DRUM_PITCH_TO_CLASSS.get(note.pitch);
       drumKit[drumClass](time);
     } else {
-      const freq = new Tone.Frequency(n.pitch, 'midi');
-      const dur = (n.quantizedEndStep - n.quantizedStartStep) * (60 / qpm);
-      this.getSynth(n.instrument, n.program)
+      const freq = new Tone.Frequency(note.pitch, 'midi');
+      const dur = note.endTime - note.startTime;
+      this.getSynth(note.instrument, note.program)
           .triggerAttackRelease(freq, dur, time);
     }
   }
@@ -160,7 +163,6 @@ export class Player {
       return this.synths.get(instrument);
     } else if (!isNullOrUndefined(program) && program >= 32 && program <= 39) {
       const bass = new Tone.Synth({oscillator: {type: 'triangle'}}).toMaster();
-      // Gotta have that bass.
       bass.volume.value = 5;
       this.synths.set(instrument, bass);
     } else {
