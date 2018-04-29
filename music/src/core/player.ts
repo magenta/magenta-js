@@ -100,6 +100,12 @@ export class Player {
   static context = Tone.context;
   /* tslint:enable */
 
+  constructor() {
+    // Set a bpm of 60 to make dealing with timing easier. We will use seconds
+    // instead of transport time since it can't go beyond 16th notes.
+    Tone.Transport.bpm.value = 60;
+  }
+
   /**
    * Start playing a quantized note sequence, and return a Promise
    * that resolves when it is done playing.
@@ -111,24 +117,18 @@ export class Player {
   start(seq: INoteSequence, qpm?: number): Promise<void> {
     sequences.assertIsQuantizedSequence(seq);
 
-    Tone.context.resume();
-
-    if (qpm) {
-      Tone.Transport.bpm.value = qpm;
-    } else if (seq.tempos && seq.tempos.length > 0) {
-      // TODO(fjord): support tempo changes.
-      Tone.Transport.bpm.value = seq.tempos[0].qpm;
-    } else {
-      Tone.Transport.bpm.value = constants.DEFAULT_QUARTERS_PER_MINUTE;
-    }
+    qpm = qpm ? qpm :
+                (seq.tempos && seq.tempos.length > 0) ?
+                seq.tempos[0].qpm :
+                constants.DEFAULT_QUARTERS_PER_MINUTE;
 
     const events = seq.notes.map(
         note =>
             [note.quantizedStartStep / seq.quantizationInfo.stepsPerQuarter *
-                 (60 / Tone.Transport.bpm.value),
+                 (60 / qpm),
              note]);
     this.currentPart = new Tone.Part(
-        (t: number, n: NoteSequence.INote) => this.playNote(t, n), events);
+        (t: number, n: NoteSequence.INote) => this.playNote(t, n, qpm), events);
     this.currentPart.start();
     if (Tone.Transport.state !== 'started') {
       Tone.Transport.start();
@@ -141,15 +141,14 @@ export class Player {
     });
   }
 
-  private playNote(time: number, n: NoteSequence.INote) {
+  private playNote(time: number, n: NoteSequence.INote, qpm: number) {
     if (n.isDrum) {
       const drumClass = DEFAULT_DRUM_PITCH_CLASSES.findIndex(
           classes => classes.indexOf(n.pitch) >= 0);
       drumKit[drumClass](time);
     } else {
       const freq = new Tone.Frequency(n.pitch, 'midi');
-      const dur = (n.quantizedEndStep - n.quantizedStartStep) *
-          (60 / Tone.Transport.bpm.value);
+      const dur = (n.quantizedEndStep - n.quantizedStartStep) * (60 / qpm);
       this.getSynth(n.instrument).triggerAttackRelease(freq, dur, time);
     }
   }
