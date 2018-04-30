@@ -379,3 +379,4 @@ function assertSingleTempo(ns: INoteSequence) {
 
     return ns;
   }
+}
