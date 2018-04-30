@@ -15,9 +15,11 @@
  * limitations under the License.
  */
 
-import * as sequences from './sequences';
 import * as test from 'tape';
+
 import {NoteSequence} from '../protobuf/index';
+
+import * as sequences from './sequences';
 
 const STEPS_PER_QUARTER = 4;
 
@@ -70,7 +72,8 @@ function addControlChangesToSequence(
     const cc = NoteSequence.ControlChange.create({
       time: ccParams[0],
       controlNumber: ccParams[1],
-      controlValue: ccParams[2], instrument
+      controlValue: ccParams[2],
+      instrument
     });
     ns.controlChanges.push(cc);
   }
@@ -376,6 +379,24 @@ test('Assert isQuantizedNoteSequence', (t: test.Test) => {
 
   const qns = sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
   sequences.assertIsQuantizedSequence(qns);
+
+  t.end();
+});
+
+test('Assert isRelativeQuantizedNoteSequence', (t: test.Test) => {
+  const ns = createTestNS();
+
+  addTrackToSequence(ns, 0, [
+    [12, 100, 0.01, 10.0], [11, 55, 0.22, 0.50], [40, 45, 2.50, 3.50],
+    [55, 120, 4.0, 4.01], [52, 99, 4.75, 5.0]
+  ]);
+
+  t.throws(
+      () => sequences.assertIsRelativeQuantizedSequence(ns),
+      sequences.QuantizationStatusException);
+
+  const qns = sequences.quantizeNoteSequence(ns, STEPS_PER_QUARTER);
+  sequences.assertIsRelativeQuantizedSequence(qns);
 
   t.end();
 });

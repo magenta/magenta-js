@@ -197,7 +197,7 @@ export class MusicRNN {
   async continueSequence(
       sequence: INoteSequence, steps: number, temperature?: number,
       chordProgression?: string[]): Promise<INoteSequence> {
-    sequences.assertIsQuantizedSequence(sequence);
+    sequences.assertIsRelativeQuantizedSequence(sequence);
 
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');

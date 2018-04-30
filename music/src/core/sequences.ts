@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 
-import {NoteSequence, INoteSequence} from '../protobuf/index';
+import {INoteSequence, NoteSequence} from '../protobuf/index';
+
 import * as constants from './constants';
 
 // Set the quantization cutoff.
@@ -113,8 +114,7 @@ export function quantizeToStep(
 function quantizeNotes(ns: INoteSequence, stepsPerSecond: number) {
   for (const note of ns.notes) {
     // Quantize the start and end times of the note.
-    note.quantizedStartStep =
-        quantizeToStep(note.startTime, stepsPerSecond);
+    note.quantizedStartStep = quantizeToStep(note.startTime, stepsPerSecond);
     note.quantizedEndStep = quantizeToStep(note.endTime, stepsPerSecond);
     if (note.quantizedEndStep === note.quantizedStartStep) {
       note.quantizedEndStep += 1;
@@ -263,11 +263,10 @@ export function quantizeNoteSequence(
   }
 
   // Compute quantization steps per second.
-  const stepsPerSecond = stepsPerQuarterToStepsPerSecond(
-      stepsPerQuarter, qns.tempos[0].qpm);
+  const stepsPerSecond =
+      stepsPerQuarterToStepsPerSecond(stepsPerQuarter, qns.tempos[0].qpm);
 
-  qns.totalQuantizedSteps =
-      quantizeToStep(qns.totalTime, stepsPerSecond);
+  qns.totalQuantizedSteps = quantizeToStep(qns.totalTime, stepsPerSecond);
   quantizeNotes(qns, stepsPerSecond);
 
   // return qns
@@ -278,13 +277,51 @@ export function quantizeNoteSequence(
  * Returns whether or not a NoteSequence proto has been quantized.
  */
 export function isQuantizedSequence(ns: INoteSequence) {
-  return ns.quantizationInfo && (ns.quantizationInfo.stepsPerQuarter > 0 ||
-                                  ns.quantizationInfo.stepsPerSecond > 0);
+  return ns.quantizationInfo &&
+      (ns.quantizationInfo.stepsPerQuarter > 0 ||
+       ns.quantizationInfo.stepsPerSecond > 0);
 }
 
+/**
+ * Confirms that the given NoteSequence has been quantized.
+ */
 export function assertIsQuantizedSequence(ns: INoteSequence) {
   if (!isQuantizedSequence(ns)) {
     throw new QuantizationStatusException(
         `NoteSequence ${ns.id} is not quantized (missing quantizationInfo)`);
+  }
+}
+
+/**
+ * Returns whether the given NoteSequence has been quantized relative to tempo.
+ */
+export function isRelativeQuantizedSequence(ns: INoteSequence) {
+  return ns.quantizationInfo && ns.quantizationInfo.stepsPerQuarter > 0;
+}
+
+/**
+ * Confirms that the given NoteSequence has been quantized relative to tempo.
+ */
+export function assertIsRelativeQuantizedSequence(ns: INoteSequence) {
+  if (!isRelativeQuantizedSequence(ns)) {
+    throw new QuantizationStatusException(`NoteSequence ${
+        ns.id} is not quantized or is quantized based on absolute timing`);
+  }
+}
+
+/**
+ * Returns whether the given NoteSequence has been quantized by absolute time.
+ */
+export function isAbsoluteQuantizedSequence(ns: INoteSequence) {
+  return ns.quantizationInfo && ns.quantizationInfo.stepsPerSecond > 0;
+}
+
+/**
+ * Confirms that the given NoteSequence has been quantized by absolute time.
+ */
+export function assertIsAbsoluteQuantizedSequence(ns: INoteSequence) {
+  if (!isAbsoluteQuantizedSequence(ns)) {
+    throw new QuantizationStatusException(`NoteSequence ${
+        ns.id} is not quantized or is quantized based on relative timing`);
   }
 }

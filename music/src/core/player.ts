@@ -109,7 +109,8 @@ export class Player {
    * of 120.
    */
   start(seq: INoteSequence, qpm?: number): Promise<void> {
-    sequences.assertIsQuantizedSequence(seq);
+    // TODO(fjord): support absolute quantized sequences.
+    sequences.assertIsRelativeQuantizedSequence(seq);
 
     Tone.context.resume();
 
