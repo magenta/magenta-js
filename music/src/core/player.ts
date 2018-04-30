@@ -22,10 +22,10 @@ import {INoteSequence, NoteSequence} from '../protobuf/index';
 import {sequences} from '.';
 import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
 
-const DRUM_PITCH_TO_CLASSS = new Map<number, number>();
+const DRUM_PITCH_TO_CLASS = new Map<number, number>();
 for (let c = 0; c < DEFAULT_DRUM_PITCH_CLASSES.length; ++c) {  // class
   DEFAULT_DRUM_PITCH_CLASSES[c].forEach((p) => {
-    DRUM_PITCH_TO_CLASSS.set(p, c);
+    DRUM_PITCH_TO_CLASS.set(p, c);
   });
 }
 
@@ -146,7 +146,7 @@ export class Player {
 
   private playNote(time: number, note: NoteSequence.INote) {
     if (note.isDrum) {
-      const drumClass = DRUM_PITCH_TO_CLASSS.get(note.pitch);
+      const drumClass = DRUM_PITCH_TO_CLASS.get(note.pitch);
       drumKit[drumClass](time);
     } else {
       const freq = new Tone.Frequency(note.pitch, 'midi');

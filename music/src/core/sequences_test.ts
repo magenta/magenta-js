@@ -405,10 +405,14 @@ function testUnQuantize(
     t: test.Test, expectedTimes: Array<[number, number]>,
     expectedTotalTime: number, originalQpm?: number, finalQpm?: number,
     originalTotalSteps?: number) {
-  const qns = createTestNS();
+  let qns = createTestNS();
 
-  qns.quantizationInfo = NoteSequence.QuantizationInfo.create(
-      {stepsPerQuarter: STEPS_PER_QUARTER});
+  const notes = [
+    [12, 100, 0.01, 0.24], [11, 100, 0.22, 0.55], [40, 100, 0.50, 0.75],
+    [41, 100, 0.689, 1.18], [44, 100, 1.19, 1.69]
+  ];
+  addTrackToSequence(qns, 1, notes);
+  qns = sequences.quantizeNoteSequence(qns, STEPS_PER_QUARTER);
   if (!originalQpm) {
     qns.tempos = [];
   } else {
@@ -418,26 +422,19 @@ function testUnQuantize(
     qns.totalQuantizedSteps = originalTotalSteps;
   }
 
-  const notes = [
-    [12, 100, 0.01, 0.24], [11, 100, 0.22, 0.55], [40, 100, 0.50, 0.75],
-    [41, 100, 0.689, 1.18], [44, 100, 1.19, 1.69]
-  ];
-
-  addTrackToSequence(qns, 1, notes);
-  addQuantizedStepsToSequence(qns, [[0, 1], [1, 2], [2, 3], [3, 5], [5, 7]]);
-
   const ns = sequences.unquantizeSequence(qns, finalQpm);
 
-  const expectedSequence = createTestNS();
-  addTrackToSequence(
-      expectedSequence, 1,
-      notes.map(
-          (n, i) => [n[0], n[1], expectedTimes[i][0], expectedTimes[i][1]]));
+  const expectedSequence = sequences.clone(qns);
+  expectedSequence.notes.map((n, i) => {
+    n.startTime = expectedTimes[i][0];
+    n.endTime = expectedTimes[i][1];
+  });
   expectedSequence.totalTime = expectedTotalTime;
   if (!finalQpm && !originalQpm) {
     expectedSequence.tempos = [];
   } else {
-    expectedSequence.tempos[0].qpm = finalQpm ? finalQpm : originalQpm;
+    expectedSequence.tempos =
+        [{time: 0, qpm: finalQpm ? finalQpm : originalQpm}];
   }
 
   t.deepEqual(

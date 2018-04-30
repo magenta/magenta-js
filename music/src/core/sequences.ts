@@ -101,7 +101,14 @@ export function quantizeToStep(
 }
 
 /**
- * Quantize the notes and chords of a NoteSequence proto in place.
+ * Returns a list of events with a `time` and `quantizedStep` properties.
+ */
+function getQuantizedTimeEvents(ns: INoteSequence) {
+  return ns.controlChanges.concat(ns.textAnnotations);
+}
+
+/**
+ * Quantize the notes and events of a NoteSequence proto in place.
  * Note start and end times, and chord times are snapped to a nearby
  * quantized step, and the resulting times are stored in a separate field
  * (e.g. QuantizedStartStep). See the comments above `QUANTIZE_CUTOFF` for
@@ -110,7 +117,7 @@ export function quantizeToStep(
  * @param stepsPerSecond Each second will be divided into this many
  * quantized time steps.
  */
-function quantizeNotes(ns: INoteSequence, stepsPerSecond: number) {
+function quantizeNotesAndEvents(ns: INoteSequence, stepsPerSecond: number) {
   for (const note of ns.notes) {
     // Quantize the start and end times of the note.
     note.quantizedStartStep = quantizeToStep(note.startTime, stepsPerSecond);
@@ -134,14 +141,14 @@ function quantizeNotes(ns: INoteSequence, stepsPerSecond: number) {
   }
 
   // Also quantize control changes and text annotations.
-  for (const event of ns.controlChanges.concat(ns.textAnnotations)) {
+  getQuantizedTimeEvents(ns).forEach(event => {
     // Quantize the event time, disallowing negative time.
     event.quantizedStep = quantizeToStep(event.time, stepsPerSecond);
     if (event.quantizedStep < 0) {
       throw new NegativeTimeException(
           `Got negative event time: step = ${event.quantizedStep}`);
     }
-  }
+  });
 }
 
 /**
@@ -276,7 +283,7 @@ export function quantizeNoteSequence(
       stepsPerQuarterToStepsPerSecond(stepsPerQuarter, qns.tempos[0].qpm);
 
   qns.totalQuantizedSteps = quantizeToStep(ns.totalTime, stepsPerSecond);
-  quantizeNotes(qns, stepsPerSecond);
+  quantizeNotesAndEvents(qns, stepsPerSecond);
 
   // return qns
   return qns;
@@ -357,7 +364,7 @@ export function unquantizeSequence(qns: INoteSequence, qpm?: number) {
     if (ns.tempos && ns.tempos.length > 0) {
       ns.tempos[0].qpm = qpm;
     } else {
-      ns.tempos.push(NoteSequence.Tempo.create({time: 0, qpm: qpm}));
+      ns.tempos.push(NoteSequence.Tempo.create({time: 0, qpm}));
     }
   } else {
     qpm = (qns.tempos && qns.tempos.length > 0) ?
@@ -368,24 +375,18 @@ export function unquantizeSequence(qns: INoteSequence, qpm?: number) {
   const stepToSeconds = (step: number) =>
       step / ns.quantizationInfo.stepsPerQuarter * (60 / qpm);
   ns.totalTime = stepToSeconds(ns.totalQuantizedSteps);
-  ns.totalQuantizedSteps = undefined;
   ns.notes.forEach(n => {
     // Quantize the start and end times of the note.
     n.startTime = stepToSeconds(n.quantizedStartStep);
     n.endTime = stepToSeconds(n.quantizedEndStep);
-    n.quantizedStartStep = undefined;
-    n.quantizedEndStep = undefined;
-
     // Extend sequence if necessary.
     ns.totalTime = Math.max(ns.totalTime, n.endTime);
   });
 
   // Also quantize control changes and text annotations.
-  ns.controlChanges.concat(ns.textAnnotations).forEach(event => {
+  getQuantizedTimeEvents(ns).forEach(event => {
     // Quantize the event time, disallowing negative time.
     event.time = stepToSeconds(event.time);
-    event.quantizedStep = undefined;
   });
-  ns.quantizationInfo = undefined;
   return ns;
 }
