@@ -106,10 +106,9 @@ export function quantizeToStep(
  * quantized step, and the resulting times are stored in a separate field
  * (e.g. QuantizedStartStep). See the comments above `QUANTIZE_CUTOFF` for
  * details on how the quantizing algorithm works.
- * @param ns A music_pb2.NoteSequence protocol buffer. Will be modified in
- *    place.
+ * @param ns A `NoteSequence` to quantize. Will be modified in place.
  * @param stepsPerSecond Each second will be divided into this many
- *    quantized time steps.
+ * quantized time steps.
  */
 function quantizeNotes(ns: INoteSequence, stepsPerSecond: number) {
   for (const note of ns.notes) {
@@ -146,10 +145,7 @@ function quantizeNotes(ns: INoteSequence, stepsPerSecond: number) {
 }
 
 /**
- * Throws `MultipleTempoException` if there is a tempo change.
- * @param ns The NoteSequence to check.
- * @throws {MultipleTempoException} If there is a change in tempo in the
- * note sequence.
+ * Confirms there is no tempo change.
  */
 function assertSingleTempo(ns: INoteSequence) {
   if (ns.tempos.length === 0) {
@@ -279,7 +275,7 @@ export function quantizeNoteSequence(
   const stepsPerSecond =
       stepsPerQuarterToStepsPerSecond(stepsPerQuarter, qns.tempos[0].qpm);
 
-  qns.totalQuantizedSteps = quantizeToStep(qns.totalTime, stepsPerSecond);
+  qns.totalQuantizedSteps = quantizeToStep(ns.totalTime, stepsPerSecond);
   quantizeNotes(qns, stepsPerSecond);
 
   // return qns
@@ -306,8 +302,7 @@ export function assertIsQuantizedSequence(ns: INoteSequence) {
 }
 
 /**
- * Returns whether the given NoteSequence has been quantized relative to
- * tempo.
+ * Returns whether the given NoteSequence has been quantized relative to tempo.
  */
 export function isRelativeQuantizedSequence(ns: INoteSequence) {
   return ns.quantizationInfo && ns.quantizationInfo.stepsPerQuarter > 0;
@@ -341,9 +336,10 @@ export function assertIsAbsoluteQuantizedSequence(ns: INoteSequence) {
 }
 
 /**
- * Convert the quantized steps in a `NoteSequence` to seconds.
+ * Create an unquantized version of a quantized `NoteSequence`.
  *
- * Existing note times will be replaced in the output `NoteSequence`.
+ * Any existing times will be replaced in the output `NoteSequence` and
+ * quantization info and steps will be removed.
  *
  * @param ns The `NoteSequence` to unquantize.
  * @param qpm The tempo to use. If not provided, the tempo in `ns` is used,
@@ -357,26 +353,39 @@ export function unquantizeSequence(qns: INoteSequence, qpm?: number) {
 
   const ns = clone(qns);
 
-  qpm = qpm ? qpm :
-              (qns.tempos && qns.tempos.length > 0) ?
-              qns.tempos[0].qpm :
-              constants.DEFAULT_QUARTERS_PER_MINUTE;
+  if (qpm) {
+    if (ns.tempos && ns.tempos.length > 0) {
+      ns.tempos[0].qpm = qpm;
+    } else {
+      ns.tempos.push(NoteSequence.Tempo.create({time: 0, qpm: qpm}));
+    }
+  } else {
+    qpm = (qns.tempos && qns.tempos.length > 0) ?
+        ns.tempos[0].qpm :
+        constants.DEFAULT_QUARTERS_PER_MINUTE;
+  }
 
   const stepToSeconds = (step: number) =>
-      step / qns.quantizationInfo.stepsPerQuarter * (60 / qpm);
-  let maxEnd = 0;
+      step / ns.quantizationInfo.stepsPerQuarter * (60 / qpm);
+  ns.totalTime = stepToSeconds(ns.totalQuantizedSteps);
+  ns.totalQuantizedSteps = undefined;
   ns.notes.forEach(n => {
+    // Quantize the start and end times of the note.
     n.startTime = stepToSeconds(n.quantizedStartStep);
     n.endTime = stepToSeconds(n.quantizedEndStep);
-    maxEnd = Math.max(maxEnd, n.endTime);
     n.quantizedStartStep = undefined;
     n.quantizedEndStep = undefined;
-  });
-  ns.totalTime = (qns.totalQuantizedSteps) ?
-      stepToSeconds(qns.totalQuantizedSteps) :
-      maxEnd;
-  ns.totalQuantizedSteps = undefined;
-  ns.quantizationInfo = undefined;
 
+    // Extend sequence if necessary.
+    ns.totalTime = Math.max(ns.totalTime, n.endTime);
+  });
+
+  // Also quantize control changes and text annotations.
+  ns.controlChanges.concat(ns.textAnnotations).forEach(event => {
+    // Quantize the event time, disallowing negative time.
+    event.time = stepToSeconds(event.time);
+    event.quantizedStep = undefined;
+  });
+  ns.quantizationInfo = undefined;
   return ns;
 }
