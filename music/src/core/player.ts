@@ -15,12 +15,19 @@
  * =============================================================================
  */
 import * as Tone from 'tone';
+import {isNullOrUndefined} from 'util';
 
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import {sequences} from '.';
-import * as constants from './constants';
 import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
+
+const DRUM_PITCH_TO_CLASSS = new Map<number, number>();
+for (let c = 0; c < DEFAULT_DRUM_PITCH_CLASSES.length; ++c) {  // class
+  DEFAULT_DRUM_PITCH_CLASSES[c].forEach((p) => {
+    DRUM_PITCH_TO_CLASSS.set(p, c);
+  });
+}
 
 const kick = new Tone.MembraneSynth().toMaster();
 const tomLow = new Tone
@@ -97,39 +104,34 @@ export class Player {
   private currentPart: any;
   private scheduledStop: number;
   private synths = new Map<number, any>();
-  static context = Tone.context;
+  static tone = Tone;
   /* tslint:enable */
 
+  constructor() {
+    // Set a bpm of 60 to make dealing with timing easier. We will use seconds
+    // instead of transport time since it can't go beyond 16th notes.
+    Tone.Transport.bpm.value = 60;
+  }
+
   /**
-   * Start playing a quantized note sequence, and return a Promise
-   * that resolves when it is done playing.
+   * Starts playing a `NoteSequence` (either quantized or unquantized), and
+   * returns a Promise that resolves when it is done playing.
    * @param seq The `NoteSequence` to play.
    * @param qpm (Optional) If specified, will play back at this qpm. If not
    * specified, will use either the qpm specified in the sequence or the default
-   * of 120.
+   * of 120. Only valid for quantized sequences.
+   * @returns a Promise that resolves when playback is complete.
    */
   start(seq: INoteSequence, qpm?: number): Promise<void> {
-    // TODO(fjord): support absolute quantized sequences.
-    sequences.assertIsRelativeQuantizedSequence(seq);
-
-    Tone.context.resume();
-
-    if (qpm) {
-      Tone.Transport.bpm.value = qpm;
-    } else if (seq.tempos && seq.tempos.length > 0) {
-      // TODO(fjord): support tempo changes.
-      Tone.Transport.bpm.value = seq.tempos[0].qpm;
-    } else {
-      Tone.Transport.bpm.value = constants.DEFAULT_QUARTERS_PER_MINUTE;
+    if (sequences.isQuantizedSequence(seq)) {
+      seq = sequences.unquantizeSequence(seq, qpm);
+    } else if (qpm) {
+      throw new Error('Cannot specify a `qpm` for a non-quantized sequence.');
     }
 
-    const events = seq.notes.map(
-        note =>
-            [note.quantizedStartStep / seq.quantizationInfo.stepsPerQuarter *
-                 (60 / Tone.Transport.bpm.value),
-             note]);
     this.currentPart = new Tone.Part(
-        (t: number, n: NoteSequence.INote) => this.playNote(t, n), events);
+        (t: number, n: NoteSequence.INote) => this.playNote(t, n),
+        seq.notes.map(n => [n.startTime, n]));
     this.currentPart.start();
     if (Tone.Transport.state !== 'started') {
       Tone.Transport.start();
@@ -138,25 +140,30 @@ export class Player {
       this.scheduledStop = Tone.Transport.schedule(() => {
         this.stop();
         resolve();
-      }, `+${events[events.length - 1][0]}`);
+      }, `+${seq.totalTime}`);
     });
   }
 
-  private playNote(time: number, n: NoteSequence.INote) {
-    if (n.isDrum) {
-      const drumClass = DEFAULT_DRUM_PITCH_CLASSES.findIndex(
-          classes => classes.indexOf(n.pitch) >= 0);
+  private playNote(time: number, note: NoteSequence.INote) {
+    if (note.isDrum) {
+      const drumClass = DRUM_PITCH_TO_CLASSS.get(note.pitch);
       drumKit[drumClass](time);
     } else {
-      const freq = new Tone.Frequency(n.pitch, 'midi');
-      const dur = (n.quantizedEndStep - n.quantizedStartStep) *
-          (60 / Tone.Transport.bpm.value);
-      this.getSynth(n.instrument).triggerAttackRelease(freq, dur, time);
+      const freq = new Tone.Frequency(note.pitch, 'midi');
+      const dur = note.endTime - note.startTime;
+      this.getSynth(note.instrument, note.program)
+          .triggerAttackRelease(freq, dur, time);
     }
   }
 
-  private getSynth(instrument: number) {
-    if (!this.synths.has(instrument)) {
+  private getSynth(instrument: number, program?: number) {
+    if (this.synths.has(instrument)) {
+      return this.synths.get(instrument);
+    } else if (!isNullOrUndefined(program) && program >= 32 && program <= 39) {
+      const bass = new Tone.Synth({oscillator: {type: 'triangle'}}).toMaster();
+      bass.volume.value = 5;
+      this.synths.set(instrument, bass);
+    } else {
       this.synths.set(instrument, new Tone.Synth().toMaster());
     }
     return this.synths.get(instrument);
