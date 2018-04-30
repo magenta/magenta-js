@@ -294,10 +294,48 @@ function assertSingleTempo(ns: INoteSequence) {
          ns.quantizationInfo.stepsPerSecond > 0);
   }
 
+  /**
+   * Confirms that the given NoteSequence has been quantized.
+   */
   export function assertIsQuantizedSequence(ns: INoteSequence) {
     if (!isQuantizedSequence(ns)) {
       throw new QuantizationStatusException(
           `NoteSequence ${ns.id} is not quantized (missing quantizationInfo)`);
+    }
+  }
+
+  /**
+   * Returns whether the given NoteSequence has been quantized relative to
+   * tempo.
+   */
+  export function isRelativeQuantizedSequence(ns: INoteSequence) {
+    return ns.quantizationInfo && ns.quantizationInfo.stepsPerQuarter > 0;
+  }
+
+  /**
+   * Confirms that the given NoteSequence has been quantized relative to tempo.
+   */
+  export function assertIsRelativeQuantizedSequence(ns: INoteSequence) {
+    if (!isRelativeQuantizedSequence(ns)) {
+      throw new QuantizationStatusException(`NoteSequence ${
+          ns.id} is not quantized or is quantized based on absolute timing`);
+    }
+  }
+
+  /**
+   * Returns whether the given NoteSequence has been quantized by absolute time.
+   */
+  export function isAbsoluteQuantizedSequence(ns: INoteSequence) {
+    return ns.quantizationInfo && ns.quantizationInfo.stepsPerSecond > 0;
+  }
+
+  /**
+   * Confirms that the given NoteSequence has been quantized by absolute time.
+   */
+  export function assertIsAbsoluteQuantizedSequence(ns: INoteSequence) {
+    if (!isAbsoluteQuantizedSequence(ns)) {
+      throw new QuantizationStatusException(`NoteSequence ${
+          ns.id} is not quantized or is quantized based on relative timing`);
     }
   }
 
@@ -313,7 +351,7 @@ function assertSingleTempo(ns: INoteSequence) {
    */
   export function unquantizeSequence(qns: INoteSequence, qpm?: number) {
     // TODO(adarob): Support absolute quantized times and multiple tempos.
-    assertIsQuantizedSequence(qns);
+    assertIsRelativeQuantizedSequence(qns);
     assertSingleTempo(qns);
 
     const ns = clone(qns);
