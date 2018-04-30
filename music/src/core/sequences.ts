@@ -101,17 +101,23 @@ export function quantizeToStep(
 }
 
 /**
- * Quantize the notes and chords of a NoteSequence proto in place.
+ * Returns a list of events with a `time` and `quantizedStep` properties.
+ */
+function getQuantizedTimeEvents(ns: INoteSequence) {
+  return ns.controlChanges.concat(ns.textAnnotations);
+}
+
+/**
+ * Quantize the notes and events of a NoteSequence proto in place.
  * Note start and end times, and chord times are snapped to a nearby
  * quantized step, and the resulting times are stored in a separate field
  * (e.g. QuantizedStartStep). See the comments above `QUANTIZE_CUTOFF` for
  * details on how the quantizing algorithm works.
- * @param ns A music_pb2.NoteSequence protocol buffer. Will be modified in
- *    place.
+ * @param ns A `NoteSequence` to quantize. Will be modified in place.
  * @param stepsPerSecond Each second will be divided into this many
- *    quantized time steps.
+ * quantized time steps.
  */
-function quantizeNotes(ns: INoteSequence, stepsPerSecond: number) {
+function quantizeNotesAndEvents(ns: INoteSequence, stepsPerSecond: number) {
   for (const note of ns.notes) {
     // Quantize the start and end times of the note.
     note.quantizedStartStep = quantizeToStep(note.startTime, stepsPerSecond);
@@ -135,12 +141,42 @@ function quantizeNotes(ns: INoteSequence, stepsPerSecond: number) {
   }
 
   // Also quantize control changes and text annotations.
-  for (const event of ns.controlChanges.concat(ns.textAnnotations)) {
+  getQuantizedTimeEvents(ns).forEach(event => {
     // Quantize the event time, disallowing negative time.
     event.quantizedStep = quantizeToStep(event.time, stepsPerSecond);
     if (event.quantizedStep < 0) {
       throw new NegativeTimeException(
           `Got negative event time: step = ${event.quantizedStep}`);
+    }
+  });
+}
+
+/**
+ * Confirms there is no tempo change.
+ */
+function assertSingleTempo(ns: INoteSequence) {
+  if (ns.tempos.length === 0) {
+    // There is a single (implicit) tempo.
+    return;
+  }
+  ns.tempos.sort((a, b) => a.time - b.time);
+  // There is an implicit 120.0 qpm tempo at 0 time. So if the first tempo
+  // is something other that 120.0 and it's at a time other than 0, that's
+  // an implicit tempo change.
+  if (ns.tempos[0].time !== 0 &&
+      ns.tempos[0].qpm !== constants.DEFAULT_QUARTERS_PER_MINUTE) {
+    throw new MultipleTempoException(
+        'NoteSequence has an implicit tempo change from initial ' +
+        `${constants.DEFAULT_QUARTERS_PER_MINUTE} qpm to ` +
+        `${ns.tempos[0].qpm} qpm at ${ns.tempos[0].time} seconds.`);
+  }
+
+  for (let i = 1; i < ns.tempos.length; i++) {
+    if (ns.tempos[i].qpm !== ns.tempos[0].qpm) {
+      throw new MultipleTempoException(
+          'NoteSequence has at least one tempo change from ' +
+          `${ns.tempos[0].qpm} qpm to ${ns.tempos[i].qpm}` +
+          `qpm at ${ns.tempos[i].time} seconds.`);
     }
   }
 }
@@ -157,25 +193,24 @@ function quantizeNotes(ns: INoteSequence, stepsPerSecond: number) {
  * QuantizedStartStep). See the comments above `QUANTIZE_CUTOFF` for details
  * on how the quantizing algorithm works.
  *
- * @param note_sequence A music_pb2.NoteSequence protocol buffer.
- * @param steps_per_quarter Each quarter note of music will be divided into
+ * @param ns The `NoteSequence` to quantize.
+ * @param stepsPerQuarter Each quarter note of music will be divided into
  *    this many quantized time steps.
  * @returns A copy of the original NoteSequence, with quantized times added.
  *
  * @throws {MultipleTempoException} If there is a change in tempo in
- *    note sequence.
+ * the sequence.
  * @throws {MultipleTimeSignatureException} If there is a change in time
- *    signature in noteSequence.
+ * signature in the sequence.
  * @throws {BadTimeSignatureException} If the time signature found in
- *    noteSequence has a 0 numerator or a denominator which is not a power of
- *    2.
+ * the sequence has a 0 numerator or a denominator which is not a power of 2.
  * @throws {NegativeTimeException} If a note or chord occurs at a negative
- *    time.
+ * time.
  */
 export function quantizeNoteSequence(
-    noteSequence: INoteSequence, stepsPerQuarter: number): NoteSequence {
+    ns: INoteSequence, stepsPerQuarter: number): NoteSequence {
   // Make a copy.
-  const qns = clone(noteSequence);
+  const qns = clone(ns);
 
   qns.quantizationInfo =
       NoteSequence.QuantizationInfo.create({stepsPerQuarter});
@@ -232,26 +267,7 @@ export function quantizeNoteSequence(
   }
 
   if (qns.tempos.length > 0) {
-    qns.tempos.sort((a, b) => a.time - b.time);
-    // There is an implicit 120.0 qpm tempo at 0 time. So if the first tempo
-    // is something other that 120.0 and it's at a time other than 0, that's
-    // an implicit tempo change.
-    if (qns.tempos[0].time !== 0 &&
-        qns.tempos[0].qpm !== constants.DEFAULT_QUARTERS_PER_MINUTE) {
-      throw new MultipleTempoException(
-          'NoteSequence has an implicit tempo change from initial ' +
-          `${constants.DEFAULT_QUARTERS_PER_MINUTE} qpm to ` +
-          `${qns.tempos[0].qpm} qpm at ${qns.tempos[0].time} seconds.`);
-    }
-
-    for (let i = 1; i < qns.tempos.length; i++) {
-      if (qns.tempos[i].qpm !== qns.tempos[0].qpm) {
-        throw new MultipleTempoException(
-            'NoteSequence has at least one tempo change from ' +
-            `${qns.tempos[0].qpm} qpm to ${qns.tempos[i].qpm}` +
-            `qpm at ${qns.tempos[i].time} seconds.`);
-      }
-    }
+    assertSingleTempo(qns);
 
     // Make it clear that there is only 1 tempo and it starts at the beginning
     qns.tempos[0].time = 0;
@@ -266,8 +282,8 @@ export function quantizeNoteSequence(
   const stepsPerSecond =
       stepsPerQuarterToStepsPerSecond(stepsPerQuarter, qns.tempos[0].qpm);
 
-  qns.totalQuantizedSteps = quantizeToStep(qns.totalTime, stepsPerSecond);
-  quantizeNotes(qns, stepsPerSecond);
+  qns.totalQuantizedSteps = quantizeToStep(ns.totalTime, stepsPerSecond);
+  quantizeNotesAndEvents(qns, stepsPerSecond);
 
   // return qns
   return qns;
@@ -324,4 +340,53 @@ export function assertIsAbsoluteQuantizedSequence(ns: INoteSequence) {
     throw new QuantizationStatusException(`NoteSequence ${
         ns.id} is not quantized or is quantized based on relative timing`);
   }
+}
+
+/**
+ * Create an unquantized version of a quantized `NoteSequence`.
+ *
+ * Any existing times will be replaced in the output `NoteSequence` and
+ * quantization info and steps will be removed.
+ *
+ * @param ns The `NoteSequence` to unquantize.
+ * @param qpm The tempo to use. If not provided, the tempo in `ns` is used,
+ * or the default of 120 if it is not specified in the sequence either.
+ * @returns a new non-quantized `NoteSequence` wih time in seconds.
+ */
+export function unquantizeSequence(qns: INoteSequence, qpm?: number) {
+  // TODO(adarob): Support absolute quantized times and multiple tempos.
+  assertIsRelativeQuantizedSequence(qns);
+  assertSingleTempo(qns);
+
+  const ns = clone(qns);
+
+  if (qpm) {
+    if (ns.tempos && ns.tempos.length > 0) {
+      ns.tempos[0].qpm = qpm;
+    } else {
+      ns.tempos.push(NoteSequence.Tempo.create({time: 0, qpm}));
+    }
+  } else {
+    qpm = (qns.tempos && qns.tempos.length > 0) ?
+        ns.tempos[0].qpm :
+        constants.DEFAULT_QUARTERS_PER_MINUTE;
+  }
+
+  const stepToSeconds = (step: number) =>
+      step / ns.quantizationInfo.stepsPerQuarter * (60 / qpm);
+  ns.totalTime = stepToSeconds(ns.totalQuantizedSteps);
+  ns.notes.forEach(n => {
+    // Quantize the start and end times of the note.
+    n.startTime = stepToSeconds(n.quantizedStartStep);
+    n.endTime = stepToSeconds(n.quantizedEndStep);
+    // Extend sequence if necessary.
+    ns.totalTime = Math.max(ns.totalTime, n.endTime);
+  });
+
+  // Also quantize control changes and text annotations.
+  getQuantizedTimeEvents(ns).forEach(event => {
+    // Quantize the event time, disallowing negative time.
+    event.time = stepToSeconds(event.time);
+  });
+  return ns;
 }

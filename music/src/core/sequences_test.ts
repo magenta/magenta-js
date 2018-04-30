@@ -400,3 +400,86 @@ test('Assert isRelativeQuantizedNoteSequence', (t: test.Test) => {
 
   t.end();
 });
+
+function testUnQuantize(
+    t: test.Test, expectedTimes: Array<[number, number]>,
+    expectedTotalTime: number, originalQpm?: number, finalQpm?: number,
+    originalTotalSteps?: number) {
+  let qns = createTestNS();
+
+  const notes = [
+    [12, 100, 0.01, 0.24], [11, 100, 0.22, 0.55], [40, 100, 0.50, 0.75],
+    [41, 100, 0.689, 1.18], [44, 100, 1.19, 1.69]
+  ];
+  addTrackToSequence(qns, 1, notes);
+  qns = sequences.quantizeNoteSequence(qns, STEPS_PER_QUARTER);
+  if (!originalQpm) {
+    qns.tempos = [];
+  } else {
+    qns.tempos[0].qpm = originalQpm;
+  }
+  if (originalTotalSteps) {
+    qns.totalQuantizedSteps = originalTotalSteps;
+  }
+
+  const ns = sequences.unquantizeSequence(qns, finalQpm);
+
+  const expectedSequence = sequences.clone(qns);
+  expectedSequence.notes.map((n, i) => {
+    n.startTime = expectedTimes[i][0];
+    n.endTime = expectedTimes[i][1];
+  });
+  expectedSequence.totalTime = expectedTotalTime;
+  if (!finalQpm && !originalQpm) {
+    expectedSequence.tempos = [];
+  } else {
+    expectedSequence.tempos =
+        [{time: 0, qpm: finalQpm ? finalQpm : originalQpm}];
+  }
+
+  t.deepEqual(
+      NoteSequence.toObject(ns), NoteSequence.toObject(expectedSequence));
+
+  t.end();
+}
+
+test('Un-Quantize NoteSequence, ns qpm', (t: test.Test) => {
+  testUnQuantize(
+      t, [[0.0, 0.25], [0.25, 0.50], [0.50, 0.75], [0.75, 1.25], [1.25, 1.75]],
+      1.75, 60);
+});
+
+test('Un-Quantize NoteSequence, no qpm', (t: test.Test) => {
+  testUnQuantize(
+      t,
+      [
+        [0.0, 0.125], [0.125, 0.25], [0.25, 0.375], [0.375, 0.625],
+        [0.625, 0.875]
+      ],
+      0.875);
+});
+
+test('Un-Quantize NoteSequence, arg qpm', (t: test.Test) => {
+  testUnQuantize(
+      t, [[0.0, 0.5], [0.5, 1.00], [1.00, 1.5], [1.5, 2.5], [2.5, 3.5]], 3.5,
+      undefined, 30);
+});
+
+test('Un-Quantize NoteSequence, orig and arg qpm', (t: test.Test) => {
+  testUnQuantize(
+      t, [[0.0, 0.5], [0.5, 1.00], [1.00, 1.5], [1.5, 2.5], [2.5, 3.5]], 3.5,
+      60, 30);
+});
+
+test('Un-Quantize NoteSequence, existing total steps lower', (t: test.Test) => {
+  testUnQuantize(
+      t, [[0.0, 0.5], [0.5, 1.00], [1.00, 1.5], [1.5, 2.5], [2.5, 3.5]], 3.5,
+      undefined, 30, 1);
+});
+
+test(
+    'Un-Quantize NoteSequence, existing total steps higher', (t: test.Test) => {
+      testUnQuantize(
+          t, [[0.0, 0.5], [0.5, 1.00], [1.00, 1.5], [1.5, 2.5], [2.5, 3.5]], 10,
+          undefined, 30, 20);
+    });
