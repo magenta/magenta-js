@@ -282,6 +282,9 @@ export function isQuantizedSequence(ns: INoteSequence) {
        ns.quantizationInfo.stepsPerSecond > 0);
 }
 
+/**
+ * Confirms that the given NoteSequence has been quantized.
+ */
 export function assertIsQuantizedSequence(ns: INoteSequence) {
   if (!isQuantizedSequence(ns)) {
     throw new QuantizationStatusException(
@@ -289,10 +292,16 @@ export function assertIsQuantizedSequence(ns: INoteSequence) {
   }
 }
 
+/**
+ * Returns whether the given NoteSequence has been quantized relative to tempo.
+ */
 export function isRelativeQuantizedSequence(ns: INoteSequence) {
   return ns.quantizationInfo && ns.quantizationInfo.stepsPerQuarter > 0;
 }
 
+/**
+ * Confirms that the given NoteSequence has been quantized relative to tempo.
+ */
 export function assertIsRelativeQuantizedSequence(ns: INoteSequence) {
   if (!isRelativeQuantizedSequence(ns)) {
     throw new QuantizationStatusException(`NoteSequence ${
@@ -300,10 +309,16 @@ export function assertIsRelativeQuantizedSequence(ns: INoteSequence) {
   }
 }
 
+/**
+ * Returns whether the given NoteSequence has been quantized by absolute time.
+ */
 export function isAbsoluteQuantizedSequence(ns: INoteSequence) {
   return ns.quantizationInfo && ns.quantizationInfo.stepsPerSecond > 0;
 }
 
+/**
+ * Confirms that the given NoteSequence has been quantized by absolute time.
+ */
 export function assertIsAbsoluteQuantizedSequence(ns: INoteSequence) {
   if (!isAbsoluteQuantizedSequence(ns)) {
     throw new QuantizationStatusException(`NoteSequence ${
