@@ -292,7 +292,7 @@ export class DrumsOneHotConverter extends DrumsConverter {
   }
 
   toTensor(noteSequence: INoteSequence) {
-    sequences.assertIsQuantizedSequence(noteSequence);
+    sequences.assertIsRelativeQuantizedSequence(noteSequence);
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
     const labels = Array<number>(numSteps).fill(0);
     for (const {pitch, quantizedStartStep} of noteSequence.notes) {
