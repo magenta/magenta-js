@@ -282,6 +282,9 @@ export function isQuantizedSequence(ns: INoteSequence) {
        ns.quantizationInfo.stepsPerSecond > 0);
 }
 
+/**
+ * Confirms that the given NoteSequence has been quantized.
+ */
 export function assertIsQuantizedSequence(ns: INoteSequence) {
   if (!isQuantizedSequence(ns)) {
     throw new QuantizationStatusException(
@@ -289,31 +292,36 @@ export function assertIsQuantizedSequence(ns: INoteSequence) {
   }
 }
 
-export function unquantizeSequence(qns: INoteSequence, qpm?: number) {
-  assertIsQuantizedSequence(qns);
+/**
+ * Returns whether the given NoteSequence has been quantized relative to tempo.
+ */
+export function isRelativeQuantizedSequence(ns: INoteSequence) {
+  return ns.quantizationInfo && ns.quantizationInfo.stepsPerQuarter > 0;
+}
 
-  const ns = clone(qns);
+/**
+ * Confirms that the given NoteSequence has been quantized relative to tempo.
+ */
+export function assertIsRelativeQuantizedSequence(ns: INoteSequence) {
+  if (!isRelativeQuantizedSequence(ns)) {
+    throw new QuantizationStatusException(`NoteSequence ${
+        ns.id} is not quantized or is quantized based on absolute timing`);
+  }
+}
 
-  qpm = qpm ? qpm :
-              (qns.tempos && qns.tempos.length > 0) ?
-              qns.tempos[0].qpm :
-              constants.DEFAULT_QUARTERS_PER_MINUTE;
+/**
+ * Returns whether the given NoteSequence has been quantized by absolute time.
+ */
+export function isAbsoluteQuantizedSequence(ns: INoteSequence) {
+  return ns.quantizationInfo && ns.quantizationInfo.stepsPerSecond > 0;
+}
 
-  const stepToSeconds = (step: number) =>
-      step / qns.quantizationInfo.stepsPerQuarter * (60 / qpm);
-  let maxEnd = 0;
-  ns.notes.forEach(n => {
-    n.startTime = stepToSeconds(n.quantizedStartStep);
-    n.endTime = stepToSeconds(n.quantizedEndStep);
-    maxEnd = Math.max(maxEnd, n.endTime);
-    n.quantizedStartStep = undefined;
-    n.quantizedEndStep = undefined;
-  })
-  ns.totalTime = (qns.totalQuantizedSteps) ?
-      stepToSeconds(qns.totalQuantizedSteps) :
-      maxEnd;
-  ns.totalQuantizedSteps = undefined;
-  ns.quantizationInfo = undefined;
-
-  return ns;
+/**
+ * Confirms that the given NoteSequence has been quantized by absolute time.
+ */
+export function assertIsAbsoluteQuantizedSequence(ns: INoteSequence) {
+  if (!isAbsoluteQuantizedSequence(ns)) {
+    throw new QuantizationStatusException(`NoteSequence ${
+        ns.id} is not quantized or is quantized based on relative timing`);
+  }
 }
