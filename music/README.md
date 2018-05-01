@@ -1,6 +1,8 @@
-# MagentaMusic.js API
+# @magenta/music
 
 This JavaScript implementation of Magenta's musical note-based models uses [TensorFlow.js](https://js.tensorflow.org) for GPU-accelerated inference.
+
+Complete documentation is available at https://tensorflow.github.io/magenta-js.
 
 For the Python TensorFlow implementations, see the [main Magenta repo](https://github.com/tensorflow/magenta).
 
@@ -44,8 +46,8 @@ Add the following code to an HTML file:
 ```html
 <html>
   <head>
-    <!-- Load MagentaMusic.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@magenta/music@0.0.8"> </script>
+    <!-- Load @magenta/music -->
+    <script src="https://cdn.jsdelivr.net/npm/@magenta/music@0.0.10"> </script>
 
     <!-- Place your code in the script tag below. You can also use an external .js file -->
     <script>

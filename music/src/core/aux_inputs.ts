@@ -1,4 +1,8 @@
 /**
+ * Module containing "auxiliary" model inputs, which can be appended to the
+ * main input tensors extracted from a `NoteSequence`. Currently the only such
+ * auxiliary input type is a binary counter.
+ *
  * @license
  * Copyright 2018 Google Inc. All Rights Reserved.
  *
@@ -16,11 +20,8 @@
  */
 
 /**
- * This file contains "auxiliary" model inputs, which can be appended to the
- * main input tensors extracted from a `NoteSequence`. Currently the only such
- * auxiliary input type is a binary counter.
+ * Imports
  */
-
 import * as tf from '@tensorflow/tfjs-core';
 
 export interface BinaryCounterSpec {

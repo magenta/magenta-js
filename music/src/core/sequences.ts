@@ -1,4 +1,6 @@
 /**
+ * A library for common manipulations of `NoteSequence`s.
+ *
  * @license
  * Copyright 2018 Google Inc. All Rights Reserved.
  *
@@ -15,6 +17,9 @@
  * limitations under the License.
  */
 
+/**
+ * Imports
+ */
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import * as constants from './constants';

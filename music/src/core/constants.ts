@@ -1,4 +1,6 @@
 /**
+ * Global constants.
+ *
  * @license
  * Copyright 2018 Google Inc. All Rights Reserved.
  *
@@ -15,7 +17,11 @@
  * limitations under the License.
  */
 
-// Meter-related constants.
+/**
+ * Null comment for documentation generation.
+ */
+null;  // tslint:disable-line:no-unused-expression
+
 export const DEFAULT_QUARTERS_PER_MINUTE = 120.0;
 // 4/4 music sampled at 4 steps per quarter note.
 export const DEFAULT_STEPS_PER_BAR = 16;

@@ -15,6 +15,9 @@
  * limitations under the License.
  */
 
+/**
+ * Imports
+ */
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 import * as constants from './constants';
 

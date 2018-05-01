@@ -1,4 +1,7 @@
 /**
+ * Core implementation for [MusicVAE]{@link https://g.co/magenta/musicvae}
+ * models.
+ *
  * @license
  * Copyright 2018 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,9 +15,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * =============================================================================
  */
 
+/**
+ * Imports
+ */
 import * as tf from '@tensorflow/tfjs-core';
 import {isNullOrUndefined} from 'util';
 
@@ -50,6 +55,7 @@ class LayerVars {
  * @param vars `LayerVars` containing the `kernel` and `bias` of the
  * transformation.
  * @param inputs A batch of input vectors to transform.
+ * @hidden
  */
 function dense(vars: LayerVars, inputs: tf.Tensor2D) {
   return inputs.matMul(vars.kernel).add(vars.bias) as tf.Tensor2D;
@@ -191,6 +197,7 @@ class HierarchicalEncoder extends Encoder {
  * @param zToInitStateVars The `LayerVars` for projecting from the latent
  * variable `z` to the initial states of the LSTM layers.
  * @returns An Object containing the LSTM cells and initial states.
+ * @hidden
  */
 function initLstmCells(
     z: tf.Tensor2D, lstmCellVars: LayerVars[], zToInitStateVars: LayerVars) {
