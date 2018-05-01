@@ -1,4 +1,7 @@
 /**
+ * Core implementation for RNN-based Magenta music models such as MelodyRNN,
+ * ImprovRNN, DrumsRNN, and PerformanceRNN.
+ *
  * @license
  * Copyright 2018 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,9 +15,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * =============================================================================
  */
 
+/**
+ * Imports
+ */
 import * as tf from '@tensorflow/tfjs-core';
 
 import * as aux_inputs from '../core/aux_inputs';
@@ -25,6 +30,9 @@ import {INoteSequence} from '../protobuf/index';
 
 import {ATTENTION_PREFIX, AttentionWrapper} from './attention';
 
+/**
+ * @hidden
+ */
 const CELL_FORMAT = 'multi_rnn_cell/cell_%d/basic_lstm_cell/';
 
 /**

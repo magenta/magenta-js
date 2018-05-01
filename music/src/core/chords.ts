@@ -1,4 +1,7 @@
 /**
+ * Module containing functionality for encoding chord symbol strings as tensors
+ * for input to models, typically as a conditioning variable.
+ *
  * @license
  * Copyright 2018 Google Inc. All Rights Reserved.
  *
@@ -16,10 +19,8 @@
  */
 
 /**
- * This file contains functionality for encoding chord symbol strings as tensors
- * for input to models, typically as a conditioning variable.
+ * Imports
  */
-
 import * as tf from '@tensorflow/tfjs-core';
 import {Chord, Note} from 'tonal';
 import * as constants from './constants';

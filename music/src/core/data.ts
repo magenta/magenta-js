@@ -1,4 +1,9 @@
 /**
+ * Module containing functionality for creating and using `DataConverter`
+ * objects that convert between tensors and `NoteSequence`s. A `DataConverter`
+ * is created from a `ConverterSpec` (typically read from JSON) that specifies
+ * the converter type and optional arguments.
+ *
  * @license
  * Copyright 2018 Google Inc. All Rights Reserved.
  *
@@ -16,12 +21,8 @@
  */
 
 /**
- * This file contains functionality for creating and using `DataConverter`
- * objects that convert between tensors and `NoteSequence`s. A `DataConverter`
- * is created from a `ConverterSpec` (typically read from JSON) that specifies
- * the converter type and optional arguments.
+ * Imports
  */
-
 import * as tf from '@tensorflow/tfjs-core';
 import {isNullOrUndefined} from 'util';
 

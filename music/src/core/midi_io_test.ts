@@ -16,9 +16,11 @@
  */
 
 import * as fs from 'fs';
-import * as midi_io from './midi_io';
 import * as test from 'tape';
+
 import {NoteSequence} from '../protobuf/index';
+
+import * as midi_io from './midi_io';
 
 test('Parse Simple MIDI', (t: test.Test) => {
   const midi = fs.readFileSync('../testdata/melody.mid', 'binary');
@@ -149,7 +151,7 @@ test('Parse Simple MIDI', (t: test.Test) => {
   t.deepEqual(ns, expectedNs);
 
   const nsRoundTrip =
-      midi_io.midiToSequenceProto(midi_io.SequenceProtoToMidi(ns));
+      midi_io.midiToSequenceProto(midi_io.sequenceProtoToMidi(ns));
 
   t.deepEqual(nsRoundTrip, expectedNs);
 

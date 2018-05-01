@@ -1,4 +1,7 @@
 /**
+ * A module for converting between MIDI files and our `NoteSequence` protobuf
+ * representation.
+ *
  * @license
  * Copyright 2018 Google Inc. All Rights Reserved.
  *
@@ -15,9 +18,14 @@
  * limitations under the License.
  */
 
-import * as constants from './constants';
+/**
+ * Imports
+ */
 import * as midiconvert from 'midiconvert';
-import {NoteSequence, INoteSequence} from '../protobuf/index';
+
+import {INoteSequence, NoteSequence} from '../protobuf/index';
+
+import * as constants from './constants';
 
 export class MidiConversionError extends Error {
   constructor(message?: string) {
@@ -79,7 +87,9 @@ export function midiToSequenceProto(midi: string): NoteSequence {
 
       ns.notes.push(NoteSequence.Note.create({
         instrument: instrumentNumber,
-        program: track.instrumentNumber, startTime, endTime,
+        program: track.instrumentNumber,
+        startTime,
+        endTime,
         pitch: note.midi,
         velocity: Math.floor(note.velocity * constants.MIDI_VELOCITIES),
         isDrum: track.isPercussion
@@ -94,7 +104,7 @@ export function midiToSequenceProto(midi: string): NoteSequence {
   return ns;
 }
 
-export function SequenceProtoToMidi(ns: INoteSequence) {
+export function sequenceProtoToMidi(ns: INoteSequence) {
   if (!ns.tempos || ns.tempos.length !== 1 || ns.tempos[0].time !== 0) {
     throw new MidiConversionError(
         'NoteSequence must have exactly 1 tempo at time 0');
