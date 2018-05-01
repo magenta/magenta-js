@@ -22,89 +22,118 @@ import {INoteSequence, NoteSequence} from '../protobuf/index';
 import {sequences} from '.';
 import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
 
-const DRUM_PITCH_TO_CLASS = new Map<number, number>();
-for (let c = 0; c < DEFAULT_DRUM_PITCH_CLASSES.length; ++c) {  // class
-  DEFAULT_DRUM_PITCH_CLASSES[c].forEach((p) => {
-    DRUM_PITCH_TO_CLASS.set(p, c);
-  });
-}
-
-const kick = new Tone.MembraneSynth().toMaster();
-const tomLow = new Tone
-                   .MembraneSynth({
-                     pitchDecay: 0.008,
-                     envelope: {attack: 0.01, decay: 0.5, sustain: 0}
-                   })
-                   .toMaster();
-const tomMid = new Tone
-                   .MembraneSynth({
-                     pitchDecay: 0.008,
-                     envelope: {attack: 0.01, decay: 0.5, sustain: 0}
-                   })
-                   .toMaster();
-const tomHigh = new Tone
-                    .MembraneSynth({
-                      pitchDecay: 0.008,
-                      envelope: {attack: 0.01, decay: 0.5, sustain: 0}
-                    })
-                    .toMaster();
-const closedHihat = new Tone
-                        .MetalSynth({
-                          frequency: 400,
-                          envelope: {attack: 0.001, decay: 0.1, release: 0.8},
-                          harmonicity: 5.1,
-                          modulationIndex: 32,
-                          resonance: 4000,
-                          octaves: 1
+/**
+ * A singleton drum kit synthesizer with 9 pitch classed defined by
+ * data.DEFAULT_DRUM_PITCH_CLASSES.
+ */
+class DrumKit {
+  private static instance: DrumKit;
+  private DRUM_PITCH_TO_CLASS = new Map<number, number>();
+  private kick = new Tone.MembraneSynth().toMaster();
+  private tomLow = new Tone
+                       .MembraneSynth({
+                         pitchDecay: 0.008,
+                         envelope: {attack: 0.01, decay: 0.5, sustain: 0}
+                       })
+                       .toMaster();
+  private tomMid = new Tone
+                       .MembraneSynth({
+                         pitchDecay: 0.008,
+                         envelope: {attack: 0.01, decay: 0.5, sustain: 0}
+                       })
+                       .toMaster();
+  private tomHigh = new Tone
+                        .MembraneSynth({
+                          pitchDecay: 0.008,
+                          envelope: {attack: 0.01, decay: 0.5, sustain: 0}
                         })
                         .toMaster();
-const openHihat =
-    new Tone
-        .MetalSynth({
-          frequency: 400,
-          envelope: {attack: 0.001, decay: 0.5, release: 0.8, sustain: 1},
-          harmonicity: 5.1,
-          modulationIndex: 32,
-          resonance: 4000,
-          octaves: 1
-        })
-        .toMaster();
-const ride = new Tone.MetalSynth().toMaster();
-const crash = new Tone
-                  .MetalSynth({
-                    frequency: 300,
-                    envelope: {attack: 0.001, decay: 1, release: 3},
-                    harmonicity: 5.1,
-                    modulationIndex: 64,
-                    resonance: 4000,
-                    octaves: 1.5
-                  })
-                  .toMaster();
-const snare =
-    new Tone
-        .NoiseSynth({
-          noise: {type: 'white'},
-          envelope: {attack: 0.005, decay: 0.05, sustain: 0.1, release: 0.4}
-        })
-        .toMaster();
+  private closedHihat =
+      new Tone
+          .MetalSynth({
+            frequency: 400,
+            envelope: {attack: 0.001, decay: 0.1, release: 0.8},
+            harmonicity: 5.1,
+            modulationIndex: 32,
+            resonance: 4000,
+            octaves: 1
+          })
+          .toMaster();
+  private openHihat =
+      new Tone
+          .MetalSynth({
+            frequency: 400,
+            envelope: {attack: 0.001, decay: 0.5, release: 0.8, sustain: 1},
+            harmonicity: 5.1,
+            modulationIndex: 32,
+            resonance: 4000,
+            octaves: 1
+          })
+          .toMaster();
+  private ride = new Tone.MetalSynth().toMaster();
+  private crash = new Tone
+                      .MetalSynth({
+                        frequency: 300,
+                        envelope: {attack: 0.001, decay: 1, release: 3},
+                        harmonicity: 5.1,
+                        modulationIndex: 64,
+                        resonance: 4000,
+                        octaves: 1.5
+                      })
+                      .toMaster();
+  private snare =
+      new Tone
+          .NoiseSynth({
+            noise: {type: 'white'},
+            envelope: {attack: 0.005, decay: 0.05, sustain: 0.1, release: 0.4}
+          })
+          .toMaster();
+  private pitchPlayers = [
+    (time: number) => this.kick.triggerAttackRelease('C2', '8n', time),
+    (time: number) => this.snare.triggerAttackRelease('16n', time),
+    (time: number) => this.closedHihat.triggerAttack(time, 0.3),
+    (time: number) => this.openHihat.triggerAttack(time, 0.3),
+    (time: number) => this.tomLow.triggerAttack('G3', time, 0.5),
+    (time: number) => this.tomMid.triggerAttack('C4', time, 0.5),
+    (time: number) => this.tomHigh.triggerAttack('F4', time, 0.5),
+    (time: number) => this.crash.triggerAttack(time, 1.0),
+    (time: number) => this.ride.triggerAttack(time, 0.5)
+  ];
 
-const drumKit: Array<(time: number) => void> = [
-  time => kick.triggerAttackRelease('C2', '8n', time),
-  time => snare.triggerAttackRelease('16n', time),
-  time => closedHihat.triggerAttack(time, 0.3),
-  time => openHihat.triggerAttack(time, 0.3),
-  time => tomLow.triggerAttack('G3', time, 0.5),
-  time => tomMid.triggerAttack('C4', time, 0.5),
-  time => tomHigh.triggerAttack('F4', time, 0.5),
-  time => crash.triggerAttack(time, 1.0), time => ride.triggerAttack(time, 0.5)
-];
+  private constructor() {
+    for (let c = 0; c < DEFAULT_DRUM_PITCH_CLASSES.length; ++c) {  // class
+      DEFAULT_DRUM_PITCH_CLASSES[c].forEach((p) => {
+        this.DRUM_PITCH_TO_CLASS.set(p, c);
+      });
+    }
+  }
 
+  static getInstance() {
+    if (!DrumKit.instance) {
+      DrumKit.instance = new DrumKit();
+    }
+    return DrumKit.instance;
+  }
+
+  public playNote(pitch: number, time: number) {
+    this.pitchPlayers[this.DRUM_PITCH_TO_CLASS.get(pitch)](time);
+  }
+}
+
+/**
+ * A `NoteSequence` player based on Tone.js.
+ */
 export class Player {
   /* tslint:disable:no-any */
   private currentPart: any;
   private scheduledStop: number;
   private synths = new Map<number, any>();
-  static tone = Tone;
+  private drumKit = DrumKit.getInstance();
+
+  /**
+   * The Tone module being used.
+   */
+  static readonly tone = Tone;
   /* tslint:enable */
 
   constructor() {
@@ -118,8 +147,8 @@ export class Player {
    * returns a Promise that resolves when it is done playing.
    * @param seq The `NoteSequence` to play.
    * @param qpm (Optional) If specified, will play back at this qpm. If not
-   * specified, will use either the qpm specified in the sequence or the default
-   * of 120. Only valid for quantized sequences.
+   * specified, will use either the qpm specified in the sequence or the
+   * default of 120. Only valid for quantized sequences.
    * @returns a Promise that resolves when playback is complete.
    */
   start(seq: INoteSequence, qpm?: number): Promise<void> {
@@ -146,8 +175,7 @@ export class Player {
 
   private playNote(time: number, note: NoteSequence.INote) {
     if (note.isDrum) {
-      const drumClass = DRUM_PITCH_TO_CLASS.get(note.pitch);
-      drumKit[drumClass](time);
+      this.drumKit.playNote(note.pitch, time);
     } else {
       const freq = new Tone.Frequency(note.pitch, 'midi');
       const dur = note.endTime - note.startTime;
