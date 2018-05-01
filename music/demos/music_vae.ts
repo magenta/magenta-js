@@ -26,8 +26,10 @@ const CHECKPOINTS_DIR =
 const DRUMS_CKPT = `${CHECKPOINTS_DIR}drums_2bar_hikl_small`;
 const DRUMS_NADE_CKPT = `${CHECKPOINTS_DIR}drums_2bar_nade_9_q2`;
 const MEL_CKPT = `${CHECKPOINTS_DIR}mel_2bar_small`;
+const MEL_CHORDS_CKPT = `${CHECKPOINTS_DIR}mel_chords`;
 const MEL_16_CKPT = `${CHECKPOINTS_DIR}mel_16bar_small_q2`;
 const TRIO_CKPT = `${CHECKPOINTS_DIR}trio_4bar_lokl_small_q1`;
+
 
 const DRUM_SEQS: mm.INoteSequence[] = [
   {
@@ -106,6 +108,20 @@ DRUM_SEQS.map(s => s.notes.map(n => {
   n.quantizedEndStep = n.quantizedStartStep + 1;
 }));
 
+const MEL_A_QUARTERS: mm.INoteSequence = {
+  notes: [
+    {pitch: 69, quantizedStartStep: 0, quantizedEndStep: 4},
+    {pitch: 69, quantizedStartStep: 4, quantizedEndStep: 8},
+    {pitch: 69, quantizedStartStep: 8, quantizedEndStep: 12},
+    {pitch: 69, quantizedStartStep: 12, quantizedEndStep: 16},
+    {pitch: 69, quantizedStartStep: 16, quantizedEndStep: 20},
+    {pitch: 69, quantizedStartStep: 20, quantizedEndStep: 24},
+    {pitch: 69, quantizedStartStep: 24, quantizedEndStep: 28},
+    {pitch: 69, quantizedStartStep: 28, quantizedEndStep: 32},
+  ],
+  quantizationInfo: {stepsPerQuarter: 4}
+};
+
 const MEL_TEAPOT: mm.INoteSequence = {
   notes: [
     {pitch: 69, quantizedStartStep: 0, quantizedEndStep: 2},
@@ -114,9 +130,9 @@ const MEL_TEAPOT: mm.INoteSequence = {
     {pitch: 74, quantizedStartStep: 6, quantizedEndStep: 8},
     {pitch: 76, quantizedStartStep: 8, quantizedEndStep: 10},
     {pitch: 81, quantizedStartStep: 12, quantizedEndStep: 16},
-    {pitch: 77, quantizedStartStep: 16, quantizedEndStep: 20},
-    {pitch: 80, quantizedStartStep: 20, quantizedEndStep: 24},
-    {pitch: 75, quantizedStartStep: 24, quantizedEndStep: 32}
+    {pitch: 78, quantizedStartStep: 16, quantizedEndStep: 20},
+    {pitch: 81, quantizedStartStep: 20, quantizedEndStep: 24},
+    {pitch: 76, quantizedStartStep: 24, quantizedEndStep: 32}
   ],
   quantizationInfo: {stepsPerQuarter: 4}
 };
@@ -269,6 +285,26 @@ async function runMel() {
   mvae.dispose();
 }
 
+async function runMelChords() {
+  const mvae = new mm.MusicVAE(MEL_CHORDS_CKPT);
+  await mvae.initialize();
+
+  const inputs = [MEL_A_QUARTERS, MEL_TEAPOT];
+  writeNoteSeqs('mel-chords-inputs', inputs);
+
+  let start = performance.now();
+  const interp = await mvae.interpolate(inputs, 5, null, ['A', 'A', 'D', 'A']);
+  writeTimer('mel-chords-interp-time', start);
+  writeNoteSeqs('mel-chords-interp', interp);
+
+  start = performance.now();
+  const sample = await mvae.sample(4, null, ['C']);
+  writeTimer('mel-chords-sample-time', start);
+  writeNoteSeqs('mel-chords-samples', sample);
+
+  mvae.dispose();
+}
+
 async function runTrio() {
   const mvae = new mm.MusicVAE(TRIO_CKPT);
   await mvae.initialize();
@@ -341,7 +377,11 @@ async function runMel16() {
 }
 
 try {
-  Promise.all([runDrums(), runDrumsNade(), runMel(), runMel16(), runTrio()])
+  Promise
+      .all([
+        runDrums(), runDrumsNade(), runMel(), runMelChords(), runMel16(),
+        runTrio()
+      ])
       .then(() => console.log(tf.memory()));
 } catch (err) {
   console.error(err);

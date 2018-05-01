@@ -197,15 +197,16 @@ function initLstmCells(
   const lstmCells: tf.LSTMCellFunc[] = [];
   const c: tf.Tensor2D[] = [];
   const h: tf.Tensor2D[] = [];
-  const initialStates = tf.split(dense(zToInitStateVars, z).tanh(), 4, 1);
+  const initialStates =
+      tf.split(dense(zToInitStateVars, z).tanh(), 2 * lstmCellVars.length, 1);
   for (let i = 0; i < lstmCellVars.length; ++i) {
     const lv = lstmCellVars[i];
     const forgetBias = tf.scalar(1.0);
     lstmCells.push(
         (data: tf.Tensor2D, c: tf.Tensor2D, h: tf.Tensor2D) =>
             tf.basicLSTMCell(forgetBias, lv.kernel, lv.bias, data, c, h));
-    c.push(initialStates[i * 2] as tf.Tensor2D);
-    h.push(initialStates[i * 2 + 1] as tf.Tensor2D);
+    c.push(initialStates[i * 2]);
+    h.push(initialStates[i * 2 + 1]);
   }
   return {'cell': lstmCells, 'c': c, 'h': h};
 }
@@ -299,11 +300,10 @@ class BaseDecoder extends Decoder {
           tf.split(tf.tile(controls, [batchSize, 1]), controls.shape[0]) :
           undefined;
       for (let i = 0; i < length; ++i) {
-        const toConat = splitControls ?
-            [nextInput, z, splitControls[i] as tf.Tensor2D] :
-            [nextInput, z];
+        const toConcat =
+            splitControls ? [nextInput, z, splitControls[i]] : [nextInput, z];
         [lstmCell.c, lstmCell.h] = tf.multiRNNCell(
-            lstmCell.cell, tf.concat(toConat, 1), lstmCell.c, lstmCell.h);
+            lstmCell.cell, tf.concat(toConcat, 1), lstmCell.c, lstmCell.h);
         const logits =
             dense(this.outputProjectVars, lstmCell.h[lstmCell.h.length - 1]);
 
@@ -384,6 +384,12 @@ class ConductorDecoder extends Decoder {
   decode(
       z: tf.Tensor2D, length: number, initialInput?: tf.Tensor2D,
       temperature?: number, controls?: tf.Tensor2D) {
+    // TODO(iansimon): support controls
+    if (controls) {
+      throw new Error(
+          'Control signals currently unsupported in hierarchical decoder.');
+    }
+
     const batchSize = z.shape[0];
 
     return tf.tidy(() => {
@@ -794,7 +800,7 @@ class MusicVAE {
                                  this.chordEncoder.encodeProgression(
                                      chordProgression, numSteps),
                                  0),
-                             [inputSequences.length, 1]) as tf.Tensor3D;
+                             [inputSequences.length, 1, 1]) as tf.Tensor3D;
         inputTensors = inputTensors.concat(controls, 2);
       }
 
