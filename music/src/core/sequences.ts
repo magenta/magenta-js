@@ -155,7 +155,7 @@ function quantizeNotesAndEvents(ns: INoteSequence, stepsPerSecond: number) {
  * Confirms there is no tempo change.
  */
 function assertSingleTempo(ns: INoteSequence) {
-  if (ns.tempos.length === 0) {
+  if (!ns.tempos || ns.tempos.length === 0) {
     // There is a single (implicit) tempo.
     return;
   }
