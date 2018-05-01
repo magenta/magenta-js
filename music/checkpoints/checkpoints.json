@@ -27,6 +27,13 @@
     "url": "https://storage.googleapis.com/download.magenta.tensorflow.org/tfjs_checkpoints/music_vae/mel_2bar_small",
     "size_mb": 17.7
   },
+	{
+    "id": "mel_chords",
+    "model": "MusicVAE",
+		"description": "A 2-bar, 90-class onehot melody model with chord conditioning. Quantized to 2-byte weights.",
+    "url": "https://storage.googleapis.com/download.magenta.tensorflow.org/tfjs_checkpoints/music_vae/mel_chords",
+    "size_mb": 17.6
+  },
   {
     "id": "mel_16bar_small_q2",
     "model": "MusicVAE",

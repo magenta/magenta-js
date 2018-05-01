@@ -93,6 +93,17 @@ class DrumKit {
             envelope: {attack: 0.005, decay: 0.05, sustain: 0.1, release: 0.4}
           })
           .toMaster();
+  private pitchPlayers = [
+    (time: number) => this.kick.triggerAttackRelease('C2', '8n', time),
+    (time: number) => this.snare.triggerAttackRelease('16n', time),
+    (time: number) => this.closedHihat.triggerAttack(time, 0.3),
+    (time: number) => this.openHihat.triggerAttack(time, 0.3),
+    (time: number) => this.tomLow.triggerAttack('G3', time, 0.5),
+    (time: number) => this.tomMid.triggerAttack('C4', time, 0.5),
+    (time: number) => this.tomHigh.triggerAttack('F4', time, 0.5),
+    (time: number) => this.crash.triggerAttack(time, 1.0),
+    (time: number) => this.ride.triggerAttack(time, 0.5)
+  ];
 
   private constructor() {
     for (let c = 0; c < DEFAULT_DRUM_PITCH_CLASSES.length; ++c) {  // class
@@ -110,16 +121,7 @@ class DrumKit {
   }
 
   public playNote(pitch: number, time: number) {
-    [() => this.kick.triggerAttackRelease('C2', '8n', time),
-     () => this.snare.triggerAttackRelease('16n', time),
-     () => this.closedHihat.triggerAttack(time, 0.3),
-     () => this.openHihat.triggerAttack(time, 0.3),
-     () => this.tomLow.triggerAttack('G3', time, 0.5),
-     () => this.tomMid.triggerAttack('C4', time, 0.5),
-     () => this.tomHigh.triggerAttack('F4', time, 0.5),
-     () => this.crash.triggerAttack(time, 1.0),
-     () => this.ride.triggerAttack(
-         time, 0.5)][this.DRUM_PITCH_TO_CLASS.get(pitch)]();
+    this.pitchPlayers[this.DRUM_PITCH_TO_CLASS.get(pitch)](time);
   }
 }
 
