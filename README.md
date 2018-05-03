@@ -3,7 +3,7 @@
 **Magenta.js** is a collection of TypeScript libraries for doing inference with pre-trained Magenta models.
 All libraries are published as [npm packages](https://www.npmjs.com/search?q=%40magenta).
 
-Learn more about the Magenta project at our [blog](https://magenta.tensorflow.org) and [main repo](https://github.com/tensorflow/magenta).
+Learn more about the Magenta project at our [blog](https://magenta.tensorflow.org) and [main TensorFlow repo](https://github.com/tensorflow/magenta).
 
 ## Libraries
 
