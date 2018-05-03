@@ -19,7 +19,9 @@
  * Imports
  */
 import {INoteSequence, NoteSequence} from '../protobuf/index';
+
 import * as constants from './constants';
+import * as sequences from './sequences';
 
 /**
  * Start a new note.
@@ -100,6 +102,8 @@ export class Performance {
   static fromNoteSequence(
       noteSequence: INoteSequence, maxShiftSteps: number,
       numVelocityBins: number, instrument?: number) {
+    sequences.assertIsQuantizedSequence(noteSequence);
+
     // First extract all desired notes and sort by increasing start time and
     // (secondarily) pitch.
     const notes = noteSequence.notes.filter(
@@ -175,8 +179,73 @@ export class Performance {
     const program =
         (!isDrum && programs.length === 1) ? programs[0] : undefined;
 
-    return new Performance(
+    const performance = new Performance(
         events, maxShiftSteps, numVelocityBins, program, isDrum);
+
+    // Make sure the performance has the correct number of steps.
+    performance.setNumSteps(noteSequence.totalQuantizedSteps);
+
+    return performance;
+  }
+
+  /**
+   * Return the total number of time steps in the performance.
+   *
+   * @returns The total number of steps.
+   */
+  getNumSteps() {
+    return this.events.filter((event) => event.type === 'time-shift')
+        .map((event: TimeShift) => event.steps)
+        .reduce((a, b) => a + b, 0);
+  }
+
+  /**
+   * Set the total number of time steps in the performance by either adding
+   * time-shift events to the end or truncating.
+   *
+   * @param The desired number of time steps.
+   */
+  setNumSteps(numSteps: number) {
+    let currentNumSteps = this.getNumSteps();
+
+    if (currentNumSteps < numSteps) {
+      // Add time shift events to the end of the performance.
+      if (this.events.length) {
+        const event = this.events[this.events.length - 1];
+        if (event.type === 'time-shift') {
+          const steps = Math.min(
+              numSteps - currentNumSteps, this.maxShiftSteps - event.steps);
+          event.steps += steps;
+          currentNumSteps += steps;
+        }
+      }
+      while (currentNumSteps < numSteps) {
+        if (currentNumSteps + this.maxShiftSteps > numSteps) {
+          this.events.push(
+              {type: 'time-shift', steps: numSteps - currentNumSteps});
+          currentNumSteps = numSteps;
+        } else {
+          this.events.push({type: 'time-shift', steps: this.maxShiftSteps});
+          currentNumSteps += this.maxShiftSteps;
+        }
+      }
+    } else if (currentNumSteps > numSteps) {
+      // Drop events from the end of the performance.
+      while (this.events.length && currentNumSteps > numSteps) {
+        const event = this.events[this.events.length - 1];
+        if (event.type === 'time-shift') {
+          if (currentNumSteps - event.steps < numSteps) {
+            event.steps -= currentNumSteps - numSteps;
+            currentNumSteps = numSteps;
+          } else {
+            this.events.pop();
+            currentNumSteps -= event.steps;
+          }
+        } else {
+          this.events.pop();
+        }
+      }
+    }
   }
 
   /**
@@ -193,7 +262,7 @@ export class Performance {
     const noteSequence = NoteSequence.create();
 
     let currentStep = 0;
-    let currentVelocity = constants.MAX_MIDI_VELOCITY;
+    let currentVelocity = undefined;
 
     // Initialize a map from pitch to (the start step and velocity of) all
     // active notes at that pitch. Multiple notes can be active at the same
@@ -278,6 +347,9 @@ export class Performance {
         }
       }
     });
+
+    // Set the total number of steps.
+    noteSequence.totalQuantizedSteps = currentStep;
 
     return noteSequence;
   }
