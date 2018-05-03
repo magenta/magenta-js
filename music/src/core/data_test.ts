@@ -74,6 +74,77 @@ sequences.clone(DRUM_NS).notes.forEach(n => {
   TRIO_NS.notes.push(n);
 });
 
+const MULTITRACK_NS = NoteSequence.create({
+  notes: [
+    {
+      pitch: 60,
+      quantizedStartStep: 0,
+      quantizedEndStep: 4,
+      instrument: 0,
+      program: 1,
+      isDrum: false
+    },
+    {
+      pitch: 67,
+      quantizedStartStep: 2,
+      quantizedEndStep: 4,
+      instrument: 0,
+      program: 1,
+      isDrum: false
+    },
+    {
+      pitch: 59,
+      quantizedStartStep: 4,
+      quantizedEndStep: 8,
+      instrument: 0,
+      program: 1,
+      isDrum: false
+    },
+    {
+      pitch: 67,
+      quantizedStartStep: 6,
+      quantizedEndStep: 8,
+      instrument: 0,
+      program: 1,
+      isDrum: false
+    },
+    {
+      pitch: 40,
+      quantizedStartStep: 0,
+      quantizedEndStep: 1,
+      instrument: 1,
+      program: 0,
+      isDrum: true
+    },
+    {
+      pitch: 50,
+      quantizedStartStep: 2,
+      quantizedEndStep: 3,
+      instrument: 1,
+      program: 0,
+      isDrum: true
+    },
+    {
+      pitch: 40,
+      quantizedStartStep: 4,
+      quantizedEndStep: 5,
+      instrument: 1,
+      program: 0,
+      isDrum: true
+    },
+    {
+      pitch: 50,
+      quantizedStartStep: 6,
+      quantizedEndStep: 7,
+      instrument: 1,
+      program: 0,
+      isDrum: true
+    },
+  ],
+  quantizationInfo: {stepsPerQuarter: 1},
+  totalQuantizedSteps: 8
+});
+
 test('Test MelodyConverter', (t: test.Test) => {
   const melConverter = new data.MelodyConverter(
       {'numSteps': 32, 'minPitch': 21, 'maxPitch': 108});
@@ -134,5 +205,24 @@ test('Test TrioConverter', (t: test.Test) => {
       .then(ns => t.deepEqual(ns.toJSON(), TRIO_NS.toJSON()));
 
   trioTensor.dispose();
+  t.end();
+});
+
+test('Test MultitrackConverter', (t: test.Test) => {
+  const multitrackConverter = new data.MultitrackConverter({
+    'numSteps': 512,
+    'numSegments': 8,
+    'stepsPerQuarter': 1,
+    'totalSteps': 8,
+    'numVelocityBins': 0
+  });
+
+  const multitrackTensor = multitrackConverter.toTensor(MULTITRACK_NS);
+  t.deepEqual(multitrackTensor.shape, [512, multitrackConverter.depth]);
+
+  multitrackConverter.toNoteSequence(multitrackTensor, 1)
+      .then(ns => t.deepEqual(ns, MULTITRACK_NS));
+
+  multitrackTensor.dispose();
   t.end();
 });

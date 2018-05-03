@@ -29,6 +29,7 @@ import {isNullOrUndefined} from 'util';
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import * as constants from './constants';
+import * as performance from './performance';
 import * as sequences from './sequences';
 
 export const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
@@ -72,6 +73,10 @@ export interface DrumsOneHotConverterSpec {
   type: 'DrumsOneHotConverter';
   args: DrumsConverterArgs;
 }
+export interface MultitrackConverterSpec {
+  type: 'MultitrackConverter';
+  args: MultitrackConverterArgs;
+}
 
 /**
  * Interface for JSON specification of a `DataConverter`.
@@ -80,8 +85,9 @@ export interface DrumsOneHotConverterSpec {
  * @property args Map containing values for argments to the constructor of the
  * `DataConverter` class specified above.
  */
-export type ConverterSpec = MelodyConverterSpec|DrumsConverterSpec|
-    DrumRollConverterSpec|TrioConverterSpec|DrumsOneHotConverterSpec;
+export type ConverterSpec =
+    MelodyConverterSpec|DrumsConverterSpec|DrumRollConverterSpec|
+    TrioConverterSpec|DrumsOneHotConverterSpec|MultitrackConverterSpec;
 
 /**
  * Builds a `DataConverter` based on the given `ConverterSpec`.
@@ -101,6 +107,8 @@ export function converterFromSpec(spec: ConverterSpec): DataConverter {
       return new TrioConverter(spec.args);
     case 'DrumsOneHotConverter':
       return new DrumsOneHotConverter(spec.args);
+    case 'MultitrackConverter':
+      return new MultitrackConverter(spec.args);
     default:
       throw new Error(`Unknown DataConverter type: ${spec}`);
   }
@@ -491,5 +499,244 @@ export class TrioConverter extends DataConverter {
     }));
     ohs.forEach(oh => oh.dispose());
     return ns;
+  }
+}
+
+/**
+ * Converts between a quantized multitrack `NoteSequence` and `Tensor` objects
+ * used by `MusicVAE`.
+ *
+ * Each track is represented using events from the following vocabulary:
+ *   - An initial program-select event specifying which MIDI program to use.
+ *   - A sequence of performance (note-on, note-off, time-shift,
+ *     velocity-change) events.
+ *   - An end token.
+ *
+ * Tracks are ordered by program number with drums at the end, then one-hot
+ * encoded and padded with zeros to the maximum number of events. If fewer than
+ * the maximum number of tracks are present, extra tracks consisting of only an
+ * end token (then one-hot encoded and zero-padded) will be added.
+ *
+ * @param numSteps The total number of events used to encode each
+ * `NoteSequence`.
+ * @param numSegments The number of tracks to use. `NoteSequence`s with more
+ * tracks will have tracks removed. `NoteSequence`s with fewer tracks will be
+ * padded with empty tracks.
+ * @param stepsPerQuarter The number of time steps per quarter note.
+ * @param totalSteps The length of each `NoteSequence` in time steps. Longer
+ * `NoteSequence`s will be truncated. Shorter `NoteSequence`s will be padded
+ * with silence.
+ * @param numVelocityBins The number of bins into which to quantize note
+ * velocities.
+ */
+export interface MultitrackConverterArgs extends BaseConverterArgs {
+  stepsPerQuarter: number;
+  totalSteps: number;
+  numVelocityBins: number;
+}
+export class MultitrackConverter extends DataConverter {
+  readonly NUM_SPLITS = 0;
+
+  readonly stepsPerQuarter: number;
+  readonly totalSteps: number;
+  readonly numVelocityBins: number;
+
+  readonly numPitches: number;
+  readonly performanceEventDepth: number;
+  readonly numPrograms: number;
+  readonly depth: number;
+
+  constructor(args: MultitrackConverterArgs) {
+    super(args);
+
+    this.stepsPerQuarter = args.stepsPerQuarter;
+    this.totalSteps = args.totalSteps;
+    this.numVelocityBins = args.numVelocityBins;
+
+    // Vocabulary:
+    // note-on, note-off, time-shift, velocity-change, program-select, end-token
+
+    this.numPitches = constants.MAX_MIDI_PITCH - constants.MIN_MIDI_PITCH + 1;
+    this.performanceEventDepth =
+        2 * this.numPitches + this.totalSteps + this.numVelocityBins;
+
+    // Include an extra "program" for drums.
+    this.numPrograms =
+        constants.MAX_MIDI_PROGRAM - constants.MIN_MIDI_PROGRAM + 2;
+    this.depth = this.performanceEventDepth + this.numPrograms + 1;
+  }
+
+  private trackToTensor(track?: performance.Performance) {
+    const maxEventsPerTrack = this.numSteps / this.numSegments;
+    let tokens: tf.TensorBuffer<tf.Rank.R1> = undefined;
+
+    if (track) {
+      // Drop events from track until we have the maximum number of events
+      // (leaving room for program select and end token).
+      while (track.events.length > maxEventsPerTrack - 2) {
+        track.events.pop();
+      }
+
+      tokens = tf.buffer([track.events.length + 2], 'int32');
+
+      // Add an initial program select token.
+      tokens.set(
+          this.performanceEventDepth +
+              (track.isDrum ? this.numPrograms - 1 : track.program),
+          0);
+
+      // Add tokens for each performance event.
+      track.events.forEach((event, index) => {
+        switch (event.type) {
+          case 'note-on':
+            tokens.set(event.pitch - constants.MIN_MIDI_PITCH, index + 1);
+            break;
+          case 'note-off':
+            tokens.set(
+                this.numPitches + event.pitch - constants.MIN_MIDI_PITCH,
+                index + 1);
+            break;
+          case 'time-shift':
+            tokens.set(2 * this.numPitches + event.steps - 1, index + 1);
+            break;
+          case 'velocity-change':
+            tokens.set(
+                2 * this.numPitches + this.totalSteps + event.velocityBin - 1,
+                index + 1);
+            break;
+          default:
+            throw new Error(`Unrecognized performance event: ${event}`);
+        }
+      });
+
+      // Add a single end token.
+      tokens.set(this.depth - 1, track.events.length + 1);
+    } else {
+      // Track doesn't exist, just use an end token.
+      tokens = tf.buffer([1], 'int32', new Int32Array([this.depth - 1]));
+    }
+
+    // Now do one-hot encoding and pad with zeros up to the maximum number of
+    // events.
+    const oh = tf.oneHot(tokens.toTensor() as tf.Tensor1D, this.depth);
+    return oh.pad([[0, maxEventsPerTrack - oh.shape[0]], [0, 0]]);
+  }
+
+  toTensor(noteSequence: INoteSequence) {
+    sequences.assertIsRelativeQuantizedSequence(noteSequence);
+
+    if (noteSequence.quantizationInfo.stepsPerQuarter != this.stepsPerQuarter) {
+      throw new Error(`Steps per quarter note mismatch: ${
+          noteSequence.quantizationInfo.stepsPerQuarter} != ${
+          this.stepsPerQuarter}`);
+    }
+
+    const instruments =
+        new Set(noteSequence.notes.map(note => note.instrument));
+    const tracks =
+        Array.from(instruments)
+            .map(
+                instrument => performance.Performance.fromNoteSequence(
+                    noteSequence, this.totalSteps, this.numVelocityBins,
+                    instrument));
+    const sortedTracks = tracks.sort(
+        (a, b) => b.isDrum ? -1 : (a.isDrum ? 1 : a.program - b.program));
+
+    // Drop tracks until we have the maximum number of instruments.
+    while (sortedTracks.length > this.numSegments) {
+      sortedTracks.pop();
+    }
+
+    // Make sure all tracks are the proper length (in time).
+    sortedTracks.forEach((track) => track.setNumSteps(this.totalSteps));
+
+    // Pad with "undefined" tracks to reach the desired number of instruments.
+    while (sortedTracks.length < this.numSegments) {
+      sortedTracks.push(undefined);
+    }
+
+    // Convert tracks to tensors then concatenate.
+    return tf.tidy(
+        () => tf.concat(
+            sortedTracks.map((track) => this.trackToTensor(track)), 0));
+  }
+
+  private tokensToTrack(tokens: Int32Array) {
+    // Trim to end token.
+    const idx = tokens.indexOf(this.depth - 1);
+    const endIndex = idx >= 0 ? idx : tokens.length;
+    const trackTokens = tokens.slice(0, endIndex);
+
+    // Split into performance event tokens and program change tokens.
+    const eventTokens =
+        trackTokens.filter((token) => token < this.performanceEventDepth);
+    const programTokens =
+        trackTokens.filter((token) => token >= this.performanceEventDepth);
+
+    // Use the first program token to determine program. If no program tokens,
+    // use program zero (piano).
+    const [program, isDrum] = programTokens.length ?
+        (programTokens[0] - this.performanceEventDepth < this.numPrograms - 1 ?
+             [programTokens[0] - this.performanceEventDepth, false] :
+             [0, true]) :
+        [0, false];
+
+    // Decode event tokens.
+    const events: performance.PerformanceEvent[] =
+        Array.from(eventTokens).map((token) => {
+          if (token < this.numPitches) {
+            return {type: 'note-on', pitch: constants.MIN_MIDI_PITCH + token} as
+                performance.NoteOn;
+          } else if (token < 2 * this.numPitches) {
+            return {
+              type: 'note-off',
+              pitch: constants.MIN_MIDI_PITCH + token - this.numPitches
+            } as performance.NoteOff;
+          } else if (token < 2 * this.numPitches + this.totalSteps) {
+            return {
+              type: 'time-shift',
+              steps: token - 2 * this.numPitches + 1
+            } as performance.TimeShift;
+          } else if (
+              token <
+              2 * this.numPitches + this.totalSteps + this.numVelocityBins) {
+            return {
+              type: 'velocity-change',
+              velocityBin: token - 2 * this.numPitches - this.totalSteps + 1
+            } as performance.VelocityChange;
+          } else {
+            throw new Error(`Invalid performance event token: ${token}`);
+          }
+        });
+
+    return new performance.Performance(
+        events, this.totalSteps, this.numVelocityBins, program, isDrum);
+  }
+
+  async toNoteSequence(
+      oh: tf.Tensor2D, stepsPerQuarter = this.stepsPerQuarter) {
+    const noteSequence = NoteSequence.create();
+    noteSequence.quantizationInfo =
+        NoteSequence.QuantizationInfo.create({stepsPerQuarter});
+    noteSequence.totalQuantizedSteps = this.totalSteps;
+
+    // Split into tracks and convert to performance representation.
+    const tensors = tf.tidy(() => {
+      return tf.split(oh.argMax(1) as tf.Tensor1D, this.numSegments);
+    });
+    const tracks = await Promise.all(tensors.map(async (tensor) => {
+      const tokens = await tensor.data() as Int32Array;
+      return this.tokensToTrack(tokens);
+    }));
+
+    tracks.forEach((track, instrument) => {
+      // Make sure track is the proper length.
+      track.setNumSteps(this.totalSteps);
+
+      // Add notes to main NoteSequence.
+      noteSequence.notes.push(...track.toNoteSequence(instrument).notes);
+    });
+
+    return noteSequence;
   }
 }
