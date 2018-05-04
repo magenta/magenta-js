@@ -59,6 +59,7 @@ Add the following code to an HTML file:
 
       const start = () => {
         document.getElementById("start").style.display = "none";
+        // Resume AudioContext on user action to enable audio.
         mm.Player.tone.context.resume();
         model.initialize().then(
           // Endlessly sample and play back the result.
