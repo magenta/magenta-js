@@ -433,7 +433,7 @@ try {
         runDrums(), runDrumsNade(), runMel(), runMelChords(), runMel16(),
         runTrio(), runMultitrack()
       ])
-      .then(() => console.log(tf.memory()))
+      .then(() => console.log(tf.memory()));
 } catch (err) {
   console.error(err);
 }
