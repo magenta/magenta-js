@@ -47,7 +47,7 @@ Add the following code to an HTML file:
 <html>
   <head>
     <!-- Load @magenta/music -->
-    <script src="https://cdn.jsdelivr.net/npm/@magenta/music@1.0.0"> </script>
+    <script src="https://cdn.jsdelivr.net/npm/@magenta/music@1.0.0"></script>
 
     <!-- Place your code in the script tag below. You can also use an external .js file -->
     <script>
@@ -56,7 +56,6 @@ Add the following code to an HTML file:
           'https://storage.googleapis.com/download.magenta.tensorflow.org/' +
           'tfjs_checkpoints/music_vae/trio_4bar_lokl_small_q1');
       const player = new mm.Player();
-
 
       const start = () => {
         document.getElementById("start").style.display = "none";
@@ -68,7 +67,7 @@ Add the following code to an HTML file:
                 .then((samples) => player.start(samples[0]))
                 .then(sampleAndPlay);
           })};
-      </script>
+    </script>
   </head>
   <body><button id="start" onclick="start()">Start</button></body>
 </html>
