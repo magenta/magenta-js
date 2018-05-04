@@ -544,6 +544,7 @@ export class MultitrackConverter extends DataConverter {
   readonly numPitches: number;
   readonly performanceEventDepth: number;
   readonly numPrograms: number;
+  readonly endToken: number;
   readonly depth: number;
 
   constructor(args: MultitrackConverterArgs) {
@@ -563,7 +564,9 @@ export class MultitrackConverter extends DataConverter {
     // Include an extra "program" for drums.
     this.numPrograms =
         constants.MAX_MIDI_PROGRAM - constants.MIN_MIDI_PROGRAM + 2;
-    this.depth = this.performanceEventDepth + this.numPrograms + 1;
+
+    this.endToken = this.performanceEventDepth + this.numPrograms;
+    this.depth = this.endToken + 1;
   }
 
   private trackToTensor(track?: performance.Performance) {
@@ -610,10 +613,10 @@ export class MultitrackConverter extends DataConverter {
       });
 
       // Add a single end token.
-      tokens.set(this.depth - 1, track.events.length + 1);
+      tokens.set(this.endToken, track.events.length + 1);
     } else {
       // Track doesn't exist, just use an end token.
-      tokens = tf.buffer([1], 'int32', new Int32Array([this.depth - 1]));
+      tokens = tf.buffer([1], 'int32', new Int32Array([this.endToken]));
     }
 
     // Now do one-hot encoding and pad with zeros up to the maximum number of
@@ -625,7 +628,8 @@ export class MultitrackConverter extends DataConverter {
   toTensor(noteSequence: INoteSequence) {
     sequences.assertIsRelativeQuantizedSequence(noteSequence);
 
-    if (noteSequence.quantizationInfo.stepsPerQuarter != this.stepsPerQuarter) {
+    if (noteSequence.quantizationInfo.stepsPerQuarter !==
+        this.stepsPerQuarter) {
       throw new Error(`Steps per quarter note mismatch: ${
           noteSequence.quantizationInfo.stepsPerQuarter} != ${
           this.stepsPerQuarter}`);
@@ -639,6 +643,8 @@ export class MultitrackConverter extends DataConverter {
                 instrument => performance.Performance.fromNoteSequence(
                     noteSequence, this.totalSteps, this.numVelocityBins,
                     instrument));
+
+    // Sort tracks by program number, with drums at the end.
     const sortedTracks = tracks.sort(
         (a, b) => b.isDrum ? -1 : (a.isDrum ? 1 : a.program - b.program));
 
@@ -663,7 +669,7 @@ export class MultitrackConverter extends DataConverter {
 
   private tokensToTrack(tokens: Int32Array) {
     // Trim to end token.
-    const idx = tokens.indexOf(this.depth - 1);
+    const idx = tokens.indexOf(this.endToken);
     const endIndex = idx >= 0 ? idx : tokens.length;
     const trackTokens = tokens.slice(0, endIndex);
 
