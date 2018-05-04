@@ -47,7 +47,7 @@ Add the following code to an HTML file:
 <html>
   <head>
     <!-- Load @magenta/music -->
-    <script src="https://cdn.jsdelivr.net/npm/@magenta/music@0.0.10"> </script>
+    <script src="https://cdn.jsdelivr.net/npm/@magenta/music@1.0.0"> </script>
 
     <!-- Place your code in the script tag below. You can also use an external .js file -->
     <script>
@@ -57,16 +57,20 @@ Add the following code to an HTML file:
           'tfjs_checkpoints/music_vae/trio_4bar_lokl_small_q1');
       const player = new mm.Player();
 
-      model.initialize().then(
+
+      const start = () => {
+        document.getElementById("start").style.display = "none";
+        mm.Player.tone.context.resume();
+        model.initialize().then(
           // Endlessly sample and play back the result.
           function sampleAndPlay() {
             return model.sample(1)
                 .then((samples) => player.start(samples[0]))
                 .then(sampleAndPlay);
-          });
+          })};
       </script>
   </head>
-  <body></body>
+  <body><button id="start" onclick="start()">Start</button></body>
 </html>
 ```
 
