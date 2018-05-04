@@ -621,8 +621,10 @@ export class MultitrackConverter extends DataConverter {
 
     // Now do one-hot encoding and pad with zeros up to the maximum number of
     // events.
-    const oh = tf.oneHot(tokens.toTensor() as tf.Tensor1D, this.depth);
-    return oh.pad([[0, maxEventsPerTrack - oh.shape[0]], [0, 0]]);
+    return tf.tidy(() => {
+      const oh = tf.oneHot(tokens.toTensor() as tf.Tensor1D, this.depth);
+      return oh.pad([[0, maxEventsPerTrack - oh.shape[0]], [0, 0]]);
+    });
   }
 
   toTensor(noteSequence: INoteSequence) {
@@ -727,12 +729,13 @@ export class MultitrackConverter extends DataConverter {
     noteSequence.totalQuantizedSteps = this.totalSteps;
 
     // Split into tracks and convert to performance representation.
-    const tensors = tf.tidy(() => {
-      return tf.split(oh.argMax(1) as tf.Tensor1D, this.numSegments);
-    });
+    const tensors =
+        tf.tidy(() => tf.split(oh.argMax(1) as tf.Tensor1D, this.numSegments));
     const tracks = await Promise.all(tensors.map(async (tensor) => {
       const tokens = await tensor.data() as Int32Array;
-      return this.tokensToTrack(tokens);
+      const track = this.tokensToTrack(tokens);
+      tensor.dispose();
+      return track;
     }));
 
     tracks.forEach((track, instrument) => {

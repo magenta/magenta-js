@@ -29,7 +29,22 @@ const MEL_CKPT = `${CHECKPOINTS_DIR}mel_2bar_small`;
 const MEL_CHORDS_CKPT = `${CHECKPOINTS_DIR}mel_chords`;
 const MEL_16_CKPT = `${CHECKPOINTS_DIR}mel_16bar_small_q2`;
 const TRIO_CKPT = `${CHECKPOINTS_DIR}trio_4bar_lokl_small_q1`;
+const MULTITRACK_CKPT = `${CHECKPOINTS_DIR}multitrack`;
 
+// TODO(adarob): Switch to magenta/core function once implemented.
+function concatNoteSequences(
+    seqs: mm.INoteSequence[], individualDuration: number) {
+  const concatSeq: mm.INoteSequence = clone(seqs[0]);
+  for (let i = 1; i < seqs.length; ++i) {
+    Array.prototype.push.apply(concatSeq.notes, seqs[i].notes.map(n => {
+      const newN = clone(n);
+      newN.quantizedStartStep += individualDuration * i;
+      newN.quantizedEndStep += individualDuration * i;
+      return newN;
+    }));
+  }
+  return concatSeq;
+}
 
 const DRUM_SEQS: mm.INoteSequence[] = [
   {
@@ -180,6 +195,35 @@ concatNoteSequences([DRUM_SEQS[0], DRUM_SEQS[0]], 32).notes.map(n => {
   TRIO_EXAMPLE.notes.push(m);
 });
 
+const MULTITRACK_EXAMPLE: mm.INoteSequence = {
+  notes: [],
+  quantizationInfo: {stepsPerQuarter: 24}
+};
+MEL_TWINKLE.notes.forEach(n => {
+  const m = clone(n);
+  m.program = 0;
+  m.instrument = 0;
+  m.quantizedStartStep *= 3;
+  m.quantizedEndStep *= 3;
+  MULTITRACK_EXAMPLE.notes.push(m);
+});
+MEL_TWINKLE.notes.forEach(n => {
+  const m = clone(n);
+  m.pitch -= 36;
+  m.program = 32;
+  m.instrument = 1;
+  m.quantizedStartStep *= 3;
+  m.quantizedEndStep *= 3;
+  MULTITRACK_EXAMPLE.notes.push(m);
+});
+DRUM_SEQS[0].notes.forEach(n => {
+  const m = clone(n);
+  m.instrument = 2;
+  m.quantizedStartStep *= 3;
+  m.quantizedEndStep = m.quantizedStartStep + 1;
+  MULTITRACK_EXAMPLE.notes.push(m);
+});
+
 function writeTimer(elementId: string, startTime: number) {
   document.getElementById(elementId).innerHTML =
       ((performance.now() - startTime) / 1000).toString() + 's';
@@ -305,43 +349,6 @@ async function runMelChords() {
   mvae.dispose();
 }
 
-async function runTrio() {
-  const mvae = new mm.MusicVAE(TRIO_CKPT);
-  await mvae.initialize();
-
-  const inputs = [TRIO_EXAMPLE];
-  writeNoteSeqs('trio-inputs', inputs);
-
-  let start = performance.now();
-  const z = await mvae.encode(inputs);
-  const recon = await mvae.decode(z);
-  z.dispose();
-  writeTimer('trio-recon-time', start);
-  writeNoteSeqs('trio-recon', recon);
-
-  start = performance.now();
-  const sample = await mvae.sample(4);
-  writeTimer('trio-sample-time', start);
-  writeNoteSeqs('trio-samples', sample);
-
-  mvae.dispose();
-}
-
-// TODO(adarob): Switch to magenta/core function once implemented.
-function concatNoteSequences(
-    seqs: mm.INoteSequence[], individualDuration: number) {
-  const concatSeq: mm.INoteSequence = clone(seqs[0]);
-  for (let i = 1; i < seqs.length; ++i) {
-    Array.prototype.push.apply(concatSeq.notes, seqs[i].notes.map(n => {
-      const newN = clone(n);
-      newN.quantizedStartStep += individualDuration * i;
-      newN.quantizedEndStep += individualDuration * i;
-      return newN;
-    }));
-  }
-  return concatSeq;
-}
-
 async function runMel16() {
   const mvae = new mm.MusicVAE(MEL_16_CKPT);
   await mvae.initialize();
@@ -376,11 +383,55 @@ async function runMel16() {
   mvae.dispose();
 }
 
+async function runTrio() {
+  const mvae = new mm.MusicVAE(TRIO_CKPT);
+  await mvae.initialize();
+
+  const inputs = [TRIO_EXAMPLE];
+  writeNoteSeqs('trio-inputs', inputs);
+
+  let start = performance.now();
+  const z = await mvae.encode(inputs);
+  const recon = await mvae.decode(z);
+  z.dispose();
+  writeTimer('trio-recon-time', start);
+  writeNoteSeqs('trio-recon', recon);
+
+  start = performance.now();
+  const sample = await mvae.sample(4);
+  writeTimer('trio-sample-time', start);
+  writeNoteSeqs('trio-samples', sample);
+
+  mvae.dispose();
+}
+
+async function runMultitrack() {
+  const mvae = new mm.MusicVAE(MULTITRACK_CKPT);
+  await mvae.initialize();
+
+  const inputs = [MULTITRACK_EXAMPLE];
+  writeNoteSeqs('multitrack-inputs', inputs);
+
+  let start = performance.now();
+  const z = await mvae.encode(inputs);
+  const recon = await mvae.decode(z, null, null, 24);
+  z.dispose();
+  writeTimer('multitrack-recon-time', start);
+  writeNoteSeqs('multitrack-recon', recon);
+
+  start = performance.now();
+  const sample = await mvae.sample(4, null, null, 24);
+  writeTimer('multitrack-sample-time', start);
+  writeNoteSeqs('multitrack-samples', sample);
+
+  mvae.dispose();
+}
+
 try {
   Promise
       .all([
         runDrums(), runDrumsNade(), runMel(), runMelChords(), runMel16(),
-        runTrio()
+        runTrio(), runMultitrack()
       ])
       .then(() => console.log(tf.memory()));
 } catch (err) {
