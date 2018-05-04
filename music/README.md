@@ -28,10 +28,10 @@ We have made an effort to port our most useful models, but please file an issue 
 missing, or feel free to submit a Pull Request!
 
 ### MusicRNN
-[MusicRNN](./music_rnn) implements Magenta's LSTM-based language models. These include [MelodyRNN][melody-rnn], [DrumsRNN][drums-rnn], [ImprovRNN][improv-rnn], and [PerformanceRNN][performance-rnn].
+[MusicRNN](./src/music_rnn) implements Magenta's LSTM-based language models. These include [MelodyRNN][melody-rnn], [DrumsRNN][drums-rnn], [ImprovRNN][improv-rnn], and [PerformanceRNN][performance-rnn].
 
 ### MusicVAE
-[MusicVAE](./music_vae) implements several configurations of Magenta's variational autoencoder model called [MusicVAE][music-vae] including melody and drum "loop" models, 4- and 16-bar "trio" models, and chord-conditioned "multi-track" models.
+[MusicVAE](./src/music_vae) implements several configurations of Magenta's variational autoencoder model called [MusicVAE][music-vae] including melody and drum "loop" models, 4- and 16-bar "trio" models, and chord-conditioned "multi-track" models.
 
 ## Getting started
 
@@ -158,5 +158,5 @@ This configuration corresponds to a chord-conditioned melody MusicRNN model.
 [improv-rnn]: https://github.com/tensorflow/magenta/tree/master/magenta/models/improv_rnn
 [performance-rnn]: https://github.com/tensorflow/magenta/tree/master/magenta/models/performance_rnn
 [magenta-models]: https://github.com/tensorflow/magenta/tree/master/magenta/models
-[music-vae]: https://g.co/musicvae
+[music-vae]: https://g.co/magenta/musicvae
 [mm-npm]: https://www.npmjs.com/package/@magenta/music
