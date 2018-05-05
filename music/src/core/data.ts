@@ -133,9 +133,10 @@ export interface BaseConverterArgs {
  * track.
  */
 export abstract class DataConverter {
-  readonly numSteps: number;             // Total length of sequences.
-  readonly numSegments: number;          // Number of steps for conductor.
-  abstract readonly depth: number;       // Size of final output dimension.
+  readonly numSteps: number;                 // Total length of sequences.
+  readonly numSegments: number;              // Number of steps for conductor.
+  abstract readonly depth: number;           // Size of final output dimension.
+  abstract readonly endTensor: tf.Tensor1D;  // Tensor marking segment end.
   abstract readonly NUM_SPLITS: number;  // Const number of conductor splits.
   abstract toTensor(noteSequence: INoteSequence): tf.Tensor2D;
   abstract async toNoteSequence(tensor: tf.Tensor2D, stepsPerQuarter: number):
@@ -179,7 +180,8 @@ export class DrumsConverter extends DataConverter {
   readonly pitchClasses: number[][];
   readonly pitchToClass: Map<number, number>;
   readonly NUM_SPLITS = 0;  // const
-  depth: number;
+  readonly depth: number;
+  readonly endTensor: tf.Tensor1D;
 
   constructor(args: DrumsConverterArgs) {
     super(args);
@@ -343,9 +345,12 @@ export class MelodyConverter extends DataConverter {
   readonly minPitch: number;  // inclusive
   readonly maxPitch: number;  // inclusive
   readonly depth: number;
-  readonly NUM_SPLITS = 0;   // const
-  readonly NOTE_OFF = 1;     // const
-  readonly FIRST_PITCH = 2;  // const
+  readonly endTensor: tf.Tensor1D;
+
+  readonly NUM_SPLITS = 0;      // const
+  readonly IS_VAR_LEN = false;  // const
+  readonly NOTE_OFF = 1;        // const
+  readonly FIRST_PITCH = 2;     // const
 
   constructor(args: MelodyConverterArgs) {
     super(args);
@@ -428,7 +433,9 @@ export class TrioConverter extends DataConverter {
   bassConverter: MelodyConverter;
   drumsConverter: DrumsConverter;
   readonly depth: number;
+  readonly endTensor: tf.Tensor1D;
   readonly NUM_SPLITS = 3;              // const
+  readonly IS_VAR_LEN = false;          // const
   readonly MEL_PROG_RANGE = [0, 31];    // inclusive, const
   readonly BASS_PROG_RANGE = [32, 39];  // inclusive, const
 
@@ -546,6 +553,7 @@ export class MultitrackConverter extends DataConverter {
   readonly numPrograms: number;
   readonly endToken: number;
   readonly depth: number;
+  readonly endTensor: tf.Tensor1D;
 
   constructor(args: MultitrackConverterArgs) {
     super(args);
@@ -567,6 +575,9 @@ export class MultitrackConverter extends DataConverter {
 
     this.endToken = this.performanceEventDepth + this.numPrograms;
     this.depth = this.endToken + 1;
+
+    this.endTensor =
+        tf.oneHot(tf.tensor1d([this.endToken], 'int32'), this.depth).as1D();
   }
 
   private trackToTensor(track?: performance.Performance) {

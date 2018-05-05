@@ -66,7 +66,8 @@ function dense(vars: LayerVars, inputs: tf.Tensor2D) {
  */
 abstract class Encoder {
   abstract zDims: number;
-  abstract encode(sequence: tf.Tensor3D): tf.Tensor2D;
+  abstract encode(sequence: tf.Tensor3D, segmentLengths?: number[]):
+      tf.Tensor2D;
 }
 
 /**
@@ -99,10 +100,11 @@ class BidirectonalLstmEncoder extends Encoder {
   /**
    * Encodes a batch of sequences.
    * @param sequence The batch of sequences to be encoded.
+   * @param segmentLengths Unused for this encoder.
    * @returns A batch of concatenated final LSTM states, or the `mu` if `muVars`
    * is known.
    */
-  encode(sequence: tf.Tensor3D) {
+  encode(sequence: tf.Tensor3D, segmentLengths?: number[]) {
     return tf.tidy(() => {
       const fwState = this.singleDirection(sequence, true);
       const bwState = this.singleDirection(sequence, false);
@@ -168,9 +170,22 @@ class HierarchicalEncoder extends Encoder {
   /**
    * Encodes a batch of sequences.
    * @param sequence The batch of sequences to be encoded.
+   * @param segmentLengths (Optional) An array of lengths of the base-level
+   * segments. Must have length `numSteps[0]`. Assumes that batch size is 1.
    * @returns A batch of `mu` values.
    */
-  encode(sequence: tf.Tensor3D) {
+  encode(sequence: tf.Tensor3D, segmentLengths?: number[]) {
+    if (segmentLengths) {
+      if (sequence.shape[0] !== 1) {
+        throw new Error(
+            'When using variable-length segments, batch size must be 1.');
+      }
+      if (segmentLengths.length !== this.numSteps[0]) {
+        throw new Error(
+            'Must provide length for all variable-length segments.');
+      }
+    }
+
     return tf.tidy(() => {
       let inputs: tf.Tensor3D = sequence;
 
@@ -180,7 +195,11 @@ class HierarchicalEncoder extends Encoder {
         const embeddings: tf.Tensor2D[] = [];
         for (let step = 0; step < levelSteps; ++step) {
           embeddings.push(this.baseEncoders[level].encode(
-              splitInputs[step] as tf.Tensor3D));
+              (level === 0 && segmentLengths) ?
+                  tf.slice3d(
+                      splitInputs[step], [0, 0, 0],
+                      [1, segmentLengths[step], -1]) :
+                  splitInputs[step] as tf.Tensor3D));
         }
         inputs = tf.stack(embeddings, 1) as tf.Tensor3D;
       }
@@ -721,13 +740,13 @@ class MusicVAE {
   /**
    * Interpolates between the input `NoteSequence`s in latent space.
    *
-   * If 2 sequences are given, a single linear interpolation is computed, with
-   * the first output sequence being a reconstruction of sequence A and the
-   * final output being a reconstruction of sequence B, with `numInterps`
-   * total sequences.
+   * If 2 sequences are given, a single linear interpolation is computed,
+   * with the first output sequence being a reconstruction of sequence A and
+   * the final output being a reconstruction of sequence B, with
+   * `numInterps` total sequences.
    *
-   * If 4 sequences are given, bilinear interpolation is used. The results are
-   * returned in row-major order for a matrix with the following layout:
+   * If 4 sequences are given, bilinear interpolation is used. The results
+   * are returned in row-major order for a matrix with the following layout:
    *   | A . . C |
    *   | . . . . |
    *   | . . . . |
@@ -741,8 +760,8 @@ class MusicVAE {
    * @param numInterps The number of pairwise interpolation sequences to
    * return, including the reconstructions. If 4 inputs are given, the total
    * number of sequences will be `numInterps`^2.
-   * @param temperature (Optional) The softmax temperature to use when sampling
-   * from the logits. Argmax is used if not provided.
+   * @param temperature (Optional) The softmax temperature to use when
+   * sampling from the logits. Argmax is used if not provided.
    * @param chordProgression (Optional) Chord progression to use as
    * conditioning.
    *
@@ -794,26 +813,68 @@ class MusicVAE {
     }
 
     const numSteps = this.dataConverter.numSteps;
+    const numSegments = this.dataConverter.numSegments;
 
-    return tf.tidy(() => {
-      let inputTensors =
-          tf.stack(inputSequences.map(
-              t => this.dataConverter.toTensor(t) as tf.Tensor2D)) as
-          tf.Tensor3D;
+    let inputTensors = tf.tidy(
+        () => tf.stack(inputSequences.map(
+                  t => this.dataConverter.toTensor(t) as tf.Tensor2D)) as
+            tf.Tensor3D);
 
-      if (this.chordEncoder) {
-        const controls = tf.tile(
-                             tf.expandDims(
-                                 this.chordEncoder.encodeProgression(
-                                     chordProgression, numSteps),
-                                 0),
-                             [inputSequences.length, 1, 1]) as tf.Tensor3D;
-        inputTensors = inputTensors.concat(controls, 2);
+    let segmentLengths: number[] = undefined;
+
+    if (this.dataConverter.endTensor) {
+      // This model uses variable-length segments.
+      if (inputSequences.length > 1) {
+        throw new Error(
+            'Variable-length segments not supported for batch size > 1.');
       }
 
-      // Use the mean `mu` of the latent variable as the best estimate of `z`.
-      return this.encoder.encode(inputTensors);
-    });
+      // Determine the segment lengths by finding the `endTensor` sentinel
+      // value.
+      const isEndTensor: tf.Tensor1D = tf.tidy(
+          () => tf.min(
+              tf.equal(
+                  inputTensors.squeeze([0]),
+                  this.dataConverter.endTensor.expandDims(0)),
+              1));
+
+      const isEndArray = await isEndTensor.data();
+      isEndTensor.dispose();
+
+      const maxSegmentLength = numSteps / numSegments;
+      segmentLengths = [];
+
+      // The data converter pads each segment to the maximum length. We need to
+      // look for exactly one "end tensor" per segment to determine its actual
+      // length.
+      let offset = 0;
+      let fromIndex = isEndArray.indexOf(1);
+      while (fromIndex !== -1) {
+        segmentLengths.push(fromIndex - offset + 1);
+        offset += maxSegmentLength;
+        fromIndex = isEndArray.indexOf(1, offset);
+      }
+
+      if (segmentLengths.length !== numSegments) {
+        throw new Error(`Incorrect number of segments: ${
+            segmentLengths.length} != ${numSegments}`);
+      }
+    }
+
+    if (this.chordEncoder) {
+      // TODO(iansimon): handle chords for variable-length segments
+      const controls = tf.tile(
+                           tf.expandDims(
+                               this.chordEncoder.encodeProgression(
+                                   chordProgression, numSteps),
+                               0),
+                           [inputSequences.length, 1, 1]) as tf.Tensor3D;
+      inputTensors = inputTensors.concat(controls, 2);
+    }
+
+    // Use the mean `mu` of the latent variable as the best estimate of
+    // `z`.
+    return tf.tidy(() => this.encoder.encode(inputTensors, segmentLengths));
   }
 
   /**
@@ -824,7 +885,8 @@ class MusicVAE {
    * sampling. The argmax is used if not provided.
    * @param chordProgression (Optional) Chord progression to use as
    * conditioning.
-   * @param stepsPerQuarter The step resolution of the resulting `NoteSequence`.
+   * @param stepsPerQuarter The step resolution of the resulting
+   * `NoteSequence`.
    *
    * @returns The decoded `NoteSequence`s.
    */
