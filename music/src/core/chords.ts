@@ -186,8 +186,9 @@ export class MajorMinorChordEncoder extends ChordEncoder {
   }
 
   encode(chord: string) {
-    return tf.oneHot(tf.tensor1d([this.index(chord)], 'int32'), this.depth)
-        .as1D();
+    return tf.tidy(
+        () => tf.oneHot(tf.tensor1d([this.index(chord)], 'int32'), this.depth)
+                  .as1D());
   }
 }
 
@@ -216,8 +217,9 @@ export class TriadChordEncoder extends ChordEncoder {
   }
 
   encode(chord: string) {
-    return tf.oneHot(tf.tensor1d([this.index(chord)], 'int32'), this.depth)
-        .as1D();
+    return tf.tidy(
+        () => tf.oneHot(tf.tensor1d([this.index(chord)], 'int32'), this.depth)
+                  .as1D());
   }
 }
 
@@ -230,24 +232,26 @@ export class PitchChordEncoder extends ChordEncoder {
   depth = 1 + 3 * constants.NUM_PITCH_CLASSES;
 
   encode(chord: string) {
-    if (chord === constants.NO_CHORD) {
-      return tf.oneHot(tf.tensor1d([0], 'int32'), this.depth).as1D();
-    }
+    return tf.tidy(() => {
+      if (chord === constants.NO_CHORD) {
+        return tf.oneHot(tf.tensor1d([0], 'int32'), this.depth).as1D();
+      }
 
-    const root = ChordSymbols.root(chord);
-    const rootEncoding =
-        tf.oneHot(tf.tensor1d([root], 'int32'), constants.NUM_PITCH_CLASSES)
-            .as1D();
+      const root = ChordSymbols.root(chord);
+      const rootEncoding =
+          tf.oneHot(tf.tensor1d([root], 'int32'), constants.NUM_PITCH_CLASSES)
+              .as1D();
 
-    const pitchBuffer = tf.buffer([constants.NUM_PITCH_CLASSES]);
-    ChordSymbols.pitches(chord).forEach(pitch => pitchBuffer.set(1.0, pitch));
-    const pitchEncoding = pitchBuffer.toTensor().as1D();
+      const pitchBuffer = tf.buffer([constants.NUM_PITCH_CLASSES]);
+      ChordSymbols.pitches(chord).forEach(pitch => pitchBuffer.set(1.0, pitch));
+      const pitchEncoding = pitchBuffer.toTensor().as1D();
 
-    // Since tonal doesn't understand chords with slash notation to specify
-    // bass, just use the root for now.
-    const bassEncoding = rootEncoding;
+      // Since tonal doesn't understand chords with slash notation to specify
+      // bass, just use the root for now.
+      const bassEncoding = rootEncoding;
 
-    return tf.concat1d(
-        [tf.tensor1d([0.0]), rootEncoding, pitchEncoding, bassEncoding]);
+      return tf.concat1d(
+          [tf.tensor1d([0.0]), rootEncoding, pitchEncoding, bassEncoding]);
+    });
   }
 }

@@ -837,7 +837,6 @@ class MusicVAE {
                   inputTensors.squeeze([0]),
                   this.dataConverter.endTensor.expandDims(0)),
               1));
-
       const isEndArray = await isEndTensor.data();
       isEndTensor.dispose();
 
@@ -863,18 +862,24 @@ class MusicVAE {
 
     if (this.chordEncoder) {
       // TODO(iansimon): handle chords for variable-length segments
-      const controls = tf.tile(
-                           tf.expandDims(
-                               this.chordEncoder.encodeProgression(
-                                   chordProgression, numSteps),
-                               0),
-                           [inputSequences.length, 1, 1]) as tf.Tensor3D;
-      inputTensors = inputTensors.concat(controls, 2);
+      const newInputTensors = tf.tidy(() => {
+        const controls = tf.tile(
+                             tf.expandDims(
+                                 this.chordEncoder.encodeProgression(
+                                     chordProgression, numSteps),
+                                 0),
+                             [inputSequences.length, 1, 1]) as tf.Tensor3D;
+        return inputTensors.concat(controls, 2);
+      });
+      inputTensors.dispose();
+      inputTensors = newInputTensors;
     }
 
     // Use the mean `mu` of the latent variable as the best estimate of
     // `z`.
-    return tf.tidy(() => this.encoder.encode(inputTensors, segmentLengths));
+    const z = this.encoder.encode(inputTensors, segmentLengths);
+    inputTensors.dispose();
+    return z;
   }
 
   /**

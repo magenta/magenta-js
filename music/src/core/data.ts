@@ -576,8 +576,9 @@ export class MultitrackConverter extends DataConverter {
     this.endToken = this.performanceEventDepth + this.numPrograms;
     this.depth = this.endToken + 1;
 
-    this.endTensor =
-        tf.oneHot(tf.tensor1d([this.endToken], 'int32'), this.depth).as1D();
+    this.endTensor = tf.tidy(
+        () => tf.oneHot(tf.tensor1d([this.endToken], 'int32'), this.depth)
+                  .as1D());
   }
 
   private trackToTensor(track?: performance.Performance) {
