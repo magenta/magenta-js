@@ -174,8 +174,7 @@ export class Performance {
         false;
 
     // Determine the program used, if consistent.
-    const programs =
-        notes.map(note => note.program).filter((p, i, a) => a.indexOf(p) === i);
+    const programs = Array.from(new Set(notes.map(note => note.program)));
     const program =
         (!isDrum && programs.length === 1) ? programs[0] : undefined;
 
