@@ -414,12 +414,6 @@ class ConductorDecoder extends Decoder {
   decode(
       z: tf.Tensor2D, length: number, initialInput?: tf.Tensor2D,
       temperature?: number, controls?: tf.Tensor2D) {
-    // TODO(iansimon): support controls
-    if (controls) {
-      throw new Error(
-          'Control signals currently unsupported in hierarchical decoder.');
-    }
-
     const batchSize = z.shape[0];
 
     return tf.tidy(() => {
@@ -431,6 +425,8 @@ class ConductorDecoder extends Decoder {
       const samples: tf.Tensor3D[] = [];
       let initialInput: tf.Tensor2D[] = this.coreDecoders.map(_ => undefined);
       const dummyInput: tf.Tensor2D = tf.zeros([batchSize, 1]);
+      const splitControls =
+          controls ? tf.split(controls, this.numSteps) : undefined;
       for (let i = 0; i < this.numSteps; ++i) {
         [lstmCell.c, lstmCell.h] =
             tf.multiRNNCell(lstmCell.cell, dummyInput, lstmCell.c, lstmCell.h);
@@ -438,7 +434,8 @@ class ConductorDecoder extends Decoder {
         for (let j = 0; j < this.coreDecoders.length; ++j) {
           currSamples.push(this.coreDecoders[j].decode(
               lstmCell.h[lstmCell.h.length - 1], length / this.numSteps,
-              initialInput[j], temperature));
+              initialInput[j], temperature,
+              splitControls ? splitControls[i] : undefined));
         }
         samples.push(tf.concat(currSamples, -1));
         initialInput = currSamples.map(
