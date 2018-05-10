@@ -30,6 +30,7 @@ const MEL_CHORDS_CKPT = `${CHECKPOINTS_DIR}mel_chords`;
 const MEL_16_CKPT = `${CHECKPOINTS_DIR}mel_16bar_small_q2`;
 const TRIO_CKPT = `${CHECKPOINTS_DIR}trio_4bar_lokl_small_q1`;
 const MULTITRACK_CKPT = `${CHECKPOINTS_DIR}multitrack`;
+const MULTITRACK_CHORDS_CKPT = `${CHECKPOINTS_DIR}multitrack_chords`;
 
 // TODO(adarob): Switch to magenta/core function once implemented.
 function concatNoteSequences(
@@ -427,11 +428,33 @@ async function runMultitrack() {
   mvae.dispose();
 }
 
+async function runMultitrackChords() {
+  const mvae = new mm.MusicVAE(MULTITRACK_CHORDS_CKPT);
+  await mvae.initialize();
+
+  const inputs = [MULTITRACK_EXAMPLE];
+  writeNoteSeqs('multitrack-chords-inputs', inputs);
+
+  let start = performance.now();
+  const z = await mvae.encode(inputs, ['C']);
+  const recon = await mvae.decode(z, null, ['G'], 24);
+  z.dispose();
+  writeTimer('multitrack-chords-recon-time', start);
+  writeNoteSeqs('multitrack-chords-recon', recon);
+
+  start = performance.now();
+  const sample = await mvae.sample(4, null, ['D'], 24);
+  writeTimer('multitrack-chords-sample-time', start);
+  writeNoteSeqs('multitrack-chords-samples', sample);
+
+  mvae.dispose();
+}
+
 try {
   Promise
       .all([
         runDrums(), runDrumsNade(), runMel(), runMelChords(), runMel16(),
-        runTrio(), runMultitrack()
+        runTrio(), runMultitrack(), runMultitrackChords()
       ])
       .then(() => console.log(tf.memory()));
 } catch (err) {
