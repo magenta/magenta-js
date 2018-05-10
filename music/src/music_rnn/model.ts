@@ -213,6 +213,9 @@ export class MusicRNN {
     if (!this.chordEncoder && chordProgression) {
       throw new Error('Unexpected chord progression provided.');
     }
+    if (this.chordEncoder && this.dataConverter.INITIAL_CHORD) {
+      throw new Error('Initial chord not supported for this model.');
+    }
 
     if (!this.initialized) {
       await this.initialize();

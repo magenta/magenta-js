@@ -808,6 +808,11 @@ class MusicVAE {
     if (!this.chordEncoder && chordProgression) {
       throw new Error('Unexpected chord progression provided.');
     }
+    if (this.chordEncoder && this.dataConverter.endTensor &&
+        chordProgression.length > 1) {
+      throw new Error(
+          'Multiple chords not supported when using variable-length segments.');
+    }
 
     if (!this.initialized) {
       await this.initialize();
@@ -862,13 +867,30 @@ class MusicVAE {
     }
 
     if (this.chordEncoder) {
-      // TODO(iansimon): handle chords for variable-length segments
       const newInputTensors = tf.tidy(() => {
+        // Construct the chord-conditioning tensors. For models where each
+        // segment is a separate track, the same chords should be used for each
+        // segment. If an initial chord is specified by the data converter, use
+        // that chord for the first step only.
+        const numChordSteps = this.dataConverter.SEGMENTED_BY_TRACK ?
+            numSteps / numSegments :
+            numSteps;
+        const encodedChordProgression = this.dataConverter.INITIAL_CHORD ?
+            tf.concat2d(
+                [
+                  this.chordEncoder.encode(this.dataConverter.INITIAL_CHORD)
+                      .expandDims(0),
+                  this.chordEncoder.encodeProgression(
+                      chordProgression, numChordSteps - 1)
+                ],
+                0) :
+            this.chordEncoder.encodeProgression(
+                chordProgression, numChordSteps);
+        const encodedChords = this.dataConverter.SEGMENTED_BY_TRACK ?
+            tf.tile(encodedChordProgression, [numSegments, 1]) :
+            encodedChordProgression;
         const controls = tf.tile(
-                             tf.expandDims(
-                                 this.chordEncoder.encodeProgression(
-                                     chordProgression, numSteps),
-                                 0),
+                             tf.expandDims(encodedChords, 0),
                              [inputSequences.length, 1, 1]) as tf.Tensor3D;
         return inputTensors.concat(controls, 2);
       });
@@ -905,17 +927,44 @@ class MusicVAE {
     if (!this.chordEncoder && chordProgression) {
       throw new Error('Unexpected chord progression provided.');
     }
+    if (this.chordEncoder && this.dataConverter.endTensor &&
+        chordProgression.length > 1) {
+      throw new Error(
+          'Multiple chords not supported when using variable-length segments.');
+    }
 
     if (!this.initialized) {
       await this.initialize();
     }
 
     const numSteps = this.dataConverter.numSteps;
+    const numSegments = this.dataConverter.numSegments;
 
     const ohSeqs: tf.Tensor2D[] = tf.tidy(() => {
-      const controls = this.chordEncoder ?
-          this.chordEncoder.encodeProgression(chordProgression, numSteps) :
-          undefined;
+      let controls: tf.Tensor2D = undefined;
+      if (this.chordEncoder) {
+        // Construct the chord-conditioning tensors. For models where each
+        // segment is a separate track, the same chords should be used for
+        // each segment. If an initial chord is specified by the data
+        // converter, use that chord for the first step only.
+        const numChordSteps = this.dataConverter.SEGMENTED_BY_TRACK ?
+            numSteps / numSegments :
+            numSteps;
+        const encodedChordProgression = this.dataConverter.INITIAL_CHORD ?
+            tf.concat2d(
+                [
+                  this.chordEncoder.encode(this.dataConverter.INITIAL_CHORD)
+                      .expandDims(0),
+                  this.chordEncoder.encodeProgression(
+                      chordProgression, numChordSteps - 1)
+                ],
+                0) :
+            this.chordEncoder.encodeProgression(
+                chordProgression, numChordSteps);
+        controls = this.dataConverter.SEGMENTED_BY_TRACK ?
+            tf.tile(encodedChordProgression, [numSegments, 1]) :
+            encodedChordProgression;
+      }
       const ohSeqs =
           this.decoder.decode(z, numSteps, undefined, temperature, controls);
       return tf.split(ohSeqs, ohSeqs.shape[0])
