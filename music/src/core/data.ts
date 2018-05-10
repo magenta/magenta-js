@@ -137,9 +137,8 @@ export abstract class DataConverter {
   readonly numSegments: number;              // Number of steps for conductor.
   abstract readonly depth: number;           // Size of final output dimension.
   abstract readonly endTensor: tf.Tensor1D;  // Tensor marking segment end.
-  abstract readonly INITIAL_CHORD: string;   // Const initial chord.
-  abstract readonly SEGMENTED_BY_TRACK: boolean;  // Segments are tracks.
   abstract readonly NUM_SPLITS: number;  // Const number of conductor splits.
+  abstract readonly SEGMENTED_BY_TRACK: boolean;  // Segments are tracks.
   abstract toTensor(noteSequence: INoteSequence): tf.Tensor2D;
   abstract async toNoteSequence(tensor: tf.Tensor2D, stepsPerQuarter: number):
       Promise<INoteSequence>;
@@ -185,9 +184,8 @@ export interface DrumsConverterArgs extends BaseConverterArgs {
 export class DrumsConverter extends DataConverter {
   readonly pitchClasses: number[][];
   readonly pitchToClass: Map<number, number>;
-  readonly INITIAL_CHORD: string;       // const
-  readonly SEGMENTED_BY_TRACK = false;  // const
   readonly NUM_SPLITS = 0;              // const
+  readonly SEGMENTED_BY_TRACK = false;  // const
   readonly depth: number;
   readonly endTensor: tf.Tensor1D;
 
@@ -355,9 +353,8 @@ export class MelodyConverter extends DataConverter {
   readonly depth: number;
   readonly endTensor: tf.Tensor1D;
 
-  readonly INITIAL_CHORD: string;       // const
-  readonly SEGMENTED_BY_TRACK = false;  // const
   readonly NUM_SPLITS = 0;              // const
+  readonly SEGMENTED_BY_TRACK = false;  // const
   readonly NOTE_OFF = 1;                // const
   readonly FIRST_PITCH = 2;             // const
 
@@ -443,9 +440,8 @@ export class TrioConverter extends DataConverter {
   drumsConverter: DrumsConverter;
   readonly depth: number;
   readonly endTensor: tf.Tensor1D;
-  readonly INITIAL_CHORD: string;       // const
-  readonly SEGMENTED_BY_TRACK = false;  // const
   readonly NUM_SPLITS = 3;              // const
+  readonly SEGMENTED_BY_TRACK = false;  // const
   readonly MEL_PROG_RANGE = [0, 31];    // inclusive, const
   readonly BASS_PROG_RANGE = [32, 39];  // inclusive, const
 
@@ -552,9 +548,8 @@ export interface MultitrackConverterArgs extends BaseConverterArgs {
   numVelocityBins: number;
 }
 export class MultitrackConverter extends DataConverter {
-  readonly INITIAL_CHORD = constants.NO_CHORD;  // const
-  readonly SEGMENTED_BY_TRACK = true;           // const
-  readonly NUM_SPLITS = 0;                      // const
+  readonly NUM_SPLITS = 0;             // const
+  readonly SEGMENTED_BY_TRACK = true;  // const
 
   readonly stepsPerQuarter: number;
   readonly totalSteps: number;

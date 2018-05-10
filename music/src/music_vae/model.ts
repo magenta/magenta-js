@@ -869,17 +869,16 @@ class MusicVAE {
     if (this.chordEncoder) {
       const newInputTensors = tf.tidy(() => {
         // Construct the chord-conditioning tensors. For models where each
-        // segment is a separate track, the same chords should be used for each
-        // segment. If an initial chord is specified by the data converter, use
-        // that chord for the first step only.
+        // segment is a separate track, the same chords should be used for
+        // each segment. Additionally, "no-chord" should be used for the first
+        // step (the instrument-select / skip-track step).
         const numChordSteps = this.dataConverter.SEGMENTED_BY_TRACK ?
             numSteps / numSegments :
             numSteps;
-        const encodedChordProgression = this.dataConverter.INITIAL_CHORD ?
+        const encodedChordProgression = this.dataConverter.SEGMENTED_BY_TRACK ?
             tf.concat2d(
                 [
-                  this.chordEncoder.encode(this.dataConverter.INITIAL_CHORD)
-                      .expandDims(0),
+                  this.chordEncoder.encode(constants.NO_CHORD).expandDims(0),
                   this.chordEncoder.encodeProgression(
                       chordProgression, numChordSteps - 1)
                 ],
@@ -945,16 +944,15 @@ class MusicVAE {
       if (this.chordEncoder) {
         // Construct the chord-conditioning tensors. For models where each
         // segment is a separate track, the same chords should be used for
-        // each segment. If an initial chord is specified by the data
-        // converter, use that chord for the first step only.
+        // each segment. Additionally, "no-chord" should be used for the first
+        // step (the instrument-select / skip-track step).
         const numChordSteps = this.dataConverter.SEGMENTED_BY_TRACK ?
             numSteps / numSegments :
             numSteps;
-        const encodedChordProgression = this.dataConverter.INITIAL_CHORD ?
+        const encodedChordProgression = this.dataConverter.SEGMENTED_BY_TRACK ?
             tf.concat2d(
                 [
-                  this.chordEncoder.encode(this.dataConverter.INITIAL_CHORD)
-                      .expandDims(0),
+                  this.chordEncoder.encode(constants.NO_CHORD).expandDims(0),
                   this.chordEncoder.encodeProgression(
                       chordProgression, numChordSteps - 1)
                 ],
