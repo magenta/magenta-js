@@ -414,12 +414,6 @@ class ConductorDecoder extends Decoder {
   decode(
       z: tf.Tensor2D, length: number, initialInput?: tf.Tensor2D,
       temperature?: number, controls?: tf.Tensor2D) {
-    // TODO(iansimon): support controls
-    if (controls) {
-      throw new Error(
-          'Control signals currently unsupported in hierarchical decoder.');
-    }
-
     const batchSize = z.shape[0];
 
     return tf.tidy(() => {
@@ -431,6 +425,8 @@ class ConductorDecoder extends Decoder {
       const samples: tf.Tensor3D[] = [];
       let initialInput: tf.Tensor2D[] = this.coreDecoders.map(_ => undefined);
       const dummyInput: tf.Tensor2D = tf.zeros([batchSize, 1]);
+      const splitControls =
+          controls ? tf.split(controls, this.numSteps) : undefined;
       for (let i = 0; i < this.numSteps; ++i) {
         [lstmCell.c, lstmCell.h] =
             tf.multiRNNCell(lstmCell.cell, dummyInput, lstmCell.c, lstmCell.h);
@@ -438,7 +434,8 @@ class ConductorDecoder extends Decoder {
         for (let j = 0; j < this.coreDecoders.length; ++j) {
           currSamples.push(this.coreDecoders[j].decode(
               lstmCell.h[lstmCell.h.length - 1], length / this.numSteps,
-              initialInput[j], temperature));
+              initialInput[j], temperature,
+              splitControls ? splitControls[i] : undefined));
         }
         samples.push(tf.concat(currSamples, -1));
         initialInput = currSamples.map(
@@ -796,6 +793,78 @@ class MusicVAE {
   }
 
   /**
+   * Get segment lengths for variable-length segments.
+   */
+  private async getSegmentLengths(inputTensors: tf.Tensor3D) {
+    if (inputTensors.shape[0] > 1) {
+      throw new Error(
+          'Variable-length segments not supported for batch size > 1.');
+    }
+
+    const numSteps = this.dataConverter.numSteps;
+    const numSegments = this.dataConverter.numSegments;
+
+    // Determine the segment lengths by finding the `endTensor` sentinel
+    // value.
+    const isEndTensor: tf.Tensor1D = tf.tidy(
+        () => tf.min(
+            tf.equal(
+                inputTensors.squeeze([0]),
+                this.dataConverter.endTensor.expandDims(0)),
+            1));
+    const isEndArray = await isEndTensor.data();
+    isEndTensor.dispose();
+
+    const maxSegmentLength = numSteps / numSegments;
+    const segmentLengths = [];
+
+    // The data converter pads each segment to the maximum length. We need to
+    // look for exactly one "end tensor" per segment to determine its actual
+    // length.
+    let offset = 0;
+    let fromIndex = isEndArray.indexOf(1);
+    while (fromIndex !== -1) {
+      segmentLengths.push(fromIndex - offset + 1);
+      offset += maxSegmentLength;
+      fromIndex = isEndArray.indexOf(1, offset);
+    }
+
+    if (segmentLengths.length !== numSegments) {
+      throw new Error(`Incorrect number of segments: ${
+          segmentLengths.length} != ${numSegments}`);
+    }
+
+    return segmentLengths;
+  }
+
+  /**
+   * Construct the chord-conditioning tensors. For models where each segment is
+   * a separate track, the same chords should be used for each segment.
+   * Additionally, "no-chord" should be used for the first step (the instrument-
+   * select / skip-track step).
+   */
+  private encodeChordProgression(chordProgression: string[]) {
+    const numSteps = this.dataConverter.numSteps;
+    const numSegments = this.dataConverter.numSegments;
+
+    const numChordSteps = this.dataConverter.SEGMENTED_BY_TRACK ?
+        numSteps / numSegments :
+        numSteps;
+    const encodedChordProgression = this.dataConverter.SEGMENTED_BY_TRACK ?
+        tf.concat2d(
+            [
+              this.chordEncoder.encode(constants.NO_CHORD).expandDims(0),
+              this.chordEncoder.encodeProgression(
+                  chordProgression, numChordSteps - 1)
+            ],
+            0) :
+        this.chordEncoder.encodeProgression(chordProgression, numChordSteps);
+    return this.dataConverter.SEGMENTED_BY_TRACK ?
+        tf.tile(encodedChordProgression, [numSegments, 1]) :
+        encodedChordProgression;
+  }
+
+  /**
    * Encodes the input `NoteSequence`s into latent vectors.
    *
    * @param inputSequences An array of `NoteSequence`s to encode.
@@ -811,67 +880,30 @@ class MusicVAE {
     if (!this.chordEncoder && chordProgression) {
       throw new Error('Unexpected chord progression provided.');
     }
+    if (this.chordEncoder && this.dataConverter.endTensor &&
+        chordProgression.length > 1) {
+      throw new Error(
+          'Multiple chords not supported when using variable-length segments.');
+    }
 
     if (!this.initialized) {
       await this.initialize();
     }
-
-    const numSteps = this.dataConverter.numSteps;
-    const numSegments = this.dataConverter.numSegments;
 
     let inputTensors = tf.tidy(
         () => tf.stack(inputSequences.map(
                   t => this.dataConverter.toTensor(t) as tf.Tensor2D)) as
             tf.Tensor3D);
 
-    let segmentLengths: number[] = undefined;
-
-    if (this.dataConverter.endTensor) {
-      // This model uses variable-length segments.
-      if (inputSequences.length > 1) {
-        throw new Error(
-            'Variable-length segments not supported for batch size > 1.');
-      }
-
-      // Determine the segment lengths by finding the `endTensor` sentinel
-      // value.
-      const isEndTensor: tf.Tensor1D = tf.tidy(
-          () => tf.min(
-              tf.equal(
-                  inputTensors.squeeze([0]),
-                  this.dataConverter.endTensor.expandDims(0)),
-              1));
-      const isEndArray = await isEndTensor.data();
-      isEndTensor.dispose();
-
-      const maxSegmentLength = numSteps / numSegments;
-      segmentLengths = [];
-
-      // The data converter pads each segment to the maximum length. We need to
-      // look for exactly one "end tensor" per segment to determine its actual
-      // length.
-      let offset = 0;
-      let fromIndex = isEndArray.indexOf(1);
-      while (fromIndex !== -1) {
-        segmentLengths.push(fromIndex - offset + 1);
-        offset += maxSegmentLength;
-        fromIndex = isEndArray.indexOf(1, offset);
-      }
-
-      if (segmentLengths.length !== numSegments) {
-        throw new Error(`Incorrect number of segments: ${
-            segmentLengths.length} != ${numSegments}`);
-      }
-    }
+    const segmentLengths = this.dataConverter.endTensor ?
+        await this.getSegmentLengths(inputTensors) :
+        undefined;
 
     if (this.chordEncoder) {
-      // TODO(iansimon): handle chords for variable-length segments
       const newInputTensors = tf.tidy(() => {
+        const encodedChords = this.encodeChordProgression(chordProgression);
         const controls = tf.tile(
-                             tf.expandDims(
-                                 this.chordEncoder.encodeProgression(
-                                     chordProgression, numSteps),
-                                 0),
+                             tf.expandDims(encodedChords, 0),
                              [inputSequences.length, 1, 1]) as tf.Tensor3D;
         return inputTensors.concat(controls, 2);
       });
@@ -908,6 +940,11 @@ class MusicVAE {
     if (!this.chordEncoder && chordProgression) {
       throw new Error('Unexpected chord progression provided.');
     }
+    if (this.chordEncoder && this.dataConverter.endTensor &&
+        chordProgression.length > 1) {
+      throw new Error(
+          'Multiple chords not supported when using variable-length segments.');
+    }
 
     if (!this.initialized) {
       await this.initialize();
@@ -917,7 +954,7 @@ class MusicVAE {
 
     const ohSeqs: tf.Tensor2D[] = tf.tidy(() => {
       const controls = this.chordEncoder ?
-          this.chordEncoder.encodeProgression(chordProgression, numSteps) :
+          this.encodeChordProgression(chordProgression) :
           undefined;
       const ohSeqs =
           this.decoder.decode(z, numSteps, undefined, temperature, controls);
