@@ -395,3 +395,33 @@ export function unquantizeSequence(qns: INoteSequence, qpm?: number) {
   });
   return ns;
 }
+
+/**
+ * Assign instruments to the notes, pitch bends, and control changes of a
+ * `NoteSequence` based on program numbers and drum status. All drums will be
+ * assigned instrument 9 (and program 0). All non-drum events with the same
+ * program number will be assigned to a single instrument.
+ * @param ns The `NoteSequence` for which to merge instruments. Will not be
+ * modified.
+ * @returns A copy of `ns` with merged instruments.
+ */
+export function mergeInstruments(ns: INoteSequence) {
+  const result = clone(ns);
+
+  const events =
+      result.notes.concat(result.pitchBends).concat(result.controlChanges);
+  const programs =
+      Array.from(new Set(events.filter(e => !e.isDrum).map(e => e.program)));
+
+  events.forEach(e => {
+    if (e.isDrum) {
+      e.program = 0;
+      e.instrument = 9;
+    } else {
+      const index = programs.indexOf(e.program);
+      e.instrument = (index >= 9) ? index + 1 : index;
+    }
+  });
+
+  return result;
+}
