@@ -67,8 +67,8 @@ function addChordsToSequence(
 }
 
 function addControlChangesToSequence(
-    ns: NoteSequence, instrument: number, chords: number[][]) {
-  for (const ccParams of chords) {
+    ns: NoteSequence, instrument: number, controlChanges: number[][]) {
+  for (const ccParams of controlChanges) {
     const cc = NoteSequence.ControlChange.create({
       time: ccParams[0],
       controlNumber: ccParams[1],
@@ -483,3 +483,26 @@ test(
           t, [[0.0, 0.5], [0.5, 1.00], [1.00, 1.5], [1.5, 2.5], [2.5, 3.5]], 10,
           undefined, 30, 20);
     });
+
+test('Merge Instruments', (t: test.Test) => {
+  const ns = createTestNS();
+  ns.notes.push({pitch: 60, program: 0, isDrum: false});
+  ns.notes.push({pitch: 64, program: 0, isDrum: false});
+  ns.notes.push({pitch: 36, program: 0, isDrum: true});
+  ns.notes.push({pitch: 48, program: 32, isDrum: false});
+  ns.notes.push({pitch: 42, program: 1, isDrum: true});
+
+  const expected = sequences.clone(ns);
+  expected.notes[0].instrument = 0;
+  expected.notes[1].instrument = 0;
+  expected.notes[2].instrument = 9;
+  expected.notes[3].instrument = 1;
+  expected.notes[4].instrument = 9;
+  expected.notes[4].program = 0;
+
+  t.deepEqual(
+      NoteSequence.toObject(sequences.mergeInstruments(ns)),
+      NoteSequence.toObject(expected));
+
+  t.end();
+});
