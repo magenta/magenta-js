@@ -92,6 +92,9 @@
 							<li>
 								<a href="_core_data_.trioconverter.html" class="tsd-signature-type">TrioConverter</a>
 							</li>
+							<li>
+								<a href="_core_data_.multitrackconverter.html" class="tsd-signature-type">MultitrackConverter</a>
+							</li>
 						</ul>
 					</li>
 				</ul>
@@ -110,7 +113,9 @@
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#num_splits" class="tsd-kind-icon">NUM_<wbr>SPLITS</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#segmented_by_track" class="tsd-kind-icon">SEGMENTED_<wbr>BY_<wbr>TRACK</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#depth" class="tsd-kind-icon">depth</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#endtensor" class="tsd-kind-icon">end<wbr>Tensor</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#numsegments" class="tsd-kind-icon">num<wbr>Segments</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#numsteps" class="tsd-kind-icon">num<wbr>Steps</a></li>
 							</ul>
@@ -118,6 +123,7 @@
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#tensorsteps" class="tsd-kind-icon">tensor<wbr>Steps</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#tonotesequence" class="tsd-kind-icon">to<wbr>Note<wbr>Sequence</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#totensor" class="tsd-kind-icon">to<wbr>Tensor</a></li>
 							</ul>
@@ -137,7 +143,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L134">core/data.ts:134</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L144">core/data.ts:144</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -159,7 +165,17 @@
 					<div class="tsd-signature tsd-kind-icon">NUM_<wbr>SPLITS<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L131">core/data.ts:131</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L140">core/data.ts:140</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="segmented_by_track" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> SEGMENTED_<wbr>BY_<wbr>TRACK</h3>
+					<div class="tsd-signature tsd-kind-icon">SEGMENTED_<wbr>BY_<wbr>TRACK<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L141">core/data.ts:141</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -169,7 +185,17 @@
 					<div class="tsd-signature tsd-kind-icon">depth<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L130">core/data.ts:130</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L138">core/data.ts:138</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="endtensor" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> end<wbr>Tensor</h3>
+					<div class="tsd-signature tsd-kind-icon">end<wbr>Tensor<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">tf.Tensor1D</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L139">core/data.ts:139</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -179,7 +205,7 @@
 					<div class="tsd-signature tsd-kind-icon">num<wbr>Segments<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L129">core/data.ts:129</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L137">core/data.ts:137</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -189,13 +215,36 @@
 					<div class="tsd-signature tsd-kind-icon">num<wbr>Steps<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L128">core/data.ts:128</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L136">core/data.ts:136</a></li>
 						</ul>
 					</aside>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Methods</h2>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="tensorsteps" class="tsd-anchor"></a>
+					<h3>tensor<wbr>Steps</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">tensor<wbr>Steps<span class="tsd-signature-symbol">(</span>tensor<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">tf.Tensor2D</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">tf.Scalar</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L151">core/data.ts:151</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>tensor: <span class="tsd-signature-type">tf.Tensor2D</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">tf.Scalar</span></h4>
+						</li>
+					</ul>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 					<a name="tonotesequence" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> to<wbr>Note<wbr>Sequence</h3>
@@ -206,7 +255,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L133">core/data.ts:133</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L143">core/data.ts:143</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -232,7 +281,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L132">core/data.ts:132</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L142">core/data.ts:142</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -302,13 +351,22 @@
 								<a href="_core_data_.dataconverter.html#num_splits" class="tsd-kind-icon">NUM_<wbr>SPLITS</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="_core_data_.dataconverter.html#segmented_by_track" class="tsd-kind-icon">SEGMENTED_<wbr>BY_<wbr>TRACK</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="_core_data_.dataconverter.html#depth" class="tsd-kind-icon">depth</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="_core_data_.dataconverter.html#endtensor" class="tsd-kind-icon">end<wbr>Tensor</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="_core_data_.dataconverter.html#numsegments" class="tsd-kind-icon">num<wbr>Segments</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="_core_data_.dataconverter.html#numsteps" class="tsd-kind-icon">num<wbr>Steps</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_core_data_.dataconverter.html#tensorsteps" class="tsd-kind-icon">tensor<wbr>Steps</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_core_data_.dataconverter.html#tonotesequence" class="tsd-kind-icon">to<wbr>Note<wbr>Sequence</a>
@@ -333,6 +391,9 @@
 						<a href="_core_data_.melodyconverter.html" class="tsd-kind-icon">Melody<wbr>Converter</a>
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module">
+						<a href="_core_data_.multitrackconverter.html" class="tsd-kind-icon">Multitrack<wbr>Converter</a>
+					</li>
+					<li class=" tsd-kind-class tsd-parent-kind-external-module">
 						<a href="_core_data_.trioconverter.html" class="tsd-kind-icon">Trio<wbr>Converter</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
@@ -355,6 +416,12 @@
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="../interfaces/_core_data_.melodyconverterspec.html" class="tsd-kind-icon">Melody<wbr>Converter<wbr>Spec</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="../interfaces/_core_data_.multitrackconverterargs.html" class="tsd-kind-icon">Multitrack<wbr>Converter<wbr>Args</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="../interfaces/_core_data_.multitrackconverterspec.html" class="tsd-kind-icon">Multitrack<wbr>Converter<wbr>Spec</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="../interfaces/_core_data_.trioconverterargs.html" class="tsd-kind-icon">Trio<wbr>Converter<wbr>Args</a>
