@@ -124,6 +124,8 @@
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_performance_.performance.html#getnumsteps" class="tsd-kind-icon">get<wbr>Num<wbr>Steps</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_performance_.performance.html#setnumsteps" class="tsd-kind-icon">set<wbr>Num<wbr>Steps</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_performance_.performance.html#tonotesequence" class="tsd-kind-icon">to<wbr>Note<wbr>Sequence</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_core_performance_.performance.html#fromnotesequence" class="tsd-kind-icon">from<wbr>Note<wbr>Sequence</a></li>
 							</ul>
@@ -143,7 +145,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/performance.ts#L76">core/performance.ts:76</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/performance.ts#L78">core/performance.ts:78</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -177,7 +179,7 @@
 					<div class="tsd-signature tsd-kind-icon">events<span class="tsd-signature-symbol">:</span> <a href="../modules/_core_performance_.html#performanceevent" class="tsd-signature-type">PerformanceEvent</a><span class="tsd-signature-symbol">[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/performance.ts#L70">core/performance.ts:70</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/performance.ts#L72">core/performance.ts:72</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -187,7 +189,7 @@
 					<div class="tsd-signature tsd-kind-icon">is<wbr>Drum<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/performance.ts#L76">core/performance.ts:76</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/performance.ts#L78">core/performance.ts:78</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -197,7 +199,7 @@
 					<div class="tsd-signature tsd-kind-icon">max<wbr>Shift<wbr>Steps<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/performance.ts#L72">core/performance.ts:72</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/performance.ts#L74">core/performance.ts:74</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -207,7 +209,7 @@
 					<div class="tsd-signature tsd-kind-icon">num<wbr>Velocity<wbr>Bins<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/performance.ts#L73">core/performance.ts:73</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/performance.ts#L75">core/performance.ts:75</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -217,13 +219,65 @@
 					<div class="tsd-signature tsd-kind-icon">program<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/performance.ts#L75">core/performance.ts:75</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/performance.ts#L77">core/performance.ts:77</a></li>
 						</ul>
 					</aside>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Methods</h2>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="getnumsteps" class="tsd-anchor"></a>
+					<h3>get<wbr>Num<wbr>Steps</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Num<wbr>Steps<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/performance.ts#L195">core/performance.ts:195</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Return the total number of time steps in the performance.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+							<p>The total number of steps.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="setnumsteps" class="tsd-anchor"></a>
+					<h3>set<wbr>Num<wbr>Steps</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">set<wbr>Num<wbr>Steps<span class="tsd-signature-symbol">(</span>numSteps<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/performance.ts#L207">core/performance.ts:207</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Set the total number of time steps in the performance by either adding
+									time-shift events to the end or truncating.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>numSteps: <span class="tsd-signature-type">number</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 					<a name="tonotesequence" class="tsd-anchor"></a>
 					<h3>to<wbr>Note<wbr>Sequence</h3>
@@ -234,7 +288,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/performance.ts#L188">core/performance.ts:188</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/performance.ts#L256">core/performance.ts:256</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -266,7 +320,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/performance.ts#L100">core/performance.ts:100</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/performance.ts#L102">core/performance.ts:102</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -375,6 +429,12 @@
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="_core_performance_.performance.html#program" class="tsd-kind-icon">program</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_core_performance_.performance.html#getnumsteps" class="tsd-kind-icon">get<wbr>Num<wbr>Steps</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_core_performance_.performance.html#setnumsteps" class="tsd-kind-icon">set<wbr>Num<wbr>Steps</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_core_performance_.performance.html#tonotesequence" class="tsd-kind-icon">to<wbr>Note<wbr>Sequence</a>

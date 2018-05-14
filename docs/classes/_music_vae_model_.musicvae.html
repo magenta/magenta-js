@@ -129,7 +129,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L531">music_vae/model.ts:531</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L551">music_vae/model.ts:551</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -170,7 +170,7 @@
 					<div class="tsd-signature tsd-kind-icon">initialized<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> =&nbsp;false</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L531">music_vae/model.ts:531</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L551">music_vae/model.ts:551</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -187,7 +187,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L831">music_vae/model.ts:831</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L934">music_vae/model.ts:934</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -220,7 +220,8 @@
 								<li>
 									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> stepsPerQuarter: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;4</span></h5>
 									<div class="tsd-comment tsd-typography">
-										<p>The step resolution of the resulting <code>NoteSequence</code>.</p>
+										<p>The step resolution of the resulting
+										<code>NoteSequence</code>.</p>
 									</div>
 								</li>
 							</ul>
@@ -239,7 +240,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L559">music_vae/model.ts:559</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L579">music_vae/model.ts:579</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -261,7 +262,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L784">music_vae/model.ts:784</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L876">music_vae/model.ts:876</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -301,7 +302,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L589">music_vae/model.ts:589</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L609">music_vae/model.ts:609</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -324,19 +325,19 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L752">music_vae/model.ts:752</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L772">music_vae/model.ts:772</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
 									<p>Interpolates between the input <code>NoteSequence</code>s in latent space.</p>
 								</div>
-								<p>If 2 sequences are given, a single linear interpolation is computed, with
-									the first output sequence being a reconstruction of sequence A and the
-									final output being a reconstruction of sequence B, with <code>numInterps</code>
-								total sequences.</p>
-								<p>If 4 sequences are given, bilinear interpolation is used. The results are
-									returned in row-major order for a matrix with the following layout:
+								<p>If 2 sequences are given, a single linear interpolation is computed,
+									with the first output sequence being a reconstruction of sequence A and
+									the final output being a reconstruction of sequence B, with
+								<code>numInterps</code> total sequences.</p>
+								<p>If 4 sequences are given, bilinear interpolation is used. The results
+									are returned in row-major order for a matrix with the following layout:
 									| A . . C |
 									| . . . . |
 									| . . . . |
@@ -365,8 +366,8 @@
 								<li>
 									<h5><span class="tsd-flag ts-flagOptional">Optional</span> temperature: <span class="tsd-signature-type">number</span></h5>
 									<div class="tsd-comment tsd-typography">
-										<p>(Optional) The softmax temperature to use when sampling
-										from the logits. Argmax is used if not provided.</p>
+										<p>(Optional) The softmax temperature to use when
+										sampling from the logits. Argmax is used if not provided.</p>
 									</div>
 								</li>
 								<li>
@@ -393,7 +394,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L717">music_vae/model.ts:717</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L737">music_vae/model.ts:737</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -415,7 +416,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L922">music_vae/model.ts:922</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1030">music_vae/model.ts:1030</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">

@@ -85,9 +85,9 @@
 				<p>We have made an effort to port our most useful models, but please file an issue if you think something is
 				missing, or feel free to submit a Pull Request!</p>
 				<h3 id="musicrnn">MusicRNN</h3>
-				<p><a href="./music_rnn">MusicRNN</a> implements Magenta&#39;s LSTM-based language models. These include <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/melody_rnn">MelodyRNN</a>, <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/drums_rnn">DrumsRNN</a>, <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/improv_rnn">ImprovRNN</a>, and <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/performance_rnn">PerformanceRNN</a>.</p>
+				<p><a href="https://tensorflow.github.io/magenta-js/classes/_music_vae_model_.musicvae.html">MusicRNN</a> implements Magenta&#39;s LSTM-based language models. These include <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/melody_rnn">MelodyRNN</a>, <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/drums_rnn">DrumsRNN</a>, <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/improv_rnn">ImprovRNN</a>, and <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/performance_rnn">PerformanceRNN</a>.</p>
 				<h3 id="musicvae">MusicVAE</h3>
-				<p><a href="./music_vae">MusicVAE</a> implements several configurations of Magenta&#39;s variational autoencoder model called <a href="https://g.co/musicvae">MusicVAE</a> including melody and drum &quot;loop&quot; models, 4- and 16-bar &quot;trio&quot; models, and chord-conditioned &quot;multi-track&quot; models.</p>
+				<p><a href="https://tensorflow.github.io/magenta-js/classes/_music_rnn_model_.musicrnn.html">MusicVAE</a> implements several configurations of Magenta&#39;s variational autoencoder model called <a href="https://g.co/magenta/musicvae">MusicVAE</a> including melody and drum &quot;loop&quot; models, 4- and 16-bar &quot;trio&quot; models, and chord-conditioned &quot;multi-track&quot; models.</p>
 				<h2 id="getting-started">Getting started</h2>
 				<p>There are two main ways to get MagentaMusic.js in your JavaScript project:
 					via <a href="https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_JavaScript_within_a_webpage">script tags</a> <strong>or</strong> by installing it from <a href="https://www.npmjs.com/">NPM</a>
@@ -97,7 +97,7 @@
 				<pre><code class="lang-html"><span class="hljs-tag">&lt;<span class="hljs-name">html</span>&gt;</span>
   <span class="hljs-tag">&lt;<span class="hljs-name">head</span>&gt;</span>
     <span class="hljs-comment">&lt;!-- Load @magenta/music --&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdn.jsdelivr.net/npm/@magenta/music@0.0.10"</span>&gt;</span><span class="undefined"> </span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdn.jsdelivr.net/npm/@magenta/music@1.0.0"</span>&gt;</span><span class="undefined"></span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
 
     <span class="hljs-comment">&lt;!-- Place your code in the script tag below. You can also use an external .js file --&gt;</span>
     <span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="javascript">
@@ -107,16 +107,20 @@
           <span class="hljs-string">'tfjs_checkpoints/music_vae/trio_4bar_lokl_small_q1'</span>);
       <span class="hljs-keyword">const</span> player = <span class="hljs-keyword">new</span> mm.Player();
 
-      model.initialize().then(
+      <span class="hljs-keyword">const</span> start = <span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+        <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">"start"</span>).style.display = <span class="hljs-string">"none"</span>;
+        <span class="hljs-comment">// Resume AudioContext on user action to enable audio.</span>
+        mm.Player.tone.context.resume();
+        model.initialize().then(
           <span class="hljs-comment">// Endlessly sample and play back the result.</span>
           <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">sampleAndPlay</span>(<span class="hljs-params"></span>) </span>{
             <span class="hljs-keyword">return</span> model.sample(<span class="hljs-number">1</span>)
                 .then(<span class="hljs-function">(<span class="hljs-params">samples</span>) =&gt;</span> player.start(samples[<span class="hljs-number">0</span>]))
                 .then(sampleAndPlay);
-          });
-      </span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+          })};
+    </span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
   <span class="hljs-tag">&lt;/<span class="hljs-name">head</span>&gt;</span>
-  <span class="hljs-tag">&lt;<span class="hljs-name">body</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">body</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">body</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"start"</span> <span class="hljs-attr">onclick</span>=<span class="hljs-string">"start()"</span>&gt;</span>Start<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">body</span>&gt;</span>
 <span class="hljs-tag">&lt;/<span class="hljs-name">html</span>&gt;</span>
 </code></pre>
 				<p>Open up that html file in your browser (or <a href="https://codepen.io/adarob/pen/gzwJZL/">click here</a> for a hosted version)
