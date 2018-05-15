@@ -32,7 +32,7 @@
   },
   "scripts": {
     "prepublish": "yarn lint && yarn test && yarn build && yarn doc && yarn bundle",
-    "build": "tsc",
+    "build": "tsc && cp src/protobuf/proto.* es5/protobuf",
     "bundle": "browserify --standalone mm src/index.ts -p [tsify] > dist/magentamusic.js",
     "lint": "tslint -c ../tslint.json -p . -t verbose",
     "test": "ts-node node_modules/tape/bin/tape src/**/*_test.ts",
