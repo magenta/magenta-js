@@ -26,6 +26,10 @@ const MEL_CHECKPOINT = `${CHECKPOINTS_DIR}basic_rnn`;
 const DRUMS_CHECKPOINT = `${CHECKPOINTS_DIR}drum_kit_rnn`;
 const IMPROV_CHECKPOINT = `${CHECKPOINTS_DIR}chord_pitches_improv`;
 
+const SOUNDFONT_URL =
+    // tslint:disable-next-line:max-line-length
+    'https://storage.googleapis.com/download.magenta.tensorflow.org/soundfonts_js/sgm_v85_piano_drums';
+
 const MELODY_NS: mm.INoteSequence = {
   ticksPerQuarter: 220,
   totalTime: 1.5,
@@ -144,9 +148,13 @@ function writeNoteSeqs(elementId: string, seqs: mm.INoteSequence[]) {
 }
 
 function createPlayer(seq: mm.INoteSequence) {
-  const player = new mm.Player();
+  const player = new mm.GMPlayer(SOUNDFONT_URL);
   const button = document.createElement('button');
   button.textContent = 'Play';
+  button.disabled = true;
+  player.initialize()
+      .then(() => player.loadSamples(seq))
+      .then(() => button.disabled = false);
   button.addEventListener('click', () => {
     if (player.isPlaying()) {
       player.stop();
