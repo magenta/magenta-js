@@ -132,7 +132,7 @@ export function sequenceProtoToMidi(ns: INoteSequence) {
     tracks: [] as Array<{}>
   };
 
-  const tracks = new Map<number, Array<NoteSequence.INote>>();
+  const tracks = new Map<number, NoteSequence.INote[]>();
   for (const note of ns.notes) {
     const instrument = note.instrument ? note.instrument : 0;
     if (!tracks.has(instrument)) {
@@ -164,22 +164,15 @@ export function sequenceProtoToMidi(ns: INoteSequence) {
           constants.DEFAULT_VELOCITY :
           note.velocity;
       return {
-        midi: note.pitch, time: note.startTime,
-            duration: note.endTime - note.startTime,
-            velocity: (velocity as number + 1) / constants.MIDI_VELOCITIES
-      }
+        midi: note.pitch,
+        time: note.startTime,
+        duration: note.endTime - note.startTime,
+        velocity: (velocity as number + 1) / constants.MIDI_VELOCITIES
+      };
     });
 
     json['tracks'].push(track);
   }
 
-  return midiconvert.fromJSON(json).encode();
-}
-
-export function downloadMidi(midi: string) {
-  const buffer = new Uint8Array(midi.length)
-  for (let i = 0; i < midi.length; i++) {
-    buffer[i] = midi.charCodeAt(i)
-  }
-  return buffer
+  return midiconvert.fromJSON(json).toArray();
 }

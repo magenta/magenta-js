@@ -151,11 +151,20 @@ test('Parse Simple MIDI', (t: test.Test) => {
 
   t.deepEqual(ns, simpleNs);
 
-  const nsRoundTrip =
-      midi_io.midiToSequenceProto(midi_io.sequenceProtoToMidi(ns));
+  const nsRoundTrip = midi_io.midiToSequenceProto(
+      String.fromCharCode.apply(null, midi_io.sequenceProtoToMidi(ns)));
 
   t.deepEqual(nsRoundTrip, simpleNs);
 
+  t.end();
+});
+
+test('Create Simple MIDI File', (t: test.Test) => {
+  const midiFile = midi_io.sequenceProtoToMidi(simpleNs);
+
+  t.deepEqual(
+      midi_io.midiToSequenceProto(String.fromCharCode.apply(null, midiFile)),
+      simpleNs);
   t.end();
 });
 
@@ -169,17 +178,16 @@ test('Write MIDI Using Defaults', (t: test.Test) => {
     n.isDrum = undefined;
     n.instrument = undefined;
     n.program = undefined;
-  })
-
+  });
 
   const expectedNs = sequences.clone(simpleNs);
   expectedNs.notes.forEach(n => {
     n.velocity = constants.DEFAULT_VELOCITY;
     n.program = constants.DEFAULT_PROGRAM;
-  })
+  });
 
-  const nsRoundTrip =
-      midi_io.midiToSequenceProto(midi_io.sequenceProtoToMidi(strippedNs));
+  const nsRoundTrip = midi_io.midiToSequenceProto(
+      String.fromCharCode.apply(null, midi_io.sequenceProtoToMidi(strippedNs)));
 
   t.deepEqual(nsRoundTrip, expectedNs);
 
