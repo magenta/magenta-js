@@ -153,7 +153,8 @@ export function sequenceProtoToMidi(ns: INoteSequence) {
       notes: [] as Array<{}>,
       isPercussion: isNullOrUndefined(notes[0].isDrum) ? false :
                                                          notes[0].isDrum,
-      channelNumber: i,
+      channelNumber: notes[0].isDrum ? constants.DRUM_CHANNEL :
+                                       constants.DEFAULT_CHANNEL,
       instrumentNumber: isNullOrUndefined(notes[0].program) ?
           constants.DEFAULT_PROGRAM :
           notes[0].program

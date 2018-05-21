@@ -33,6 +33,9 @@ export const DEFAULT_STEPS_PER_SECOND = 100;
 export const DEFAULT_VELOCITY = 80;
 export const DEFAULT_PROGRAM = 0;
 export const DEFAULT_TICKS_PER_QUARTER = 220;
+export const DEFAULT_CHANNEL = 0;
+export const DRUM_CHANNEL = 9;
+
 
 // Velocity-related constants.
 export const MIN_MIDI_VELOCITY = 0;
