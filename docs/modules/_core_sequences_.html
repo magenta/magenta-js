@@ -118,6 +118,7 @@
 								<li class="tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported"><a href="_core_sequences_.html#ispowerof2" class="tsd-kind-icon">is<wbr>Power<wbr>Of2</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#isquantizedsequence" class="tsd-kind-icon">is<wbr>Quantized<wbr>Sequence</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#isrelativequantizedsequence" class="tsd-kind-icon">is<wbr>Relative<wbr>Quantized<wbr>Sequence</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#mergeinstruments" class="tsd-kind-icon">merge<wbr>Instruments</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#quantizenotesequence" class="tsd-kind-icon">quantize<wbr>Note<wbr>Sequence</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported"><a href="_core_sequences_.html#quantizenotesandevents" class="tsd-kind-icon">quantize<wbr>Notes<wbr>And<wbr>Events</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#quantizetostep" class="tsd-kind-icon">quantize<wbr>ToStep</a></li>
@@ -410,6 +411,42 @@
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
+					<a name="mergeinstruments" class="tsd-anchor"></a>
+					<h3>merge<wbr>Instruments</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
+						<li class="tsd-signature tsd-kind-icon">merge<wbr>Instruments<span class="tsd-signature-symbol">(</span>ns<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">NoteSequence</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L408">core/sequences.ts:408</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Assign instruments to the notes, pitch bends, and control changes of a
+										<code>NoteSequence</code> based on program numbers and drum status. All drums will be
+										assigned instrument 9 (and program 0). All non-drum events with the same
+									program number will be assigned to a single instrument.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>ns: <span class="tsd-signature-type">INoteSequence</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The <code>NoteSequence</code> for which to merge instruments. Will not be
+										modified.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">NoteSequence</span></h4>
+							<p>A copy of <code>ns</code> with merged instruments.</p>
 						</li>
 					</ul>
 				</section>
@@ -726,6 +763,9 @@
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
 						<a href="_core_sequences_.html#isrelativequantizedsequence" class="tsd-kind-icon">is<wbr>Relative<wbr>Quantized<wbr>Sequence</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="_core_sequences_.html#mergeinstruments" class="tsd-kind-icon">merge<wbr>Instruments</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
 						<a href="_core_sequences_.html#quantizenotesequence" class="tsd-kind-icon">quantize<wbr>Note<wbr>Sequence</a>

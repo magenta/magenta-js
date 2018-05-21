@@ -22,10 +22,12 @@
  * Imports
  */
 import * as midiconvert from 'midiconvert';
+import {isNullOrUndefined} from 'util';
 
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import * as constants from './constants';
+import * as sequences from './sequences';
 
 export class MidiConversionError extends Error {
   constructor(message?: string) {
@@ -104,59 +106,89 @@ export function midiToSequenceProto(midi: string): NoteSequence {
   return ns;
 }
 
+/**
+ * Convert a `NoteSequence` to a MIDI file encoded as a byte array.
+ *
+ * If quantized, the `NoteSequence` is first unquantized.
+ *
+ * @param ns The `NoteSequence` to convert to MIDI.
+ * @param qpm The tempo to use. If not provided, the tempo in `ns` is used,
+ * or the default of 120 if it is not specified in the sequence either.
+ * @returns a new non-quantized `NoteSequence` wih time in seconds.
+ */
 export function sequenceProtoToMidi(ns: INoteSequence) {
-  if (!ns.tempos || ns.tempos.length !== 1 || ns.tempos[0].time !== 0) {
+  if (sequences.isQuantizedSequence(ns)) {
+    ns = sequences.unquantizeSequence(ns);
+  }
+
+  if (!ns.tempos || ns.tempos.length === 0) {
+    ns.tempos = [{time: 0, qpm: constants.DEFAULT_QUARTERS_PER_MINUTE}];
+  }
+  if (!ns.timeSignatures || ns.timeSignatures.length === 0) {
+    ns.timeSignatures = [{time: 0, numerator: 4, denominator: 4}];
+  }
+
+  if (ns.tempos.length !== 1 || ns.tempos[0].time !== 0) {
     throw new MidiConversionError(
         'NoteSequence must have exactly 1 tempo at time 0');
   }
-  if (!ns.timeSignatures || ns.timeSignatures.length !== 1 ||
-      ns.timeSignatures[0].time !== 0) {
+  if (ns.timeSignatures.length !== 1 || ns.timeSignatures[0].time !== 0) {
     throw new MidiConversionError(
         'NoteSequence must have exactly 1 time signature at time 0');
   }
   const json = {
     header: {
       bpm: ns.tempos[0].qpm,
-      PPQ: ns.ticksPerQuarter,
+      PPQ: ns.ticksPerQuarter ? ns.ticksPerQuarter :
+                                constants.DEFAULT_TICKS_PER_QUARTER,
       timeSignature:
           [ns.timeSignatures[0].numerator, ns.timeSignatures[0].denominator]
     },
     tracks: [] as Array<{}>
   };
-  const tracks: {[instrument: number]: NoteSequence.INote[]} = {};
+
+  const tracks = new Map<number, NoteSequence.INote[]>();
   for (const note of ns.notes) {
-    const track = note.instrument;
-    if (!(track in tracks)) {
-      tracks[track] = [];
+    const instrument = note.instrument ? note.instrument : 0;
+    if (!tracks.has(instrument)) {
+      tracks.set(instrument, []);
     }
-    tracks[track].push(note);
+    tracks.get(instrument).push(note);
   }
-  const instruments = Object.keys(tracks).map(x => parseInt(x, 10)).sort();
+  const instruments = Array.from(tracks.keys()).sort();
   for (let i = 0; i < instruments.length; i++) {
     if (i !== instruments[i]) {
       throw new MidiConversionError(
           'Instrument list must be continuous and start at 0');
     }
 
+    const notes = tracks.get(i);
     const track = {
       id: i,
       notes: [] as Array<{}>,
-      isPercussion: tracks[i][0].isDrum,
-      channelNumber: i,
-      instrumentNumber: tracks[i][0].program
+      isPercussion: isNullOrUndefined(notes[0].isDrum) ? false :
+                                                         notes[0].isDrum,
+      channelNumber: notes[0].isDrum ? constants.DRUM_CHANNEL :
+                                       constants.DEFAULT_CHANNEL,
+      instrumentNumber: isNullOrUndefined(notes[0].program) ?
+          constants.DEFAULT_PROGRAM :
+          notes[0].program
     };
 
-    for (const note of tracks[i]) {
-      track.notes.push({
+    track.notes = notes.map(note => {
+      const velocity = isNullOrUndefined(note.velocity) ?
+          constants.DEFAULT_VELOCITY :
+          note.velocity;
+      return {
         midi: note.pitch,
         time: note.startTime,
         duration: note.endTime - note.startTime,
-        velocity: (note.velocity as number + 1) / constants.MIDI_VELOCITIES
-      });
-    }
+        velocity: (velocity as number + 1) / constants.MIDI_VELOCITIES
+      };
+    });
 
     json['tracks'].push(track);
   }
 
-  return midiconvert.fromJSON(json).encode();
+  return new Uint8Array(midiconvert.fromJSON(json).toArray());
 }
