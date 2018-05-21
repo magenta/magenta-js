@@ -118,7 +118,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/midi_io.ts#L38">core/midi_io.ts:38</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/midi_io.ts#L39">core/midi_io.ts:39</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -141,16 +141,26 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/midi_io.ts#L108">core/midi_io.ts:108</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/midi_io.ts#L119">core/midi_io.ts:119</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Convert a <code>NoteSequence</code> to a MIDI file encoded as a byte array.</p>
+								</div>
+								<p>If quantized, the <code>NoteSequence</code> is first unquantized.</p>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>ns: <span class="tsd-signature-type">INoteSequence</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The <code>NoteSequence</code> to convert to MIDI.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Uint8Array</span></h4>
+							<p>a new non-quantized <code>NoteSequence</code> wih time in seconds.</p>
 						</li>
 					</ul>
 				</section>

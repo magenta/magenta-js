@@ -36,7 +36,6 @@ export const DEFAULT_TICKS_PER_QUARTER = 220;
 export const DEFAULT_CHANNEL = 0;
 export const DRUM_CHANNEL = 9;
 
-
 // Velocity-related constants.
 export const MIN_MIDI_VELOCITY = 0;
 export const MAX_MIDI_VELOCITY = 127;

@@ -27,6 +27,7 @@ import {isNullOrUndefined} from 'util';
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import * as constants from './constants';
+import * as sequences from './sequences';
 
 export class MidiConversionError extends Error {
   constructor(message?: string) {
@@ -105,7 +106,21 @@ export function midiToSequenceProto(midi: string): NoteSequence {
   return ns;
 }
 
+/**
+ * Convert a `NoteSequence` to a MIDI file encoded as a byte array.
+ *
+ * If quantized, the `NoteSequence` is first unquantized.
+ *
+ * @param ns The `NoteSequence` to convert to MIDI.
+ * @param qpm The tempo to use. If not provided, the tempo in `ns` is used,
+ * or the default of 120 if it is not specified in the sequence either.
+ * @returns a new non-quantized `NoteSequence` wih time in seconds.
+ */
 export function sequenceProtoToMidi(ns: INoteSequence) {
+  if (sequences.isQuantizedSequence(ns)) {
+    ns = sequences.unquantizeSequence(ns);
+  }
+
   if (!ns.tempos || ns.tempos.length === 0) {
     ns.tempos = [{time: 0, qpm: constants.DEFAULT_QUARTERS_PER_MINUTE}];
   }
@@ -175,5 +190,5 @@ export function sequenceProtoToMidi(ns: INoteSequence) {
     json['tracks'].push(track);
   }
 
-  return midiconvert.fromJSON(json).toArray();
+  return new Uint8Array(midiconvert.fromJSON(json).toArray());
 }
