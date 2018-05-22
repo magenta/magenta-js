@@ -44,6 +44,8 @@ export interface SampleInfo {
  * @param durationSeconds Length of each sample in seconds, not including the
  * release.
  * @param releaseSeconds Length of the release for each sample in seconds.
+ * @param percussive If true, the sample is considered percussive and will
+ * always be played in its entirety.
  * @param velocities (Optional) The set of velocities sampled.
  */
 export interface InstrumentSpec {
@@ -52,6 +54,7 @@ export interface InstrumentSpec {
   maxPitch: number;
   durationSeconds: number;
   releaseSeconds: number;
+  percussive: boolean;
   velocities?: number[];
 }
 
@@ -60,7 +63,7 @@ export interface InstrumentSpec {
  * the `loadSamples` method before any notes can be played.
  */
 export class Instrument {
-  private FADE_OUT_TIME = 0.1;
+  private FADE_SECONDS = 0.1;
 
   private readonly baseURL: string;
   // tslint:disable-next-line:no-any
@@ -73,6 +76,7 @@ export class Instrument {
   maxPitch: number;
   durationSeconds: number;
   releaseSeconds: number;
+  percussive: boolean;
   velocities?: number[];
 
   /**
@@ -99,6 +103,7 @@ export class Instrument {
           this.maxPitch = spec.maxPitch;
           this.durationSeconds = spec.durationSeconds;
           this.releaseSeconds = spec.releaseSeconds;
+          this.percussive = spec.percussive;
           this.velocities = spec.velocities;
           this.initialized = true;
         });
@@ -223,10 +228,16 @@ export class Instrument {
           duration} > ${this.durationSeconds}`);
     }
 
-    // TODO (iansimon): handle note release
     const source = new Tone.BufferSource(buffer).toMaster();
     source.start(startTime, 0, undefined, 1, 0);
-    source.stop(startTime + duration + this.FADE_OUT_TIME, this.FADE_OUT_TIME);
+    if (!this.percussive && duration < this.durationSeconds) {
+      // Fade to the note release.
+      const releaseSource = new Tone.BufferSource(buffer).toMaster();
+      source.stop(startTime + duration + this.FADE_SECONDS, this.FADE_SECONDS);
+      releaseSource.start(
+          startTime + duration, this.durationSeconds, undefined, 1,
+          this.FADE_SECONDS);
+    }
   }
 }
 
