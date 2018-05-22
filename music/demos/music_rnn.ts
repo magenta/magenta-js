@@ -28,7 +28,7 @@ const IMPROV_CHECKPOINT = `${CHECKPOINTS_DIR}chord_pitches_improv`;
 
 const SOUNDFONT_URL =
     // tslint:disable-next-line:max-line-length
-    'https://storage.googleapis.com/download.magenta.tensorflow.org/soundfonts_js/sgm_v85_piano_drums';
+    'https://storage.googleapis.com/download.magenta.tensorflow.org/soundfonts_js/sgm_v85';
 
 const MELODY_NS: mm.INoteSequence = {
   ticksPerQuarter: 220,
