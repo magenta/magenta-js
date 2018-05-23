@@ -148,7 +148,7 @@ function writeNoteSeqs(elementId: string, seqs: mm.INoteSequence[]) {
 }
 
 function createPlayer(seq: mm.INoteSequence) {
-  const player = new mm.GMPlayer(SOUNDFONT_URL);
+  const player = new mm.SoundFontPlayer(SOUNDFONT_URL);
   const button = document.createElement('button');
   button.textContent = 'Play';
   button.disabled = true;

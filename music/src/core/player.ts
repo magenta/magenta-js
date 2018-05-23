@@ -232,7 +232,7 @@ export class Player extends BasePlayer {
 /**
  * A `NoteSequence` player based on Tone.js that uses SoundFont samples.
  */
-export class GMPlayer extends BasePlayer {
+export class SoundFontPlayer extends BasePlayer {
   private soundfont: soundfont.SoundFont;
 
   constructor(soundFontURL: string) {
