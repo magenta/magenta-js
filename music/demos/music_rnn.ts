@@ -26,6 +26,8 @@ const MEL_CHECKPOINT = `${CHECKPOINTS_DIR}basic_rnn`;
 const DRUMS_CHECKPOINT = `${CHECKPOINTS_DIR}drum_kit_rnn`;
 const IMPROV_CHECKPOINT = `${CHECKPOINTS_DIR}chord_pitches_improv`;
 
+// Samples from Shan's SGM SoundFont:
+// http://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01
 const SOUNDFONT_URL =
     // tslint:disable-next-line:max-line-length
     'https://storage.googleapis.com/download.magenta.tensorflow.org/soundfonts_js/sgm_v85';
