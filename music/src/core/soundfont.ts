@@ -182,14 +182,16 @@ export class Instrument {
                  }))
             .filter((nameAndURL) => !this.buffers.has(nameAndURL.name));
 
-    sampleNamesAndURLs.forEach(
-        (nameAndURL) => this.buffers.add(nameAndURL.name, nameAndURL.url));
+    if (sampleNamesAndURLs.length > 0) {
+      sampleNamesAndURLs.forEach(
+          (nameAndURL) => this.buffers.add(nameAndURL.name, nameAndURL.url));
 
-    await new Promise(resolve => Tone.Buffer.on('load', resolve));
+      await new Promise(resolve => Tone.Buffer.on('load', resolve));
 
-    sampleNamesAndURLs.forEach(
-        (nameAndURL) =>
-            console.log(`Loaded ${nameAndURL.name} for ${this.name}.`));
+      sampleNamesAndURLs.forEach(
+          (nameAndURL) =>
+              console.log(`Loaded ${nameAndURL.name} for ${this.name}.`));
+    }
   }
 
   /**

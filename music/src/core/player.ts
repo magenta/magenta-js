@@ -248,6 +248,10 @@ export class SoundFontPlayer extends BasePlayer {
                                                    })));
   }
 
+  start(seq: INoteSequence, qpm?: number): Promise<void> {
+    return this.loadSamples(seq).then(() => super.start(seq, qpm));
+  }
+
   protected playNote(time: number, note: NoteSequence.INote) {
     this.soundfont.playNote(
         note.pitch, note.velocity, time, note.endTime - note.startTime,
