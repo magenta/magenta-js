@@ -228,8 +228,23 @@ export class Player extends BasePlayer {
 
 /**
  * A `NoteSequence` player based on Tone.js that uses SoundFont samples. The
- * `loadSamples` method must be called before `start` so that the necessary
- * samples are available to play a particular `NoteSequence`.
+ * `loadSamples` method may be called before `start` so that the samples
+ * necessary for playing the sequence will be loaded and playing will begin
+ * immediately upon `start`.
+ *
+ * Example (explicitly loading samples):
+ *
+ *   `player.loadSamples(seq).then(() => player.start(seq))`
+ *
+ * Explicitly loads samples, so that playing starts immediately when `start` is
+ * called.
+ *
+ * Example (implicitly loading samples):
+ *
+ *   `player.start(seq)`
+ *
+ * If the samples for `seq` have not already been loaded, playing will only
+ * start after all necessary samples have been loaded.
  */
 export class SoundFontPlayer extends BasePlayer {
   private soundfont: soundfont.SoundFont;
