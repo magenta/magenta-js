@@ -227,7 +227,9 @@ export class Player extends BasePlayer {
 }
 
 /**
- * A `NoteSequence` player based on Tone.js that uses SoundFont samples.
+ * A `NoteSequence` player based on Tone.js that uses SoundFont samples. The
+ * `loadSamples` method must be called before `start` so that the necessary
+ * samples are available to play a particular `NoteSequence`.
  */
 export class SoundFontPlayer extends BasePlayer {
   private soundfont: soundfont.SoundFont;
@@ -235,10 +237,6 @@ export class SoundFontPlayer extends BasePlayer {
   constructor(soundFontURL: string) {
     super();
     this.soundfont = new soundfont.SoundFont(soundFontURL);
-  }
-
-  async initialize() {
-    await this.soundfont.initialize();
   }
 
   async loadSamples(seq: INoteSequence): Promise<void> {

@@ -265,9 +265,7 @@ function createPlayer(seq: mm.INoteSequence) {
   const button = document.createElement('button');
   button.textContent = 'Play';
   button.disabled = true;
-  player.initialize()
-      .then(() => player.loadSamples(seq))
-      .then(() => button.disabled = false);
+  player.loadSamples(seq).then(() => button.disabled = false);
   button.addEventListener('click', () => {
     if (player.isPlaying()) {
       player.stop();
