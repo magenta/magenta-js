@@ -32,8 +32,7 @@ import * as soundfont from './soundfont';
  * Abstract base class for a `NoteSequence` player based on Tone.js.
  */
 export abstract class BasePlayer {
-  // tslint:disable-next-line:no-any
-  private currentPart: any;
+  private currentPart: any;  // tslint:disable-line:no-any
   private scheduledStop: number;
 
   protected abstract playNote(time: number, note: NoteSequence.INote): void;
@@ -194,15 +193,13 @@ class DrumKit {
  * A `NoteSequence` player based on Tone.js.
  */
 export class Player extends BasePlayer {
-  // tslint:disable-next-line:no-any
-  private synths = new Map<number, any>();
+  private synths = new Map<number, any>();  // tslint:disable-line:no-any
   private drumKit = DrumKit.getInstance();
 
   /**
    * The Tone module being used.
    */
-  // tslint:disable-next-line:no-any
-  static readonly tone = Tone;
+  static readonly tone = Tone;  // tslint:disable-line:no-any
 
   protected playNote(time: number, note: NoteSequence.INote) {
     if (note.isDrum) {

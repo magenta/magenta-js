@@ -35,7 +35,7 @@ export interface SampleInfo {
  * Specification for a sampled instrument. Samples must exist for all pitches
  * between `minPitch` and `maxPitch` at all velocities in `velocities` (unless
  * `velocities` is undefined, in which case only a single sample exists for each
- * pitch. Each sample consists of a note sustained for `durationSeconds` then
+ * pitch). Each sample consists of a note sustained for `durationSeconds` then
  * released, ending after `releaseSeconds` additional seconds.
  *
  * @param name Name of the instrument.
@@ -66,8 +66,7 @@ export class Instrument {
   private FADE_SECONDS = 0.1;
 
   private readonly baseURL: string;
-  // tslint:disable-next-line:no-any
-  private readonly buffers: any;
+  private readonly buffers: any;  // tslint:disable-line:no-any
 
   private initialized: boolean;
 
