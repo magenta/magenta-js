@@ -26,6 +26,12 @@ const MEL_CHECKPOINT = `${CHECKPOINTS_DIR}basic_rnn`;
 const DRUMS_CHECKPOINT = `${CHECKPOINTS_DIR}drum_kit_rnn`;
 const IMPROV_CHECKPOINT = `${CHECKPOINTS_DIR}chord_pitches_improv`;
 
+// Samples from Shan's SGM SoundFont:
+// http://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01
+const SOUNDFONT_URL =
+    // tslint:disable-next-line:max-line-length
+    'https://storage.googleapis.com/download.magenta.tensorflow.org/soundfonts_js/sgm_v85';
+
 const MELODY_NS: mm.INoteSequence = {
   ticksPerQuarter: 220,
   totalTime: 1.5,
@@ -144,9 +150,11 @@ function writeNoteSeqs(elementId: string, seqs: mm.INoteSequence[]) {
 }
 
 function createPlayer(seq: mm.INoteSequence) {
-  const player = new mm.Player();
+  const player = new mm.SoundFontPlayer(SOUNDFONT_URL);
   const button = document.createElement('button');
   button.textContent = 'Play';
+  button.disabled = true;
+  player.loadSamples(seq).then(() => button.disabled = false);
   button.addEventListener('click', () => {
     if (player.isPlaying()) {
       player.stop();

@@ -26,6 +26,70 @@ import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import {sequences} from '.';
 import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
+import * as soundfont from './soundfont';
+
+/**
+ * Abstract base class for a `NoteSequence` player based on Tone.js.
+ */
+export abstract class BasePlayer {
+  private currentPart: any;  // tslint:disable-line:no-any
+  private scheduledStop: number;
+
+  protected abstract playNote(time: number, note: NoteSequence.INote): void;
+
+  constructor() {
+    // Set a bpm of 60 to make dealing with timing easier. We will use seconds
+    // instead of transport time since it can't go beyond 16th notes.
+    Tone.Transport.bpm.value = 60;
+  }
+
+  /**
+   * Starts playing a `NoteSequence` (either quantized or unquantized), and
+   * returns a Promise that resolves when it is done playing.
+   * @param seq The `NoteSequence` to play.
+   * @param qpm (Optional) If specified, will play back at this qpm. If not
+   * specified, will use either the qpm specified in the sequence or the
+   * default of 120. Only valid for quantized sequences.
+   * @returns a Promise that resolves when playback is complete.
+   */
+  start(seq: INoteSequence, qpm?: number): Promise<void> {
+    if (sequences.isQuantizedSequence(seq)) {
+      seq = sequences.unquantizeSequence(seq, qpm);
+    } else if (qpm) {
+      throw new Error('Cannot specify a `qpm` for a non-quantized sequence.');
+    }
+
+    this.currentPart = new Tone.Part(
+        (t: number, n: NoteSequence.INote) => this.playNote(t, n),
+        seq.notes.map(n => [n.startTime, n]));
+    this.currentPart.start();
+    if (Tone.Transport.state !== 'started') {
+      Tone.Transport.start();
+    }
+    return new Promise(resolve => {
+      this.scheduledStop = Tone.Transport.schedule(() => {
+        this.stop();
+        resolve();
+      }, `+${seq.totalTime}`);
+    });
+  }
+
+  /**
+   * Stop playing the currently playing sequence right away.
+   */
+  stop() {
+    if (this.currentPart) {
+      this.currentPart.stop();
+      this.currentPart = null;
+    }
+    Tone.Transport.clear(this.scheduledStop);
+    this.scheduledStop = null;
+  }
+
+  isPlaying() {
+    return !!this.currentPart;
+  }
+}
 
 /**
  * A singleton drum kit synthesizer with 9 pitch classed defined by
@@ -128,57 +192,16 @@ class DrumKit {
 /**
  * A `NoteSequence` player based on Tone.js.
  */
-export class Player {
-  /* tslint:disable:no-any */
-  private currentPart: any;
-  private scheduledStop: number;
-  private synths = new Map<number, any>();
+export class Player extends BasePlayer {
+  private synths = new Map<number, any>();  // tslint:disable-line:no-any
   private drumKit = DrumKit.getInstance();
 
   /**
    * The Tone module being used.
    */
-  static readonly tone = Tone;
-  /* tslint:enable */
+  static readonly tone = Tone;  // tslint:disable-line:no-any
 
-  constructor() {
-    // Set a bpm of 60 to make dealing with timing easier. We will use seconds
-    // instead of transport time since it can't go beyond 16th notes.
-    Tone.Transport.bpm.value = 60;
-  }
-
-  /**
-   * Starts playing a `NoteSequence` (either quantized or unquantized), and
-   * returns a Promise that resolves when it is done playing.
-   * @param seq The `NoteSequence` to play.
-   * @param qpm (Optional) If specified, will play back at this qpm. If not
-   * specified, will use either the qpm specified in the sequence or the
-   * default of 120. Only valid for quantized sequences.
-   * @returns a Promise that resolves when playback is complete.
-   */
-  start(seq: INoteSequence, qpm?: number): Promise<void> {
-    if (sequences.isQuantizedSequence(seq)) {
-      seq = sequences.unquantizeSequence(seq, qpm);
-    } else if (qpm) {
-      throw new Error('Cannot specify a `qpm` for a non-quantized sequence.');
-    }
-
-    this.currentPart = new Tone.Part(
-        (t: number, n: NoteSequence.INote) => this.playNote(t, n),
-        seq.notes.map(n => [n.startTime, n]));
-    this.currentPart.start();
-    if (Tone.Transport.state !== 'started') {
-      Tone.Transport.start();
-    }
-    return new Promise(resolve => {
-      this.scheduledStop = Tone.Transport.schedule(() => {
-        this.stop();
-        resolve();
-      }, `+${seq.totalTime}`);
-    });
-  }
-
-  private playNote(time: number, note: NoteSequence.INote) {
+  protected playNote(time: number, note: NoteSequence.INote) {
     if (note.isDrum) {
       this.drumKit.playNote(note.pitch, time);
     } else {
@@ -201,20 +224,52 @@ export class Player {
     }
     return this.synths.get(instrument);
   }
+}
 
-  /**
-   * Stop playing the currently playing sequence right away.
-   */
-  stop() {
-    if (this.currentPart) {
-      this.currentPart.stop();
-      this.currentPart = null;
-    }
-    Tone.Transport.clear(this.scheduledStop);
-    this.scheduledStop = null;
+/**
+ * A `NoteSequence` player based on Tone.js that uses SoundFont samples. The
+ * `loadSamples` method may be called before `start` so that the samples
+ * necessary for playing the sequence will be loaded and playing will begin
+ * immediately upon `start`.
+ *
+ * Example (explicitly loading samples):
+ *
+ *   `player.loadSamples(seq).then(() => player.start(seq))`
+ *
+ * Explicitly loads samples, so that playing starts immediately when `start` is
+ * called.
+ *
+ * Example (implicitly loading samples):
+ *
+ *   `player.start(seq)`
+ *
+ * If the samples for `seq` have not already been loaded, playing will only
+ * start after all necessary samples have been loaded.
+ */
+export class SoundFontPlayer extends BasePlayer {
+  private soundfont: soundfont.SoundFont;
+
+  constructor(soundFontURL: string) {
+    super();
+    this.soundfont = new soundfont.SoundFont(soundFontURL);
   }
 
-  isPlaying() {
-    return !!this.currentPart;
+  async loadSamples(seq: INoteSequence): Promise<void> {
+    await this.soundfont.loadSamples(seq.notes.map((note) => ({
+                                                     pitch: note.pitch,
+                                                     velocity: note.velocity,
+                                                     program: note.program,
+                                                     isDrum: note.isDrum
+                                                   })));
+  }
+
+  start(seq: INoteSequence, qpm?: number): Promise<void> {
+    return this.loadSamples(seq).then(() => super.start(seq, qpm));
+  }
+
+  protected playNote(time: number, note: NoteSequence.INote) {
+    this.soundfont.playNote(
+        note.pitch, note.velocity, time, note.endTime - note.startTime,
+        note.program, note.isDrum);
   }
 }

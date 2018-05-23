@@ -32,6 +32,12 @@ const TRIO_CKPT = `${CHECKPOINTS_DIR}trio_4bar_lokl_small_q1`;
 const MULTITRACK_CKPT = `${CHECKPOINTS_DIR}multitrack`;
 const MULTITRACK_CHORDS_CKPT = `${CHECKPOINTS_DIR}multitrack_chords`;
 
+// Samples from Shan's SGM SoundFont:
+// http://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01
+const SOUNDFONT_URL =
+    // tslint:disable-next-line:max-line-length
+    'https://storage.googleapis.com/download.magenta.tensorflow.org/soundfonts_js/sgm_v85';
+
 // TODO(adarob): Switch to magenta/core function once implemented.
 function concatNoteSequences(
     seqs: mm.INoteSequence[], individualDuration: number) {
@@ -126,49 +132,49 @@ DRUM_SEQS.map(s => s.notes.map(n => {
 
 const MEL_A_QUARTERS: mm.INoteSequence = {
   notes: [
-    {pitch: 69, quantizedStartStep: 0, quantizedEndStep: 4},
-    {pitch: 69, quantizedStartStep: 4, quantizedEndStep: 8},
-    {pitch: 69, quantizedStartStep: 8, quantizedEndStep: 12},
-    {pitch: 69, quantizedStartStep: 12, quantizedEndStep: 16},
-    {pitch: 69, quantizedStartStep: 16, quantizedEndStep: 20},
-    {pitch: 69, quantizedStartStep: 20, quantizedEndStep: 24},
-    {pitch: 69, quantizedStartStep: 24, quantizedEndStep: 28},
-    {pitch: 69, quantizedStartStep: 28, quantizedEndStep: 32},
+    {pitch: 69, quantizedStartStep: 0, quantizedEndStep: 4, program: 0},
+    {pitch: 69, quantizedStartStep: 4, quantizedEndStep: 8, program: 0},
+    {pitch: 69, quantizedStartStep: 8, quantizedEndStep: 12, program: 0},
+    {pitch: 69, quantizedStartStep: 12, quantizedEndStep: 16, program: 0},
+    {pitch: 69, quantizedStartStep: 16, quantizedEndStep: 20, program: 0},
+    {pitch: 69, quantizedStartStep: 20, quantizedEndStep: 24, program: 0},
+    {pitch: 69, quantizedStartStep: 24, quantizedEndStep: 28, program: 0},
+    {pitch: 69, quantizedStartStep: 28, quantizedEndStep: 32, program: 0},
   ],
   quantizationInfo: {stepsPerQuarter: 4}
 };
 
 const MEL_TEAPOT: mm.INoteSequence = {
   notes: [
-    {pitch: 69, quantizedStartStep: 0, quantizedEndStep: 2},
-    {pitch: 71, quantizedStartStep: 2, quantizedEndStep: 4},
-    {pitch: 73, quantizedStartStep: 4, quantizedEndStep: 6},
-    {pitch: 74, quantizedStartStep: 6, quantizedEndStep: 8},
-    {pitch: 76, quantizedStartStep: 8, quantizedEndStep: 10},
-    {pitch: 81, quantizedStartStep: 12, quantizedEndStep: 16},
-    {pitch: 78, quantizedStartStep: 16, quantizedEndStep: 20},
-    {pitch: 81, quantizedStartStep: 20, quantizedEndStep: 24},
-    {pitch: 76, quantizedStartStep: 24, quantizedEndStep: 32}
+    {pitch: 69, quantizedStartStep: 0, quantizedEndStep: 2, program: 0},
+    {pitch: 71, quantizedStartStep: 2, quantizedEndStep: 4, program: 0},
+    {pitch: 73, quantizedStartStep: 4, quantizedEndStep: 6, program: 0},
+    {pitch: 74, quantizedStartStep: 6, quantizedEndStep: 8, program: 0},
+    {pitch: 76, quantizedStartStep: 8, quantizedEndStep: 10, program: 0},
+    {pitch: 81, quantizedStartStep: 12, quantizedEndStep: 16, program: 0},
+    {pitch: 78, quantizedStartStep: 16, quantizedEndStep: 20, program: 0},
+    {pitch: 81, quantizedStartStep: 20, quantizedEndStep: 24, program: 0},
+    {pitch: 76, quantizedStartStep: 24, quantizedEndStep: 32, program: 0}
   ],
   quantizationInfo: {stepsPerQuarter: 4}
 };
 
 const MEL_TWINKLE: mm.INoteSequence = {
   notes: [
-    {pitch: 60, quantizedStartStep: 0, quantizedEndStep: 2},
-    {pitch: 60, quantizedStartStep: 2, quantizedEndStep: 4},
-    {pitch: 67, quantizedStartStep: 4, quantizedEndStep: 6},
-    {pitch: 67, quantizedStartStep: 6, quantizedEndStep: 8},
-    {pitch: 69, quantizedStartStep: 8, quantizedEndStep: 10},
-    {pitch: 69, quantizedStartStep: 10, quantizedEndStep: 12},
-    {pitch: 67, quantizedStartStep: 12, quantizedEndStep: 16},
-    {pitch: 65, quantizedStartStep: 16, quantizedEndStep: 18},
-    {pitch: 65, quantizedStartStep: 18, quantizedEndStep: 20},
-    {pitch: 64, quantizedStartStep: 20, quantizedEndStep: 22},
-    {pitch: 64, quantizedStartStep: 22, quantizedEndStep: 24},
-    {pitch: 62, quantizedStartStep: 24, quantizedEndStep: 26},
-    {pitch: 62, quantizedStartStep: 26, quantizedEndStep: 28},
-    {pitch: 60, quantizedStartStep: 28, quantizedEndStep: 32}
+    {pitch: 60, quantizedStartStep: 0, quantizedEndStep: 2, program: 0},
+    {pitch: 60, quantizedStartStep: 2, quantizedEndStep: 4, program: 0},
+    {pitch: 67, quantizedStartStep: 4, quantizedEndStep: 6, program: 0},
+    {pitch: 67, quantizedStartStep: 6, quantizedEndStep: 8, program: 0},
+    {pitch: 69, quantizedStartStep: 8, quantizedEndStep: 10, program: 0},
+    {pitch: 69, quantizedStartStep: 10, quantizedEndStep: 12, program: 0},
+    {pitch: 67, quantizedStartStep: 12, quantizedEndStep: 16, program: 0},
+    {pitch: 65, quantizedStartStep: 16, quantizedEndStep: 18, program: 0},
+    {pitch: 65, quantizedStartStep: 18, quantizedEndStep: 20, program: 0},
+    {pitch: 64, quantizedStartStep: 20, quantizedEndStep: 22, program: 0},
+    {pitch: 64, quantizedStartStep: 22, quantizedEndStep: 24, program: 0},
+    {pitch: 62, quantizedStartStep: 24, quantizedEndStep: 26, program: 0},
+    {pitch: 62, quantizedStartStep: 26, quantizedEndStep: 28, program: 0},
+    {pitch: 60, quantizedStartStep: 28, quantizedEndStep: 32, program: 0}
   ],
   quantizationInfo: {stepsPerQuarter: 4}
 };
@@ -257,9 +263,11 @@ function writeNoteSeqs(elementId: string, seqs: mm.INoteSequence[]) {
 }
 
 function createPlayer(seq: mm.INoteSequence) {
-  const player = new mm.Player();
+  const player = new mm.SoundFontPlayer(SOUNDFONT_URL);
   const button = document.createElement('button');
   button.textContent = 'Play';
+  button.disabled = true;
+  player.loadSamples(seq).then(() => button.disabled = false);
   button.addEventListener('click', () => {
     if (player.isPlaying()) {
       player.stop();
