@@ -16,21 +16,14 @@
  */
 
 import * as tf from '@tensorflow/tfjs-core';
-
 import * as mm from '../src/index';
 
-const CHECKPOINTS_DIR =
-    // tslint:disable-next-line:max-line-length
-    'https://storage.googleapis.com/download.magenta.tensorflow.org/tfjs_checkpoints/music_rnn/';
-const MEL_CHECKPOINT = `${CHECKPOINTS_DIR}basic_rnn`;
-const DRUMS_CHECKPOINT = `${CHECKPOINTS_DIR}drum_kit_rnn`;
-const IMPROV_CHECKPOINT = `${CHECKPOINTS_DIR}chord_pitches_improv`;
+import {CHECKPOINTS_DIR} from './common';
+import {writeNoteSeqs, writeTimer} from './common';
 
-// Samples from Shan's SGM SoundFont:
-// http://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01
-const SOUNDFONT_URL =
-    // tslint:disable-next-line:max-line-length
-    'https://storage.googleapis.com/download.magenta.tensorflow.org/soundfonts_js/sgm_v85';
+const MEL_CHECKPOINT = `${CHECKPOINTS_DIR}/music_rnn/basic_rnn`;
+const DRUMS_CHECKPOINT = `${CHECKPOINTS_DIR}/music_rnn/drum_kit_rnn`;
+const IMPROV_CHECKPOINT = `${CHECKPOINTS_DIR}/music_rnn/chord_pitches_improv`;
 
 const MELODY_NS: mm.INoteSequence = {
   ticksPerQuarter: 220,
@@ -117,55 +110,6 @@ const DRUMS_NS: mm.INoteSequence = {
     }
   ]
 };
-
-function writeTimer(elementId: string, startTime: number) {
-  document.getElementById(elementId).innerHTML =
-      ((performance.now() - startTime) / 1000).toString() + 's';
-}
-
-function writeNoteSeqs(elementId: string, seqs: mm.INoteSequence[]) {
-  const element = document.getElementById(elementId);
-  while (element.firstChild) {
-    element.removeChild(element.firstChild);
-  }
-  seqs.forEach(seq => {
-    const seqWrap = document.createElement('div');
-    const seqText = document.createElement('span');
-    seqText.innerHTML = '[' +
-        seq.notes
-            .map(n => {
-              let s = '{p:' + n.pitch + ' s:' + n.quantizedStartStep;
-              if (n.quantizedEndStep != null) {
-                s += ' e:' + n.quantizedEndStep;
-              }
-              s += '}';
-              return s;
-            })
-            .join(', ') +
-        ']';
-    seqWrap.appendChild(seqText);
-    seqWrap.appendChild(createPlayer(seq));
-    element.appendChild(seqWrap);
-  });
-}
-
-function createPlayer(seq: mm.INoteSequence) {
-  const player = new mm.SoundFontPlayer(SOUNDFONT_URL);
-  const button = document.createElement('button');
-  button.textContent = 'Play';
-  button.disabled = true;
-  player.loadSamples(seq).then(() => button.disabled = false);
-  button.addEventListener('click', () => {
-    if (player.isPlaying()) {
-      player.stop();
-      button.textContent = 'Play';
-    } else {
-      player.start(seq).then(() => (button.textContent = 'Play'));
-      button.textContent = 'Stop';
-    }
-  });
-  return button;
-}
 
 async function runMelodyRnn() {
   const melodyRnn = new mm.MusicRNN(MEL_CHECKPOINT);

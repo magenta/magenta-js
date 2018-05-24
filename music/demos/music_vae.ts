@@ -20,23 +20,16 @@ import * as clone from 'clone';
 
 import * as mm from '../src/index';
 
-const CHECKPOINTS_DIR =
-    // tslint:disable-next-line:max-line-length
-    'https://storage.googleapis.com/download.magenta.tensorflow.org/tfjs_checkpoints/music_vae/';
-const DRUMS_CKPT = `${CHECKPOINTS_DIR}drums_2bar_hikl_small`;
-const DRUMS_NADE_CKPT = `${CHECKPOINTS_DIR}drums_2bar_nade_9_q2`;
-const MEL_CKPT = `${CHECKPOINTS_DIR}mel_2bar_small`;
-const MEL_CHORDS_CKPT = `${CHECKPOINTS_DIR}mel_chords`;
-const MEL_16_CKPT = `${CHECKPOINTS_DIR}mel_16bar_small_q2`;
-const TRIO_CKPT = `${CHECKPOINTS_DIR}trio_4bar_lokl_small_q1`;
-const MULTITRACK_CKPT = `${CHECKPOINTS_DIR}multitrack`;
-const MULTITRACK_CHORDS_CKPT = `${CHECKPOINTS_DIR}multitrack_chords`;
+import {CHECKPOINTS_DIR} from './common';
+import {DRUM_SEQS, MEL_A_QUARTERS, MEL_TEAPOT, MEL_TWINKLE} from './common';
+import {writeNoteSeqs, writeTimer} from './common';
 
-// Samples from Shan's SGM SoundFont:
-// http://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01
-const SOUNDFONT_URL =
-    // tslint:disable-next-line:max-line-length
-    'https://storage.googleapis.com/download.magenta.tensorflow.org/soundfonts_js/sgm_v85';
+const DRUMS_CKPT = `${CHECKPOINTS_DIR}/music_vae/drums_2bar_hikl_small`;
+const DRUMS_NADE_CKPT = `${CHECKPOINTS_DIR}/music_vae/drums_2bar_nade_9_q2`;
+const MEL_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_2bar_small`;
+const MEL_CHORDS_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_chords`;
+const MEL_16_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_16bar_small_q2`;
+const TRIO_CKPT = `${CHECKPOINTS_DIR}/music_vae/trio_4bar_lokl_small_q1`;
 
 // TODO(adarob): Switch to magenta/core function once implemented.
 function concatNoteSequences(
@@ -52,132 +45,6 @@ function concatNoteSequences(
   }
   return concatSeq;
 }
-
-const DRUM_SEQS: mm.INoteSequence[] = [
-  {
-    notes: [
-      {pitch: 36, quantizedStartStep: 0}, {pitch: 42, quantizedStartStep: 2},
-      {pitch: 36, quantizedStartStep: 4}, {pitch: 42, quantizedStartStep: 6},
-      {pitch: 36, quantizedStartStep: 8}, {pitch: 42, quantizedStartStep: 10},
-      {pitch: 36, quantizedStartStep: 12}, {pitch: 42, quantizedStartStep: 14},
-      {pitch: 36, quantizedStartStep: 16}, {pitch: 36, quantizedStartStep: 24},
-      {pitch: 36, quantizedStartStep: 28}, {pitch: 42, quantizedStartStep: 30}
-    ],
-    quantizationInfo: {stepsPerQuarter: 4}
-  },
-  {
-    notes: [
-      {pitch: 36, quantizedStartStep: 0},  {pitch: 38, quantizedStartStep: 0},
-      {pitch: 42, quantizedStartStep: 0},  {pitch: 46, quantizedStartStep: 0},
-      {pitch: 42, quantizedStartStep: 2},  {pitch: 42, quantizedStartStep: 3},
-      {pitch: 42, quantizedStartStep: 4},  {pitch: 50, quantizedStartStep: 4},
-      {pitch: 36, quantizedStartStep: 6},  {pitch: 38, quantizedStartStep: 6},
-      {pitch: 42, quantizedStartStep: 6},  {pitch: 45, quantizedStartStep: 6},
-      {pitch: 36, quantizedStartStep: 8},  {pitch: 42, quantizedStartStep: 8},
-      {pitch: 46, quantizedStartStep: 8},  {pitch: 42, quantizedStartStep: 10},
-      {pitch: 48, quantizedStartStep: 10}, {pitch: 50, quantizedStartStep: 10},
-      {pitch: 36, quantizedStartStep: 12}, {pitch: 38, quantizedStartStep: 12},
-      {pitch: 42, quantizedStartStep: 12}, {pitch: 48, quantizedStartStep: 12},
-      {pitch: 50, quantizedStartStep: 13}, {pitch: 42, quantizedStartStep: 14},
-      {pitch: 45, quantizedStartStep: 14}, {pitch: 48, quantizedStartStep: 14},
-      {pitch: 36, quantizedStartStep: 16}, {pitch: 38, quantizedStartStep: 16},
-      {pitch: 42, quantizedStartStep: 16}, {pitch: 46, quantizedStartStep: 16},
-      {pitch: 49, quantizedStartStep: 16}, {pitch: 42, quantizedStartStep: 18},
-      {pitch: 42, quantizedStartStep: 19}, {pitch: 42, quantizedStartStep: 20},
-      {pitch: 50, quantizedStartStep: 20}, {pitch: 36, quantizedStartStep: 22},
-      {pitch: 38, quantizedStartStep: 22}, {pitch: 42, quantizedStartStep: 22},
-      {pitch: 45, quantizedStartStep: 22}, {pitch: 36, quantizedStartStep: 24},
-      {pitch: 42, quantizedStartStep: 24}, {pitch: 46, quantizedStartStep: 24},
-      {pitch: 42, quantizedStartStep: 26}, {pitch: 48, quantizedStartStep: 26},
-      {pitch: 50, quantizedStartStep: 26}, {pitch: 36, quantizedStartStep: 28},
-      {pitch: 38, quantizedStartStep: 28}, {pitch: 42, quantizedStartStep: 28},
-      {pitch: 42, quantizedStartStep: 30}, {pitch: 48, quantizedStartStep: 30}
-    ],
-    quantizationInfo: {stepsPerQuarter: 4}
-  },
-  {
-    notes: [
-      {pitch: 38, quantizedStartStep: 0},  {pitch: 42, quantizedStartStep: 0},
-      {pitch: 42, quantizedStartStep: 2},  {pitch: 42, quantizedStartStep: 4},
-      {pitch: 36, quantizedStartStep: 6},  {pitch: 38, quantizedStartStep: 6},
-      {pitch: 42, quantizedStartStep: 6},  {pitch: 45, quantizedStartStep: 6},
-      {pitch: 36, quantizedStartStep: 8},  {pitch: 42, quantizedStartStep: 8},
-      {pitch: 42, quantizedStartStep: 10}, {pitch: 38, quantizedStartStep: 12},
-      {pitch: 42, quantizedStartStep: 12}, {pitch: 45, quantizedStartStep: 12},
-      {pitch: 36, quantizedStartStep: 14}, {pitch: 42, quantizedStartStep: 14},
-      {pitch: 46, quantizedStartStep: 14}, {pitch: 36, quantizedStartStep: 16},
-      {pitch: 42, quantizedStartStep: 16}, {pitch: 42, quantizedStartStep: 18},
-      {pitch: 38, quantizedStartStep: 20}, {pitch: 42, quantizedStartStep: 20},
-      {pitch: 45, quantizedStartStep: 20}, {pitch: 36, quantizedStartStep: 22},
-      {pitch: 42, quantizedStartStep: 22}, {pitch: 36, quantizedStartStep: 24},
-      {pitch: 42, quantizedStartStep: 24}, {pitch: 38, quantizedStartStep: 26},
-      {pitch: 42, quantizedStartStep: 26}, {pitch: 45, quantizedStartStep: 26},
-      {pitch: 42, quantizedStartStep: 28}, {pitch: 45, quantizedStartStep: 28},
-      {pitch: 36, quantizedStartStep: 30}, {pitch: 42, quantizedStartStep: 30},
-      {pitch: 45, quantizedStartStep: 30}
-    ],
-    quantizationInfo: {stepsPerQuarter: 4}
-  },
-  {
-    notes: [
-      {pitch: 50, quantizedStartStep: 4}, {pitch: 50, quantizedStartStep: 20}
-    ],
-    quantizationInfo: {stepsPerQuarter: 4}
-  }
-];
-DRUM_SEQS.map(s => s.notes.map(n => {
-  n.isDrum = true;
-  n.quantizedEndStep = n.quantizedStartStep + 1;
-}));
-
-const MEL_A_QUARTERS: mm.INoteSequence = {
-  notes: [
-    {pitch: 69, quantizedStartStep: 0, quantizedEndStep: 4, program: 0},
-    {pitch: 69, quantizedStartStep: 4, quantizedEndStep: 8, program: 0},
-    {pitch: 69, quantizedStartStep: 8, quantizedEndStep: 12, program: 0},
-    {pitch: 69, quantizedStartStep: 12, quantizedEndStep: 16, program: 0},
-    {pitch: 69, quantizedStartStep: 16, quantizedEndStep: 20, program: 0},
-    {pitch: 69, quantizedStartStep: 20, quantizedEndStep: 24, program: 0},
-    {pitch: 69, quantizedStartStep: 24, quantizedEndStep: 28, program: 0},
-    {pitch: 69, quantizedStartStep: 28, quantizedEndStep: 32, program: 0},
-  ],
-  quantizationInfo: {stepsPerQuarter: 4}
-};
-
-const MEL_TEAPOT: mm.INoteSequence = {
-  notes: [
-    {pitch: 69, quantizedStartStep: 0, quantizedEndStep: 2, program: 0},
-    {pitch: 71, quantizedStartStep: 2, quantizedEndStep: 4, program: 0},
-    {pitch: 73, quantizedStartStep: 4, quantizedEndStep: 6, program: 0},
-    {pitch: 74, quantizedStartStep: 6, quantizedEndStep: 8, program: 0},
-    {pitch: 76, quantizedStartStep: 8, quantizedEndStep: 10, program: 0},
-    {pitch: 81, quantizedStartStep: 12, quantizedEndStep: 16, program: 0},
-    {pitch: 78, quantizedStartStep: 16, quantizedEndStep: 20, program: 0},
-    {pitch: 81, quantizedStartStep: 20, quantizedEndStep: 24, program: 0},
-    {pitch: 76, quantizedStartStep: 24, quantizedEndStep: 32, program: 0}
-  ],
-  quantizationInfo: {stepsPerQuarter: 4}
-};
-
-const MEL_TWINKLE: mm.INoteSequence = {
-  notes: [
-    {pitch: 60, quantizedStartStep: 0, quantizedEndStep: 2, program: 0},
-    {pitch: 60, quantizedStartStep: 2, quantizedEndStep: 4, program: 0},
-    {pitch: 67, quantizedStartStep: 4, quantizedEndStep: 6, program: 0},
-    {pitch: 67, quantizedStartStep: 6, quantizedEndStep: 8, program: 0},
-    {pitch: 69, quantizedStartStep: 8, quantizedEndStep: 10, program: 0},
-    {pitch: 69, quantizedStartStep: 10, quantizedEndStep: 12, program: 0},
-    {pitch: 67, quantizedStartStep: 12, quantizedEndStep: 16, program: 0},
-    {pitch: 65, quantizedStartStep: 16, quantizedEndStep: 18, program: 0},
-    {pitch: 65, quantizedStartStep: 18, quantizedEndStep: 20, program: 0},
-    {pitch: 64, quantizedStartStep: 20, quantizedEndStep: 22, program: 0},
-    {pitch: 64, quantizedStartStep: 22, quantizedEndStep: 24, program: 0},
-    {pitch: 62, quantizedStartStep: 24, quantizedEndStep: 26, program: 0},
-    {pitch: 62, quantizedStartStep: 26, quantizedEndStep: 28, program: 0},
-    {pitch: 60, quantizedStartStep: 28, quantizedEndStep: 32, program: 0}
-  ],
-  quantizationInfo: {stepsPerQuarter: 4}
-};
 
 const TRIO_EXAMPLE: mm.INoteSequence = {
   notes: [],
@@ -201,84 +68,6 @@ concatNoteSequences([DRUM_SEQS[0], DRUM_SEQS[0]], 32).notes.map(n => {
   m.instrument = 2;
   TRIO_EXAMPLE.notes.push(m);
 });
-
-const MULTITRACK_EXAMPLE: mm.INoteSequence = {
-  notes: [],
-  quantizationInfo: {stepsPerQuarter: 24}
-};
-MEL_TWINKLE.notes.forEach(n => {
-  const m = clone(n);
-  m.program = 0;
-  m.instrument = 0;
-  m.quantizedStartStep *= 3;
-  m.quantizedEndStep *= 3;
-  MULTITRACK_EXAMPLE.notes.push(m);
-});
-MEL_TWINKLE.notes.forEach(n => {
-  const m = clone(n);
-  m.pitch -= 36;
-  m.program = 32;
-  m.instrument = 1;
-  m.quantizedStartStep *= 3;
-  m.quantizedEndStep *= 3;
-  MULTITRACK_EXAMPLE.notes.push(m);
-});
-DRUM_SEQS[0].notes.forEach(n => {
-  const m = clone(n);
-  m.instrument = 2;
-  m.quantizedStartStep *= 3;
-  m.quantizedEndStep = m.quantizedStartStep + 1;
-  MULTITRACK_EXAMPLE.notes.push(m);
-});
-
-function writeTimer(elementId: string, startTime: number) {
-  document.getElementById(elementId).innerHTML =
-      ((performance.now() - startTime) / 1000).toString() + 's';
-}
-
-function writeNoteSeqs(elementId: string, seqs: mm.INoteSequence[]) {
-  const element = document.getElementById(elementId);
-  while (element.firstChild) {
-    element.removeChild(element.firstChild);
-  }
-  seqs.forEach(seq => {
-    const seqWrap = document.createElement('div');
-    const seqText = document.createElement('span');
-    seqText.innerHTML = '[' +
-        seq.notes
-            .map(n => {
-              let s = '{p:' + n.pitch + ' s:' + n.quantizedStartStep;
-              if (n.quantizedEndStep != null) {
-                s += ' e:' + n.quantizedEndStep;
-              }
-              s += '}';
-              return s;
-            })
-            .join(', ') +
-        ']';
-    seqWrap.appendChild(seqText);
-    seqWrap.appendChild(createPlayer(seq));
-    element.appendChild(seqWrap);
-  });
-}
-
-function createPlayer(seq: mm.INoteSequence) {
-  const player = new mm.SoundFontPlayer(SOUNDFONT_URL);
-  const button = document.createElement('button');
-  button.textContent = 'Play';
-  button.disabled = true;
-  player.loadSamples(seq).then(() => button.disabled = false);
-  button.addEventListener('click', () => {
-    if (player.isPlaying()) {
-      player.stop();
-      button.textContent = 'Play';
-    } else {
-      player.start(seq).then(() => (button.textContent = 'Play'));
-      button.textContent = 'Stop';
-    }
-  });
-  return button;
-}
 
 async function runDrums() {
   const mvae = new mm.MusicVAE(DRUMS_CKPT);
@@ -414,50 +203,6 @@ async function runTrio() {
   mvae.dispose();
 }
 
-async function runMultitrack() {
-  const mvae = new mm.MusicVAE(MULTITRACK_CKPT);
-  await mvae.initialize();
-
-  const inputs = [MULTITRACK_EXAMPLE];
-  writeNoteSeqs('multitrack-inputs', inputs);
-
-  let start = performance.now();
-  const z = await mvae.encode(inputs);
-  const recon = await mvae.decode(z, null, null, 24);
-  z.dispose();
-  writeTimer('multitrack-recon-time', start);
-  writeNoteSeqs('multitrack-recon', recon);
-
-  start = performance.now();
-  const sample = await mvae.sample(4, null, null, 24);
-  writeTimer('multitrack-sample-time', start);
-  writeNoteSeqs('multitrack-samples', sample);
-
-  mvae.dispose();
-}
-
-async function runMultitrackChords() {
-  const mvae = new mm.MusicVAE(MULTITRACK_CHORDS_CKPT);
-  await mvae.initialize();
-
-  const inputs = [MULTITRACK_EXAMPLE];
-  writeNoteSeqs('multitrack-chords-inputs', inputs);
-
-  let start = performance.now();
-  const z = await mvae.encode(inputs, ['C']);
-  const recon = await mvae.decode(z, null, ['G'], 24);
-  z.dispose();
-  writeTimer('multitrack-chords-recon-time', start);
-  writeNoteSeqs('multitrack-chords-recon', recon);
-
-  start = performance.now();
-  const sample = await mvae.sample(4, null, ['D'], 24);
-  writeTimer('multitrack-chords-sample-time', start);
-  writeNoteSeqs('multitrack-chords-samples', sample);
-
-  mvae.dispose();
-}
-
 async function generateAllButton() {
   const button = document.createElement('button');
   button.textContent = 'Generate All';
@@ -466,10 +211,7 @@ async function generateAllButton() {
     runDrumsNade();
     runMel();
     runMelChords();
-    runMel16(),
-    runTrio();
-    runMultitrack();
-    runMultitrackChords();
+    runMel16(), runTrio();
     button.disabled = true;
   });
   const div = document.getElementById('generate-all');
@@ -542,36 +284,12 @@ async function generateTrioButton() {
   trioDiv.appendChild(trioButton);
 }
 
-async function generateMultitrackButton() {
-  const multitrackButton = document.createElement('button');
-  multitrackButton.textContent = 'Generate Multitrack';
-  multitrackButton.addEventListener('click', () => {
-    runMultitrack();
-    multitrackButton.disabled = true;
-  });
-  const multitrackDiv = document.getElementById('generate-multitrack');
-  multitrackDiv.appendChild(multitrackButton);
-}
-
-async function generateMultitrackChordsButton() {
-  const multitrackChordsButton = document.createElement('button');
-  multitrackChordsButton.textContent = 'Generate Chord-Conditioned Multitrack';
-  multitrackChordsButton.addEventListener('click', () => {
-    runMultitrackChords();
-    multitrackChordsButton.disabled = true;
-  });
-  const multitrackChordsDiv = document.getElementById(
-    'generate-multitrack-chord');
-  multitrackChordsDiv.appendChild(multitrackChordsButton);
-}
-
 try {
   Promise
       .all([
         generateAllButton(), generateDrumsButton(), generateDrumsNadeButton(),
         generateMelButton(), generateMelChordsButton(), generateMel16Button(),
-        generateTrioButton(), generateMultitrackButton(),
-        generateMultitrackChordsButton()
+        generateTrioButton()
       ])
       .then(() => console.log(tf.memory()));
 } catch (err) {
