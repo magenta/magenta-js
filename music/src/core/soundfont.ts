@@ -134,6 +134,10 @@ export class Instrument {
       return velocity;
     }
 
+    if (!velocity) {
+      velocity = constants.DEFAULT_VELOCITY;
+    }
+
     let bestVelocity = undefined;
     let bestDistance = constants.MIDI_VELOCITIES;
     this.velocities.forEach((v) => {
