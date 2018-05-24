@@ -158,7 +158,8 @@ export function writeTimer(elementId: string, startTime: number) {
       ((performance.now() - startTime) / 1000).toString() + 's';
 }
 
-export function writeNoteSeqs(elementId: string, seqs: mm.INoteSequence[]) {
+export function writeNoteSeqs(
+    elementId: string, seqs: mm.INoteSequence[], useSoundFontPlayer = false) {
   const element = document.getElementById(elementId);
   while (element.firstChild) {
     element.removeChild(element.firstChild);
@@ -179,12 +180,29 @@ export function writeNoteSeqs(elementId: string, seqs: mm.INoteSequence[]) {
             .join(', ') +
         ']';
     seqWrap.appendChild(seqText);
-    seqWrap.appendChild(createPlayer(seq));
+    seqWrap.appendChild(
+        useSoundFontPlayer ? createSoundFontPlayer(seq) : createPlayer(seq));
     element.appendChild(seqWrap);
   });
 }
 
 function createPlayer(seq: mm.INoteSequence) {
+  const player = new mm.Player();
+  const button = document.createElement('button');
+  button.textContent = 'Play';
+  button.addEventListener('click', () => {
+    if (player.isPlaying()) {
+      player.stop();
+      button.textContent = 'Play';
+    } else {
+      player.start(seq).then(() => (button.textContent = 'Play'));
+      button.textContent = 'Stop';
+    }
+  });
+  return button;
+}
+
+function createSoundFontPlayer(seq: mm.INoteSequence) {
   const player = new mm.SoundFontPlayer(SOUNDFONT_URL);
   const button = document.createElement('button');
   button.textContent = 'Play';

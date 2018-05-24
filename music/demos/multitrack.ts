@@ -60,19 +60,19 @@ async function runMultitrack() {
   await mvae.initialize();
 
   const inputs = [MULTITRACK_EXAMPLE];
-  writeNoteSeqs('multitrack-inputs', inputs);
+  writeNoteSeqs('multitrack-inputs', inputs, true);
 
   let start = performance.now();
   const z = await mvae.encode(inputs);
   const recon = await mvae.decode(z, null, null, 24);
   z.dispose();
   writeTimer('multitrack-recon-time', start);
-  writeNoteSeqs('multitrack-recon', recon);
+  writeNoteSeqs('multitrack-recon', recon, true);
 
   start = performance.now();
   const sample = await mvae.sample(4, null, null, 24);
   writeTimer('multitrack-sample-time', start);
-  writeNoteSeqs('multitrack-samples', sample);
+  writeNoteSeqs('multitrack-samples', sample, true);
 
   mvae.dispose();
 }
@@ -82,19 +82,19 @@ async function runMultitrackChords() {
   await mvae.initialize();
 
   const inputs = [MULTITRACK_EXAMPLE];
-  writeNoteSeqs('multitrack-chords-inputs', inputs);
+  writeNoteSeqs('multitrack-chords-inputs', inputs, true);
 
   let start = performance.now();
   const z = await mvae.encode(inputs, ['C']);
   const recon = await mvae.decode(z, null, ['G'], 24);
   z.dispose();
   writeTimer('multitrack-chords-recon-time', start);
-  writeNoteSeqs('multitrack-chords-recon', recon);
+  writeNoteSeqs('multitrack-chords-recon', recon, true);
 
   start = performance.now();
   const sample = await mvae.sample(4, null, ['D'], 24);
   writeTimer('multitrack-chords-sample-time', start);
-  writeNoteSeqs('multitrack-chords-samples', sample);
+  writeNoteSeqs('multitrack-chords-samples', sample, true);
 
   mvae.dispose();
 }
