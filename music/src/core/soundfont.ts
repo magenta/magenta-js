@@ -120,10 +120,10 @@ export class Instrument {
   }
 
   /**
-   * Map pitch and velocity to sample URL.
+   * Map sample name to URL.
    */
-  private sampleInfoToURL(sampleInfo: SampleInfo) {
-    return `${this.baseURL}/${this.sampleInfoToName(sampleInfo)}.mp3`;
+  private sampleNameToURL(name: string) {
+    return `${this.baseURL}/${name}.mp3`;
   }
 
   /**
@@ -157,7 +157,9 @@ export class Instrument {
       await this.initialize();
     }
 
-    const nearestSamples = Array.from(new Set(
+    // Filter out invalid pitches and find the nearest velocity we have for each
+    // sample.
+    const nearestSampleNames =
         samples
             .filter((info) => {
               if (info.pitch < this.minPitch || info.pitch > this.maxPitch) {
@@ -169,28 +171,24 @@ export class Instrument {
                 return true;
               }
             })
-            .map((info) => ({
-                   pitch: info.pitch,
-                   velocity: this.nearestVelocity(info.velocity)
-                 }))));
+            .map((info) => this.sampleInfoToName({
+              pitch: info.pitch,
+              velocity: this.nearestVelocity(info.velocity)
+            }));
 
-    const sampleNamesAndURLs =
-        nearestSamples
-            .map((info) => ({
-                   name: this.sampleInfoToName(info),
-                   url: this.sampleInfoToURL(info)
-                 }))
-            .filter((nameAndURL) => !this.buffers.has(nameAndURL.name));
+    // Remove duplicates and samples that have already been loaded.
+    const uniqueSampleNames = Array.from(new Set(nearestSampleNames))
+                                  .filter((name) => !this.buffers.has(name));
+
+    // Map each name to the corresponding URL.
+    const sampleNamesAndURLs = uniqueSampleNames.map(
+        (name) => ({name, url: this.sampleNameToURL(name)}));
 
     if (sampleNamesAndURLs.length > 0) {
       sampleNamesAndURLs.forEach(
           (nameAndURL) => this.buffers.add(nameAndURL.name, nameAndURL.url));
-
       await new Promise(resolve => Tone.Buffer.on('load', resolve));
-
-      sampleNamesAndURLs.forEach(
-          (nameAndURL) =>
-              console.log(`Loaded ${nameAndURL.name} for ${this.name}.`));
+      console.log(`Loaded samples for ${this.name}.`);
     }
   }
 
