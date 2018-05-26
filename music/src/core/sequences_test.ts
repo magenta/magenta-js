@@ -495,9 +495,9 @@ test('Merge Instruments', (t: test.Test) => {
   const expected = sequences.clone(ns);
   expected.notes[0].instrument = 0;
   expected.notes[1].instrument = 0;
-  expected.notes[2].instrument = 9;
+  expected.notes[2].instrument = 2;
   expected.notes[3].instrument = 1;
-  expected.notes[4].instrument = 9;
+  expected.notes[4].instrument = 2;
   expected.notes[4].program = 0;
 
   t.deepEqual(
