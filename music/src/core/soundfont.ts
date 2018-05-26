@@ -203,9 +203,11 @@ export class Instrument {
    * @param velocity Velocity of the note.
    * @param startTime Time at which to start playing the note.
    * @param duration Length of the note in seconds.
+   * @param output Output `AudioNode`.
    */
   playNote(
-      pitch: number, velocity: number, startTime: number, duration: number) {
+      pitch: number, velocity: number, startTime: number, duration: number,
+      output: any) {
     if (!this.initialized) {
       throw new Error('Instrument is not initialized.');
     }
@@ -231,11 +233,11 @@ export class Instrument {
           duration} > ${this.durationSeconds}`);
     }
 
-    const source = new Tone.BufferSource(buffer).toMaster();
+    const source = new Tone.BufferSource(buffer).connect(output);
     source.start(startTime, 0, undefined, 1, 0);
     if (!this.percussive && duration < this.durationSeconds) {
       // Fade to the note release.
-      const releaseSource = new Tone.BufferSource(buffer).toMaster();
+      const releaseSource = new Tone.BufferSource(buffer).connect(output);
       source.stop(startTime + duration + this.FADE_SECONDS, this.FADE_SECONDS);
       releaseSource.start(
           startTime + duration, this.durationSeconds, undefined, 1,
@@ -360,10 +362,11 @@ export class SoundFont {
    * @param duration Length of the note in seconds.
    * @param program Program number to use for instrument lookup.
    * @param isDrum Drum status to use for instrument lookup.
+   * @param output Output `AudioNode`.
    */
   playNote(
       pitch: number, velocity: number, startTime: number, duration: number,
-      program: number, isDrum: boolean) {
+      program: number, isDrum: boolean, output: any) {
     const instrument = isDrum ? 'drums' : program;
     if (!this.initialized) {
       throw new Error('SoundFont is not initialized.');
@@ -375,6 +378,6 @@ export class SoundFont {
     }
 
     this.instruments.get(instrument)
-        .playNote(pitch, velocity, startTime, duration);
+        .playNote(pitch, velocity, startTime, duration, output);
   }
 }
