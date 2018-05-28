@@ -458,11 +458,120 @@ async function runMultitrackChords() {
   mvae.dispose();
 }
 
+async function generateAllButton() {
+  const button = document.createElement('button');
+  button.textContent = 'Generate All';
+  button.addEventListener('click', () => {
+    runDrums();
+    runDrumsNade();
+    runMel();
+    runMelChords();
+    runMel16(),
+    runTrio();
+    runMultitrack();
+    runMultitrackChords();
+    button.disabled = true;
+  });
+  const div = document.getElementById('generate-all');
+  div.appendChild(button);
+}
+
+async function generateDrumsButton() {
+  const drumsButton = document.createElement('button');
+  drumsButton.textContent = 'Generate Drums';
+  drumsButton.addEventListener('click', () => {
+    runDrums();
+    drumsButton.disabled = true;
+  });
+  const drumsDiv = document.getElementById('generate-drums');
+  drumsDiv.appendChild(drumsButton);
+}
+
+async function generateDrumsNadeButton() {
+  const drumsNadeButton = document.createElement('button');
+  drumsNadeButton.textContent = 'Generate Drums NADE';
+  drumsNadeButton.addEventListener('click', () => {
+    runDrumsNade();
+    drumsNadeButton.disabled = true;
+  });
+  const drumsNadeDiv = document.getElementById('generate-drums-nade');
+  drumsNadeDiv.appendChild(drumsNadeButton);
+}
+
+async function generateMelButton() {
+  const melButton = document.createElement('button');
+  melButton.textContent = 'Generate Melody';
+  melButton.addEventListener('click', () => {
+    runMel();
+    melButton.disabled = true;
+  });
+  const melDiv = document.getElementById('generate-melody');
+  melDiv.appendChild(melButton);
+}
+
+async function generateMelChordsButton() {
+  const melChordsButton = document.createElement('button');
+  melChordsButton.textContent = 'Generate Chord-Conditioned Melody';
+  melChordsButton.addEventListener('click', () => {
+    runMelChords();
+    melChordsButton.disabled = true;
+  });
+  const melChordsDiv = document.getElementById('generate-melody-chord');
+  melChordsDiv.appendChild(melChordsButton);
+}
+
+async function generateMel16Button() {
+  const mel16Button = document.createElement('button');
+  mel16Button.textContent = 'Generate Melody 16-bar';
+  mel16Button.addEventListener('click', () => {
+    runMel16();
+    mel16Button.disabled = true;
+  });
+  const mel16Div = document.getElementById('generate-melody-16');
+  mel16Div.appendChild(mel16Button);
+}
+
+async function generateTrioButton() {
+  const trioButton = document.createElement('button');
+  trioButton.textContent = 'Generate Trio';
+  trioButton.addEventListener('click', () => {
+    runTrio();
+    trioButton.disabled = true;
+  });
+  const trioDiv = document.getElementById('generate-trio');
+  trioDiv.appendChild(trioButton);
+}
+
+async function generateMultitrackButton() {
+  const multitrackButton = document.createElement('button');
+  multitrackButton.textContent = 'Generate Multitrack';
+  multitrackButton.addEventListener('click', () => {
+    runMultitrack();
+    multitrackButton.disabled = true;
+  });
+  const multitrackDiv = document.getElementById('generate-multitrack');
+  multitrackDiv.appendChild(multitrackButton);
+}
+
+async function generateMultitrackChordsButton() {
+  const multitrackChordsButton = document.createElement('button');
+  multitrackChordsButton.textContent = 'Generate Chord-Conditioned Multitrack';
+  multitrackChordsButton.addEventListener('click', () => {
+    runMultitrackChords();
+    multitrackChordsButton.disabled = true;
+  });
+  const multitrackChordsiv = document.getElementById(
+    'generate-multitrack-chord');
+  multitrackChordsiv.appendChild(multitrackChordsButton);
+}
+
 try {
   Promise
       .all([
-        runDrums(), runDrumsNade(), runMel(), runMelChords(), runMel16(),
-        runTrio(), runMultitrack(), runMultitrackChords()
+        generateAllButton(), generateDrumsButton(), generateDrumsNadeButton(),
+        generateMelButton(), generateMelChordsButton(), generateMel16Button(),
+        generateTrioButton(), generateMultitrackButton(),
+        generateMultitrackChordsButton()
       ])
       .then(() => console.log(tf.memory()));
 } catch (err) {
