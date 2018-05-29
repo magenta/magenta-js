@@ -247,15 +247,17 @@ export class Player extends BasePlayer {
  * start after all necessary samples have been loaded.
  */
 export class SoundFontPlayer extends BasePlayer {
-  private soundfont: soundfont.SoundFont;
+  private soundFont: soundfont.SoundFont;
+  private output: any;  // tslint:disable-line:no-any
 
-  constructor(soundFontURL: string) {
+  constructor(soundFontURL: string, output = Tone.Master) {
     super();
-    this.soundfont = new soundfont.SoundFont(soundFontURL);
+    this.soundFont = new soundfont.SoundFont(soundFontURL);
+    this.output = output;
   }
 
   async loadSamples(seq: INoteSequence): Promise<void> {
-    await this.soundfont.loadSamples(seq.notes.map((note) => ({
+    await this.soundFont.loadSamples(seq.notes.map((note) => ({
                                                      pitch: note.pitch,
                                                      velocity: note.velocity,
                                                      program: note.program,
@@ -268,8 +270,8 @@ export class SoundFontPlayer extends BasePlayer {
   }
 
   protected playNote(time: number, note: NoteSequence.INote) {
-    this.soundfont.playNote(
+    this.soundFont.playNote(
         note.pitch, note.velocity, time, note.endTime - note.startTime,
-        note.program, note.isDrum);
+        note.program, note.isDrum, this.output);
   }
 }

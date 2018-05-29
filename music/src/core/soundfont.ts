@@ -120,10 +120,10 @@ export class Instrument {
   }
 
   /**
-   * Map pitch and velocity to sample URL.
+   * Map sample name to URL.
    */
-  private sampleInfoToURL(sampleInfo: SampleInfo) {
-    return `${this.baseURL}/${this.sampleInfoToName(sampleInfo)}.mp3`;
+  private sampleNameToURL(name: string) {
+    return `${this.baseURL}/${name}.mp3`;
   }
 
   /**
@@ -132,6 +132,10 @@ export class Instrument {
   private nearestVelocity(velocity: number): number {
     if (!this.velocities) {
       return velocity;
+    }
+
+    if (!velocity) {
+      velocity = constants.DEFAULT_VELOCITY;
     }
 
     let bestVelocity = undefined;
@@ -157,7 +161,9 @@ export class Instrument {
       await this.initialize();
     }
 
-    const nearestSamples = Array.from(new Set(
+    // Filter out invalid pitches and find the nearest velocity we have for each
+    // sample.
+    const nearestSampleNames =
         samples
             .filter((info) => {
               if (info.pitch < this.minPitch || info.pitch > this.maxPitch) {
@@ -169,28 +175,24 @@ export class Instrument {
                 return true;
               }
             })
-            .map((info) => ({
-                   pitch: info.pitch,
-                   velocity: this.nearestVelocity(info.velocity)
-                 }))));
+            .map((info) => this.sampleInfoToName({
+              pitch: info.pitch,
+              velocity: this.nearestVelocity(info.velocity)
+            }));
 
-    const sampleNamesAndURLs =
-        nearestSamples
-            .map((info) => ({
-                   name: this.sampleInfoToName(info),
-                   url: this.sampleInfoToURL(info)
-                 }))
-            .filter((nameAndURL) => !this.buffers.has(nameAndURL.name));
+    // Remove duplicates and samples that have already been loaded.
+    const uniqueSampleNames = Array.from(new Set(nearestSampleNames))
+                                  .filter((name) => !this.buffers.has(name));
+
+    // Map each name to the corresponding URL.
+    const sampleNamesAndURLs = uniqueSampleNames.map(
+        (name) => ({name, url: this.sampleNameToURL(name)}));
 
     if (sampleNamesAndURLs.length > 0) {
       sampleNamesAndURLs.forEach(
           (nameAndURL) => this.buffers.add(nameAndURL.name, nameAndURL.url));
-
       await new Promise(resolve => Tone.Buffer.on('load', resolve));
-
-      sampleNamesAndURLs.forEach(
-          (nameAndURL) =>
-              console.log(`Loaded ${nameAndURL.name} for ${this.name}.`));
+      console.log(`Loaded samples for ${this.name}.`);
     }
   }
 
@@ -201,9 +203,11 @@ export class Instrument {
    * @param velocity Velocity of the note.
    * @param startTime Time at which to start playing the note.
    * @param duration Length of the note in seconds.
+   * @param output Output `AudioNode`.
    */
   playNote(
-      pitch: number, velocity: number, startTime: number, duration: number) {
+      pitch: number, velocity: number, startTime: number, duration: number,
+      output: any) {
     if (!this.initialized) {
       throw new Error('Instrument is not initialized.');
     }
@@ -229,11 +233,11 @@ export class Instrument {
           duration} > ${this.durationSeconds}`);
     }
 
-    const source = new Tone.BufferSource(buffer).toMaster();
+    const source = new Tone.BufferSource(buffer).connect(output);
     source.start(startTime, 0, undefined, 1, 0);
     if (!this.percussive && duration < this.durationSeconds) {
       // Fade to the note release.
-      const releaseSource = new Tone.BufferSource(buffer).toMaster();
+      const releaseSource = new Tone.BufferSource(buffer).connect(output);
       source.stop(startTime + duration + this.FADE_SECONDS, this.FADE_SECONDS);
       releaseSource.start(
           startTime + duration, this.durationSeconds, undefined, 1,
@@ -358,10 +362,11 @@ export class SoundFont {
    * @param duration Length of the note in seconds.
    * @param program Program number to use for instrument lookup.
    * @param isDrum Drum status to use for instrument lookup.
+   * @param output Output `AudioNode`.
    */
   playNote(
       pitch: number, velocity: number, startTime: number, duration: number,
-      program: number, isDrum: boolean) {
+      program: number, isDrum: boolean, output: any) {
     const instrument = isDrum ? 'drums' : program;
     if (!this.initialized) {
       throw new Error('SoundFont is not initialized.');
@@ -373,6 +378,6 @@ export class SoundFont {
     }
 
     this.instruments.get(instrument)
-        .playNote(pitch, velocity, startTime, duration);
+        .playNote(pitch, velocity, startTime, duration, output);
   }
 }

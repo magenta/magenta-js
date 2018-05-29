@@ -13,9 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# An install script for magenta (https://github.com/tensorflow/magenta).
-# Run with: bash install_magenta.sh
 
 # Builds all demos in the demos folder.
 # Looks for all .html files and builds the corresponding .ts file as
@@ -26,7 +23,7 @@
 if [[ -n $1 ]]; then
   demos=( "${1}" )
 else
-  demos=( *.ts )
+  demos=( "music_rnn.ts" "music_vae.ts" "multitrack.ts" )
 fi
 
 echo "Building ${demos[@]}..."

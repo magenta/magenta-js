@@ -155,7 +155,7 @@ export function sequenceProtoToMidi(ns: INoteSequence) {
     }
     tracks.get(instrument).push(note);
   }
-  const instruments = Array.from(tracks.keys()).sort();
+  const instruments = Array.from(tracks.keys()).sort((a, b) => a - b);
   for (let i = 0; i < instruments.length; i++) {
     if (i !== instruments[i]) {
       throw new MidiConversionError(
