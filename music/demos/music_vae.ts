@@ -560,9 +560,9 @@ async function generateMultitrackChordsButton() {
     runMultitrackChords();
     multitrackChordsButton.disabled = true;
   });
-  const multitrackChordsiv = document.getElementById(
+  const multitrackChordsDiv = document.getElementById(
     'generate-multitrack-chord');
-  multitrackChordsiv.appendChild(multitrackChordsButton);
+  multitrackChordsDiv.appendChild(multitrackChordsButton);
 }
 
 try {
