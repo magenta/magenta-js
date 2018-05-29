@@ -753,14 +753,15 @@ class MusicVAE {
    *   | . . . . |
    *   | B . . D |
    * where the letters represent the reconstructions of the four inputs, in
-   * alphabetical order, and there are `numInterps` sequences on each
-   * edge for a total of `numInterps`^2 sequences.
+   * alphabetical order, with the number of output columns and rows specified
+   * by `numInterps`.
    *
    * @param inputSequences An array of 2 or 4 `NoteSequence`s to interpolate
    * between.
    * @param numInterps The number of pairwise interpolation sequences to
-   * return, including the reconstructions. If 4 inputs are given, the total
-   * number of sequences will be `numInterps`^2.
+   * return, including the reconstructions. If 4 inputs are given, this can be
+   * either a single number specifying the side length of a square, or a
+   * `[columnCount, rowCount]` array to specify a rectangle.
    * @param temperature (Optional) The softmax temperature to use when
    * sampling from the logits. Argmax is used if not provided.
    * @param chordProgression (Optional) Chord progression to use as
@@ -770,8 +771,8 @@ class MusicVAE {
    * above.
    */
   async interpolate(
-      inputSequences: INoteSequence[], numInterps: number, temperature?: number,
-      chordProgression?: string[]) {
+      inputSequences: INoteSequence[], numInterps: number | number[],
+      temperature?: number, chordProgression?: string[]) {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
     }
@@ -971,42 +972,53 @@ class MusicVAE {
     return outputSequences;
   }
 
-  private getInterpolatedZs(z: tf.Tensor2D, numInterps: number) {
+  private getInterpolatedZs(z: tf.Tensor2D, numInterps: number | number[]) {
+    if (typeof numInterps === 'number') {
+      numInterps = [numInterps];
+    }
+
     if (z.shape[0] !== 2 && z.shape[0] !== 4) {
       throw new Error(
           'Invalid number of input sequences. Requires length 2, or 4');
     }
+    if (numInterps.length !== 1 && numInterps.length !== 2) {
+      throw new Error('Invalid number of dimensions. Requires length 1, or 2.');
+    }
+
+    const w = numInterps[0];
+    const h = numInterps.length === 2 ? numInterps[1] : w;
 
     // Compute the interpolations of the latent variable.
     const interpolatedZs: tf.Tensor2D = tf.tidy(() => {
-      const rangeArray = tf.linspace(0.0, 1.0, numInterps);
+      const rangeX = tf.linspace(0.0, 1.0, w);
 
       const z0 = z.slice([0, 0], [1, z.shape[1]]).as1D();
       const z1 = z.slice([1, 0], [1, z.shape[1]]).as1D();
 
       if (z.shape[0] === 2) {
         const zDiff = z1.sub(z0) as tf.Tensor1D;
-        return tf.outerProduct(rangeArray, zDiff).add(z0) as tf.Tensor2D;
+        return tf.outerProduct(rangeX, zDiff).add(z0) as tf.Tensor2D;
       } else if (z.shape[0] === 4) {
+        const rangeY = tf.linspace(0.0, 1.0, h);
         const z2 = z.slice([2, 0], [1, z.shape[1]]).as1D();
         const z3 = z.slice([3, 0], [1, z.shape[1]]).as1D();
 
-        const revRangeArray = tf.scalar(1.0).sub(rangeArray) as tf.Tensor1D;
+        const revRangeX = tf.scalar(1.0).sub(rangeX) as tf.Tensor1D;
+        const revRangeY = tf.scalar(1.0).sub(rangeY) as tf.Tensor1D;
 
-        const r = numInterps;
         let finalZs =
-            z0.mul(tf.outerProduct(revRangeArray, revRangeArray).as3D(r, r, 1));
+            z0.mul(tf.outerProduct(revRangeY, revRangeX).as3D(h, w, 1));
         finalZs = tf.addStrict(
             finalZs,
-            z1.mul(tf.outerProduct(rangeArray, revRangeArray).as3D(r, r, 1)));
+            z1.mul(tf.outerProduct(rangeY, revRangeX).as3D(h, w, 1)));
         finalZs = tf.addStrict(
             finalZs,
-            z2.mul(tf.outerProduct(revRangeArray, rangeArray).as3D(r, r, 1)));
+            z2.mul(tf.outerProduct(revRangeY, rangeX).as3D(h, w, 1)));
         finalZs = tf.addStrict(
             finalZs,
-            z3.mul(tf.outerProduct(rangeArray, rangeArray).as3D(r, r, 1)));
+            z3.mul(tf.outerProduct(rangeY, rangeX).as3D(h, w, 1)));
 
-        return finalZs.as2D(r * r, z.shape[1]);
+        return finalZs.as2D(w * h, z.shape[1]);
       } else {
         throw new Error(
             'Invalid number of note sequences. Requires length 2, or 4');
