@@ -1045,8 +1045,8 @@ midi-file-parser@^1.0.0:
   resolved "https://registry.yarnpkg.com/midi-file-parser/-/midi-file-parser-1.0.0.tgz#175a013f277e9d26acf94cfe6c03b13abb0a1e9e"
 
 midiconvert@^0.4.5:
-  version "0.4.5"
-  resolved "https://registry.yarnpkg.com/midiconvert/-/midiconvert-0.4.5.tgz#f24831167651e8f846474b640c416acb28cf8e73"
+  version "0.4.7"
+  resolved "https://registry.yarnpkg.com/midiconvert/-/midiconvert-0.4.7.tgz#4744cd2e57cffdb980f3e56aa1268e56a86f20f8"
   dependencies:
     jsmidgen "^0.1.5"
     midi-file-parser "^1.0.0"
