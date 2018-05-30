@@ -145,6 +145,55 @@ const simpleNs = NoteSequence.create({
   ]
 });
 
+const polyNs = NoteSequence.create({
+  ticksPerQuarter: 220,
+  totalTime: 1.0,
+  timeSignatures: [{time: 0, numerator: 4, denominator: 4}],
+  tempos: [{time: 0, qpm: 120}],
+  sourceInfo: {
+    encodingType: NoteSequence.SourceInfo.EncodingType.MIDI,
+    parser: NoteSequence.SourceInfo.Parser.TONEJS_MIDI_CONVERT
+  },
+  notes: [
+    {
+      instrument: 0,
+      program: 0,
+      startTime: 0.0,
+      endTime: 1.0,
+      pitch: 60,
+      velocity: 100,
+      isDrum: false
+    },
+    {
+      instrument: 0,
+      program: 0,
+      startTime: 0.125,
+      endTime: 0.875,
+      pitch: 62,
+      velocity: 100,
+      isDrum: false
+    },
+    {
+      instrument: 0,
+      program: 0,
+      startTime: 0.25,
+      endTime: 0.75,
+      pitch: 64,
+      velocity: 100,
+      isDrum: false
+    },
+    {
+      instrument: 0,
+      program: 0,
+      startTime: 0.375,
+      endTime: 0.625,
+      pitch: 67,
+      velocity: 100,
+      isDrum: false
+    }
+  ]
+});
+
 test('Parse Simple MIDI', (t: test.Test) => {
   const midi = fs.readFileSync('../testdata/melody.mid', 'binary');
   const ns = midi_io.midiToSequenceProto(midi);
@@ -165,6 +214,15 @@ test('Create Simple MIDI File', (t: test.Test) => {
   t.deepEqual(
       midi_io.midiToSequenceProto(String.fromCharCode.apply(null, midiFile)),
       simpleNs);
+  t.end();
+});
+
+test('Create MIDI File With Polyphony', (t: test.Test) => {
+  const midiFile = midi_io.sequenceProtoToMidi(polyNs);
+
+  t.deepEqual(
+      midi_io.midiToSequenceProto(String.fromCharCode.apply(null, midiFile)),
+      polyNs);
   t.end();
 });
 
