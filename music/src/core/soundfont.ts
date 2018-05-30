@@ -207,7 +207,7 @@ export class Instrument {
    */
   playNote(
       pitch: number, velocity: number, startTime: number, duration: number,
-      output: any) {
+      output: any) {  // tslint:disable-line:no-any
     if (!this.initialized) {
       throw new Error('Instrument is not initialized.');
     }
@@ -366,7 +366,8 @@ export class SoundFont {
    */
   playNote(
       pitch: number, velocity: number, startTime: number, duration: number,
-      program: number, isDrum: boolean, output: any) {
+      program: number, isDrum: boolean,
+      output: any) {  // tslint:disable-line:no-any
     const instrument = isDrum ? 'drums' : program;
     if (!this.initialized) {
       throw new Error('SoundFont is not initialized.');
