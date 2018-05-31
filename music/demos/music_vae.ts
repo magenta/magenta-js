@@ -29,7 +29,7 @@ const DRUMS_NADE_CKPT = `${CHECKPOINTS_DIR}/music_vae/drums_2bar_nade_9_q2`;
 const MEL_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_2bar_small`;
 const MEL_CHORDS_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_chords`;
 const MEL_16_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_16bar_small_q2`;
-const TRIO_CKPT = `${CHECKPOINTS_DIR}/music_vae/trio_4bar_lokl_small_q1`;
+const TRIO_CKPT = `${CHECKPOINTS_DIR}/music_vae/trio_4bar`;
 
 // TODO(adarob): Switch to magenta/core function once implemented.
 function concatNoteSequences(
