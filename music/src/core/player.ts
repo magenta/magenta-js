@@ -249,11 +249,17 @@ export class Player extends BasePlayer {
 export class SoundFontPlayer extends BasePlayer {
   private soundFont: soundfont.SoundFont;
   private output: any;  // tslint:disable-line:no-any
+  private programOutputs: Map<number, any>;
+  private drumOutputs: Map<number, any>;
 
-  constructor(soundFontURL: string, output = Tone.Master) {
+  constructor(
+      soundFontURL: string, output = Tone.Master,
+      programOutputs?: Map<number, any>, drumOutputs?: Map<number, any>) {
     super();
     this.soundFont = new soundfont.SoundFont(soundFontURL);
     this.output = output;
+    this.programOutputs = programOutputs;
+    this.drumOutputs = drumOutputs;
   }
 
   async loadSamples(seq: INoteSequence): Promise<void> {
@@ -270,8 +276,23 @@ export class SoundFontPlayer extends BasePlayer {
   }
 
   protected playNote(time: number, note: NoteSequence.INote) {
+    // Determine which `AudioNode` to use for output. Non-drums are mapped to
+    // outputs by program number, while drums are mapped to outputs by MIDI
+    // pitch value. A single output (defaulting to `Tone.Master`) is used as a
+    // fallback.
+    let output = this.output;
+    if (this.programOutputs && !note.isDrum) {
+      if (this.programOutputs.has(note.program)) {
+        output = this.programOutputs.get(note.program);
+      }
+    } else if (this.drumOutputs && note.isDrum) {
+      if (this.drumOutputs.has(note.pitch)) {
+        output = this.drumOutputs.get(note.pitch);
+      }
+    }
+
     this.soundFont.playNote(
         note.pitch, note.velocity, time, note.endTime - note.startTime,
-        note.program, note.isDrum, this.output);
+        note.program, note.isDrum, output);
   }
 }
