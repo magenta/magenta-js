@@ -214,7 +214,9 @@ test('Test MultitrackConverter', (t: test.Test) => {
     'numSegments': 8,
     'stepsPerQuarter': 1,
     'totalSteps': 8,
-    'numVelocityBins': 0
+    'numVelocityBins': 0,
+    'minPitch': 21,
+    'maxPitch': 108
   });
 
   const multitrackTensor = multitrackConverter.toTensor(MULTITRACK_NS);

@@ -53,8 +53,7 @@ Add the following code to an HTML file:
     <script>
       // Instantiate model by loading desired config.
       const model = new mm.MusicVAE(
-        'https://storage.googleapis.com/download.magenta.tensorflow.org' +
-        '/tfjs_checkpoints/music_vae/trio_4bar');
+        'https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/trio_4bar');
       const player = new mm.Player();
 
       function play() {

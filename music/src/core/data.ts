@@ -541,11 +541,17 @@ export class TrioConverter extends DataConverter {
  * with silence.
  * @param numVelocityBins The number of bins into which to quantize note
  * velocities.
+ * @param minPitch (Optional) Minimum MIDI pitch to allow. Will be 0 if not
+ * specified.
+ * @param maxPitch (Optional) Maximum MIDI pitch to allow. Will be 127 if not
+ * specified.
  */
 export interface MultitrackConverterArgs extends BaseConverterArgs {
   stepsPerQuarter: number;
   totalSteps: number;
   numVelocityBins: number;
+  minPitch?: number;
+  maxPitch?: number;
 }
 export class MultitrackConverter extends DataConverter {
   readonly NUM_SPLITS = 0;             // const
@@ -554,6 +560,8 @@ export class MultitrackConverter extends DataConverter {
   readonly stepsPerQuarter: number;
   readonly totalSteps: number;
   readonly numVelocityBins: number;
+  readonly minPitch: number;
+  readonly maxPitch: number;
 
   readonly numPitches: number;
   readonly performanceEventDepth: number;
@@ -568,11 +576,13 @@ export class MultitrackConverter extends DataConverter {
     this.stepsPerQuarter = args.stepsPerQuarter;
     this.totalSteps = args.totalSteps;
     this.numVelocityBins = args.numVelocityBins;
+    this.minPitch = args.minPitch ? args.minPitch : constants.MIN_MIDI_PITCH;
+    this.maxPitch = args.maxPitch ? args.maxPitch : constants.MAX_MIDI_PITCH;
 
     // Vocabulary:
     // note-on, note-off, time-shift, velocity-change, program-select, end-token
 
-    this.numPitches = constants.MAX_MIDI_PITCH - constants.MIN_MIDI_PITCH + 1;
+    this.numPitches = this.maxPitch - this.minPitch + 1;
     this.performanceEventDepth =
         2 * this.numPitches + this.totalSteps + this.numVelocityBins;
 
@@ -611,12 +621,11 @@ export class MultitrackConverter extends DataConverter {
       track.events.forEach((event, index) => {
         switch (event.type) {
           case 'note-on':
-            tokens.set(event.pitch - constants.MIN_MIDI_PITCH, index + 1);
+            tokens.set(event.pitch - this.minPitch, index + 1);
             break;
           case 'note-off':
             tokens.set(
-                this.numPitches + event.pitch - constants.MIN_MIDI_PITCH,
-                index + 1);
+                this.numPitches + event.pitch - this.minPitch, index + 1);
             break;
           case 'time-shift':
             tokens.set(2 * this.numPitches + event.steps - 1, index + 1);
@@ -656,14 +665,17 @@ export class MultitrackConverter extends DataConverter {
           this.stepsPerQuarter}`);
     }
 
-    const instruments =
-        new Set(noteSequence.notes.map(note => note.instrument));
+    // Drop all notes outside the valid pitch range.
+    const seq = sequences.clone(noteSequence);
+    seq.notes = noteSequence.notes.filter(
+        note => note.pitch >= this.minPitch && note.pitch <= this.maxPitch);
+
+    const instruments = new Set(seq.notes.map(note => note.instrument));
     const tracks =
         Array.from(instruments)
             .map(
                 instrument => performance.Performance.fromNoteSequence(
-                    noteSequence, this.totalSteps, this.numVelocityBins,
-                    instrument));
+                    seq, this.totalSteps, this.numVelocityBins, instrument));
 
     // Sort tracks by program number, with drums at the end.
     const sortedTracks = tracks.sort(
@@ -712,12 +724,12 @@ export class MultitrackConverter extends DataConverter {
     const events: performance.PerformanceEvent[] =
         Array.from(eventTokens).map((token) => {
           if (token < this.numPitches) {
-            return {type: 'note-on', pitch: constants.MIN_MIDI_PITCH + token} as
+            return {type: 'note-on', pitch: this.minPitch + token} as
                 performance.NoteOn;
           } else if (token < 2 * this.numPitches) {
             return {
               type: 'note-off',
-              pitch: constants.MIN_MIDI_PITCH + token - this.numPitches
+              pitch: this.minPitch + token - this.numPitches
             } as performance.NoteOff;
           } else if (token < 2 * this.numPitches + this.totalSteps) {
             return {
