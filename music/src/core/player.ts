@@ -62,31 +62,7 @@ export abstract class BasePlayer {
    * default of 120. Only valid for quantized sequences.
    * @returns a Promise that resolves when playback is complete.
    */
-  start(seq: INoteSequence, click?: boolean, qpm?: number): Promise<void> {
-    if (click) {
-      let clickSeq:INoteSequence = {
-        notes: [],
-        quantizationInfo: seq.quantizationInfo
-      };
-      for (let i = 0; i < seq.notes.length; ++i) {
-        clickSeq.notes.push(seq.notes[i]);
-      }
-      var sixteenthEnds = clickSeq.notes.map(n => n.quantizedEndStep);
-      var lastSixteenth = sixteenthEnds.reduce(
-        function(a, b) { return Math.max(a, b); });
-      for (let i = 0; i < lastSixteenth; i += 4) {
-        let click:NoteSequence.INote = {
-          pitch: i % 16 == 0 ? 90 : 89,
-          quantizedStartStep: i,
-          isDrum: true,
-          quantizedEndStep: i + 1
-        };
-        clickSeq.notes.push(click);
-      }
-      clickSeq.notes.sort(compareQuantizedNotes);
-      seq = clickSeq;
-    }
-
+  start(seq: INoteSequence, qpm?: number): Promise<void> {
     if (sequences.isQuantizedSequence(seq)) {
       seq = sequences.unquantizeSequence(seq, qpm);
     } else if (qpm) {
@@ -321,8 +297,8 @@ export class SoundFontPlayer extends BasePlayer {
                                                    })));
   }
 
-  start(seq: INoteSequence, click?: boolean, qpm?: number): Promise<void> {
-    return this.loadSamples(seq).then(() => super.start(seq, click, qpm));
+  start(seq: INoteSequence, qpm?: number): Promise<void> {
+    return this.loadSamples(seq).then(() => super.start(seq, qpm));
   }
 
   protected playNote(time: number, note: NoteSequence.INote) {
@@ -344,5 +320,44 @@ export class SoundFontPlayer extends BasePlayer {
     this.soundFont.playNote(
         note.pitch, note.velocity, time, note.endTime - note.startTime,
         note.program, note.isDrum, output);
+  }
+}
+
+/**
+ * A `NoteSequence` player based on Tone.js that includes a click track.
+ */
+export class PlayerWithClick extends Player {
+  /**
+   * Starts playing a `NoteSequence` (either quantized or unquantized) which
+   * includes a click track, and returns a Promise that resolves when it is
+   * done playing.  @param seq The `NoteSequence` to play.  @param qpm
+   * (Optional) If specified, will play back at this qpm. If not specified,
+   * will use either the qpm specified in the sequence or the default of 120.
+   * Only valid for quantized sequences.  @returns a Promise that resolves when
+   * playback is complete.
+   */
+  start(seq: INoteSequence, qpm?: number): Promise<void> {
+    let clickSeq:INoteSequence = {
+      notes: [],
+      quantizationInfo: seq.quantizationInfo
+    };
+    for (let i = 0; i < seq.notes.length; ++i) {
+      clickSeq.notes.push(seq.notes[i]);
+    }
+    var sixteenthEnds = clickSeq.notes.map(n => n.quantizedEndStep);
+    var lastSixteenth = sixteenthEnds.reduce(
+      function(a, b) { return Math.max(a, b); });
+    for (let i = 0; i < lastSixteenth; i += 4) {
+      let click:NoteSequence.INote = {
+        pitch: i % 16 == 0 ? 90 : 89,
+        quantizedStartStep: i,
+        isDrum: true,
+        quantizedEndStep: i + 1
+      };
+      clickSeq.notes.push(click);
+    }
+    clickSeq.notes.sort(compareQuantizedNotes);
+    seq = clickSeq;
+    return super.start(clickSeq, qpm);
   }
 }

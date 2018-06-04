@@ -186,8 +186,8 @@ export function writeNoteSeqs(
   });
 }
 
-function createPlayerButton(seq: mm.INoteSequence, player: mm.Player,
-                            withClick: boolean) {
+function createPlayerButton(seq: mm.INoteSequence, withClick: boolean) {
+  const player = withClick ? new mm.PlayerWithClick() : new mm.Player();
   const button = document.createElement('button');
   let playText = withClick ? 'Play With Click' : 'Play';
   button.textContent = playText;
@@ -196,7 +196,7 @@ function createPlayerButton(seq: mm.INoteSequence, player: mm.Player,
       player.stop();
       button.textContent = playText;
     } else {
-      player.start(seq, withClick).then(() => (button.textContent = playText));
+      player.start(seq).then(() => (button.textContent = playText));
       button.textContent = 'Stop';
     }
   });
@@ -204,10 +204,9 @@ function createPlayerButton(seq: mm.INoteSequence, player: mm.Player,
 }
 
 function createPlayer(seq: mm.INoteSequence) {
-  const player = new mm.Player();
   const buttonsDiv = document.createElement('div');
-  buttonsDiv.appendChild(createPlayerButton(seq, player, false));
-  buttonsDiv.appendChild(createPlayerButton(seq, player, true));
+  buttonsDiv.appendChild(createPlayerButton(seq, false));
+  buttonsDiv.appendChild(createPlayerButton(seq, true));
   return buttonsDiv;
 }
 
