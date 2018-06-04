@@ -50,12 +50,7 @@ export const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
   // crash cymbal
   [49, 55, 57, 58],
   // ride cymbal
-  [51, 52, 53, 59, 82] /*,
-  // lo-click
-  [89],
-  // hi-click
-  [90]
-                        */
+  [51, 52, 53, 59, 82]
 ];
 
 export interface MelodyConverterSpec {
