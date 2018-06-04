@@ -50,3 +50,7 @@ export const MAX_MIDI_PITCH = 127;
 // Program-related constants.
 export const MIN_MIDI_PROGRAM = 0;
 export const MAX_MIDI_PROGRAM = 127;
+
+// Click-track constants.
+export const LO_CLICK_PITCH = 89;
+export const HI_CLICK_PITCH = 90;

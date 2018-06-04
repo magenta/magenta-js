@@ -201,10 +201,10 @@ export class DrumsConverter extends DataConverter {
       });
     }
     // We also add two extra pitches for the click-track.
-    // lo-click.
-    this.pitchToClass.set(89, this.pitchClasses.length + 1);
-    // hi-click.
-    this.pitchToClass.set(90, this.pitchClasses.length + 2);
+    this.pitchToClass.set(constants.LO_CLICK_PITCH,
+                          this.pitchClasses.length + 1);
+    this.pitchToClass.set(constants.HI_CLICK_PITCH,
+                          this.pitchClasses.length + 2);
     this.depth = this.pitchClasses.length;
   }
 
