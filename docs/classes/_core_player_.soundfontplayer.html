@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Player | @magenta/music</title>
+	<title>SoundFontPlayer | @magenta/music</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -57,10 +57,10 @@
 					<a href="../modules/_core_player_.html">&quot;core/player&quot;</a>
 				</li>
 				<li>
-					<a href="_core_player_.player.html">Player</a>
+					<a href="_core_player_.soundfontplayer.html">SoundFontPlayer</a>
 				</li>
 			</ul>
-			<h1>Class Player</h1>
+			<h1>Class SoundFontPlayer</h1>
 		</div>
 	</div>
 </header>
@@ -70,8 +70,19 @@
 			<section class="tsd-panel tsd-comment">
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>A <code>NoteSequence</code> player based on Tone.js.</p>
+						<p>A <code>NoteSequence</code> player based on Tone.js that uses SoundFont samples. The
+							<code>loadSamples</code> method may be called before <code>start</code> so that the samples
+							necessary for playing the sequence will be loaded and playing will begin
+						immediately upon <code>start</code>.</p>
 					</div>
+					<p>Example (explicitly loading samples):</p>
+					<p>  <code>player.loadSamples(seq).then(() =&gt; player.start(seq))</code></p>
+					<p>Explicitly loads samples, so that playing starts immediately when <code>start</code> is
+					called.</p>
+					<p>Example (implicitly loading samples):</p>
+					<p>  <code>player.start(seq)</code></p>
+					<p>If the samples for <code>seq</code> have not already been loaded, playing will only
+					start after all necessary samples have been loaded.</p>
 				</div>
 			</section>
 			<section class="tsd-panel tsd-hierarchy">
@@ -81,7 +92,7 @@
 						<a href="_core_player_.baseplayer.html" class="tsd-signature-type">BasePlayer</a>
 						<ul class="tsd-hierarchy">
 							<li>
-								<span class="target">Player</span>
+								<span class="target">SoundFontPlayer</span>
 							</li>
 						</ul>
 					</li>
@@ -91,67 +102,53 @@
 				<h2>Index</h2>
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
-						<section class="tsd-index-section tsd-is-inherited">
+						<section class="tsd-index-section ">
 							<h3>Constructors</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><a href="_core_player_.player.html#constructor" class="tsd-kind-icon">constructor</a></li>
-							</ul>
-						</section>
-						<section class="tsd-index-section ">
-							<h3>Properties</h3>
-							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="_core_player_.player.html#tone" class="tsd-kind-icon">tone</a></li>
+								<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite"><a href="_core_player_.soundfontplayer.html#constructor" class="tsd-kind-icon">constructor</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_core_player_.player.html#isplaying" class="tsd-kind-icon">is<wbr>Playing</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-protected"><a href="_core_player_.player.html#playnote" class="tsd-kind-icon">play<wbr>Note</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_core_player_.player.html#start" class="tsd-kind-icon">start</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_core_player_.player.html#stop" class="tsd-kind-icon">stop</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_core_player_.soundfontplayer.html#isplaying" class="tsd-kind-icon">is<wbr>Playing</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_player_.soundfontplayer.html#loadsamples" class="tsd-kind-icon">load<wbr>Samples</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-protected"><a href="_core_player_.soundfontplayer.html#playnote" class="tsd-kind-icon">play<wbr>Note</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite"><a href="_core_player_.soundfontplayer.html#start" class="tsd-kind-icon">start</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_core_player_.soundfontplayer.html#stop" class="tsd-kind-icon">stop</a></li>
 							</ul>
 						</section>
 					</div>
 				</section>
 			</section>
-			<section class="tsd-panel-group tsd-member-group tsd-is-inherited">
+			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Constructors</h2>
-				<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited">
+				<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite">
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
-					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Player<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_core_player_.player.html" class="tsd-signature-type">Player</a></li>
+					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite">
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Sound<wbr>Font<wbr>Player<span class="tsd-signature-symbol">(</span>soundFontURL<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, output<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_core_player_.soundfontplayer.html" class="tsd-signature-type">SoundFontPlayer</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Inherited from <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#constructor">constructor</a></p>
+								<p>Overrides <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L38">core/player.ts:38</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L251">core/player.ts:251</a></li>
 								</ul>
 							</aside>
-							<h4 class="tsd-returns-title">Returns <a href="_core_player_.player.html" class="tsd-signature-type">Player</a></h4>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>soundFontURL: <span class="tsd-signature-type">string</span></h5>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> output: <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> =&nbsp;Tone.Master</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="_core_player_.soundfontplayer.html" class="tsd-signature-type">SoundFontPlayer</a></h4>
 						</li>
 					</ul>
-				</section>
-			</section>
-			<section class="tsd-panel-group tsd-member-group ">
-				<h2>Properties</h2>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-static">
-					<a name="tone" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagStatic">Static</span> tone</h3>
-					<div class="tsd-signature tsd-kind-icon">tone<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> =&nbsp;Tone</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L202">core/player.ts:202</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>The Tone module being used.</p>
-						</div>
-					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
@@ -174,6 +171,29 @@
 						</li>
 					</ul>
 				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="loadsamples" class="tsd-anchor"></a>
+					<h3>load<wbr>Samples</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">load<wbr>Samples<span class="tsd-signature-symbol">(</span>seq<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L259">core/player.ts:259</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>seq: <span class="tsd-signature-type">INoteSequence</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-protected">
 					<a name="playnote" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> play<wbr>Note</h3>
@@ -185,7 +205,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#playnote">playNote</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L204">core/player.ts:204</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L272">core/player.ts:272</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -201,45 +221,30 @@
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-overwrite">
 					<a name="start" class="tsd-anchor"></a>
 					<h3>start</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-overwrite">
 						<li class="tsd-signature tsd-kind-icon">start<span class="tsd-signature-symbol">(</span>seq<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span>, qpm<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Inherited from <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#start">start</a></p>
+								<p>Overrides <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#start">start</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L55">core/player.ts:55</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L268">core/player.ts:268</a></li>
 								</ul>
 							</aside>
-							<div class="tsd-comment tsd-typography">
-								<div class="lead">
-									<p>Starts playing a <code>NoteSequence</code> (either quantized or unquantized), and
-									returns a Promise that resolves when it is done playing.</p>
-								</div>
-							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>seq: <span class="tsd-signature-type">INoteSequence</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>The <code>NoteSequence</code> to play.</p>
-									</div>
 								</li>
 								<li>
 									<h5><span class="tsd-flag ts-flagOptional">Optional</span> qpm: <span class="tsd-signature-type">number</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>(Optional) If specified, will play back at this qpm. If not
-											specified, will use either the qpm specified in the sequence or the
-										default of 120. Only valid for quantized sequences.</p>
-									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
-							<p>a Promise that resolves when playback is complete.</p>
 						</li>
 					</ul>
 				</section>
@@ -320,36 +325,36 @@
 					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_core_player_.drumkit.html" class="tsd-kind-icon">Drum<wbr>Kit</a>
 					</li>
+					<li class=" tsd-kind-class tsd-parent-kind-external-module">
+						<a href="_core_player_.player.html" class="tsd-kind-icon">Player</a>
+					</li>
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_core_player_.player.html" class="tsd-kind-icon">Player</a>
+						<a href="_core_player_.soundfontplayer.html" class="tsd-kind-icon">Sound<wbr>Font<wbr>Player</a>
 						<ul>
-							<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited">
-								<a href="_core_player_.player.html#constructor" class="tsd-kind-icon">constructor</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-static">
-								<a href="_core_player_.player.html#tone" class="tsd-kind-icon">tone</a>
+							<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite">
+								<a href="_core_player_.soundfontplayer.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-								<a href="_core_player_.player.html#isplaying" class="tsd-kind-icon">is<wbr>Playing</a>
+								<a href="_core_player_.soundfontplayer.html#isplaying" class="tsd-kind-icon">is<wbr>Playing</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_core_player_.soundfontplayer.html#loadsamples" class="tsd-kind-icon">load<wbr>Samples</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-protected">
-								<a href="_core_player_.player.html#playnote" class="tsd-kind-icon">play<wbr>Note</a>
+								<a href="_core_player_.soundfontplayer.html#playnote" class="tsd-kind-icon">play<wbr>Note</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite">
+								<a href="_core_player_.soundfontplayer.html#start" class="tsd-kind-icon">start</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-								<a href="_core_player_.player.html#start" class="tsd-kind-icon">start</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-								<a href="_core_player_.player.html#stop" class="tsd-kind-icon">stop</a>
+								<a href="_core_player_.soundfontplayer.html#stop" class="tsd-kind-icon">stop</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_core_player_.soundfontplayer.html" class="tsd-kind-icon">Sound<wbr>Font<wbr>Player</a>
-					</li>
 				</ul>
 			</nav>
 		</div>
