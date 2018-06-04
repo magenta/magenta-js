@@ -16,7 +16,6 @@
  */
 
 import * as mm from '../src/index';
-import {NoteSequence} from '../src/protobuf/index';
 
 export const CHECKPOINTS_DIR =
     // tslint:disable-next-line:max-line-length
@@ -187,25 +186,17 @@ export function writeNoteSeqs(
   });
 }
 
-function compareQuantizedNotes(a: NoteSequence.INote, b: NoteSequence.INote) {
-  if (a.quantizedStartStep < b.quantizedStartStep)
-    return -1;
-  if (a.quantizedStartStep > b.quantizedStartStep)
-    return 1;
-  if (a.pitch < b.pitch)
-    return -1;
-  return 1;
-}
-
-function createPlayerButton(seq: mm.INoteSequence, player: mm.Player, playText: string) {
+function createPlayerButton(seq: mm.INoteSequence, player: mm.Player,
+                            withClick: boolean) {
   const button = document.createElement('button');
+  let playText = withClick ? 'Play With Click' : 'Play';
   button.textContent = playText;
   button.addEventListener('click', () => {
     if (player.isPlaying()) {
       player.stop();
       button.textContent = playText;
     } else {
-      player.start(seq).then(() => (button.textContent = playText));
+      player.start(seq, withClick).then(() => (button.textContent = playText));
       button.textContent = 'Stop';
     }
   });
@@ -215,28 +206,8 @@ function createPlayerButton(seq: mm.INoteSequence, player: mm.Player, playText: 
 function createPlayer(seq: mm.INoteSequence) {
   const player = new mm.Player();
   const buttonsDiv = document.createElement('div');
-  buttonsDiv.appendChild(createPlayerButton(seq, player, 'Play'));
-  let clickSeq:mm.INoteSequence = {
-    notes: [],
-    quantizationInfo: seq.quantizationInfo
-  };
-  for (let i = 0; i < seq.notes.length; ++i) {
-    clickSeq.notes.push(seq.notes[i]);
-  }
-  var sixteenthEnds = clickSeq.notes.map(n => n.quantizedEndStep);
-  var lastSixteenth = sixteenthEnds.reduce(
-    function(a, b) { return Math.max(a, b); });
-  for (let i = 0; i < lastSixteenth; i += 4) {
-    let click:NoteSequence.INote = {
-      pitch: i % 16 == 0 ? 90 : 89,
-      quantizedStartStep: i,
-      isDrum: true,
-      quantizedEndStep: i + 1
-    };
-    clickSeq.notes.push(click);
-  }
-  clickSeq.notes.sort(compareQuantizedNotes);
-  buttonsDiv.appendChild(createPlayerButton(clickSeq, player, 'Play With Click'));
+  buttonsDiv.appendChild(createPlayerButton(seq, player, false));
+  buttonsDiv.appendChild(createPlayerButton(seq, player, true));
   return buttonsDiv;
 }
 

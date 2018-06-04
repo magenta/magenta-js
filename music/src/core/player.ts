@@ -28,6 +28,16 @@ import {sequences} from '.';
 import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
 import * as soundfont from './soundfont';
 
+function compareQuantizedNotes(a: NoteSequence.INote, b: NoteSequence.INote) {
+  if (a.quantizedStartStep < b.quantizedStartStep)
+    return -1;
+  if (a.quantizedStartStep > b.quantizedStartStep)
+    return 1;
+  if (a.pitch < b.pitch)
+    return -1;
+  return 1;
+}
+
 /**
  * Abstract base class for a `NoteSequence` player based on Tone.js.
  */
@@ -52,7 +62,31 @@ export abstract class BasePlayer {
    * default of 120. Only valid for quantized sequences.
    * @returns a Promise that resolves when playback is complete.
    */
-  start(seq: INoteSequence, qpm?: number): Promise<void> {
+  start(seq: INoteSequence, click?: boolean, qpm?: number): Promise<void> {
+    if (click) {
+      let clickSeq:INoteSequence = {
+        notes: [],
+        quantizationInfo: seq.quantizationInfo
+      };
+      for (let i = 0; i < seq.notes.length; ++i) {
+        clickSeq.notes.push(seq.notes[i]);
+      }
+      var sixteenthEnds = clickSeq.notes.map(n => n.quantizedEndStep);
+      var lastSixteenth = sixteenthEnds.reduce(
+        function(a, b) { return Math.max(a, b); });
+      for (let i = 0; i < lastSixteenth; i += 4) {
+        let click:NoteSequence.INote = {
+          pitch: i % 16 == 0 ? 90 : 89,
+          quantizedStartStep: i,
+          isDrum: true,
+          quantizedEndStep: i + 1
+        };
+        clickSeq.notes.push(click);
+      }
+      clickSeq.notes.sort(compareQuantizedNotes);
+      seq = clickSeq;
+    }
+
     if (sequences.isQuantizedSequence(seq)) {
       seq = sequences.unquantizeSequence(seq, qpm);
     } else if (qpm) {
@@ -287,8 +321,8 @@ export class SoundFontPlayer extends BasePlayer {
                                                    })));
   }
 
-  start(seq: INoteSequence, qpm?: number): Promise<void> {
-    return this.loadSamples(seq).then(() => super.start(seq, qpm));
+  start(seq: INoteSequence, click?: boolean, qpm?: number): Promise<void> {
+    return this.loadSamples(seq).then(() => super.start(seq, click, qpm));
   }
 
   protected playNote(time: number, note: NoteSequence.INote) {
