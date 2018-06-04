@@ -248,13 +248,14 @@ export class Player extends BasePlayer {
  */
 export class SoundFontPlayer extends BasePlayer {
   private soundFont: soundfont.SoundFont;
-  private output: any;  // tslint:disable-line:no-any
-  private programOutputs: Map<number, any>;
-  private drumOutputs: Map<number, any>;
+  private output: any;                       // tslint:disable-line:no-any
+  private programOutputs: Map<number, any>;  // tslint:disable-line:no-any
+  private drumOutputs: Map<number, any>;     // tslint:disable-line:no-any
 
   constructor(
       soundFontURL: string, output = Tone.Master,
-      programOutputs?: Map<number, any>, drumOutputs?: Map<number, any>) {
+      programOutputs?: Map<number, any>,  // tslint:disable-line:no-any
+      drumOutputs?: Map<number, any>) {   // tslint:disable-line:no-any
     super();
     this.soundFont = new soundfont.SoundFont(soundFontURL);
     this.output = output;
