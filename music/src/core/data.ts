@@ -50,7 +50,12 @@ export const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
   // crash cymbal
   [49, 55, 57, 58],
   // ride cymbal
-  [51, 52, 53, 59, 82]
+  [51, 52, 53, 59, 82] /*,
+  // lo-click
+  [89],
+  // hi-click
+  [90]
+                        */
 ];
 
 export interface MelodyConverterSpec {
@@ -200,6 +205,11 @@ export class DrumsConverter extends DataConverter {
         this.pitchToClass.set(p, c);
       });
     }
+    // We also add two extra pitches for the click-track.
+    // lo-click.
+    this.pitchToClass.set(89, this.pitchClasses.length + 1);
+    // hi-click.
+    this.pitchToClass.set(90, this.pitchClasses.length + 2);
     this.depth = this.pitchClasses.length;
   }
 

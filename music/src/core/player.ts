@@ -157,6 +157,18 @@ class DrumKit {
             envelope: {attack: 0.005, decay: 0.05, sustain: 0.1, release: 0.4}
           })
           .toMaster();
+  private loClick = new Tone
+                        .MembraneSynth({
+                          pitchDecay: 0.008,
+                          envelope: {attack: 0.001, decay: 0.3, sustain: 0}
+                        })
+                        .toMaster();
+  private hiClick = new Tone
+                        .MembraneSynth({
+                          pitchDecay: 0.008,
+                          envelope: {attack: 0.001, decay: 0.3, sustain: 0}
+                        })
+                        .toMaster();
   private pitchPlayers = [
     (time: number) => this.kick.triggerAttackRelease('C2', '8n', time),
     (time: number) => this.snare.triggerAttackRelease('16n', time),
@@ -166,7 +178,9 @@ class DrumKit {
     (time: number) => this.tomMid.triggerAttack('C4', time, 0.5),
     (time: number) => this.tomHigh.triggerAttack('F4', time, 0.5),
     (time: number) => this.crash.triggerAttack(time, 1.0),
-    (time: number) => this.ride.triggerAttack(time, 0.5)
+    (time: number) => this.ride.triggerAttack(time, 0.5),
+    (time: number) => this.loClick.triggerAttack('G5', time, 0.5),
+    (time: number) => this.hiClick.triggerAttack('C6', time, 0.5)
   ];
 
   private constructor() {
@@ -175,6 +189,8 @@ class DrumKit {
         this.DRUM_PITCH_TO_CLASS.set(p, c);
       });
     }
+    this.DRUM_PITCH_TO_CLASS.set(89, 9);
+    this.DRUM_PITCH_TO_CLASS.set(90, 10);
   }
 
   static getInstance() {
