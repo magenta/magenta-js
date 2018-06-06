@@ -25,6 +25,7 @@ import {isNullOrUndefined} from 'util';
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import {sequences} from '.';
+import * as constants from './constants';
 import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
 import * as soundfont from './soundfont';
 
@@ -199,8 +200,10 @@ class DrumKit {
         this.DRUM_PITCH_TO_CLASS.set(p, c);
       });
     }
-    this.DRUM_PITCH_TO_CLASS.set(89, 9);
-    this.DRUM_PITCH_TO_CLASS.set(90, 10);
+    this.DRUM_PITCH_TO_CLASS.set(constants.LO_CLICK_PITCH,
+                                 constants.LO_CLICK_CLASS);
+    this.DRUM_PITCH_TO_CLASS.set(constants.HI_CLICK_PITCH,
+                                 constants.HI_CLICK_CLASS);
   }
 
   static getInstance() {
