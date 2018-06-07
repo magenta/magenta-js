@@ -186,20 +186,28 @@ export function writeNoteSeqs(
   });
 }
 
-function createPlayer(seq: mm.INoteSequence) {
-  const player = new mm.Player();
+function createPlayerButton(seq: mm.INoteSequence, withClick: boolean) {
+  const player = withClick ? new mm.PlayerWithClick() : new mm.Player();
   const button = document.createElement('button');
-  button.textContent = 'Play';
+  let playText = withClick ? 'Play With Click' : 'Play';
+  button.textContent = playText;
   button.addEventListener('click', () => {
     if (player.isPlaying()) {
       player.stop();
-      button.textContent = 'Play';
+      button.textContent = playText;
     } else {
-      player.start(seq).then(() => (button.textContent = 'Play'));
+      player.start(seq).then(() => (button.textContent = playText));
       button.textContent = 'Stop';
     }
   });
   return button;
+}
+
+function createPlayer(seq: mm.INoteSequence) {
+  const buttonsDiv = document.createElement('div');
+  buttonsDiv.appendChild(createPlayerButton(seq, false));
+  buttonsDiv.appendChild(createPlayerButton(seq, true));
+  return buttonsDiv;
 }
 
 function createSoundFontPlayer(seq: mm.INoteSequence) {

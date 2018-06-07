@@ -16,19 +16,19 @@
   },
   "devDependencies": {
     "@types/clone": "^0.1.30",
-    "@types/tape": "^4.2.31",
-    "browserify": "~14.4.0",
+    "@types/tape": "^4.2.32",
+    "browserify": "^14.4.0",
     "clang-format": "^1.2.3",
     "clone": "^1.0.4",
     "fs": "^0.0.1-security",
     "http-server": "^0.11.1",
     "tape": "^4.9.0",
     "ts-node": "^5.0.1",
-    "tsify": "~3.0.1",
+    "tsify": "^3.0.4",
     "tslint": "^5.9.1",
     "typedoc": "^0.11.1",
     "typedoc-plugin-sourcefile-url": "^1.0.3",
-    "typescript": "2.7.2"
+    "typescript": "^2.7.2"
   },
   "scripts": {
     "prepublish": "yarn lint && yarn test && yarn build && yarn doc && yarn bundle",

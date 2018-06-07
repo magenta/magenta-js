@@ -25,8 +25,19 @@ import {isNullOrUndefined} from 'util';
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import {sequences} from '.';
+import * as constants from './constants';
 import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
 import * as soundfont from './soundfont';
+
+function compareQuantizedNotes(a: NoteSequence.INote, b: NoteSequence.INote) {
+  if (a.quantizedStartStep < b.quantizedStartStep)
+    return -1;
+  if (a.quantizedStartStep > b.quantizedStartStep)
+    return 1;
+  if (a.pitch < b.pitch)
+    return -1;
+  return 1;
+}
 
 /**
  * Abstract base class for a `NoteSequence` player based on Tone.js.
@@ -157,6 +168,18 @@ class DrumKit {
             envelope: {attack: 0.005, decay: 0.05, sustain: 0.1, release: 0.4}
           })
           .toMaster();
+  private loClick = new Tone
+                        .MembraneSynth({
+                          pitchDecay: 0.008,
+                          envelope: {attack: 0.001, decay: 0.3, sustain: 0}
+                        })
+                        .toMaster();
+  private hiClick = new Tone
+                        .MembraneSynth({
+                          pitchDecay: 0.008,
+                          envelope: {attack: 0.001, decay: 0.3, sustain: 0}
+                        })
+                        .toMaster();
   private pitchPlayers = [
     (time: number) => this.kick.triggerAttackRelease('C2', '8n', time),
     (time: number) => this.snare.triggerAttackRelease('16n', time),
@@ -166,7 +189,9 @@ class DrumKit {
     (time: number) => this.tomMid.triggerAttack('C4', time, 0.5),
     (time: number) => this.tomHigh.triggerAttack('F4', time, 0.5),
     (time: number) => this.crash.triggerAttack(time, 1.0),
-    (time: number) => this.ride.triggerAttack(time, 0.5)
+    (time: number) => this.ride.triggerAttack(time, 0.5),
+    (time: number) => this.loClick.triggerAttack('G5', time, 0.5),
+    (time: number) => this.hiClick.triggerAttack('C6', time, 0.5)
   ];
 
   private constructor() {
@@ -175,6 +200,10 @@ class DrumKit {
         this.DRUM_PITCH_TO_CLASS.set(p, c);
       });
     }
+    this.DRUM_PITCH_TO_CLASS.set(constants.LO_CLICK_PITCH,
+                                 constants.LO_CLICK_CLASS);
+    this.DRUM_PITCH_TO_CLASS.set(constants.HI_CLICK_PITCH,
+                                 constants.HI_CLICK_CLASS);
   }
 
   static getInstance() {
@@ -295,5 +324,44 @@ export class SoundFontPlayer extends BasePlayer {
     this.soundFont.playNote(
         note.pitch, note.velocity, time, note.endTime - note.startTime,
         note.program, note.isDrum, output);
+  }
+}
+
+/**
+ * A `NoteSequence` player based on Tone.js that includes a click track.
+ */
+export class PlayerWithClick extends Player {
+  /**
+   * Starts playing a `NoteSequence` (either quantized or unquantized) which
+   * includes a click track, and returns a Promise that resolves when it is
+   * done playing.  @param seq The `NoteSequence` to play.  @param qpm
+   * (Optional) If specified, will play back at this qpm. If not specified,
+   * will use either the qpm specified in the sequence or the default of 120.
+   * Only valid for quantized sequences.  @returns a Promise that resolves when
+   * playback is complete.
+   */
+  start(seq: INoteSequence, qpm?: number): Promise<void> {
+    let clickSeq:INoteSequence = {
+      notes: [],
+      quantizationInfo: seq.quantizationInfo
+    };
+    for (let i = 0; i < seq.notes.length; ++i) {
+      clickSeq.notes.push(seq.notes[i]);
+    }
+    var sixteenthEnds = clickSeq.notes.map(n => n.quantizedEndStep);
+    var lastSixteenth = sixteenthEnds.reduce(
+      function(a, b) { return Math.max(a, b); });
+    for (let i = 0; i < lastSixteenth; i += 4) {
+      let click:NoteSequence.INote = {
+        pitch: i % 16 == 0 ? 90 : 89,
+        quantizedStartStep: i,
+        isDrum: true,
+        quantizedEndStep: i + 1
+      };
+      clickSeq.notes.push(click);
+    }
+    clickSeq.notes.sort(compareQuantizedNotes);
+    seq = clickSeq;
+    return super.start(clickSeq, qpm);
   }
 }
