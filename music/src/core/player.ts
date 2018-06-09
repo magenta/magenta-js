@@ -43,8 +43,8 @@ function compareQuantizedNotes(a: NoteSequence.INote, b: NoteSequence.INote) {
  * Abstract base class for a `NoteSequence` player based on Tone.js.
  */
 export abstract class BasePlayer {
-  private currentPart: any;  // tslint:disable-line:no-any
-  private scheduledStop: number;
+  protected currentPart: any;  // tslint:disable-line:no-any
+  protected scheduledStop: number;
 
   protected abstract playNote(time: number, note: NoteSequence.INote): void;
 
@@ -327,9 +327,89 @@ export class SoundFontPlayer extends BasePlayer {
 }
 
 /**
- * A `NoteSequence` player based on Tone.js that includes a click track.
+ * A base class for providing arbitrary callbacks for each note played.
  */
-export class PlayerWithClick extends Player {
+export class BasePlayerCallback {
+
+  /* The function should be overridden, it will be called for each time/note
+   * pair in a sequence being played.
+   */
+  run(t: number, n: NoteSequence.INote) {
+    // Do nothing.
+  }
+
+    /* The function should be overridden, it will be called when a sequence is
+     * stopped.
+     */
+  stop() {
+    // Do nothing.
+  }
+}
+
+/**
+ * A `NoteSequence` player based on Tone.js that allows arbitrary callbacks
+ * when playing each note.
+ */
+export class PlayerWithCallback extends Player {
+  private playClick: boolean;
+  private callbackObject: BasePlayerCallback;
+
+  constructor(playClick?: boolean, callbackObject?: BasePlayerCallback) {
+    super();
+    if (!playClick) {
+      this.playClick = true;
+    } else {
+      this.playClick = playClick;
+    }
+    if (!callbackObject) {
+      this.callbackObject = new BasePlayerCallback();
+    } else {
+      this.callbackObject = callbackObject;
+    }
+  }
+  /**
+   * Starts playing a `NoteSequence` (either quantized or unquantized), and
+   * returns a Promise that resolves when it is done playing.
+   * @param seq The `NoteSequence` to play.
+   * @param qpm (Optional) If specified, will play back at this qpm. If not
+   * specified, will use either the qpm specified in the sequence or the
+   * default of 120. Only valid for quantized sequences.
+   * @returns a Promise that resolves when playback is complete.
+   */
+  start(seq: INoteSequence, qpm?: number): Promise<void> {
+    if (sequences.isQuantizedSequence(seq)) {
+      seq = sequences.unquantizeSequence(seq, qpm);
+    } else if (qpm) {
+      throw new Error('Cannot specify a `qpm` for a non-quantized sequence.');
+    }
+
+    this.currentPart = new Tone.Part(
+      (t: number, n: NoteSequence.INote) => {
+        if (this.playClick ||
+            (n.pitch != constants.LO_CLICK_PITCH &&
+             n.pitch != constants.HI_CLICK_PITCH)) {
+          this.playNote(t, n);
+        }
+        this.callbackObject.run(t, n);
+      }, seq.notes.map(n => [n.startTime, n]));
+    this.currentPart.start();
+    if (Tone.Transport.state !== 'started') {
+      Tone.Transport.start();
+    }
+    return new Promise(resolve => {
+      this.scheduledStop = Tone.Transport.schedule(() => {
+        this.stop();
+        resolve();
+        this.callbackObject.stop();
+      }, `+${seq.totalTime}`);
+    });
+  }
+}
+/**
+ * A `NoteSequence` player based on Tone.js that includes a click track and a
+ * callback object to be called while playing notes.
+ */
+export class PlayerWithClick extends PlayerWithCallback {
   /**
    * Starts playing a `NoteSequence` (either quantized or unquantized) which
    * includes a click track, and returns a Promise that resolves when it is
@@ -364,3 +444,4 @@ export class PlayerWithClick extends Player {
     return super.start(clickSeq, qpm);
   }
 }
+
