@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>TrioConverterSpec | @magenta/music</title>
+	<title>SampleInfo | @magenta/music</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,24 +54,31 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="../modules/_core_data_.html">&quot;core/data&quot;</a>
+					<a href="../modules/_core_soundfont_.html">&quot;core/soundfont&quot;</a>
 				</li>
 				<li>
-					<a href="_core_data_.trioconverterspec.html">TrioConverterSpec</a>
+					<a href="_core_soundfont_.sampleinfo.html">SampleInfo</a>
 				</li>
 			</ul>
-			<h1>Interface TrioConverterSpec</h1>
+			<h1>Interface SampleInfo</h1>
 		</div>
 	</div>
 </header>
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
+			<section class="tsd-panel tsd-comment">
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>Instrument sample pitch and velocity.</p>
+					</div>
+				</div>
+			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">TrioConverterSpec</span>
+						<span class="target">SampleInfo</span>
 					</li>
 				</ul>
 			</section>
@@ -82,8 +89,8 @@
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_core_data_.trioconverterspec.html#args" class="tsd-kind-icon">args</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_core_data_.trioconverterspec.html#type" class="tsd-kind-icon">type</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_core_soundfont_.sampleinfo.html#pitch" class="tsd-kind-icon">pitch</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_core_soundfont_.sampleinfo.html#velocity" class="tsd-kind-icon">velocity</a></li>
 							</ul>
 						</section>
 					</div>
@@ -92,22 +99,22 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="args" class="tsd-anchor"></a>
-					<h3>args</h3>
-					<div class="tsd-signature tsd-kind-icon">args<span class="tsd-signature-symbol">:</span> <a href="_core_data_.trioconverterargs.html" class="tsd-signature-type">TrioConverterArgs</a></div>
+					<a name="pitch" class="tsd-anchor"></a>
+					<h3>pitch</h3>
+					<div class="tsd-signature tsd-kind-icon">pitch<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L70">core/data.ts:70</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/soundfont.ts#L30">core/soundfont.ts:30</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="type" class="tsd-anchor"></a>
-					<h3>type</h3>
-					<div class="tsd-signature tsd-kind-icon">type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"TrioConverter"</span></div>
+					<a name="velocity" class="tsd-anchor"></a>
+					<h3>velocity</h3>
+					<div class="tsd-signature tsd-kind-icon">velocity<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L69">core/data.ts:69</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/soundfont.ts#L31">core/soundfont.ts:31</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -128,7 +135,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_core_constants_.html">"core/constants"</a>
 					</li>
-					<li class="current tsd-kind-external-module">
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_core_data_.html">"core/data"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -143,7 +150,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_core_sequences_.html">"core/sequences"</a>
 					</li>
-					<li class=" tsd-kind-external-module">
+					<li class="current tsd-kind-external-module">
 						<a href="../modules/_core_soundfont_.html">"core/soundfont"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -160,79 +167,37 @@
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
 					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_core_data_.dataconverter.html" class="tsd-kind-icon">Data<wbr>Converter</a>
+						<a href="../classes/_core_soundfont_.instrument.html" class="tsd-kind-icon">Instrument</a>
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_core_data_.drumrollconverter.html" class="tsd-kind-icon">Drum<wbr>Roll<wbr>Converter</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_core_data_.drumsconverter.html" class="tsd-kind-icon">Drums<wbr>Converter</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_core_data_.drumsonehotconverter.html" class="tsd-kind-icon">Drums<wbr>One<wbr>Hot<wbr>Converter</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_core_data_.melodyconverter.html" class="tsd-kind-icon">Melody<wbr>Converter</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_core_data_.multitrackconverter.html" class="tsd-kind-icon">Multitrack<wbr>Converter</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_core_data_.trioconverter.html" class="tsd-kind-icon">Trio<wbr>Converter</a>
+						<a href="../classes/_core_soundfont_.soundfont.html" class="tsd-kind-icon">Sound<wbr>Font</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_core_data_.baseconverterargs.html" class="tsd-kind-icon">Base<wbr>Converter<wbr>Args</a>
+						<a href="_core_soundfont_.instrumentinfo.html" class="tsd-kind-icon">Instrument<wbr>Info</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_core_data_.drumrollconverterspec.html" class="tsd-kind-icon">Drum<wbr>Roll<wbr>Converter<wbr>Spec</a>
+						<a href="_core_soundfont_.instrumentspec.html" class="tsd-kind-icon">Instrument<wbr>Spec</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_core_data_.drumsconverterargs.html" class="tsd-kind-icon">Drums<wbr>Converter<wbr>Args</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_core_data_.drumsconverterspec.html" class="tsd-kind-icon">Drums<wbr>Converter<wbr>Spec</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_core_data_.drumsonehotconverterspec.html" class="tsd-kind-icon">Drums<wbr>One<wbr>Hot<wbr>Converter<wbr>Spec</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_core_data_.melodyconverterargs.html" class="tsd-kind-icon">Melody<wbr>Converter<wbr>Args</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_core_data_.melodyconverterspec.html" class="tsd-kind-icon">Melody<wbr>Converter<wbr>Spec</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_core_data_.multitrackconverterargs.html" class="tsd-kind-icon">Multitrack<wbr>Converter<wbr>Args</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_core_data_.multitrackconverterspec.html" class="tsd-kind-icon">Multitrack<wbr>Converter<wbr>Spec</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_core_data_.trioconverterargs.html" class="tsd-kind-icon">Trio<wbr>Converter<wbr>Args</a>
+						<a href="_core_soundfont_.instrumentsspec.html" class="tsd-kind-icon">Instruments<wbr>Spec</a>
 					</li>
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_core_data_.trioconverterspec.html" class="tsd-kind-icon">Trio<wbr>Converter<wbr>Spec</a>
+						<a href="_core_soundfont_.sampleinfo.html" class="tsd-kind-icon">Sample<wbr>Info</a>
 						<ul>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_core_data_.trioconverterspec.html#args" class="tsd-kind-icon">args</a>
+								<a href="_core_soundfont_.sampleinfo.html#pitch" class="tsd-kind-icon">pitch</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_core_data_.trioconverterspec.html#type" class="tsd-kind-icon">type</a>
+								<a href="_core_soundfont_.sampleinfo.html#velocity" class="tsd-kind-icon">velocity</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
-						<a href="../modules/_core_data_.html#converterspec" class="tsd-kind-icon">Converter<wbr>Spec</a>
-					</li>
-					<li class=" tsd-kind-variable tsd-parent-kind-external-module">
-						<a href="../modules/_core_data_.html#default_drum_pitch_classes" class="tsd-kind-icon">DEFAULT_<wbr>DRUM_<wbr>PITCH_<wbr>CLASSES</a>
-					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-external-module">
-						<a href="../modules/_core_data_.html#converterfromspec" class="tsd-kind-icon">converter<wbr>From<wbr>Spec</a>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_core_soundfont_.soundfontspec.html" class="tsd-kind-icon">Sound<wbr>Font<wbr>Spec</a>
 					</li>
 				</ul>
 			</nav>

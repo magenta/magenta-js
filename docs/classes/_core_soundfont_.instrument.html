@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>DataConverter | @magenta/music</title>
+	<title>Instrument | @magenta/music</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,13 +54,13 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="../modules/_core_data_.html">&quot;core/data&quot;</a>
+					<a href="../modules/_core_soundfont_.html">&quot;core/soundfont&quot;</a>
 				</li>
 				<li>
-					<a href="_core_data_.dataconverter.html">DataConverter</a>
+					<a href="_core_soundfont_.instrument.html">Instrument</a>
 				</li>
 			</ul>
-			<h1>Class DataConverter</h1>
+			<h1>Class Instrument</h1>
 		</div>
 	</div>
 </header>
@@ -70,10 +70,8 @@
 			<section class="tsd-panel tsd-comment">
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>Abstract DataConverter class for converting between <code>Tensor</code> and
-							<code>NoteSequence</code> objects. Each subclass handles a particular type of musical
-							sequence e.g. monophonic melody or (a few different representations of) drum
-						track.</p>
+						<p>Sampled instrument. Must be initialized and samples must be pre-loaded using
+						the <code>loadSamples</code> method before any notes can be played.</p>
 					</div>
 				</div>
 			</section>
@@ -81,21 +79,7 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">DataConverter</span>
-						<ul class="tsd-hierarchy">
-							<li>
-								<a href="_core_data_.drumsconverter.html" class="tsd-signature-type">DrumsConverter</a>
-							</li>
-							<li>
-								<a href="_core_data_.melodyconverter.html" class="tsd-signature-type">MelodyConverter</a>
-							</li>
-							<li>
-								<a href="_core_data_.trioconverter.html" class="tsd-signature-type">TrioConverter</a>
-							</li>
-							<li>
-								<a href="_core_data_.multitrackconverter.html" class="tsd-signature-type">MultitrackConverter</a>
-							</li>
-						</ul>
+						<span class="target">Instrument</span>
 					</li>
 				</ul>
 			</section>
@@ -106,26 +90,27 @@
 						<section class="tsd-index-section ">
 							<h3>Constructors</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-constructor tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#constructor" class="tsd-kind-icon">constructor</a></li>
+								<li class="tsd-kind-constructor tsd-parent-kind-class"><a href="_core_soundfont_.instrument.html#constructor" class="tsd-kind-icon">constructor</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#num_splits" class="tsd-kind-icon">NUM_<wbr>SPLITS</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#segmented_by_track" class="tsd-kind-icon">SEGMENTED_<wbr>BY_<wbr>TRACK</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#depth" class="tsd-kind-icon">depth</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#endtensor" class="tsd-kind-icon">end<wbr>Tensor</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#numsegments" class="tsd-kind-icon">num<wbr>Segments</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#numsteps" class="tsd-kind-icon">num<wbr>Steps</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_soundfont_.instrument.html#durationseconds" class="tsd-kind-icon">duration<wbr>Seconds</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_soundfont_.instrument.html#maxpitch" class="tsd-kind-icon">max<wbr>Pitch</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_soundfont_.instrument.html#minpitch" class="tsd-kind-icon">min<wbr>Pitch</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_soundfont_.instrument.html#name" class="tsd-kind-icon">name</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_soundfont_.instrument.html#percussive" class="tsd-kind-icon">percussive</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_soundfont_.instrument.html#releaseseconds" class="tsd-kind-icon">release<wbr>Seconds</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_soundfont_.instrument.html#velocities" class="tsd-kind-icon">velocities</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#tensorsteps" class="tsd-kind-icon">tensor<wbr>Steps</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#tonotesequence" class="tsd-kind-icon">to<wbr>Note<wbr>Sequence</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_data_.dataconverter.html#totensor" class="tsd-kind-icon">to<wbr>Tensor</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_soundfont_.instrument.html#initialize" class="tsd-kind-icon">initialize</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_soundfont_.instrument.html#loadsamples" class="tsd-kind-icon">load<wbr>Samples</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_soundfont_.instrument.html#playnote" class="tsd-kind-icon">play<wbr>Note</a></li>
 							</ul>
 						</section>
 					</div>
@@ -137,22 +122,32 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Data<wbr>Converter<span class="tsd-signature-symbol">(</span>args<span class="tsd-signature-symbol">: </span><a href="../interfaces/_core_data_.baseconverterargs.html" class="tsd-signature-type">BaseConverterArgs</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_core_data_.dataconverter.html" class="tsd-signature-type">DataConverter</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Instrument<span class="tsd-signature-symbol">(</span>baseURL<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_core_soundfont_.instrument.html" class="tsd-signature-type">Instrument</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L144">core/data.ts:144</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/soundfont.ts#L79">core/soundfont.ts:79</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p><code>Instrument</code> constructor.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>args: <a href="../interfaces/_core_data_.baseconverterargs.html" class="tsd-signature-type">BaseConverterArgs</a></h5>
+									<h5>baseURL: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>Path to the instrument directory.</p>
+										</div>
+									</div>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="_core_data_.dataconverter.html" class="tsd-signature-type">DataConverter</a></h4>
+							<h4 class="tsd-returns-title">Returns <a href="_core_soundfont_.instrument.html" class="tsd-signature-type">Instrument</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -160,62 +155,72 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="num_splits" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> NUM_<wbr>SPLITS</h3>
-					<div class="tsd-signature tsd-kind-icon">NUM_<wbr>SPLITS<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<a name="durationseconds" class="tsd-anchor"></a>
+					<h3>duration<wbr>Seconds</h3>
+					<div class="tsd-signature tsd-kind-icon">duration<wbr>Seconds<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L140">core/data.ts:140</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/soundfont.ts#L76">core/soundfont.ts:76</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="segmented_by_track" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> SEGMENTED_<wbr>BY_<wbr>TRACK</h3>
-					<div class="tsd-signature tsd-kind-icon">SEGMENTED_<wbr>BY_<wbr>TRACK<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<a name="maxpitch" class="tsd-anchor"></a>
+					<h3>max<wbr>Pitch</h3>
+					<div class="tsd-signature tsd-kind-icon">max<wbr>Pitch<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L141">core/data.ts:141</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/soundfont.ts#L75">core/soundfont.ts:75</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="depth" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> depth</h3>
-					<div class="tsd-signature tsd-kind-icon">depth<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<a name="minpitch" class="tsd-anchor"></a>
+					<h3>min<wbr>Pitch</h3>
+					<div class="tsd-signature tsd-kind-icon">min<wbr>Pitch<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L138">core/data.ts:138</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/soundfont.ts#L74">core/soundfont.ts:74</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="endtensor" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> end<wbr>Tensor</h3>
-					<div class="tsd-signature tsd-kind-icon">end<wbr>Tensor<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">tf.Tensor1D</span></div>
+					<a name="name" class="tsd-anchor"></a>
+					<h3>name</h3>
+					<div class="tsd-signature tsd-kind-icon">name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L139">core/data.ts:139</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/soundfont.ts#L73">core/soundfont.ts:73</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="numsegments" class="tsd-anchor"></a>
-					<h3>num<wbr>Segments</h3>
-					<div class="tsd-signature tsd-kind-icon">num<wbr>Segments<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<a name="percussive" class="tsd-anchor"></a>
+					<h3>percussive</h3>
+					<div class="tsd-signature tsd-kind-icon">percussive<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L137">core/data.ts:137</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/soundfont.ts#L78">core/soundfont.ts:78</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="numsteps" class="tsd-anchor"></a>
-					<h3>num<wbr>Steps</h3>
-					<div class="tsd-signature tsd-kind-icon">num<wbr>Steps<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<a name="releaseseconds" class="tsd-anchor"></a>
+					<h3>release<wbr>Seconds</h3>
+					<div class="tsd-signature tsd-kind-icon">release<wbr>Seconds<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L136">core/data.ts:136</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/soundfont.ts#L77">core/soundfont.ts:77</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="velocities" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> velocities</h3>
+					<div class="tsd-signature tsd-kind-icon">velocities<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/soundfont.ts#L79">core/soundfont.ts:79</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -223,74 +228,112 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Methods</h2>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="tensorsteps" class="tsd-anchor"></a>
-					<h3>tensor<wbr>Steps</h3>
+					<a name="initialize" class="tsd-anchor"></a>
+					<h3>initialize</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">tensor<wbr>Steps<span class="tsd-signature-symbol">(</span>tensor<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">tf.Tensor2D</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">tf.Scalar</span></li>
+						<li class="tsd-signature tsd-kind-icon">initialize<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L151">core/data.ts:151</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/soundfont.ts#L96">core/soundfont.ts:96</a></li>
 								</ul>
 							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>tensor: <span class="tsd-signature-type">tf.Tensor2D</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">tf.Scalar</span></h4>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Loads instrument configuration from an <code>instrument.json</code> file in the base
+									URL directory. Does not load any of the samples.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="tonotesequence" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> to<wbr>Note<wbr>Sequence</h3>
+					<a name="loadsamples" class="tsd-anchor"></a>
+					<h3>load<wbr>Samples</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">to<wbr>Note<wbr>Sequence<span class="tsd-signature-symbol">(</span>tensor<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">tf.Tensor2D</span>, stepsPerQuarter<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">load<wbr>Samples<span class="tsd-signature-symbol">(</span>samples<span class="tsd-signature-symbol">: </span><a href="../interfaces/_core_soundfont_.sampleinfo.html" class="tsd-signature-type">SampleInfo</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L143">core/data.ts:143</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/soundfont.ts#L159">core/soundfont.ts:159</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Load samples necessary to play a set of pitch/velocity pairs. This must be
+									called before any notes can be played.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>tensor: <span class="tsd-signature-type">tf.Tensor2D</span></h5>
-								</li>
-								<li>
-									<h5>stepsPerQuarter: <span class="tsd-signature-type">number</span></h5>
+									<h5>samples: <a href="../interfaces/_core_soundfont_.sampleinfo.html" class="tsd-signature-type">SampleInfo</a><span class="tsd-signature-symbol">[]</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Array of pitch/velocity pairs.</p>
+									</div>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="totensor" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> to<wbr>Tensor</h3>
+					<a name="playnote" class="tsd-anchor"></a>
+					<h3>play<wbr>Note</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">to<wbr>Tensor<span class="tsd-signature-symbol">(</span>noteSequence<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">tf.Tensor2D</span></li>
+						<li class="tsd-signature tsd-kind-icon">play<wbr>Note<span class="tsd-signature-symbol">(</span>pitch<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, velocity<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, startTime<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, duration<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, output<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L142">core/data.ts:142</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/soundfont.ts#L208">core/soundfont.ts:208</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Play a note using one of the samples.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>noteSequence: <span class="tsd-signature-type">INoteSequence</span></h5>
+									<h5>pitch: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Pitch of the note.</p>
+									</div>
+								</li>
+								<li>
+									<h5>velocity: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Velocity of the note.</p>
+									</div>
+								</li>
+								<li>
+									<h5>startTime: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Time at which to start playing the note.</p>
+									</div>
+								</li>
+								<li>
+									<h5>duration: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Length of the note in seconds.</p>
+									</div>
+								</li>
+								<li>
+									<h5>output: <span class="tsd-signature-type">any</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Output <code>AudioNode</code>.</p>
+									</div>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">tf.Tensor2D</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -311,7 +354,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_core_constants_.html">"core/constants"</a>
 					</li>
-					<li class="current tsd-kind-external-module">
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_core_data_.html">"core/data"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -326,7 +369,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_core_sequences_.html">"core/sequences"</a>
 					</li>
-					<li class=" tsd-kind-external-module">
+					<li class="current tsd-kind-external-module">
 						<a href="../modules/_core_soundfont_.html">"core/soundfont"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -345,101 +388,62 @@
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_core_data_.dataconverter.html" class="tsd-kind-icon">Data<wbr>Converter</a>
+						<a href="_core_soundfont_.instrument.html" class="tsd-kind-icon">Instrument</a>
 						<ul>
 							<li class=" tsd-kind-constructor tsd-parent-kind-class">
-								<a href="_core_data_.dataconverter.html#constructor" class="tsd-kind-icon">constructor</a>
+								<a href="_core_soundfont_.instrument.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="_core_data_.dataconverter.html#num_splits" class="tsd-kind-icon">NUM_<wbr>SPLITS</a>
+								<a href="_core_soundfont_.instrument.html#durationseconds" class="tsd-kind-icon">duration<wbr>Seconds</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="_core_data_.dataconverter.html#segmented_by_track" class="tsd-kind-icon">SEGMENTED_<wbr>BY_<wbr>TRACK</a>
+								<a href="_core_soundfont_.instrument.html#maxpitch" class="tsd-kind-icon">max<wbr>Pitch</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="_core_data_.dataconverter.html#depth" class="tsd-kind-icon">depth</a>
+								<a href="_core_soundfont_.instrument.html#minpitch" class="tsd-kind-icon">min<wbr>Pitch</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="_core_data_.dataconverter.html#endtensor" class="tsd-kind-icon">end<wbr>Tensor</a>
+								<a href="_core_soundfont_.instrument.html#name" class="tsd-kind-icon">name</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="_core_data_.dataconverter.html#numsegments" class="tsd-kind-icon">num<wbr>Segments</a>
+								<a href="_core_soundfont_.instrument.html#percussive" class="tsd-kind-icon">percussive</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="_core_data_.dataconverter.html#numsteps" class="tsd-kind-icon">num<wbr>Steps</a>
+								<a href="_core_soundfont_.instrument.html#releaseseconds" class="tsd-kind-icon">release<wbr>Seconds</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="_core_soundfont_.instrument.html#velocities" class="tsd-kind-icon">velocities</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_core_data_.dataconverter.html#tensorsteps" class="tsd-kind-icon">tensor<wbr>Steps</a>
+								<a href="_core_soundfont_.instrument.html#initialize" class="tsd-kind-icon">initialize</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_core_data_.dataconverter.html#tonotesequence" class="tsd-kind-icon">to<wbr>Note<wbr>Sequence</a>
+								<a href="_core_soundfont_.instrument.html#loadsamples" class="tsd-kind-icon">load<wbr>Samples</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_core_data_.dataconverter.html#totensor" class="tsd-kind-icon">to<wbr>Tensor</a>
+								<a href="_core_soundfont_.instrument.html#playnote" class="tsd-kind-icon">play<wbr>Note</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
 					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_core_data_.drumrollconverter.html" class="tsd-kind-icon">Drum<wbr>Roll<wbr>Converter</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_core_data_.drumsconverter.html" class="tsd-kind-icon">Drums<wbr>Converter</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_core_data_.drumsonehotconverter.html" class="tsd-kind-icon">Drums<wbr>One<wbr>Hot<wbr>Converter</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_core_data_.melodyconverter.html" class="tsd-kind-icon">Melody<wbr>Converter</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_core_data_.multitrackconverter.html" class="tsd-kind-icon">Multitrack<wbr>Converter</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_core_data_.trioconverter.html" class="tsd-kind-icon">Trio<wbr>Converter</a>
+						<a href="_core_soundfont_.soundfont.html" class="tsd-kind-icon">Sound<wbr>Font</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="../interfaces/_core_data_.baseconverterargs.html" class="tsd-kind-icon">Base<wbr>Converter<wbr>Args</a>
+						<a href="../interfaces/_core_soundfont_.instrumentinfo.html" class="tsd-kind-icon">Instrument<wbr>Info</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="../interfaces/_core_data_.drumrollconverterspec.html" class="tsd-kind-icon">Drum<wbr>Roll<wbr>Converter<wbr>Spec</a>
+						<a href="../interfaces/_core_soundfont_.instrumentspec.html" class="tsd-kind-icon">Instrument<wbr>Spec</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="../interfaces/_core_data_.drumsconverterargs.html" class="tsd-kind-icon">Drums<wbr>Converter<wbr>Args</a>
+						<a href="../interfaces/_core_soundfont_.instrumentsspec.html" class="tsd-kind-icon">Instruments<wbr>Spec</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="../interfaces/_core_data_.drumsconverterspec.html" class="tsd-kind-icon">Drums<wbr>Converter<wbr>Spec</a>
+						<a href="../interfaces/_core_soundfont_.sampleinfo.html" class="tsd-kind-icon">Sample<wbr>Info</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="../interfaces/_core_data_.drumsonehotconverterspec.html" class="tsd-kind-icon">Drums<wbr>One<wbr>Hot<wbr>Converter<wbr>Spec</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="../interfaces/_core_data_.melodyconverterargs.html" class="tsd-kind-icon">Melody<wbr>Converter<wbr>Args</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="../interfaces/_core_data_.melodyconverterspec.html" class="tsd-kind-icon">Melody<wbr>Converter<wbr>Spec</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="../interfaces/_core_data_.multitrackconverterargs.html" class="tsd-kind-icon">Multitrack<wbr>Converter<wbr>Args</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="../interfaces/_core_data_.multitrackconverterspec.html" class="tsd-kind-icon">Multitrack<wbr>Converter<wbr>Spec</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="../interfaces/_core_data_.trioconverterargs.html" class="tsd-kind-icon">Trio<wbr>Converter<wbr>Args</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="../interfaces/_core_data_.trioconverterspec.html" class="tsd-kind-icon">Trio<wbr>Converter<wbr>Spec</a>
-					</li>
-					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
-						<a href="../modules/_core_data_.html#converterspec" class="tsd-kind-icon">Converter<wbr>Spec</a>
-					</li>
-					<li class=" tsd-kind-variable tsd-parent-kind-external-module">
-						<a href="../modules/_core_data_.html#default_drum_pitch_classes" class="tsd-kind-icon">DEFAULT_<wbr>DRUM_<wbr>PITCH_<wbr>CLASSES</a>
-					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-external-module">
-						<a href="../modules/_core_data_.html#converterfromspec" class="tsd-kind-icon">converter<wbr>From<wbr>Spec</a>
+						<a href="../interfaces/_core_soundfont_.soundfontspec.html" class="tsd-kind-icon">Sound<wbr>Font<wbr>Spec</a>
 					</li>
 				</ul>
 			</nav>
