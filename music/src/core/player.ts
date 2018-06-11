@@ -327,23 +327,18 @@ export class SoundFontPlayer extends BasePlayer {
 }
 
 /**
- * A base class for providing arbitrary callbacks for each note played.
+ * An abstract base class for providing arbitrary callbacks for each note
+ * played.
  */
-export class BasePlayerCallback {
+export abstract class BasePlayerCallback {
 
-  /* The function should be overridden, it will be called for each time/note
-   * pair in a sequence being played.
+  /* Will be called for each time/note pair in a sequence being played.
    */
-  run(t: number, n: NoteSequence.INote) {
-    // Do nothing.
-  }
+  abstract run(t: number, n: NoteSequence.INote): void;
 
-    /* The function should be overridden, it will be called when a sequence is
-     * stopped.
-     */
-  stop() {
-    // Do nothing.
-  }
+  /*  Will be called when a sequence is stopped.
+   */
+  abstract stop(): void;
 }
 
 /**
@@ -354,19 +349,20 @@ export class PlayerWithCallback extends Player {
   private playClick: boolean;
   private callbackObject: BasePlayerCallback;
 
-  constructor(playClick?: boolean, callbackObject?: BasePlayerCallback) {
+  /**
+   * `PlayerWithCallback` constructor.
+   *
+   *   @param playClick A boolean, determines whether the click will be played.
+   *   @param callbackObject An optional BasePlayerCallback, specifies an
+   *     object that contains run() and stop() methods to invode during
+   *     playback.
+   */
+  constructor(playClick=true, callbackObject?: BasePlayerCallback) {
     super();
-    if (!playClick) {
-      this.playClick = true;
-    } else {
-      this.playClick = playClick;
-    }
-    if (!callbackObject) {
-      this.callbackObject = new BasePlayerCallback();
-    } else {
-      this.callbackObject = callbackObject;
-    }
+    this.playClick = playClick;
+    this.callbackObject = callbackObject;
   }
+
   /**
    * Starts playing a `NoteSequence` (either quantized or unquantized), and
    * returns a Promise that resolves when it is done playing.
@@ -390,7 +386,9 @@ export class PlayerWithCallback extends Player {
              n.pitch != constants.HI_CLICK_PITCH)) {
           this.playNote(t, n);
         }
-        this.callbackObject.run(t, n);
+        if (this.callbackObject) {
+          this.callbackObject.run(t, n);
+        }
       }, seq.notes.map(n => [n.startTime, n]));
     this.currentPart.start();
     if (Tone.Transport.state !== 'started') {
@@ -400,7 +398,9 @@ export class PlayerWithCallback extends Player {
       this.scheduledStop = Tone.Transport.schedule(() => {
         this.stop();
         resolve();
-        this.callbackObject.stop();
+        if (this.callbackObject) {
+          this.callbackObject.stop();
+        }
       }, `+${seq.totalTime}`);
     });
   }

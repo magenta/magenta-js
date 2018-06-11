@@ -151,55 +151,59 @@ class MetronomeCallback extends mm.BasePlayerCallback {
 
 function generateDrums() {
   const callback = new MetronomeCallback();
-  const player = new mm.PlayerWithClick(true , callback);
-  // Add drums buttons.
-  const drumsDiv = document.getElementById('drums-button-div');
-  for (let i = 0; i < DRUM_SEQS.length; ++i) {
-    const button = document.createElement('button');
-    button.textContent = 'Play Beat ' + i;
-    button.addEventListener('click', () => {
+  let playClicks = [true, false];
+  let buttonSuffixes = [' with click', ' without click']
+  for (let i = 0; i < playClicks.length; ++i) {
+    const player = new mm.PlayerWithClick(playClicks[i], callback);
+    // Add drums buttons.
+    const drumsDiv = document.getElementById('drums-button-div');
+    for (let j = 0; j < DRUM_SEQS.length; ++j) {
+      const button = document.createElement('button');
+      button.textContent = 'Play Beat ' + j + buttonSuffixes[i];
+      button.addEventListener('click', () => {
+        if (player.isPlaying()) {
+          player.stop();
+          button.textContent = 'Play Beat ' + j + buttonSuffixes[i];
+          callback.stop();
+        } else {
+          player.start(DRUM_SEQS[j]).then(() => (
+            button.textContent = 'Play Beat ' + j + buttonSuffixes[i]));
+          button.textContent = 'Stop';
+        }
+      });
+      drumsDiv.appendChild(button);
+    }
+    // Add melody buttons.
+    const melDiv = document.getElementById('mel-button-div');
+    const teapotButton = document.createElement('button');
+    teapotButton.textContent = 'Play Teapot' + buttonSuffixes[i];
+    teapotButton.addEventListener('click', () => {
       if (player.isPlaying()) {
         player.stop();
-        button.textContent = 'Play Beat ' + i;
+        teapotButton.textContent = 'Play Teapot' + buttonSuffixes[i];
         callback.stop();
       } else {
-        player.start(DRUM_SEQS[i]).then(() => (
-          button.textContent = 'Play Beat ' + i));
-        button.textContent = 'Stop';
+        player.start(MEL_TEAPOT).then(() => (
+          teapotButton.textContent = 'Play Teapot' + buttonSuffixes[i]));
+        teapotButton.textContent = 'Stop';
       }
     });
-    drumsDiv.appendChild(button);
+    melDiv.appendChild(teapotButton);
+    const twinkleButton = document.createElement('button');
+    twinkleButton.textContent = 'Play Twinkle' + buttonSuffixes[i];
+    twinkleButton.addEventListener('click', () => {
+      if (player.isPlaying()) {
+        player.stop();
+        twinkleButton.textContent = 'Play Twinkle' + buttonSuffixes[i];
+        callback.stop();
+      } else {
+        player.start(MEL_TWINKLE).then(() => (
+          twinkleButton.textContent = 'Play Twinkle' + buttonSuffixes[i]));
+        twinkleButton.textContent = 'Stop';
+      }
+    });
+    melDiv.appendChild(twinkleButton);
   }
-  // Add melody buttons.
-  const melDiv = document.getElementById('mel-button-div');
-  const teapotButton = document.createElement('button');
-  teapotButton.textContent = 'Play Teapot';
-  teapotButton.addEventListener('click', () => {
-    if (player.isPlaying()) {
-      player.stop();
-      teapotButton.textContent = 'Play Teapot';
-      callback.stop();
-    } else {
-      player.start(MEL_TEAPOT).then(() => (
-        teapotButton.textContent = 'Play Teapot'));
-      teapotButton.textContent = 'Stop';
-    }
-  });
-  melDiv.appendChild(teapotButton);
-  const twinkleButton = document.createElement('button');
-  twinkleButton.textContent = 'Play Twinkle';
-  twinkleButton.addEventListener('click', () => {
-    if (player.isPlaying()) {
-      player.stop();
-      twinkleButton.textContent = 'Play Twinkle';
-      callback.stop();
-    } else {
-      player.start(MEL_TWINKLE).then(() => (
-        twinkleButton.textContent = 'Play Twinkle'));
-      twinkleButton.textContent = 'Stop';
-    }
-  });
-  melDiv.appendChild(twinkleButton);
 }
 
 try {
