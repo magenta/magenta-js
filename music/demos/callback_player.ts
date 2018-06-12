@@ -134,7 +134,7 @@ class MetronomeCallback extends mm.BasePlayerCallback {
     }
   }
 
-  run(t: number, n: mm.NoteSequence.INote) {
+  run(n: mm.NoteSequence.INote) {
     if (n.isDrum) {
       this.colorDrums(n);
     } else {

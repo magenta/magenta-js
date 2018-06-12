@@ -335,7 +335,7 @@ export abstract class BasePlayerCallback {
 
   /* Will be called for each time/note pair in a sequence being played.
    */
-  abstract run(t: number, n: NoteSequence.INote): void;
+  abstract run(n: NoteSequence.INote): void;
 
   /*  Will be called when a sequence is stopped.
    */
@@ -388,7 +388,9 @@ export class PlayerWithCallback extends Player {
           this.playNote(t, n);
         }
         if (this.callbackObject) {
-          this.callbackObject.run(t, n);
+          Tone.Draw.schedule(() => {
+            this.callbackObject.run(n);
+          }, t);
         }
       }, seq.notes.map(n => [n.startTime, n]));
     this.currentPart.start();
