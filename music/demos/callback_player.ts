@@ -154,7 +154,7 @@ function generateDrums() {
   let playClicks = [true, false];
   let buttonSuffixes = [' with click', ' without click']
   for (let i = 0; i < playClicks.length; ++i) {
-    const player = new mm.PlayerWithClick(playClicks[i], callback);
+    const player = new mm.Player(playClicks[i], callback);
     // Add drums buttons.
     const drumsDiv = document.getElementById('drums-button-div');
     for (let j = 0; j < DRUM_SEQS.length; ++j) {
