@@ -96,13 +96,13 @@ class MetronomeCallback extends mm.BasePlayerCallback {
   }
 
   colorDrums(n: mm.NoteSequence.INote) {
-    if (n.pitch == mm.HI_CLICK_PITCH) {
+    if (n.pitch == mm.constants.HI_CLICK_PITCH) {
       this.beatPos = 0;
       this.clickDivs[this.beatPos].style.background = 'red';
       setTimeout(() => {
         this.clickDivs[this.beatPos].style.background = 'grey';
       }, 300);
-    } else if (n.pitch == mm.LO_CLICK_PITCH) {
+    } else if (n.pitch == mm.constants.LO_CLICK_PITCH) {
       if (this.beatPos < this.clickDivs.length - 1) {
         ++this.beatPos;
       }

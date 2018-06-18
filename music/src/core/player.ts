@@ -73,7 +73,7 @@ export abstract class BasePlayer {
    *     object that contains run() and stop() methods to invode during
    *     playback.
    */
-  constructor(playClick=true, callbackObject?: BasePlayerCallback) {
+  constructor(playClick=false, callbackObject?: BasePlayerCallback) {
     this.playClick = playClick;
     this.callbackObject = callbackObject;
     // Set a bpm of 60 to make dealing with timing easier. We will use seconds
