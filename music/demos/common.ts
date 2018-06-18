@@ -187,7 +187,7 @@ export function writeNoteSeqs(
 }
 
 function createPlayerButton(seq: mm.INoteSequence, withClick: boolean) {
-  const player = withClick ? new mm.PlayerWithClick() : new mm.Player();
+  const player = new mm.Player(withClick);
   const button = document.createElement('button');
   let playText = withClick ? 'Play With Click' : 'Play';
   button.textContent = playText;
