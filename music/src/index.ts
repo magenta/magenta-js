@@ -18,8 +18,6 @@
 import * as tf from '@tensorflow/tfjs-core';
 export {tf};
 
-export * from './core/constants';
-export * from './core/data';
 export * from './core/index';
 export * from './music_rnn/index';
 export * from './music_vae/index';

@@ -77,8 +77,8 @@ class MetronomeCallback extends mm.BasePlayerCallback {
        document.getElementById('bottom_b')]
     ];
     this.drumPitchToClass = new Map<number, number>();
-    for (let c = 0; c < mm.DEFAULT_DRUM_PITCH_CLASSES.length; ++c) {
-      mm.DEFAULT_DRUM_PITCH_CLASSES[c].forEach((p) => {
+    for (let c = 0; c < mm.data.DEFAULT_DRUM_PITCH_CLASSES.length; ++c) {
+      mm.data.DEFAULT_DRUM_PITCH_CLASSES[c].forEach((p) => {
         this.drumPitchToClass.set(p, c);
       });
     }

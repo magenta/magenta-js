@@ -17,9 +17,10 @@
 
 import * as aux_inputs from './aux_inputs';
 import * as chords from './chords';
+import * as constants from './constants';
 import * as data from './data';
 import * as sequences from './sequences';
-export {aux_inputs, chords, data, sequences};
+export {aux_inputs, chords, constants, data, sequences};
 
 export * from './midi_io';
 export * from './player';
