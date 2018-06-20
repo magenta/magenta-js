@@ -100,6 +100,15 @@
 								<li class="tsd-kind-constructor tsd-parent-kind-class"><a href="_core_player_.baseplayer.html#constructor" class="tsd-kind-icon">constructor</a></li>
 							</ul>
 						</section>
+						<section class="tsd-index-section tsd-is-private-protected">
+							<h3>Properties</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="_core_player_.baseplayer.html#callbackobject" class="tsd-kind-icon">callback<wbr>Object</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="_core_player_.baseplayer.html#currentpart" class="tsd-kind-icon">current<wbr>Part</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="_core_player_.baseplayer.html#playclick" class="tsd-kind-icon">play<wbr>Click</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="_core_player_.baseplayer.html#scheduledstop" class="tsd-kind-icon">scheduled<wbr>Stop</a></li>
+							</ul>
+						</section>
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
@@ -118,18 +127,79 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Base<wbr>Player<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_core_player_.baseplayer.html" class="tsd-signature-type">BasePlayer</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Base<wbr>Player<span class="tsd-signature-symbol">(</span>playClick<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span>, callbackObject<span class="tsd-signature-symbol">?: </span><a href="_core_player_.baseplayercallback.html" class="tsd-signature-type">BasePlayerCallback</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_core_player_.baseplayer.html" class="tsd-signature-type">BasePlayer</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L38">core/player.ts:38</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L68">core/player.ts:68</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>  <code>BasePlayer</code> constructor.</p>
+								</div>
+								<p>  @param playClick A boolean, determines whether the click will be played.
+									@param callbackObject An optional BasePlayerCallback, specifies an
+									object that contains run() and stop() methods to invode during
+								playback.</p>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> playClick: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> =&nbsp;false</span></h5>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> callbackObject: <a href="_core_player_.baseplayercallback.html" class="tsd-signature-type">BasePlayerCallback</a></h5>
+								</li>
+							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="_core_player_.baseplayer.html" class="tsd-signature-type">BasePlayer</a></h4>
 						</li>
 					</ul>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group tsd-is-private-protected">
+				<h2>Properties</h2>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+					<a name="callbackobject" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagProtected">Protected</span> callback<wbr>Object</h3>
+					<div class="tsd-signature tsd-kind-icon">callback<wbr>Object<span class="tsd-signature-symbol">:</span> <a href="_core_player_.baseplayercallback.html" class="tsd-signature-type">BasePlayerCallback</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L66">core/player.ts:66</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+					<a name="currentpart" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagProtected">Protected</span> current<wbr>Part</h3>
+					<div class="tsd-signature tsd-kind-icon">current<wbr>Part<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L63">core/player.ts:63</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+					<a name="playclick" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagProtected">Protected</span> play<wbr>Click</h3>
+					<div class="tsd-signature tsd-kind-icon">play<wbr>Click<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L65">core/player.ts:65</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+					<a name="scheduledstop" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagProtected">Protected</span> scheduled<wbr>Stop</h3>
+					<div class="tsd-signature tsd-kind-icon">scheduled<wbr>Stop<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L64">core/player.ts:64</a></li>
+						</ul>
+					</aside>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
@@ -144,7 +214,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L89">core/player.ts:89</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L166">core/player.ts:166</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
@@ -161,7 +231,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L38">core/player.ts:38</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L68">core/player.ts:68</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -187,7 +257,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L55">core/player.ts:55</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L117">core/player.ts:117</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -228,7 +298,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L80">core/player.ts:80</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L157">core/player.ts:157</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -296,6 +366,18 @@
 							<li class=" tsd-kind-constructor tsd-parent-kind-class">
 								<a href="_core_player_.baseplayer.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+								<a href="_core_player_.baseplayer.html#callbackobject" class="tsd-kind-icon">callback<wbr>Object</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+								<a href="_core_player_.baseplayer.html#currentpart" class="tsd-kind-icon">current<wbr>Part</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+								<a href="_core_player_.baseplayer.html#playclick" class="tsd-kind-icon">play<wbr>Click</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+								<a href="_core_player_.baseplayer.html#scheduledstop" class="tsd-kind-icon">scheduled<wbr>Stop</a>
+							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_core_player_.baseplayer.html#isplaying" class="tsd-kind-icon">is<wbr>Playing</a>
 							</li>
@@ -312,6 +394,9 @@
 					</li>
 				</ul>
 				<ul class="after-current">
+					<li class=" tsd-kind-class tsd-parent-kind-external-module">
+						<a href="_core_player_.baseplayercallback.html" class="tsd-kind-icon">Base<wbr>Player<wbr>Callback</a>
+					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_core_player_.drumkit.html" class="tsd-kind-icon">Drum<wbr>Kit</a>
 					</li>
@@ -319,7 +404,13 @@
 						<a href="_core_player_.player.html" class="tsd-kind-icon">Player</a>
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module">
+						<a href="_core_player_.playerwithclick.html" class="tsd-kind-icon">Player<wbr>With<wbr>Click</a>
+					</li>
+					<li class=" tsd-kind-class tsd-parent-kind-external-module">
 						<a href="_core_player_.soundfontplayer.html" class="tsd-kind-icon">Sound<wbr>Font<wbr>Player</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../modules/_core_player_.html#comparequantizednotes" class="tsd-kind-icon">compare<wbr>Quantized<wbr>Notes</a>
 					</li>
 				</ul>
 			</nav>
