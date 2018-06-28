@@ -27,7 +27,13 @@
     "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_2bar_small",
     "size_mb": 17.7
   },
-	{
+  {
+    "id": "mel_4bar_small_q2",
+    "model": "MusicVAE",
+		"description": "A 4-bar, 90-class onehot melody model. Less accurate, but smaller in size than full model. Quantized to 2-byte weights.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_4bar_small_q2",
+    "size_mb": 26.5
+  },{
     "id": "mel_chords",
     "model": "MusicVAE",
 		"description": "A 2-bar, 90-class onehot melody model with chord conditioning. Quantized to 2-byte weights.",
