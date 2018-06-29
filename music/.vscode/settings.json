@@ -26,5 +26,5 @@
   "editor.wrappingIndent": "none",
   "typescript.tsdk": "node_modules/typescript/lib",
   "clang-format.executable": "${workspaceRoot}/node_modules/.bin/clang-format",
-  "git.ignoreLimitWarning": true,
+  "git.ignoreLimitWarning": true
 }
