@@ -49,7 +49,7 @@ function compareQuantizedNotes(a: NoteSequence.INote, b: NoteSequence.INote) {
 export abstract class BasePlayerCallback {
   /* Will be called for each time/note pair in a sequence being played.
    */
-  abstract run(n: NoteSequence.INote): void;
+  abstract run(n: NoteSequence.INote, t?: number): void;
 
   /*  Will be called when a sequence is stopped.
    */
@@ -132,7 +132,7 @@ export abstract class BasePlayer {
       }
       if (this.callbackObject) {
         Tone.Draw.schedule(() => {
-          this.callbackObject.run(n);
+          this.callbackObject.run(n, t);
         }, t);
       }
     }, seq.notes.map(n => [n.startTime, n]));
@@ -398,17 +398,6 @@ export class SoundFontPlayer extends BasePlayer {
  * callback object to be called while playing notes.
  */
 export class PlayerWithClick extends Player {
-
-  /**
-   *   `PlayerWithClick constructor
-   *
-   *   @param callbackObject An optional BasePlayerCallback, specifies an
-   *     object that contains run() and stop() methods to invode during
-   *     playback.
-   */
-  constructor(callbackObject?: BasePlayerCallback) {
-    super(true, callbackObject);
-  }
 
   /**
    *   `PlayerWithClick constructor
