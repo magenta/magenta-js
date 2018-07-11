@@ -30,12 +30,15 @@ import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
 import * as soundfont from './soundfont';
 
 function compareQuantizedNotes(a: NoteSequence.INote, b: NoteSequence.INote) {
-  if (a.quantizedStartStep < b.quantizedStartStep)
+  if (a.quantizedStartStep < b.quantizedStartStep) {
     return -1;
-  if (a.quantizedStartStep > b.quantizedStartStep)
+  }
+  if (a.quantizedStartStep > b.quantizedStartStep) {
     return 1;
-  if (a.pitch < b.pitch)
+  }
+  if (a.pitch < b.pitch) {
     return -1;
+  }
   return 1;
 }
 
@@ -44,7 +47,10 @@ function compareQuantizedNotes(a: NoteSequence.INote, b: NoteSequence.INote) {
  * played.
  */
 export abstract class BasePlayerCallback {
+<<<<<<< HEAD
 
+=======
+>>>>>>> upstream/master
   /* Will be called for each time/note pair in a sequence being played.
    */
   abstract run(n: NoteSequence.INote): void;
@@ -73,7 +79,11 @@ export abstract class BasePlayer {
    *     object that contains run() and stop() methods to invode during
    *     playback.
    */
+<<<<<<< HEAD
   constructor(playClick=false, callbackObject?: BasePlayerCallback) {
+=======
+  constructor(playClick = false, callbackObject?: BasePlayerCallback) {
+>>>>>>> upstream/master
     this.playClick = playClick;
     this.callbackObject = callbackObject;
     // Set a bpm of 60 to make dealing with timing easier. We will use seconds
@@ -86,6 +96,7 @@ export abstract class BasePlayer {
    * @param seq The `NoteSequence` to augment with a click track.
    */
   private makeClickSequence(seq: INoteSequence): INoteSequence {
+<<<<<<< HEAD
     let clickSeq:INoteSequence = {
       notes: [],
       quantizationInfo: seq.quantizationInfo
@@ -99,6 +110,15 @@ export abstract class BasePlayer {
     for (let i = 0; i < lastSixteenth; i += 4) {
       let click:NoteSequence.INote = {
         pitch: i % 16 == 0 ? 90 : 89,
+=======
+    const clickSeq = sequences.clone(seq);
+    const sixteenthEnds = clickSeq.notes.map(n => n.quantizedEndStep);
+    const lastSixteenth = Math.max(...sixteenthEnds);
+    for (let i = 0; i < lastSixteenth; i += 4) {
+      const click: NoteSequence.INote = {
+        pitch: i % 16 === 0 ? constants.LO_CLICK_PITCH :
+                              constants.HI_CLICK_PITCH,
+>>>>>>> upstream/master
         quantizedStartStep: i,
         isDrum: true,
         quantizedEndStep: i + 1
@@ -128,6 +148,7 @@ export abstract class BasePlayer {
       throw new Error('Cannot specify a `qpm` for a non-quantized sequence.');
     }
 
+<<<<<<< HEAD
     this.currentPart = new Tone.Part(
       (t: number, n: NoteSequence.INote) => {
         if (this.playClick ||
@@ -141,6 +162,20 @@ export abstract class BasePlayer {
           }, t);
         }
       }, seq.notes.map(n => [n.startTime, n]));
+=======
+    this.currentPart = new Tone.Part((t: number, n: NoteSequence.INote) => {
+      if (this.playClick ||
+          (n.pitch !== constants.LO_CLICK_PITCH &&
+           n.pitch !== constants.HI_CLICK_PITCH)) {
+        this.playNote(t, n);
+      }
+      if (this.callbackObject) {
+        Tone.Draw.schedule(() => {
+          this.callbackObject.run(n);
+        }, t);
+      }
+    }, seq.notes.map(n => [n.startTime, n]));
+>>>>>>> upstream/master
     this.currentPart.start();
     if (Tone.Transport.state !== 'started') {
       Tone.Transport.start();
@@ -271,10 +306,10 @@ class DrumKit {
         this.DRUM_PITCH_TO_CLASS.set(p, c);
       });
     }
-    this.DRUM_PITCH_TO_CLASS.set(constants.LO_CLICK_PITCH,
-                                 constants.LO_CLICK_CLASS);
-    this.DRUM_PITCH_TO_CLASS.set(constants.HI_CLICK_PITCH,
-                                 constants.HI_CLICK_CLASS);
+    this.DRUM_PITCH_TO_CLASS.set(
+        constants.LO_CLICK_PITCH, constants.LO_CLICK_CLASS);
+    this.DRUM_PITCH_TO_CLASS.set(
+        constants.HI_CLICK_PITCH, constants.HI_CLICK_CLASS);
   }
 
   static getInstance() {
@@ -416,36 +451,13 @@ export class PlayerWithClick extends Player {
   }
 
   /**
-   * Starts playing a `NoteSequence` (either quantized or unquantized) which
-   * includes a click track, and returns a Promise that resolves when it is
-   * done playing.  @param seq The `NoteSequence` to play.  @param qpm
-   * (Optional) If specified, will play back at this qpm. If not specified,
-   * will use either the qpm specified in the sequence or the default of 120.
-   * Only valid for quantized sequences.  @returns a Promise that resolves when
-   * playback is complete.
+   *   `PlayerWithClick constructor
+   *
+   *   @param callbackObject An optional BasePlayerCallback, specifies an
+   *     object that contains run() and stop() methods to invode during
+   *     playback.
    */
-  start(seq: INoteSequence, qpm?: number): Promise<void> {
-    let clickSeq:INoteSequence = {
-      notes: [],
-      quantizationInfo: seq.quantizationInfo
-    };
-    for (let i = 0; i < seq.notes.length; ++i) {
-      clickSeq.notes.push(seq.notes[i]);
-    }
-    var sixteenthEnds = clickSeq.notes.map(n => n.quantizedEndStep);
-    var lastSixteenth = sixteenthEnds.reduce(
-      function(a, b) { return Math.max(a, b); });
-    for (let i = 0; i < lastSixteenth; i += 4) {
-      let click:NoteSequence.INote = {
-        pitch: i % 16 == 0 ? 90 : 89,
-        quantizedStartStep: i,
-        isDrum: true,
-        quantizedEndStep: i + 1
-      };
-      clickSeq.notes.push(click);
-    }
-    clickSeq.notes.sort(compareQuantizedNotes);
-    seq = clickSeq;
-    return super.start(clickSeq, qpm);
+  constructor(callbackObject?: BasePlayerCallback) {
+    super(true, callbackObject);
   }
 }
