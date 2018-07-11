@@ -50,9 +50,8 @@ export abstract class BasePlayerCallback {
   /**
    *   Will be called for each time/note pair in a sequence being played.
    *
-   *   @param n A NoteSequence.INote object, which is the note being played
-   *     at the moment.
-   *   @param t A number, the time at which the note is being played.
+   *   @param n The note being played at the moment.
+   *   @param t The time at which the note is being played.
    */
   abstract run(n: NoteSequence.INote, t?: number): void;
 
