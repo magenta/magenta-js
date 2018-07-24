@@ -203,6 +203,11 @@ function generateDrums() {
       }
     });
     melDiv.appendChild(twinkleButton);
+    var rng = (<HTMLInputElement>document.getElementById('tempo'));
+    var listener = function() {
+      player.setBPM(+rng.value);
+    };
+    rng.addEventListener('input', listener);
   }
 }
 

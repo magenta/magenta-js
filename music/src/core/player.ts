@@ -88,6 +88,15 @@ export abstract class BasePlayer {
   }
 
   /**
+   * Changes the bpm of the playback.
+   *
+   * @param bpm A number, the new bpm to use.
+   */
+  setBPM(bpm: number) {
+    Tone.Transport.bpm.value = bpm;
+  }
+
+  /**
    * Adds a click track to an existing note sequence.
    * @param seq The `NoteSequence` to augment with a click track.
    */
@@ -402,17 +411,6 @@ export class SoundFontPlayer extends BasePlayer {
  * callback object to be called while playing notes.
  */
 export class PlayerWithClick extends Player {
-
-  /**
-   *   `PlayerWithClick constructor
-   *
-   *   @param callbackObject An optional BasePlayerCallback, specifies an
-   *     object that contains run() and stop() methods to invode during
-   *     playback.
-   */
-  constructor(callbackObject?: BasePlayerCallback) {
-    super(true, callbackObject);
-  }
 
   /**
    *   `PlayerWithClick constructor
