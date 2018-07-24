@@ -411,7 +411,6 @@ export class SoundFontPlayer extends BasePlayer {
  * callback object to be called while playing notes.
  */
 export class PlayerWithClick extends Player {
-
   /**
    *   `PlayerWithClick constructor
    *
