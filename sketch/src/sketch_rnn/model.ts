@@ -61,7 +61,7 @@ export class SketchRNN {
 
   private rawVars: tf.Tensor[];
 
-  private N_MIXTURE = 20;
+  private NMIXTURE = 20;
 
   /**
    * `SketchRNN` constructor.
@@ -81,8 +81,7 @@ export class SketchRNN {
   }
 
   /**
-   * Instantiates class information
-   * inputs from the JSON model.
+   * Instantiates class information inputs from the JSON model.
    */
   private instantiateFromJSON(info: SketchRNNInfo,
     weightDims: number[][],
@@ -90,14 +89,14 @@ export class SketchRNN {
 
     this.forgetBias = tf.scalar(1.0);
     this.info = info;
-    this.set_pixel_factor(2.0);
+    this.setPixelFactor(2.0);
     this.weightDims = weightDims;
     this.numUnits = this.weightDims[0][0]; // size of LSTM
     let rawWeights: Float32Array;
     const maxWeight = 10.0;
     this.weights = [];
     for (let i = 0; i < weightStrings.length; i++) {
-      rawWeights = new Float32Array(support.string_to_array(weightStrings[i]));
+      rawWeights = new Float32Array(support.stringToArray(weightStrings[i]));
       const N: number = rawWeights.length;
       for (let j = 0; j < N; j++) {
         rawWeights[j] = maxWeight * rawWeights[j] / 32767;
@@ -154,13 +153,13 @@ export class SketchRNN {
   }
 
   /**
-   * sets the internal EXTRA factor of this model (pixel to model space)
+   * Sets the internal EXTRA factor of this model (pixel to model space)
    *
    * @param scale (the extra scale factor for pixel to model space)
    *
    * @returns nothing
    */
-  set_pixel_factor(scale: number) {
+  setPixelFactor(scale: number) {
     // for best effect, set to 1.0 for d3 or paper.js, 2.0 for p5.js
     this.pixelFactor = scale;
     this.scaleFactor = this.info.scale_factor / this.pixelFactor;
@@ -169,7 +168,7 @@ export class SketchRNN {
   /**
    * Updates the RNN, returns the next state.
    *
-   * @param pen [dx, dy, pen_down, pen_up, pen_end].
+   * @param pen [dx, dy, penDown, penUp, penEnd].
    * @param state previous [c, h] state of the LSTM.
    *
    * @returns the next [c, h] state of the LSTM`.
@@ -210,13 +209,10 @@ export class SketchRNN {
    *
    * @returns [pi, mu1, mu2, sigma1, sigma2, corr, pen]
    */
-  get_pdf(state: Float32Array[],
-    temperature?: number,
+  getPDF(state: Float32Array[],
+    temperature=0.65,
     softmaxTemperature?: number) {
-    let temp = 0.65;
-    if (temperature) {
-      temp = temperature;
-    }
+    const temp = temperature;
     let discreteTemp: number = 0.5 + temp * 0.5; // good heuristic.
     if (softmaxTemperature) {
       discreteTemp = softmaxTemperature;
@@ -224,21 +220,21 @@ export class SketchRNN {
     const out = tf.tidy(() => {
       const numUnits = this.numUnits;
       const h = tf.tensor2d(state[1], [1, numUnits]);
-      const NOUT = this.N_MIXTURE;
+      const NOUT = this.NMIXTURE;
 
       const sqrttemp = tf.scalar(Math.sqrt(temp));
       const softtemp = tf.scalar(discreteTemp);
 
       const z = tf.add(tf.matMul(h, this.outputKernel), this.outputBias)
         .squeeze();
-      const pen = tf.softmax(z.slice([0], [3]).div(softtemp));
-      const pi = tf.softmax(z.slice([3 + NOUT * 0], [NOUT]).div(softtemp));
-      const mu1 = z.slice([3 + NOUT * 1], [NOUT]);
-      const mu2 = z.slice([3 + NOUT * 2], [NOUT]);
-      const sigma1 = tf.exp(z.slice([3 + NOUT * 3], [NOUT])).mul(sqrttemp);
-      const sigma2 = tf.exp(z.slice([3 + NOUT * 4], [NOUT])).mul(sqrttemp);
-      const corr = tf.tanh(z.slice([3 + NOUT * 5], [NOUT]));
 
+      const [rawPen, rst] = tf.split(z, [3, NOUT*6]);
+      const [rawPi, mu1, mu2, rawSigma1, rawSigma2, rawCorr] = tf.split(rst, 6);
+      const pen = tf.softmax(rawPen.div(softtemp));
+      const pi = tf.softmax(rawPi.div(softtemp));
+      const sigma1 = tf.exp(rawSigma1).mul(sqrttemp);
+      const sigma2 = tf.exp(rawSigma2).mul(sqrttemp);
+      const corr = tf.tanh(rawCorr);
       return [pi, mu1, mu2, sigma1, sigma2, corr, pen];
     });
     const result = [];
@@ -250,11 +246,11 @@ export class SketchRNN {
   }
 
   /**
-   * returns the zero/initial state of the model
+   * Returns the zero/initial state of the model
    *
    * @returns zero state of the lstm: [c, h], where c and h are zero vectors.
    */
-  zero_state() {
+  zeroState() {
     const result: Float32Array[] = [
       new Float32Array(this.numUnits),
       new Float32Array(this.numUnits),
@@ -263,44 +259,44 @@ export class SketchRNN {
   }
 
   /**
-   * returns a new copy of the rnn state
+   * Returns a new copy of the rnn state
    *
    * @param rnnState original [c, h] states of the lstm
    *
    * @returns copy of state of the lstm: [c, h]
    */
-  copy_state(rnnState: Float32Array[]) {
+  copyState(rnnState: Float32Array[]) {
     const c = new Float32Array(rnnState[0]);
     const h = new Float32Array(rnnState[1]);
     return [c, h];
   }
 
   /**
-   * returns the zero input state of the model
+   * Returns the zero input state of the model
    *
    * @returns [0, 0, 1, 0, 0].
    */
-  zero_input() {
+  zeroInput() {
     return [0, 0, 1, 0, 0];
   }
 
   /**
    * Samples the next point of the sketch given pdf parameters
    *
-   * @param pdf result from get_pdf() call
+   * @param pdf result from getPDF() call
    *
-   * @returns [dx, dy, pen_down, pen_up, pen_end]
+   * @returns [dx, dy, penDown, penUp, penEnd]
    */
   sample(pdf: number[][]) {
-    // pdf is [z_pi, z_mu1, z_mu2, z_sigma1, z_sigma2, z_corr, z_pen]
+    // pdf is [pi, mu1, mu2, sigma1, sigma2, corr, pen]
     // returns [x, y, eos]
-    const idx = support.sample_softmax(pdf[0]);
+    const idx = support.sampleSoftmax(pdf[0]);
     const mu1 = pdf[1][idx];
     const mu2 = pdf[2][idx];
     const sigma1 = pdf[3][idx];
     const sigma2 = pdf[4][idx];
     const corr = pdf[5][idx];
-    const penIdx = support.sample_softmax(pdf[6]);
+    const penIdx = support.sampleSoftmax(pdf[6]);
     const penstate = [0, 0, 0];
     penstate[penIdx] = 1;
     const delta = support.birandn(mu1, mu2, sigma1, sigma2, corr);
@@ -321,8 +317,8 @@ export class SketchRNN {
    *
    * @returns simpified line [[x0', y0'], [x1', y1'], ...]
    */
-  simplify_line(line: number[][], tolerance?: number) {
-    return support.simplify_line(line, tolerance);
+  simplifyLine(line: number[][], tolerance?: number) {
+    return support.simplifyLine(line, tolerance);
   }
 
   /**
@@ -333,31 +329,31 @@ export class SketchRNN {
    *
    * @returns simpified lines (each elem is [[x0', y0'], [x1', y1'], ...])
    */
-  simplify_lines(lines: number[][][], tolerance?: number) {
-    return support.simplify_lines(lines, tolerance);
+  simplifyLines(lines: number[][][], tolerance?: number) {
+    return support.simplifyLines(lines, tolerance);
   }
 
   /**
-   * convert from polylines to stroke-5 format that sketch-rnn uses
+   * Convert from polylines to stroke-5 format that sketch-rnn uses
    *
    * @param lines list of points each elem is ([[x0, y0], [x1, y1], ...])
    *
    * @returns stroke-5 format of the line, list of [dx, dy, p0, p1, p2]
    */
-  lines_to_stroke(lines: number[][][]) {
-    return support.lines_to_strokes(lines);
+  linesToStroke(lines: number[][][]) {
+    return support.linesToStrokes(lines);
   }
 
   /**
-   * convert from a line format to stroke-5
+   * Convert from a line format to stroke-5
    *
    * @param line list of points [[x0, y0], [x1, y1], ...]
    * @param lastPoint the absolute position of the last point
    *
    * @returns stroke-5 format of the line, list of [dx, dy, p0, p1, p2]
    */
-  line_to_stroke(line: number[][], lastPoint: number[]) {
-    return support.line_to_stroke(line, lastPoint);
+  lineToStroke(line: number[][], lastPoint: number[]) {
+    return support.lineToStroke(line, lastPoint);
   }
 
 }

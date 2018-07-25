@@ -121,16 +121,16 @@ var sketch = function( p ) {
     [end_x, end_y] = draw_example(strokes, start_x, start_y, line_color);
 
     // copies over the model
-    model_state = model.copy_state(model_state_orig);
+    model_state = model.copyState(model_state_orig);
     model_x = end_x;
     model_y = end_y;
     model_prev_pen = [0, 1, 0];
   };
 
   var encode_strokes = function() {
-    model_state_orig = model.zero_state();
+    model_state_orig = model.zeroState();
     // encode strokes
-    model_state_orig = model.update(model.zero_input(), model_state_orig);
+    model_state_orig = model.update(model.zeroInput(), model_state_orig);
     for (var i=0;i<strokes.length;i++) {
       model_state_orig = model.update(strokes[i], model_state_orig);
     }
@@ -142,7 +142,7 @@ var sketch = function( p ) {
 
     Promise.all([model.initialize()]).then(function() {
       // initialize the scale factor for the model. Bigger -> large outputs
-      model.set_pixel_factor(screen_scale_factor);
+      model.setPixelFactor(screen_scale_factor);
       encode_strokes();
       restart();
       console.log("model loaded.");
@@ -204,7 +204,7 @@ var sketch = function( p ) {
     var model_dx, model_dy;
     var model_pen_down, model_pen_up, model_pen_end;
 
-    model_pdf = model.get_pdf(model_state, temperature);
+    model_pdf = model.getPDF(model_state, temperature);
     [model_dx, model_dy, model_pen_down, model_pen_up, model_pen_end] = model.sample(model_pdf);
 
     if (model_pen_end === 1) {
@@ -240,7 +240,7 @@ var sketch = function( p ) {
     var model_mode = "gen";
     console.log("user wants to change to model "+c);
     var call_back = function() {
-      model.set_pixel_factor(screen_scale_factor);
+      model.setPixelFactor(screen_scale_factor);
       encode_strokes();
       restart();
     }

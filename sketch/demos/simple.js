@@ -40,10 +40,10 @@ var sketch = function( p ) {
 
   var restart = function() {
     // initialize pen's states to zero.
-    [dx, dy, pen_down, pen_up, pen_end] = model.zero_input(); // the pen's states
+    [dx, dy, pen_down, pen_up, pen_end] = model.zeroInput(); // the pen's states
 
     // zero out the rnn's initial states
-    rnn_state = model.zero_state();
+    rnn_state = model.zeroState();
 
     clear_screen();
 
@@ -51,7 +51,7 @@ var sketch = function( p ) {
 
   Promise.all([model.initialize()]).then(function() {
     // initialize the scale factor for the model. Bigger -> large outputs
-    model.set_pixel_factor(3.0);
+    model.setPixelFactor(3.0);
     restart();
     model_loaded = true;
     console.log("model loaded.");
@@ -88,7 +88,7 @@ var sketch = function( p ) {
     rnn_state = model.update([dx, dy, pen_down, pen_up, pen_end], rnn_state);
 
     // get the parameters of the probability distribution (pdf) from hidden state
-    pdf = model.get_pdf(rnn_state, temperature);
+    pdf = model.getPDF(rnn_state, temperature);
 
     // sample the next pen's states from our probability distribution
     [dx, dy, pen_down, pen_up, pen_end] = model.sample(pdf);

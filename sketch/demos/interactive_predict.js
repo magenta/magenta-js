@@ -144,7 +144,6 @@ var sketch = function( p ) {
 
   // sketch_rnn model
   var model;
-  var model_data;
   var temperature = 0.25;
   var min_sequence_length = 5;
 
@@ -231,7 +230,7 @@ var sketch = function( p ) {
 
     Promise.all([model.initialize()]).then(function() {
       // initialize the scale factor for the model. Bigger -> large outputs
-      model.set_pixel_factor(screen_scale_factor);
+      model.setPixelFactor(screen_scale_factor);
 
       console.log("model loaded.");
       set_title_text("draw something on the screen!");
@@ -301,14 +300,14 @@ var sketch = function( p ) {
 
   var encode_strokes = function(sequence) {
 
-    model_state_orig = model.zero_state();
+    model_state_orig = model.zeroState();
 
     if (sequence.length <= min_sequence_length) {
       return;
     }
 
     // encode sequence
-    model_state_orig = model.update(model.zero_input(), model_state_orig);
+    model_state_orig = model.update(model.zeroInput(), model_state_orig);
     for (var i=0;i<sequence.length-1;i++) {
       model_state_orig = model.update(sequence[i], model_state_orig);
     }
@@ -321,7 +320,7 @@ var sketch = function( p ) {
 
   var restart_model = function(sequence) {
 
-    model_state = model.copy_state(model_state_orig); // bounded
+    model_state = model.copyState(model_state_orig); // bounded
 
     var idx = raw_lines.length-1;
     var last_point = raw_lines[idx][raw_lines[idx].length-1];
@@ -446,7 +445,7 @@ var sketch = function( p ) {
     } else { // pen is above the paper
       pen = 1;
       if (just_finished_line) {
-        var current_raw_line_simple = model.simplify_line(current_raw_line);
+        var current_raw_line_simple = model.simplifyLine(current_raw_line);
         var idx, last_point, last_x, last_y;
 
         if (current_raw_line_simple.length > 1) {
@@ -459,7 +458,7 @@ var sketch = function( p ) {
             last_x = last_point[0];
             last_y = last_point[1];
           }
-          var stroke = model.line_to_stroke(current_raw_line_simple, [last_x, last_y]);
+          var stroke = model.lineToStroke(current_raw_line_simple, [last_x, last_y]);
           raw_lines.push(current_raw_line_simple);
           strokes = strokes.concat(stroke);
 
@@ -494,7 +493,7 @@ var sketch = function( p ) {
         model_pen_end = model_prev_pen[2];
 
         model_state = model.update([model_dx, model_dy, model_pen_down, model_pen_up, model_pen_end], model_state);
-        model_pdf = model.get_pdf(model_state, temperature);
+        model_pdf = model.getPDF(model_state, temperature);
         [model_dx, model_dy, model_pen_down, model_pen_up, model_pen_end] = model.sample(model_pdf);
 
         if (model_pen_end === 1) {
@@ -532,7 +531,7 @@ var sketch = function( p ) {
     var c = model_sel.value();
     console.log("user wants to change to model "+c);
     var call_back = function() {
-      model.set_pixel_factor(screen_scale_factor);
+      model.setPixelFactor(screen_scale_factor);
       encode_strokes(strokes);
       clear_screen();
       draw_example(strokes, start_x, start_y, line_color);

@@ -19385,7 +19385,7 @@ exports.support = support;
 },{"./sketch_support":141}],141:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-function string_to_uint8array(b64encoded) {
+function stringToUint8array(b64encoded) {
     var u8 = new Uint8Array(atob(b64encoded)
         .split("")
         .map(function (c) {
@@ -19393,13 +19393,13 @@ function string_to_uint8array(b64encoded) {
     }));
     return u8;
 }
-exports.string_to_uint8array = string_to_uint8array;
-function string_to_array(b64encoded) {
-    var u = string_to_uint8array(b64encoded);
+exports.stringToUint8array = stringToUint8array;
+function stringToArray(b64encoded) {
+    var u = stringToUint8array(b64encoded);
     var result = new Int16Array(u.buffer);
     return result;
 }
-exports.string_to_array = string_to_array;
+exports.stringToArray = stringToArray;
 var returnV = false;
 var vVal = 0.0;
 function gaussRandom() {
@@ -19439,7 +19439,7 @@ function birandn(mu1, mu2, std1, std2, rho) {
     return [x, y];
 }
 exports.birandn = birandn;
-function sample_softmax(zSample) {
+function sampleSoftmax(zSample) {
     var x = randf(0, 1);
     var N = zSample.length;
     var accumulate = 0;
@@ -19453,12 +19453,10 @@ function sample_softmax(zSample) {
     console.log('error sampling pi index');
     return -1;
 }
-exports.sample_softmax = sample_softmax;
-function simplify_line(V, tolerance) {
-    var tol = 2.0;
-    if (tolerance) {
-        tol = tolerance;
-    }
+exports.sampleSoftmax = sampleSoftmax;
+function simplifyLine(V, tolerance) {
+    if (tolerance === void 0) { tolerance = 2.0; }
+    var tol = tolerance;
     function diff(u, v) {
         return [u[0] - v[0], u[1] - v[1]];
     }
@@ -19535,20 +19533,20 @@ function simplify_line(V, tolerance) {
     }
     return sV;
 }
-exports.simplify_line = simplify_line;
-function simplify_lines(lines, tolerance) {
+exports.simplifyLine = simplifyLine;
+function simplifyLines(lines, tolerance) {
     var result = [];
     var tol = 2.0;
     if (tolerance) {
         tol = tolerance;
     }
     for (var i = 0; i < lines.length; i++) {
-        result.push(simplify_line(lines[i], tol));
+        result.push(simplifyLine(lines[i], tol));
     }
     return result;
 }
-exports.simplify_lines = simplify_lines;
-function lines_to_strokes(rawData) {
+exports.simplifyLines = simplifyLines;
+function linesToStrokes(rawData) {
     var x, y;
     var px = 0, py = 0;
     var dx, dy;
@@ -19583,8 +19581,8 @@ function lines_to_strokes(rawData) {
     stroke.push([0, 0, 0, 0, 1]);
     return stroke.slice(1);
 }
-exports.lines_to_strokes = lines_to_strokes;
-function line_to_stroke(line, lastPoint) {
+exports.linesToStrokes = linesToStrokes;
+function lineToStroke(line, lastPoint) {
     var pon, poff;
     var stroke = [];
     var len;
@@ -19618,7 +19616,7 @@ function line_to_stroke(line, lastPoint) {
     }
     return stroke;
 }
-exports.line_to_stroke = line_to_stroke;
+exports.lineToStroke = lineToStroke;
 
 },{}],142:[function(require,module,exports){
 "use strict";
@@ -19679,7 +19677,7 @@ var tf = require("@tensorflow/tfjs-core");
 var support = require("../core/sketch_support");
 var SketchRNN = (function () {
     function SketchRNN(checkpointURL) {
-        this.N_MIXTURE = 20;
+        this.NMIXTURE = 20;
         this.checkpointURL = checkpointURL;
         this.initialized = false;
     }
@@ -19689,14 +19687,14 @@ var SketchRNN = (function () {
     SketchRNN.prototype.instantiateFromJSON = function (info, weightDims, weightStrings) {
         this.forgetBias = tf.scalar(1.0);
         this.info = info;
-        this.set_pixel_factor(2.0);
+        this.setPixelFactor(2.0);
         this.weightDims = weightDims;
         this.numUnits = this.weightDims[0][0];
         var rawWeights;
         var maxWeight = 10.0;
         this.weights = [];
         for (var i = 0; i < weightStrings.length; i++) {
-            rawWeights = new Float32Array(support.string_to_array(weightStrings[i]));
+            rawWeights = new Float32Array(support.stringToArray(weightStrings[i]));
             var N = rawWeights.length;
             for (var j = 0; j < N; j++) {
                 rawWeights[j] = maxWeight * rawWeights[j] / 32767;
@@ -19749,7 +19747,7 @@ var SketchRNN = (function () {
         }
         this.initialized = false;
     };
-    SketchRNN.prototype.set_pixel_factor = function (scale) {
+    SketchRNN.prototype.setPixelFactor = function (scale) {
         this.pixelFactor = scale;
         this.scaleFactor = this.info.scale_factor / this.pixelFactor;
     };
@@ -19772,12 +19770,10 @@ var SketchRNN = (function () {
         }
         return [newC, newH];
     };
-    SketchRNN.prototype.get_pdf = function (state, temperature, softmaxTemperature) {
+    SketchRNN.prototype.getPDF = function (state, temperature, softmaxTemperature) {
         var _this = this;
-        var temp = 0.65;
-        if (temperature) {
-            temp = temperature;
-        }
+        if (temperature === void 0) { temperature = 0.65; }
+        var temp = temperature;
         var discreteTemp = 0.5 + temp * 0.5;
         if (softmaxTemperature) {
             discreteTemp = softmaxTemperature;
@@ -19785,18 +19781,18 @@ var SketchRNN = (function () {
         var out = tf.tidy(function () {
             var numUnits = _this.numUnits;
             var h = tf.tensor2d(state[1], [1, numUnits]);
-            var NOUT = _this.N_MIXTURE;
+            var NOUT = _this.NMIXTURE;
             var sqrttemp = tf.scalar(Math.sqrt(temp));
             var softtemp = tf.scalar(discreteTemp);
             var z = tf.add(tf.matMul(h, _this.outputKernel), _this.outputBias)
                 .squeeze();
-            var pen = tf.softmax(z.slice([0], [3]).div(softtemp));
-            var pi = tf.softmax(z.slice([3 + NOUT * 0], [NOUT]).div(softtemp));
-            var mu1 = z.slice([3 + NOUT * 1], [NOUT]);
-            var mu2 = z.slice([3 + NOUT * 2], [NOUT]);
-            var sigma1 = tf.exp(z.slice([3 + NOUT * 3], [NOUT])).mul(sqrttemp);
-            var sigma2 = tf.exp(z.slice([3 + NOUT * 4], [NOUT])).mul(sqrttemp);
-            var corr = tf.tanh(z.slice([3 + NOUT * 5], [NOUT]));
+            var _a = tf.split(z, [3, NOUT * 6]), rawPen = _a[0], rst = _a[1];
+            var _b = tf.split(rst, 6), rawPi = _b[0], mu1 = _b[1], mu2 = _b[2], rawSigma1 = _b[3], rawSigma2 = _b[4], rawCorr = _b[5];
+            var pen = tf.softmax(rawPen.div(softtemp));
+            var pi = tf.softmax(rawPi.div(softtemp));
+            var sigma1 = tf.exp(rawSigma1).mul(sqrttemp);
+            var sigma2 = tf.exp(rawSigma2).mul(sqrttemp);
+            var corr = tf.tanh(rawCorr);
             return [pi, mu1, mu2, sigma1, sigma2, corr, pen];
         });
         var result = [];
@@ -19806,29 +19802,29 @@ var SketchRNN = (function () {
         }
         return result;
     };
-    SketchRNN.prototype.zero_state = function () {
+    SketchRNN.prototype.zeroState = function () {
         var result = [
             new Float32Array(this.numUnits),
             new Float32Array(this.numUnits),
         ];
         return result;
     };
-    SketchRNN.prototype.copy_state = function (rnnState) {
+    SketchRNN.prototype.copyState = function (rnnState) {
         var c = new Float32Array(rnnState[0]);
         var h = new Float32Array(rnnState[1]);
         return [c, h];
     };
-    SketchRNN.prototype.zero_input = function () {
+    SketchRNN.prototype.zeroInput = function () {
         return [0, 0, 1, 0, 0];
     };
     SketchRNN.prototype.sample = function (pdf) {
-        var idx = support.sample_softmax(pdf[0]);
+        var idx = support.sampleSoftmax(pdf[0]);
         var mu1 = pdf[1][idx];
         var mu2 = pdf[2][idx];
         var sigma1 = pdf[3][idx];
         var sigma2 = pdf[4][idx];
         var corr = pdf[5][idx];
-        var penIdx = support.sample_softmax(pdf[6]);
+        var penIdx = support.sampleSoftmax(pdf[6]);
         var penstate = [0, 0, 0];
         penstate[penIdx] = 1;
         var delta = support.birandn(mu1, mu2, sigma1, sigma2, corr);
@@ -19840,17 +19836,17 @@ var SketchRNN = (function () {
             penstate[2]
         ];
     };
-    SketchRNN.prototype.simplify_line = function (line, tolerance) {
-        return support.simplify_line(line, tolerance);
+    SketchRNN.prototype.simplifyLine = function (line, tolerance) {
+        return support.simplifyLine(line, tolerance);
     };
-    SketchRNN.prototype.simplify_lines = function (lines, tolerance) {
-        return support.simplify_lines(lines, tolerance);
+    SketchRNN.prototype.simplifyLines = function (lines, tolerance) {
+        return support.simplifyLines(lines, tolerance);
     };
-    SketchRNN.prototype.lines_to_stroke = function (lines) {
-        return support.lines_to_strokes(lines);
+    SketchRNN.prototype.linesToStroke = function (lines) {
+        return support.linesToStrokes(lines);
     };
-    SketchRNN.prototype.line_to_stroke = function (line, lastPoint) {
-        return support.line_to_stroke(line, lastPoint);
+    SketchRNN.prototype.lineToStroke = function (line, lastPoint) {
+        return support.lineToStroke(line, lastPoint);
     };
     return SketchRNN;
 }());

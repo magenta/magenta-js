@@ -142,7 +142,7 @@ function draw() {
   rnn_state = model.update([dx, dy, pen_down, pen_up, pen_end], rnn_state);
 
   // get the parameters of the probability distribution (pdf) from hidden state
-  pdf = model.get_pdf(rnn_state, temperature);
+  pdf = model.getPDF(rnn_state, temperature);
 
   // sample the next pen's states from our probability distribution
   [dx, dy, pen_down, pen_up, pen_end] = model.sample(pdf);

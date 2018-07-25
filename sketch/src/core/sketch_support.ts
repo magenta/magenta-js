@@ -18,12 +18,12 @@
  */
 
 /**
- * deals with decompressing b64 models to uint8 arrays.
+ * Deals with decompressing b64 models to uint8 arrays.
  *
  * @param b64encoded String of b64 encoded data.
  * @returns uint8 version of data.
  */
-export function string_to_uint8array(b64encoded: string) {
+export function stringToUint8array(b64encoded: string) {
   const u8: Uint8Array = new Uint8Array(atob(b64encoded)
     .split("")
     .map((c: string): number => {
@@ -38,13 +38,13 @@ export function string_to_uint8array(b64encoded: string) {
  * @param b64encoded String of b64 encoded data.
  * @returns int16 version of data.
  */
-export function string_to_array(b64encoded: string) {
-  const u: Uint8Array = string_to_uint8array(b64encoded);
+export function stringToArray(b64encoded: string) {
+  const u: Uint8Array = stringToUint8array(b64encoded);
   const result: Int16Array = new Int16Array(u.buffer);
   return result;
 }
 
-// functions for sampling normal or bi-normals
+// Functions for sampling normal or bi-normals
 
 // Random numbers util (from https://github.com/karpathy/recurrentjs)
 let returnV = false;
@@ -74,7 +74,7 @@ export function randi(a: number, b: number): number {
 export function randn(mu: number, std: number): number {
   return mu + gaussRandom() * std;
 }
-// from http://www.math.grin.edu/~mooret/courses/math336/bivariate-normal.html
+// From http://www.math.grin.edu/~mooret/courses/math336/bivariate-normal.html
 export function birandn(
   mu1: number,
   mu2: number,
@@ -89,9 +89,9 @@ export function birandn(
 }
 
 /**
- * sample from a categorial distribution
+ * Sample from a categorial distribution
  */
-export function sample_softmax(zSample: number[]): number {
+export function sampleSoftmax(zSample: number[]): number {
   const x = randf(0, 1);
   const N = zSample.length;
   let accumulate = 0;
@@ -108,7 +108,7 @@ export function sample_softmax(zSample: number[]): number {
 
 // Data Tool Functions
 
-export function simplify_line(V: number[][], tolerance?: number): number[][] {
+export function simplifyLine(V: number[][], tolerance=2.0): number[][] {
   // from https://gist.github.com/adammiller/826148
   // V ... [[x1,y1],[x2,y2],...] polyline
   // tol  ... approximation tolerance
@@ -121,10 +121,7 @@ export function simplify_line(V: number[][], tolerance?: number): number[][] {
   // Users of this code must verify correctness for their application.
   // http://softsurfer.com/Archive/algorithm_0205/algorithm_0205.htm
 
-  let tol = 2.0;
-  if (tolerance) {
-    tol = tolerance;
-  }
+  const tol = tolerance;
 
   /*function sum(u: number[], v: number[]): number {
     return [u[0] + v[0], u[1] + v[1]];
@@ -237,7 +234,7 @@ export function simplify_line(V: number[][], tolerance?: number): number[][] {
 /**
  * Clean wrapper method to use RDP function.
  */
-export function simplify_lines(lines: number[][][],
+export function simplifyLines(lines: number[][][],
   tolerance?: number): number[][][] {
   const result: number[][][] = [];
   let tol = 2.0;
@@ -245,15 +242,15 @@ export function simplify_lines(lines: number[][][],
     tol = tolerance;
   }
   for (let i = 0; i < lines.length; i++) {
-    result.push(simplify_line(lines[i], tol));
+    result.push(simplifyLine(lines[i], tol));
   }
   return result;
 }
 
 /**
- * convert from polylines to stroke-5 format that sketch-rnn uses
+ * Convert from polylines to stroke-5 format that sketch-rnn uses
  */
-export function lines_to_strokes(rawData: number[][][]): number[][] {
+export function linesToStrokes(rawData: number[][][]): number[][] {
   let x: number, y: number;
   let px = 0, py = 0;
   let dx: number, dy: number;
@@ -289,9 +286,9 @@ export function lines_to_strokes(rawData: number[][][]): number[][] {
 }
 
 /**
- * convert to stroke-5 format to polyline
+ * Convert to stroke-5 format to polyline
  */
-export function line_to_stroke(line: number[][],
+export function lineToStroke(line: number[][],
   lastPoint: number[]): number[][] {
 
   let pon: number, poff: number;
