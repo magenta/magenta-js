@@ -81,7 +81,7 @@ export abstract class BasePlayer {
    *   @param bpm An optional number specifying the starting BPM for playback.
    */
   constructor(playClick = false, callbackObject?: BasePlayerCallback,
-              bpm = 60: number) {
+              bpm = 60) {
     this.playClick = playClick;
     this.callbackObject = callbackObject;
     // Set a bpm of 60 to make dealing with timing easier. We will use seconds
