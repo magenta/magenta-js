@@ -149,7 +149,7 @@ class MetronomeCallback extends mm.BasePlayerCallback {
 }
 
 
-function generateDrums() {
+function generateDrumsAndMelodies() {
   const callback = new MetronomeCallback();
   let playClicks = [true, false];
   let buttonSuffixes = [' with click', ' without click']
@@ -203,16 +203,11 @@ function generateDrums() {
       }
     });
     melDiv.appendChild(twinkleButton);
-    var rng = (<HTMLInputElement>document.getElementById('tempo'));
-    var listener = function() {
-      player.setBPM(+rng.value);
-    };
-    rng.addEventListener('input', listener);
   }
 }
 
 try {
-  Promise.all([generateDrums()]);
+  Promise.all([generateDrumsAndMelodies()]);
 } catch (err) {
   console.error(err);
 }

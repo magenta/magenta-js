@@ -153,6 +153,111 @@ export const MEL_TWINKLE: mm.INoteSequence = {
   quantizationInfo: {stepsPerQuarter: 4}
 };
 
+export const FULL_TWINKLE: mm.INoteSequence = {
+  notes: [
+    {pitch: 60, quantizedStartStep: 0, quantizedEndStep: 2, program: 0},
+    {pitch: 60, quantizedStartStep: 2, quantizedEndStep: 4, program: 0},
+    {pitch: 67, quantizedStartStep: 4, quantizedEndStep: 6, program: 0},
+    {pitch: 67, quantizedStartStep: 6, quantizedEndStep: 8, program: 0},
+    {pitch: 69, quantizedStartStep: 8, quantizedEndStep: 10, program: 0},
+    {pitch: 69, quantizedStartStep: 10, quantizedEndStep: 12, program: 0},
+    {pitch: 67, quantizedStartStep: 12, quantizedEndStep: 16, program: 0},
+    {pitch: 65, quantizedStartStep: 16, quantizedEndStep: 18, program: 0},
+    {pitch: 65, quantizedStartStep: 18, quantizedEndStep: 20, program: 0},
+    {pitch: 64, quantizedStartStep: 20, quantizedEndStep: 22, program: 0},
+    {pitch: 64, quantizedStartStep: 22, quantizedEndStep: 24, program: 0},
+    {pitch: 62, quantizedStartStep: 24, quantizedEndStep: 26, program: 0},
+    {pitch: 62, quantizedStartStep: 26, quantizedEndStep: 28, program: 0},
+    {pitch: 60, quantizedStartStep: 28, quantizedEndStep: 32, program: 0},
+    {pitch: 67, quantizedStartStep: 32, quantizedEndStep: 34, program: 0},
+    {pitch: 67, quantizedStartStep: 34, quantizedEndStep: 36, program: 0},
+    {pitch: 65, quantizedStartStep: 36, quantizedEndStep: 38, program: 0},
+    {pitch: 65, quantizedStartStep: 38, quantizedEndStep: 40, program: 0},
+    {pitch: 64, quantizedStartStep: 40, quantizedEndStep: 42, program: 0},
+    {pitch: 64, quantizedStartStep: 42, quantizedEndStep: 44, program: 0},
+    {pitch: 62, quantizedStartStep: 44, quantizedEndStep: 48, program: 0},
+    {pitch: 67, quantizedStartStep: 48, quantizedEndStep: 50, program: 0},
+    {pitch: 67, quantizedStartStep: 50, quantizedEndStep: 52, program: 0},
+    {pitch: 65, quantizedStartStep: 52, quantizedEndStep: 54, program: 0},
+    {pitch: 65, quantizedStartStep: 54, quantizedEndStep: 56, program: 0},
+    {pitch: 64, quantizedStartStep: 56, quantizedEndStep: 58, program: 0},
+    {pitch: 64, quantizedStartStep: 58, quantizedEndStep: 60, program: 0},
+    {pitch: 62, quantizedStartStep: 60, quantizedEndStep: 64, program: 0},
+    {pitch: 60, quantizedStartStep: 64, quantizedEndStep: 66, program: 0},
+    {pitch: 60, quantizedStartStep: 66, quantizedEndStep: 68, program: 0},
+    {pitch: 67, quantizedStartStep: 68, quantizedEndStep: 70, program: 0},
+    {pitch: 67, quantizedStartStep: 70, quantizedEndStep: 72, program: 0},
+    {pitch: 69, quantizedStartStep: 72, quantizedEndStep: 74, program: 0},
+    {pitch: 69, quantizedStartStep: 74, quantizedEndStep: 76, program: 0},
+    {pitch: 67, quantizedStartStep: 76, quantizedEndStep: 80, program: 0},
+    {pitch: 65, quantizedStartStep: 80, quantizedEndStep: 82, program: 0},
+    {pitch: 65, quantizedStartStep: 82, quantizedEndStep: 84, program: 0},
+    {pitch: 64, quantizedStartStep: 84, quantizedEndStep: 86, program: 0},
+    {pitch: 64, quantizedStartStep: 86, quantizedEndStep: 88, program: 0},
+    {pitch: 62, quantizedStartStep: 88, quantizedEndStep: 90, program: 0},
+    {pitch: 62, quantizedStartStep: 90, quantizedEndStep: 92, program: 0},
+    {pitch: 60, quantizedStartStep: 92, quantizedEndStep: 96, program: 0}
+  ],
+  tempos: [
+    {time: 0, qpm: 60}
+  ],
+  quantizationInfo: {stepsPerQuarter: 4}
+};
+
+export const FULL_TWINKLE_UNQUANTIZED: mm.INoteSequence = {
+  notes: [
+    {pitch: 60, startTime: 0.0, endTime: 0.5, program: 0},
+    {pitch: 60, startTime: 0.5, endTime: 1.0, program: 0},
+    {pitch: 67, startTime: 1.0, endTime: 1.5, program: 0},
+    {pitch: 67, startTime: 1.5, endTime: 2.0, program: 0},
+    {pitch: 69, startTime: 2.0, endTime: 2.5, program: 0},
+    {pitch: 69, startTime: 2.5, endTime: 3.0, program: 0},
+    {pitch: 67, startTime: 3.0, endTime: 4.0, program: 0},
+    {pitch: 65, startTime: 4.0, endTime: 4.5, program: 0},
+    {pitch: 65, startTime: 4.5, endTime: 5.0, program: 0},
+    {pitch: 64, startTime: 5.0, endTime: 5.5, program: 0},
+    {pitch: 64, startTime: 5.5, endTime: 6.0, program: 0},
+    {pitch: 62, startTime: 6.0, endTime: 6.5, program: 0},
+    {pitch: 62, startTime: 6.5, endTime: 7.0, program: 0},
+    {pitch: 60, startTime: 7.0, endTime: 8.0, program: 0},
+    {pitch: 67, startTime: 8.0, endTime: 8.5, program: 0},
+    {pitch: 67, startTime: 8.5, endTime: 9.0, program: 0},
+    {pitch: 65, startTime: 9.0, endTime: 9.5, program: 0},
+    {pitch: 65, startTime: 9.5, endTime: 10.0, program: 0},
+    {pitch: 64, startTime: 10.0, endTime: 10.5, program: 0},
+    {pitch: 64, startTime: 10.5, endTime: 11.0, program: 0},
+    {pitch: 62, startTime: 11.0, endTime: 12.0, program: 0},
+    {pitch: 67, startTime: 12.0, endTime: 12.5, program: 0},
+    {pitch: 67, startTime: 12.5, endTime: 13.0, program: 0},
+    {pitch: 65, startTime: 13.0, endTime: 13.5, program: 0},
+    {pitch: 65, startTime: 13.5, endTime: 14.0, program: 0},
+    {pitch: 64, startTime: 14.0, endTime: 14.5, program: 0},
+    {pitch: 64, startTime: 14.5, endTime: 15.0, program: 0},
+    {pitch: 62, startTime: 15.0, endTime: 16.0, program: 0},
+    {pitch: 60, startTime: 16.0, endTime: 16.5, program: 0},
+    {pitch: 60, startTime: 16.5, endTime: 17.0, program: 0},
+    {pitch: 67, startTime: 17.0, endTime: 17.5, program: 0},
+    {pitch: 67, startTime: 17.5, endTime: 18.0, program: 0},
+    {pitch: 69, startTime: 18.0, endTime: 18.5, program: 0},
+    {pitch: 69, startTime: 18.5, endTime: 19.0, program: 0},
+    {pitch: 67, startTime: 19.0, endTime: 20.0, program: 0},
+    {pitch: 65, startTime: 20.0, endTime: 20.5, program: 0},
+    {pitch: 65, startTime: 20.5, endTime: 21.0, program: 0},
+    {pitch: 64, startTime: 21.0, endTime: 21.5, program: 0},
+    {pitch: 64, startTime: 21.5, endTime: 22.0, program: 0},
+    {pitch: 62, startTime: 22.0, endTime: 22.5, program: 0},
+    {pitch: 62, startTime: 22.5, endTime: 23.0, program: 0},
+    {pitch: 60, startTime: 23.0, endTime: 24.0, program: 0}
+  ],
+  tempos: [
+    {time: 0, qpm: 120}
+  ],
+  timeSignatures: [
+    {time: 0, numerator: 4, denominator: 4}
+  ],
+  totalTime: 24
+};
+
 export function writeTimer(elementId: string, startTime: number) {
   document.getElementById(elementId).innerHTML =
       ((performance.now() - startTime) / 1000).toString() + 's';

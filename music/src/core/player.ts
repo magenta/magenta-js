@@ -68,6 +68,7 @@ export abstract class BasePlayer {
   protected scheduledStop: number;
   protected playClick: boolean;
   protected callbackObject: BasePlayerCallback;
+  protected desiredBPM: number;
 
   protected abstract playNote(time: number, note: NoteSequence.INote): void;
 
@@ -86,7 +87,7 @@ export abstract class BasePlayer {
     this.callbackObject = callbackObject;
     // Set a bpm of 60 to make dealing with timing easier. We will use seconds
     // instead of transport time since it can't go beyond 16th notes.
-    Tone.Transport.bpm.value = bpm;
+    this.desiredBPM = bpm;
   }
 
   /**
@@ -95,7 +96,10 @@ export abstract class BasePlayer {
    * @param bpm A number, the new bpm to use.
    */
   setBPM(bpm: number) {
-    Tone.Transport.bpm.value = bpm;
+    this.desiredBPM = bpm;
+    if (Tone.Transport.state == 'started') {
+      Tone.Transport.bpm.value = bpm;
+    }
   }
 
   /**
@@ -130,10 +134,12 @@ export abstract class BasePlayer {
    * @returns a Promise that resolves when playback is complete.
    */
   start(seq: INoteSequence, qpm?: number): Promise<void> {
-    if (this.playClick) {
+    let isQuantized = sequences.isQuantizedSequence(seq);
+    if (this.playClick && isQuantized) {
       seq = this.makeClickSequence(seq);
     }
-    if (sequences.isQuantizedSequence(seq)) {
+    Tone.Transport.bpm.value = 120;
+    if (isQuantized) {
       seq = sequences.unquantizeSequence(seq, qpm);
     } else if (qpm) {
       throw new Error('Cannot specify a `qpm` for a non-quantized sequence.');
@@ -151,6 +157,7 @@ export abstract class BasePlayer {
         }, t);
       }
     }, seq.notes.map(n => [n.startTime, n]));
+    Tone.Transport.bpm.value = this.desiredBPM;
     this.currentPart.start();
     if (Tone.Transport.state !== 'started') {
       Tone.Transport.start();

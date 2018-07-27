@@ -1,0 +1,22 @@
+<html>
+  <head>
+    <title>Player with Tempo changing demo</title>
+    <style>body{color: white}</style>
+  </head>
+  <body bgcolor='brown'>
+    <br>
+    <h1>Player with Tempo changing demo</h1>
+    <div class="control">
+        <p class="range-field grey-text">
+          Tempo:
+          <input type="range" id="tempo" min="20" max="240" value="120" step="1"
+           oninput="tempoValue.value = tempo.value">
+          <output id="tempoValue">120</output>
+        </p>
+      </div>
+    </div>
+    <div id='button-div'></div>
+
+    <script src="tempo_changing_bundle.js"></script>
+  </body>
+</html>
