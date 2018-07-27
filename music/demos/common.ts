@@ -249,9 +249,6 @@ export const FULL_TWINKLE_UNQUANTIZED: mm.INoteSequence = {
     {pitch: 62, startTime: 22.5, endTime: 23.0, program: 0},
     {pitch: 60, startTime: 23.0, endTime: 24.0, program: 0}
   ],
-  tempos: [
-    {time: 0, qpm: 120}
-  ],
   timeSignatures: [
     {time: 0, numerator: 4, denominator: 4}
   ],
