@@ -31,6 +31,16 @@ export interface SketchRNNInfo {
   version: number;
 }
 
+export interface StrokePDF {
+  pi: Float32Array;
+  muX: Float32Array;
+  muY: Float32Array;
+  sigmaX: Float32Array;
+  sigmaY: Float32Array;
+  corr: Float32Array;
+  pen: Float32Array;
+}
+
 /**
  * Main SketchRNN model class.
  *
@@ -82,6 +92,7 @@ export class SketchRNN {
 
   /**
    * Instantiates class information inputs from the JSON model.
+   * TODO(hardmaru): to add support for new tfjs checkpoints.
    */
   private instantiateFromJSON(info: SketchRNNInfo,
     weightDims: number[][],
@@ -168,17 +179,18 @@ export class SketchRNN {
   /**
    * Updates the RNN, returns the next state.
    *
-   * @param pen [dx, dy, penDown, penUp, penEnd].
+   * @param stroke [dx, dy, penDown, penUp, penEnd].
    * @param state previous [c, h] state of the LSTM.
    *
    * @returns the next [c, h] state of the LSTM`.
    */
-  update(pen: number[], state: Float32Array[]) {
+  update(stroke: number[], state: Float32Array[]) {
     const out = tf.tidy(() => {
       const numUnits = this.numUnits;
       const s = this.scaleFactor;
-      const normalizedPen = [pen[0] / s, pen[1] / s, pen[2], pen[3], pen[4]];
-      const x = tf.tensor2d(normalizedPen, [1, 5]);
+      const normStroke =
+        [stroke[0]/s, stroke[1]/s, stroke[2], stroke[3], stroke[4]];
+      const x = tf.tensor2d(normStroke, [1, 5]);
       const c = tf.tensor2d(state[0], [1, numUnits]);
       const h = tf.tensor2d(state[1], [1, numUnits]);
       const newState = tf.basicLSTMCell(
@@ -199,6 +211,59 @@ export class SketchRNN {
   }
 
   /**
+   * Updates the RNN on a series of Strokes, returns the next state.
+   *
+   * @param strokes list of [dx, dy, penDown, penUp, penEnd].
+   * @param state previous [c, h] state of the LSTM.
+   * @param steps (Optional) number of steps of the stroke to update
+   * (default is length of strokes list)
+   * 
+   *
+   * @returns the final [c, h] state of the LSTM`.
+   */
+  updateStrokes(strokes: number[][], state: Float32Array[], steps?: number) {
+    const out = tf.tidy(() => {
+      const numUnits = this.numUnits;
+      const s = this.scaleFactor;
+      let normStroke:number[];
+      let x: tf.Tensor2D;
+      let c: tf.Tensor2D;
+      let h: tf.Tensor2D;
+      let newState: tf.Tensor2D[];
+      let numSteps = strokes.length;
+      if (steps) {
+        numSteps = steps;
+      }
+      c = tf.tensor2d(state[0], [1, numUnits]);
+      h = tf.tensor2d(state[1], [1, numUnits]);
+      for (let i=0;i<numSteps;i++) {
+        normStroke = [strokes[i][0]/s,
+                      strokes[i][1]/s,
+                      strokes[i][2],
+                      strokes[i][3],
+                      strokes[i][4]];
+        x = tf.tensor2d(normStroke, [1, 5]);
+        newState = tf.basicLSTMCell(
+          this.forgetBias,
+          this.lstmKernel,
+          this.lstmBias,
+          x,
+          c,
+          h);
+        c = newState[0];
+        h = newState[1];
+      }
+      return newState;
+    });
+    const newC = out[0].dataSync();
+    const newH = out[1].dataSync();
+    for (let i = 0; i < out.length; i++) {
+      out[i].dispose();
+    }
+    return [newC, newH];
+  }
+
+  /**
    * Given the RNN state, returns the probabilty distribution function (pdf)
    * of the next stroke. Optionally adjust the temperature of the pdf here.
    *
@@ -207,7 +272,7 @@ export class SketchRNN {
    * @param softmaxTemperature (Optional) for Pi and Pen discrete states
    * (default is temperature * 0.5 + 0.5, which is a nice heuristic.)
    *
-   * @returns [pi, mu1, mu2, sigma1, sigma2, corr, pen]
+   * @returns StrokePDF (pi, muX, muY, sigmaX, sigmaY, corr, pen)
    */
   getPDF(state: Float32Array[],
     temperature=0.65,
@@ -235,14 +300,24 @@ export class SketchRNN {
       const sigma1 = tf.exp(rawSigma1).mul(sqrttemp);
       const sigma2 = tf.exp(rawSigma2).mul(sqrttemp);
       const corr = tf.tanh(rawCorr);
-      return [pi, mu1, mu2, sigma1, sigma2, corr, pen];
+      const result = [pi, mu1, mu2, sigma1, sigma2, corr, pen];
+      return result; // the actual pdf is an Interface (StrokePDF) sent to user.
     });
     const result = [];
     for (let i = 0; i < out.length; i++) {
       result.push(out[i].dataSync());
       out[i].dispose();
     }
-    return result;
+    const pdf:StrokePDF = {
+      pi: new Float32Array(result[0]),
+      muX: new Float32Array(result[1]),
+      muY: new Float32Array(result[2]),
+      sigmaX: new Float32Array(result[3]),
+      sigmaY: new Float32Array(result[4]),
+      corr: new Float32Array(result[5]),
+      pen: new Float32Array(result[6])
+    };
+    return pdf;
   }
 
   /**
@@ -287,26 +362,27 @@ export class SketchRNN {
    *
    * @returns [dx, dy, penDown, penUp, penEnd]
    */
-  sample(pdf: number[][]) {
-    // pdf is [pi, mu1, mu2, sigma1, sigma2, corr, pen]
+  sample(pdf: StrokePDF) {
+    // pdf is a StrokePDF Interface
     // returns [x, y, eos]
-    const idx = support.sampleSoftmax(pdf[0]);
-    const mu1 = pdf[1][idx];
-    const mu2 = pdf[2][idx];
-    const sigma1 = pdf[3][idx];
-    const sigma2 = pdf[4][idx];
-    const corr = pdf[5][idx];
-    const penIdx = support.sampleSoftmax(pdf[6]);
+    const idx = support.sampleSoftmax(pdf.pi);
+    const mu1 = pdf.muX[idx];
+    const mu2 = pdf.muY[idx];
+    const sigma1 = pdf.sigmaX[idx];
+    const sigma2 = pdf.sigmaY[idx];
+    const corr = pdf.corr[idx];
+    const penIdx = support.sampleSoftmax(pdf.pen);
     const penstate = [0, 0, 0];
     penstate[penIdx] = 1;
     const delta = support.birandn(mu1, mu2, sigma1, sigma2, corr);
-    return [
+    const stroke = [
       delta[0] * this.scaleFactor,
       delta[1] * this.scaleFactor,
       penstate[0],
       penstate[1],
       penstate[2]
     ];
+    return stroke;
   }
 
   /**

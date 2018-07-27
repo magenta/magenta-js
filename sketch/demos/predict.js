@@ -131,9 +131,13 @@ var sketch = function( p ) {
     model_state_orig = model.zeroState();
     // encode strokes
     model_state_orig = model.update(model.zeroInput(), model_state_orig);
+    /* the slower way
     for (var i=0;i<strokes.length;i++) {
       model_state_orig = model.update(strokes[i], model_state_orig);
     }
+    */
+    // the faster way:
+    model_state_orig = model.updateStrokes(strokes, model_state_orig);
   };
 
   var init_model = function(category_name) {

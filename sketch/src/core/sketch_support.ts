@@ -91,7 +91,7 @@ export function birandn(
 /**
  * Sample from a categorial distribution
  */
-export function sampleSoftmax(zSample: number[]): number {
+export function sampleSoftmax(zSample: number[] | Float32Array): number {
   const x = randf(0, 1);
   const N = zSample.length;
   let accumulate = 0;
@@ -106,65 +106,61 @@ export function sampleSoftmax(zSample: number[]): number {
   return -1;
 }
 
-// Data Tool Functions
+// Legacy RDP algorithm implementation, ported over to TypeScript.
 
 export function simplifyLine(V: number[][], tolerance=2.0): number[][] {
-  // from https://gist.github.com/adammiller/826148
-  // V ... [[x1,y1],[x2,y2],...] polyline
-  // tol  ... approximation tolerance
-  // ==============================================
-  // Copyright 2002, softSurfer (www.softsurfer.com)
-  // This code may be freely used and modified for any purpose
-  // providing that this copyright notice is included with it.
-  // SoftSurfer makes no warranty for this code, and cannot be held
-  // liable for any real or imagined damage resulting from its use.
-  // Users of this code must verify correctness for their application.
-  // http://softsurfer.com/Archive/algorithm_0205/algorithm_0205.htm
+  /*
+  from https://gist.github.com/adammiller/826148
+  V ... [[x1,y1],[x2,y2],...] polyline
+  tol  ... approximation tolerance
+  ==============================================
+  Copyright 2002, softSurfer (www.softsurfer.com)
+  This code may be freely used and modified for any purpose
+  providing that this copyright notice is included with it.
+  SoftSurfer makes no warranty for this code, and cannot be held
+  liable for any real or imagined damage resulting from its use.
+  Users of this code must verify correctness for their application.
+  http://softsurfer.com/Archive/algorithm_0205/algorithm_0205.htm
+  */
 
   const tol = tolerance;
 
-  /*function sum(u: number[], v: number[]): number {
-    return [u[0] + v[0], u[1] + v[1]];
-  }*/
   function diff(u: number[], v: number[]): number[] {
     return [u[0] - v[0], u[1] - v[1]];
   }
-  /*function prod(u: number[], v: number[]): number[] {
-    return [u[0] * v[0], u[1] * v[1]];
-  }*/
   function dot(u: number[], v: number[]): number {
     return u[0] * v[0] + u[1] * v[1];
   }
   function norm2(v: number[]): number {
     return v[0] * v[0] + v[1] * v[1];
   }
-  /*function norm(v: number[]): number {
-    return Math.sqrt(norm2(v));
-  }*/
   function d2(u: number[], v: number[]): number {return norm2(diff(u, v));}
-  /*function d(u: number[], v: number[]): number {return norm(diff(u, v));}*/
 
   function simplifyDP(tol: number, v: number[][],
     j: number, k: number, mk: number[]) {
-    //  This is the Douglas-Peucker recursive simplification routine
-    //  It just marks vertices that are part of the simplified polyline
-    //  for approximating the polyline subchain v[j] to v[k].
-    //  mk[] ... array of markers matching vertex array v[]
+    /*
+    This is the Douglas-Peucker recursive simplification routine
+    It just marks vertices that are part of the simplified polyline
+    for approximating the polyline subchain v[j] to v[k].
+    mk[] ... array of markers matching vertex array v[]
+    */
     if (k <= j + 1) { // there is nothing to simplify
       return;
     }
     // check for adequate approximation by segment S from v[j] to v[k]
-    let maxi = j;          // index of vertex farthest from S
-    let maxd2 = 0;         // distance squared of farthest vertex
-    const tol2 = tol * tol;  // tolerance squared
-    const S: number[][] = [v[j], v[k]];  // segment from v[j] to v[k]
-    const u: number[] = diff(S[1], S[0]);   // segment direction vector
-    const cu: number = norm2(u);     // segment length squared
-    // test each vertex v[i] for max distance from S
-    // compute using the Feb 2001 Algorithm's dist_Point_to_Segment()
-    // Note: this works in any dimension (2D, 3D, ...)
-    let w: number[];           // vector
-    let pb: number[];          // point, base of perpendicular from v[i] to S
+    let maxi = j; // index of vertex farthest from S
+    let maxd2 = 0; // distance squared of farthest vertex
+    const tol2 = tol * tol; // tolerance squared
+    const S: number[][] = [v[j], v[k]]; // segment from v[j] to v[k]
+    const u: number[] = diff(S[1], S[0]); // segment direction vector
+    const cu: number = norm2(u); // segment length squared
+    /*
+    test each vertex v[i] for max distance from S
+    compute using the Feb 2001 Algorithm's dist_Point_to_Segment()
+    Note: this works in any dimension (2D, 3D, ...)
+    */
+    let w: number[]; // vector
+    let pb: number[]; // point, base of perpendicular from v[i] to S
     let b: number, cw: number, dv2: number; // dv2 = distance v[i] to S squared
     for (let i: number = j + 1; i < k; i++) {
       // compute distance squared
@@ -187,12 +183,12 @@ export function simplifyLine(V: number[][], tolerance=2.0): number[][] {
       maxi = i;
       maxd2 = dv2;
     }
-    if (maxd2 > tol2) {      // error is worse than the tolerance
+    if (maxd2 > tol2) { // error is worse than the tolerance
       // split the polyline at the farthest vertex from S
-      mk[maxi] = 1;      // mark v[maxi] for the simplified polyline
+      mk[maxi] = 1; // mark v[maxi] for the simplified polyline
       // recursively simplify the two subpolylines at v[maxi]
-      simplifyDP(tol, v, j, maxi, mk);  // polyline v[j] to v[maxi]
-      simplifyDP(tol, v, maxi, k, mk);  // polyline v[maxi] to v[k]
+      simplifyDP(tol, v, j, maxi, mk); // polyline v[j] to v[maxi]
+      simplifyDP(tol, v, maxi, k, mk); // polyline v[maxi] to v[k]
     }
     // else the approximation is OK, so ignore intermediate vertices
     return;
@@ -201,12 +197,12 @@ export function simplifyLine(V: number[][], tolerance=2.0): number[][] {
   const n = V.length;
   const sV: number[][] = [];
   let i: number, k: number, m: number, pv: number; // misc counters
-  const tol2: number = tol * tol;          // tolerance squared
-  const vt: number[][] = [];                       // vertex buffer, points
-  const mk: number[] = [];                       // marker buffer, ints
+  const tol2: number = tol * tol; // tolerance squared
+  const vt: number[][] = []; // vertex buffer, points
+  const mk: number[] = []; // marker buffer, ints
 
-  // STAGE 1.  Vertex Reduction within tolerance of prior vertex cluster
-  vt[0] = V[0];              // start at the beginning
+  // STAGE 1. Vertex Reduction within tolerance of prior vertex cluster
+  vt[0] = V[0]; // start at the beginning
   for (i = k = 1, pv = 0; i < n; i++) {
     if (d2(V[i], V[pv]) < tol2) {
       continue;
@@ -215,11 +211,11 @@ export function simplifyLine(V: number[][], tolerance=2.0): number[][] {
     pv = i;
   }
   if (pv < n - 1) {
-    vt[k++] = V[n - 1];      // finish at the end
+    vt[k++] = V[n - 1]; // finish at the end
   }
 
   // STAGE 2.  Douglas-Peucker polyline simplification
-  mk[0] = mk[k - 1] = 1;       // mark the first and last vertices
+  mk[0] = mk[k - 1] = 1; // mark the first and last vertices
   simplifyDP(tol, vt, 0, k - 1, mk);
 
   // copy marked vertices to the output simplified polyline
@@ -290,7 +286,6 @@ export function linesToStrokes(rawData: number[][][]): number[][] {
  */
 export function lineToStroke(line: number[][],
   lastPoint: number[]): number[][] {
-
   let pon: number, poff: number;
   const stroke: number[][] = [];
   let len: number;
@@ -321,7 +316,5 @@ export function lineToStroke(line: number[][],
       stroke.push([dx, dy, pon, poff, 0]);
     }
   }
-
   return stroke;
-
 }

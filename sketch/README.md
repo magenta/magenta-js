@@ -21,6 +21,7 @@ In the .html files, we need to include `magentasketch.js`. Our example sketch ar
 <head>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.1/p5.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.1/addons/p5.dom.js"></script>
+  <!-- TODO(hardmaru): change below link to jsdeliver cdn link once we publish. -->
   <script src="magentasketch.js"></script>
   <script src="sketch.js"></script>
 </head>
@@ -169,9 +170,9 @@ There is a small IPython [notebook](https://github.com/tensorflow/magenta-demos/
 
 ## Demos
 
-A few demos are available in `demos` directory built to use the Sketch RNN model.  You can look at the corresponding code to study in detail how the model works.  To run these examples, it is recommended to use a simple local webserver, such as the http-server that can be obtained using npm, or the `python -m http.server` command, and load the local html file from the local server.  Some examples require this, since they need to dynamically load .json model files, and local static session doesn't allow for this in many browsers.
+A few demos are available in `demos` directory built to use the Sketch RNN model.  You can look at the corresponding code to study in detail how the model works.  To run these examples, it is recommended to use a simple local webserver, such as the http-server that can be obtained using npm, or the `yarn run-demos` command, and load the local html file from the local server.  Some examples require this, since they need to dynamically load .json model files, and local static session doesn't allow for this in many browsers.
 
-If you use the http-server, running something would be like putting `http://localhost:8000/simple.html` in the address tab in Chrome.  For debugging, it is recommended you open a console tab on the side of the screen to look at the log messages.
+If you use `yarn run-demos`, running something would be like putting `http://localhost:8080/demos/simple.html` in the address tab in Chrome.  For debugging, it is recommended you open a console tab on the side of the screen to look at the log messages.
 
 ### 1) simple.html / simple.js
 

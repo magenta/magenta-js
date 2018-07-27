@@ -308,9 +308,14 @@ var sketch = function( p ) {
 
     // encode sequence
     model_state_orig = model.update(model.zeroInput(), model_state_orig);
+    // the slower way:
+    /*
     for (var i=0;i<sequence.length-1;i++) {
       model_state_orig = model.update(sequence[i], model_state_orig);
     }
+    */
+    // the faster way:
+    model_state_orig = model.updateStrokes(sequence, model_state_orig, sequence.length-1);
 
     restart_model(sequence);
 
