@@ -31,7 +31,7 @@
     "bundle": "browserify --standalone ms src/index.ts -p [tsify] > dist/magentasketch.js",
     "lint": "tslint -c ../tslint.json -p . -t verbose",
     "run-demos": "yarn http-server",
-    "doc": "typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/sketch/src/' --out ../docs/ src --mode modules --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals && touch ../docs/.nojekyll"
+    "doc": "typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/sketch/src/' --out ../docs/sketch src --mode modules --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals"
   },
   "author": "Magenta",
   "license": "Apache-2.0",
