@@ -23,6 +23,18 @@ import * as tf from '@tensorflow/tfjs-core';
 
 import * as support from '../core/sketch_support';
 
+/**
+ * Interface for JSON specification of a `MusicVAE` model.
+ *
+ * @property max_seq_len: Model trained on dataset w/ this max sequence length.
+ * @property mode: Pre-trained models have this parameter for legacy reasons.
+ * 0 for VAE, 1 for Decoder only. This model is Decoder only (not used).
+ * @property name: QuickDraw name, like cat, dog, elephant, etc
+ * @property scale_factor: the factor to convert from neural-network space to
+ * pixel space. Most pre-trained models have this number between 80-120
+ * @property version: Pre-trained models have a version between 1-6, for
+ * the purpose of experimental research log.
+ */
 export interface SketchRNNInfo {
   max_seq_len: number;
   mode: number;
@@ -31,6 +43,25 @@ export interface SketchRNNInfo {
   version: number;
 }
 
+/**
+ * Interface for specification of the Probability Distribution Function
+ * of a pen stroke.
+ * 
+ * Please refer to "A Neural Representation of Sketch Drawings"
+ * https://arxiv.org/abs/1704.03477
+ * 
+ * In Eq.3 is an explanation of all of these parameters.
+ * 
+ * Below is a brief description:
+ * 
+ * @property pi: categorial distribution for mixture of Gaussian
+ * @property muX: mean for x-axis
+ * @property muY: mean for y-axis
+ * @property sigmaX: standard deviation of x-axis
+ * @property sigmaY: standard deviation of y-axis
+ * @property corr: correlation parameter between x and y
+ * @property pen: categorical distribution for the 3 pen states
+ */
 export interface StrokePDF {
   pi: Float32Array;
   muX: Float32Array;
@@ -42,9 +73,25 @@ export interface StrokePDF {
 }
 
 /**
+ * States of the LSTM Cell
+ * 
+ * Long-Short Term Memory: ftp://ftp.idsia.ch/pub/juergen/lstm.pdf
+ * 
+ * @property c: memory "cell" of the LSTM.
+ * @property h: hidden state (also the output) of the LSTM.
+ */
+export interface LSTMState {
+  c: Float32Array;
+  h: Float32Array;
+}
+
+/**
  * Main SketchRNN model class.
  *
  * Implementation of decoder model in https://arxiv.org/abs/1704.03477
+ * 
+ * TODO(hardmaru): make a "batch" continueSequence-like method
+ * that runs fully on GPU.
  */
 export class SketchRNN {
   private checkpointURL: string;
@@ -180,19 +227,19 @@ export class SketchRNN {
    * Updates the RNN, returns the next state.
    *
    * @param stroke [dx, dy, penDown, penUp, penEnd].
-   * @param state previous [c, h] state of the LSTM.
+   * @param state previous LSTMState.
    *
-   * @returns the next [c, h] state of the LSTM`.
+   * @returns next LSTMState.
    */
-  update(stroke: number[], state: Float32Array[]) {
+  update(stroke: number[], state: LSTMState) {
     const out = tf.tidy(() => {
       const numUnits = this.numUnits;
       const s = this.scaleFactor;
       const normStroke =
         [stroke[0]/s, stroke[1]/s, stroke[2], stroke[3], stroke[4]];
       const x = tf.tensor2d(normStroke, [1, 5]);
-      const c = tf.tensor2d(state[0], [1, numUnits]);
-      const h = tf.tensor2d(state[1], [1, numUnits]);
+      const c = tf.tensor2d(state.c, [1, numUnits]);
+      const h = tf.tensor2d(state.h, [1, numUnits]);
       const newState = tf.basicLSTMCell(
         this.forgetBias,
         this.lstmKernel,
@@ -207,21 +254,25 @@ export class SketchRNN {
     for (let i = 0; i < out.length; i++) {
       out[i].dispose();
     }
-    return [newC, newH];
+    const finalState:LSTMState = {
+      c: new Float32Array(newC),
+      h: new Float32Array(newH)
+    };
+    return finalState;
   }
 
   /**
    * Updates the RNN on a series of Strokes, returns the next state.
    *
    * @param strokes list of [dx, dy, penDown, penUp, penEnd].
-   * @param state previous [c, h] state of the LSTM.
+   * @param state previous LSTMState.
    * @param steps (Optional) number of steps of the stroke to update
    * (default is length of strokes list)
    * 
    *
-   * @returns the final [c, h] state of the LSTM`.
+   * @returns the final LSTMState.
    */
-  updateStrokes(strokes: number[][], state: Float32Array[], steps?: number) {
+  updateStrokes(strokes: number[][], state: LSTMState, steps?: number) {
     const out = tf.tidy(() => {
       const numUnits = this.numUnits;
       const s = this.scaleFactor;
@@ -234,8 +285,8 @@ export class SketchRNN {
       if (steps) {
         numSteps = steps;
       }
-      c = tf.tensor2d(state[0], [1, numUnits]);
-      h = tf.tensor2d(state[1], [1, numUnits]);
+      c = tf.tensor2d(state.c, [1, numUnits]);
+      h = tf.tensor2d(state.h, [1, numUnits]);
       for (let i=0;i<numSteps;i++) {
         normStroke = [strokes[i][0]/s,
                       strokes[i][1]/s,
@@ -260,21 +311,25 @@ export class SketchRNN {
     for (let i = 0; i < out.length; i++) {
       out[i].dispose();
     }
-    return [newC, newH];
+    const finalState:LSTMState = {
+      c: new Float32Array(newC),
+      h: new Float32Array(newH)
+    };
+    return finalState;
   }
 
   /**
    * Given the RNN state, returns the probabilty distribution function (pdf)
    * of the next stroke. Optionally adjust the temperature of the pdf here.
    *
-   * @param state previous [c, h] state of the LSTM.
+   * @param state previous LSTMState.
    * @param temperature (Optional) for dx and dy (default 0.65)
    * @param softmaxTemperature (Optional) for Pi and Pen discrete states
    * (default is temperature * 0.5 + 0.5, which is a nice heuristic.)
    *
    * @returns StrokePDF (pi, muX, muY, sigmaX, sigmaY, corr, pen)
    */
-  getPDF(state: Float32Array[],
+  getPDF(state: LSTMState,
     temperature=0.65,
     softmaxTemperature?: number) {
     const temp = temperature;
@@ -284,7 +339,7 @@ export class SketchRNN {
     }
     const out = tf.tidy(() => {
       const numUnits = this.numUnits;
-      const h = tf.tensor2d(state[1], [1, numUnits]);
+      const h = tf.tensor2d(state.h, [1, numUnits]);
       const NOUT = this.NMIXTURE;
 
       const sqrttemp = tf.scalar(Math.sqrt(temp));
@@ -326,24 +381,26 @@ export class SketchRNN {
    * @returns zero state of the lstm: [c, h], where c and h are zero vectors.
    */
   zeroState() {
-    const result: Float32Array[] = [
-      new Float32Array(this.numUnits),
-      new Float32Array(this.numUnits),
-    ];
+    const result:LSTMState = {
+      c: new Float32Array(this.numUnits),
+      h: new Float32Array(this.numUnits)
+    };
     return result;
   }
 
   /**
    * Returns a new copy of the rnn state
    *
-   * @param rnnState original [c, h] states of the lstm
+   * @param rnnState original LSTMState
    *
-   * @returns copy of state of the lstm: [c, h]
+   * @returns copy of LSTMState
    */
-  copyState(rnnState: Float32Array[]) {
-    const c = new Float32Array(rnnState[0]);
-    const h = new Float32Array(rnnState[1]);
-    return [c, h];
+  copyState(rnnState: LSTMState) {
+    const result:LSTMState = {
+      c: new Float32Array(rnnState.c),
+      h: new Float32Array(rnnState.h)
+    };
+    return result;
   }
 
   /**
