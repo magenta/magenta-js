@@ -68,7 +68,7 @@ export abstract class BasePlayer {
   protected scheduledStop: number;
   protected playClick: boolean;
   protected callbackObject: BasePlayerCallback;
-  protected desiredBPM: number;
+  protected desiredQPM: number;
 
   protected abstract playNote(time: number, note: NoteSequence.INote): void;
 
@@ -79,26 +79,24 @@ export abstract class BasePlayer {
    *   @param callbackObject An optional BasePlayerCallback, specifies an
    *     object that contains run() and stop() methods to invode during
    *     playback.
-   *   @param bpm An optional number specifying the starting BPM for playback.
+   *   @param qpm An optional number specifying the starting BPM for playback.
    */
   constructor(playClick = false, callbackObject?: BasePlayerCallback,
-              bpm = 60) {
+              qpm = 60) {
     this.playClick = playClick;
     this.callbackObject = callbackObject;
-    // Set a bpm of 60 to make dealing with timing easier. We will use seconds
-    // instead of transport time since it can't go beyond 16th notes.
-    this.desiredBPM = bpm;
+    this.desiredQPM = qpm;
   }
 
   /**
-   * Changes the bpm of the playback.
+   * Changes the tempo of the playback.
    *
-   * @param bpm A number, the new bpm to use.
+   * @param qpm A number, the new qpm to use.
    */
-  setBPM(bpm: number) {
-    this.desiredBPM = bpm;
+  setTempo(qpm: number) {
+    this.desiredQPM = qpm;
     if (Tone.Transport.state == 'started') {
-      Tone.Transport.bpm.value = bpm;
+      Tone.Transport.bpm.value = qpm;
     }
   }
 
@@ -144,6 +142,9 @@ export abstract class BasePlayer {
     } else if (qpm) {
       throw new Error('Cannot specify a `qpm` for a non-quantized sequence.');
     }
+    if (qpm) {
+      this.desiredQPM = qpm;
+    }
 
     this.currentPart = new Tone.Part((t: number, n: NoteSequence.INote) => {
       if (this.playClick ||
@@ -157,7 +158,7 @@ export abstract class BasePlayer {
         }, t);
       }
     }, seq.notes.map(n => [n.startTime, n]));
-    Tone.Transport.bpm.value = this.desiredBPM;
+    Tone.Transport.bpm.value = this.desiredQPM;
     this.currentPart.start();
     if (Tone.Transport.state !== 'started') {
       Tone.Transport.start();

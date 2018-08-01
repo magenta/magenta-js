@@ -23,7 +23,7 @@ function generateMelodies() {
   var rng = (<HTMLInputElement>document.getElementById('tempo'));
   const player = new mm.Player(true, null, +rng.value);
   var listener = function() {
-    player.setBPM(+rng.value);
+    player.setTempo(+rng.value);
   };
   rng.addEventListener('input', listener);
   const buttonDiv = document.getElementById('button-div');
