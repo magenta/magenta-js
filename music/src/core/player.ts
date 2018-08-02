@@ -79,13 +79,11 @@ export abstract class BasePlayer {
    *   @param callbackObject An optional BasePlayerCallback, specifies an
    *     object that contains run() and stop() methods to invode during
    *     playback.
-   *   @param qpm An optional number specifying the starting BPM for playback.
    */
-  constructor(playClick = false, callbackObject?: BasePlayerCallback,
-              qpm = 60) {
+  constructor(playClick = false, callbackObject?: BasePlayerCallback) {
     this.playClick = playClick;
     this.callbackObject = callbackObject;
-    this.desiredQPM = qpm;
+    this.desiredQPM = null;
   }
 
   /**
@@ -136,14 +134,17 @@ export abstract class BasePlayer {
     if (this.playClick && isQuantized) {
       seq = this.makeClickSequence(seq);
     }
-    Tone.Transport.bpm.value = 120;
+    if (qpm) {
+      Tone.Transport.bpm.value = qpm;
+    } else if (seq.tempos && seq.tempos.length > 0 && seq.tempos[0].qpm > 0) {
+      Tone.Transport.bpm.value = seq.tempos[0].qpm;
+    } else {
+      Tone.Transport.bpm.value = constants.DEFAULT_QUARTERS_PER_MINUTE;
+    }
     if (isQuantized) {
       seq = sequences.unquantizeSequence(seq, qpm);
     } else if (qpm) {
       throw new Error('Cannot specify a `qpm` for a non-quantized sequence.');
-    }
-    if (qpm) {
-      this.desiredQPM = qpm;
     }
 
     this.currentPart = new Tone.Part((t: number, n: NoteSequence.INote) => {
@@ -158,7 +159,9 @@ export abstract class BasePlayer {
         }, t);
       }
     }, seq.notes.map(n => [n.startTime, n]));
-    Tone.Transport.bpm.value = this.desiredQPM;
+    if (this.desiredQPM) {
+      Tone.Transport.bpm.value = this.desiredQPM;
+    }
     this.currentPart.start();
     if (Tone.Transport.state !== 'started') {
       Tone.Transport.start();
@@ -184,6 +187,7 @@ export abstract class BasePlayer {
     }
     Tone.Transport.clear(this.scheduledStop);
     this.scheduledStop = null;
+    this.desiredQPM = null;
   }
 
   isPlaying() {

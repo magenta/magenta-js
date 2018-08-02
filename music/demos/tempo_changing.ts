@@ -21,7 +21,7 @@ import {FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED} from './common';
 function generateMelodies() {
   // Set up listener for changing tempo.
   var rng = (<HTMLInputElement>document.getElementById('tempo'));
-  const player = new mm.Player(true, null, +rng.value);
+  const player = new mm.Player(true, null);
   var listener = function() {
     player.setTempo(+rng.value);
   };
@@ -38,6 +38,7 @@ function generateMelodies() {
         player.stop();
         playButton.textContent = playString;
       } else {
+        player.setTempo(+rng.value);
         player.start(melodies[i]).then(() => (
           playButton.textContent = playString));
         playButton.textContent = 'Stop';
