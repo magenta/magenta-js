@@ -79,42 +79,42 @@
     "id": "multitrack",
     "model": "MusicVAE",
     "description": "A 1-bar multitrack model, trained with 64 free bits. Quantized to 1-byte weights.",
-    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/multitrack",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/multitrack",
     "size_mb": 26.4
   },
   {
     "id": "multitrack_med",
     "model": "MusicVAE",
     "description": "A larger 1-bar multitrack model, trained with 64 free bits. Quantized to 1-byte weights.",
-    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/multitrack_med",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/multitrack_med",
     "size_mb": 95.9
   },
   {
     "id": "multitrack_med_fb256",
     "model": "MusicVAE",
     "description": "A larger 1-bar multitrack model, trained with 256 free bits. Quantized to 1-byte weights.",
-    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/multitrack_med_fb256",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/multitrack_med_fb256",
     "size_mb": 95.9
   },
   {
     "id": "multitrack_chords",
     "model": "MusicVAE",
     "description": "A 1-bar chord-conditioned multitrack model, trained with 64 free bits. Quantized to 1-byte weights.",
-    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/multitrack_chords",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/multitrack_chords",
     "size_mb": 26.9
   },
   {
     "id": "multitrack_med_chords",
     "model": "MusicVAE",
     "description": "A larger 1-bar chord-conditioned multitrack model, trained with 64 free bits. Quantized to 1-byte weights.",
-    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/multitrack_med_chords",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/multitrack_med_chords",
     "size_mb": 96.9
   },
   {
     "id": "multitrack_med_chords_fb256",
     "model": "MusicVAE",
     "description": "A larger 1-bar chord-conditioned multitrack model, trained with 256 free bits. Quantized to 1-byte weights.",
-    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/multitrack_med_chords_fb256",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/multitrack_med_chords_fb256",
     "size_mb": 96.9
   }
 ]
