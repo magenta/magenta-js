@@ -118,13 +118,13 @@ function setup() {
   frameRate(60);
 
   // initialize the scale factor for the model. Bigger -> large outputs
-  model.set_pixel_factor(3.0);
+  model.setPixelFactor(3.0);
 
   // initialize pen's states to zero.
-  [dx, dy, pen_down, pen_up, pen_end] = model.zero_input(); // the pen's states
+  [dx, dy, pen_down, pen_up, pen_end] = model.zeroInput(); // the pen's states
 
   // zero out the rnn's initial states
-  rnn_state = model.zero_state();
+  rnn_state = model.zeroState();
 
   // define color of line
   line_color = color(random(64, 224), random(64, 224), random(64, 224));
@@ -230,7 +230,7 @@ Each row of the stroke will be 5 elements:
 
 `p0, p1, p2` are binary values, and only one of them will be 1, the other 2 must be 0.
 
-```
+```text
 p0 = 1 means the pen stays on the paper at the next stroke.
 p1 = 1 means the pen will is now above the paper after this stroke.  The next stroke will be the start of a new line.
 p2 = 1 means the drawing has stopped.  Stop drawing anything!
