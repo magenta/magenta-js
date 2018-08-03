@@ -1,5 +1,7 @@
 # @magenta/sketch
 
+Link to Documentation: [tensorflow.github.io/magenta-js/sketch](https://tensorflow.github.io/magenta-js/sketch/)
+
 This JavaScript implementation of Magenta's sketch-rnn model uses [TensorFlow.js](https://js.tensorflow.org) for GPU-accelerated inference. `sketch-rnn` is a recurrent neural network model described in [Teaching Machines to Draw](https://research.googleblog.com/2017/04/teaching-machines-to-draw.html) and [A Neural Representation of Sketch Drawings](https://arxiv.org/abs/1704.03477).
 
 ![Example Images](https://cdn.rawgit.com/tensorflow/magenta/master/magenta/models/sketch_rnn/assets/sketch_rnn_examples.svg)
@@ -21,8 +23,7 @@ In the .html files, we need to include `magentasketch.js`. Our example sketch ar
 <head>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.1/p5.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.1/addons/p5.dom.js"></script>
-  <!-- TODO(hardmaru): change below link to jsdeliver cdn link once we publish. -->
-  <script src="magentasketch.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@magenta/sketch@0.1.1"></script>
   <script src="sketch.js"></script>
 </head>
 <body>
