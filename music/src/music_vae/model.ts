@@ -57,8 +57,8 @@ class LayerVars {
  * @param inputs A batch of input vectors to transform.
  * @hidden
  */
-function dense(vars: LayerVars, inputs: tf.Tensor2D) {
-  return inputs.matMul(vars.kernel).add(vars.bias) as tf.Tensor2D;
+function dense(vars: LayerVars, inputs: tf.Tensor2D): tf.Tensor2D {
+  return inputs.matMul(vars.kernel).add(vars.bias);
 }
 
 /**
@@ -341,7 +341,9 @@ class BaseDecoder extends Decoder {
         if (this.nade == null) {
           const timeLabels =
               (temperature ?
-                   tf.multinomial(logits.div(tf.scalar(temperature)), 1)
+                   tf.multinomial(
+                         logits.divStrict(tf.fill(logits.shape, temperature)),
+                         1)
                        .as1D() :
                    logits.argMax(1).as1D());
           nextInput = tf.oneHot(timeLabels, this.outputDims).toFloat();
@@ -771,7 +773,7 @@ class MusicVAE {
    * above.
    */
   async interpolate(
-      inputSequences: INoteSequence[], numInterps: number | number[],
+      inputSequences: INoteSequence[], numInterps: number|number[],
       temperature?: number, chordProgression?: string[]) {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
@@ -972,7 +974,7 @@ class MusicVAE {
     return outputSequences;
   }
 
-  private getInterpolatedZs(z: tf.Tensor2D, numInterps: number | number[]) {
+  private getInterpolatedZs(z: tf.Tensor2D, numInterps: number|number[]) {
     if (typeof numInterps === 'number') {
       numInterps = [numInterps];
     }
@@ -1009,14 +1011,11 @@ class MusicVAE {
         let finalZs =
             z0.mul(tf.outerProduct(revRangeY, revRangeX).as3D(h, w, 1));
         finalZs = tf.addStrict(
-            finalZs,
-            z1.mul(tf.outerProduct(rangeY, revRangeX).as3D(h, w, 1)));
+            finalZs, z1.mul(tf.outerProduct(rangeY, revRangeX).as3D(h, w, 1)));
         finalZs = tf.addStrict(
-            finalZs,
-            z2.mul(tf.outerProduct(revRangeY, rangeX).as3D(h, w, 1)));
+            finalZs, z2.mul(tf.outerProduct(revRangeY, rangeX).as3D(h, w, 1)));
         finalZs = tf.addStrict(
-            finalZs,
-            z3.mul(tf.outerProduct(rangeY, rangeX).as3D(h, w, 1)));
+            finalZs, z3.mul(tf.outerProduct(rangeY, rangeX).as3D(h, w, 1)));
 
         return finalZs.as2D(w * h, z.shape[1]);
       } else {
