@@ -7,7 +7,7 @@
   "jsdelivr": "dist/magentamusic.js",
   "unpkg": "dist/magentamusic.js",
   "dependencies": {
-    "@tensorflow/tfjs-core": "^0.8.5",
+    "@tensorflow/tfjs": "^0.12.4",
     "midiconvert": "^0.4.7",
     "protobufjs": "^6.8.6",
     "tonal": "^1.1.3",
