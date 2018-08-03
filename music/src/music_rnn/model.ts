@@ -273,10 +273,13 @@ export class MusicRNN {
       if (i < length) {
         nextInput = splitInputs[i];
       } else {
-        const logits = lastOutput.matMul(this.lstmFcW).add(this.lstmFcB);
+        const logits =
+            lastOutput.matMul(this.lstmFcW).add(this.lstmFcB) as tf.Tensor2D;
         const sampledOutput =
             (temperature ?
-                 tf.multinomial(logits.div(tf.scalar(temperature)), 1).as1D() :
+                 tf.multinomial(
+                       logits.div(tf.scalar(temperature)) as tf.Tensor2D, 1)
+                     .as1D() :
                  logits.argMax(1).as1D());
         nextInput = tf.oneHot(sampledOutput, outputSize).toFloat();
         // Save samples as bool to reduce data sync time.
