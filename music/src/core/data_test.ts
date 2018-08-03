@@ -172,7 +172,8 @@ test('Test DrumConverters', (t: test.Test) => {
   const drumOneHotTensor = drumsOneHotConverter.toTensor(DRUM_NS);
   t.deepEqual(drumOneHotTensor.shape, [32, 512]);
   t.equal(
-      tf.tidy(() => drumOneHotTensor.sum(1).equal(tf.scalar(1)).sum().get()),
+      tf.tidy(
+        () => drumOneHotTensor.sum(1).equal(tf.scalar(1, 'int32')).sum().get()),
       32);
 
   const drumRollTensorOutput = drumRollTensor.slice([0, 0], [32, 9]);
@@ -199,7 +200,8 @@ test('Test TrioConverter', (t: test.Test) => {
 
   const trioTensor = trioConverter.toTensor(TRIO_NS);
   t.deepEqual(trioTensor.shape, [32, 90 + 90 + 512]);
-  t.equal(tf.tidy(() => trioTensor.sum(1).equal(tf.scalar(3)).sum().get()), 32);
+  t.equal(tf.tidy(
+    () => trioTensor.sum(1).equal(tf.scalar(3, 'int32')).sum().get()), 32);
 
   trioConverter.toNoteSequence(trioTensor, 2)
       .then(ns => t.deepEqual(ns.toJSON(), TRIO_NS.toJSON()));
