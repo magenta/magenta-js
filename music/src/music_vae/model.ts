@@ -342,8 +342,7 @@ class BaseDecoder extends Decoder {
           const timeLabels =
               (temperature ?
                    tf.multinomial(
-                         logits.divStrict(tf.fill(logits.shape, temperature)),
-                         1)
+                         logits.div(tf.scalar(temperature)) as tf.Tensor2D, 1)
                        .as1D() :
                    logits.argMax(1).as1D());
           nextInput = tf.oneHot(timeLabels, this.outputDims).toFloat();

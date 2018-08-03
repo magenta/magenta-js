@@ -278,7 +278,7 @@ export class MusicRNN {
         const sampledOutput =
             (temperature ?
                  tf.multinomial(
-                       logits.divStrict(tf.fill(logits.shape, temperature)), 1)
+                       logits.div(tf.scalar(temperature)) as tf.Tensor2D, 1)
                      .as1D() :
                  logits.argMax(1).as1D());
         nextInput = tf.oneHot(sampledOutput, outputSize).toFloat();
