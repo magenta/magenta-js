@@ -247,13 +247,12 @@ export class SketchRNN {
         x,
         c,
         h);
-      return newState;
+      return tf.concat(newState, 1);
     });
-    const newC = out[0].dataSync();
-    const newH = out[1].dataSync();
-    for (let i = 0; i < out.length; i++) {
-      out[i].dispose();
-    }
+    const newCH = out.dataSync();
+    out.dispose();
+    const newC = newCH.slice(0, this.numUnits);
+    const newH = newCH.slice(this.numUnits, this.numUnits * 2);
     const finalState:LSTMState = {
       c: new Float32Array(newC),
       h: new Float32Array(newH)
@@ -304,13 +303,12 @@ export class SketchRNN {
         c = newState[0];
         h = newState[1];
       }
-      return newState;
+      return tf.concat(newState, 1);
     });
-    const newC = out[0].dataSync();
-    const newH = out[1].dataSync();
-    for (let i = 0; i < out.length; i++) {
-      out[i].dispose();
-    }
+    const newCH = out.dataSync();
+    out.dispose();
+    const newC = newCH.slice(0, this.numUnits);
+    const newH = newCH.slice(this.numUnits, this.numUnits * 2);
     const finalState:LSTMState = {
       c: new Float32Array(newC),
       h: new Float32Array(newH)
@@ -337,10 +335,10 @@ export class SketchRNN {
     if (softmaxTemperature) {
       discreteTemp = softmaxTemperature;
     }
+    const NOUT = this.NMIXTURE;
     const out = tf.tidy(() => {
       const numUnits = this.numUnits;
       const h = tf.tensor2d(state.h, [1, numUnits]);
-      const NOUT = this.NMIXTURE;
 
       const sqrttemp = tf.scalar(Math.sqrt(temp));
       const softtemp = tf.scalar(discreteTemp);
@@ -356,21 +354,19 @@ export class SketchRNN {
       const sigma2 = tf.exp(rawSigma2).mul(sqrttemp);
       const corr = tf.tanh(rawCorr);
       const result = [pi, mu1, mu2, sigma1, sigma2, corr, pen];
-      return result; // the actual pdf is an Interface (StrokePDF) sent to user.
+      // concat, and then unpack after dataSync
+      return tf.concat(result);
     });
-    const result = [];
-    for (let i = 0; i < out.length; i++) {
-      result.push(out[i].dataSync());
-      out[i].dispose();
-    }
-    const pdf:StrokePDF = {
-      pi: new Float32Array(result[0]),
-      muX: new Float32Array(result[1]),
-      muY: new Float32Array(result[2]),
-      sigmaX: new Float32Array(result[3]),
-      sigmaY: new Float32Array(result[4]),
-      corr: new Float32Array(result[5]),
-      pen: new Float32Array(result[6])
+    const result = out.dataSync();
+    out.dispose();
+    const pdf:StrokePDF = { // note: JS doesn't have a nice "split" method.
+      pi: new Float32Array(result.slice(0, NOUT)),
+      muX: new Float32Array(result.slice(1*NOUT, 2*NOUT)),
+      muY: new Float32Array(result.slice(2*NOUT, 3*NOUT)),
+      sigmaX: new Float32Array(result.slice(3*NOUT, 4*NOUT)),
+      sigmaY: new Float32Array(result.slice(4*NOUT, 15*NOUT)),
+      corr: new Float32Array(result.slice(5*NOUT, 6*NOUT)),
+      pen: new Float32Array(result.slice(6*NOUT, 6*NOUT+3))
     };
     return pdf;
   }

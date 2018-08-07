@@ -1,6 +1,6 @@
 {
   "name": "@magenta/sketch",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Make sketches in the browser with machine learning.",
   "main": "es5/index.js",
   "types": "es5/index.d.ts",
@@ -30,7 +30,7 @@
     "build": "tsc",
     "bundle": "browserify --standalone ms src/index.ts -p [tsify] > dist/magentasketch.js",
     "lint": "tslint -c ../tslint.json -p . -t verbose",
-    "run-demos": "yarn http-server",
+    "run-demos": "yarn build && yarn bundle && cp dist/*.js demos && http-server demos/",
     "doc": "typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/sketch/src/' --out ../docs/sketch src --mode modules --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals"
   },
   "author": "Magenta",
