@@ -83,13 +83,13 @@ export abstract class BasePlayer {
   constructor(playClick = false, callbackObject?: BasePlayerCallback) {
     this.playClick = playClick;
     this.callbackObject = callbackObject;
-    this.desiredQPM = null;
+    this.desiredQPM = undefined;
   }
 
   /**
    * Changes the tempo of the playback.
    *
-   * @param qpm A number, the new qpm to use.
+   * @param qpm The new qpm to use.
    */
   setTempo(qpm: number) {
     this.desiredQPM = qpm;
@@ -130,7 +130,7 @@ export abstract class BasePlayer {
    * @returns a Promise that resolves when playback is complete.
    */
   start(seq: INoteSequence, qpm?: number): Promise<void> {
-    let isQuantized = sequences.isQuantizedSequence(seq);
+    const isQuantized = sequences.isQuantizedSequence(seq);
     if (this.playClick && isQuantized) {
       seq = this.makeClickSequence(seq);
     }
@@ -186,8 +186,8 @@ export abstract class BasePlayer {
       this.currentPart = null;
     }
     Tone.Transport.clear(this.scheduledStop);
-    this.scheduledStop = null;
-    this.desiredQPM = null;
+    this.scheduledStop = undefined;
+    this.desiredQPM = undefined;
   }
 
   isPlaying() {
