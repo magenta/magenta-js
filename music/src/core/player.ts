@@ -68,6 +68,7 @@ export abstract class BasePlayer {
   protected scheduledStop: number;
   protected playClick: boolean;
   protected callbackObject: BasePlayerCallback;
+  protected desiredQPM: number;
 
   protected abstract playNote(time: number, note: NoteSequence.INote): void;
 
@@ -82,9 +83,19 @@ export abstract class BasePlayer {
   constructor(playClick = false, callbackObject?: BasePlayerCallback) {
     this.playClick = playClick;
     this.callbackObject = callbackObject;
-    // Set a bpm of 60 to make dealing with timing easier. We will use seconds
-    // instead of transport time since it can't go beyond 16th notes.
-    Tone.Transport.bpm.value = 60;
+    this.desiredQPM = undefined;
+  }
+
+  /**
+   * Changes the tempo of the playback.
+   *
+   * @param qpm The new qpm to use.
+   */
+  setTempo(qpm: number) {
+    this.desiredQPM = qpm;
+    if (Tone.Transport.state == 'started') {
+      Tone.Transport.bpm.value = qpm;
+    }
   }
 
   /**
@@ -119,10 +130,18 @@ export abstract class BasePlayer {
    * @returns a Promise that resolves when playback is complete.
    */
   start(seq: INoteSequence, qpm?: number): Promise<void> {
-    if (this.playClick) {
+    const isQuantized = sequences.isQuantizedSequence(seq);
+    if (this.playClick && isQuantized) {
       seq = this.makeClickSequence(seq);
     }
-    if (sequences.isQuantizedSequence(seq)) {
+    if (qpm) {
+      Tone.Transport.bpm.value = qpm;
+    } else if (seq.tempos && seq.tempos.length > 0 && seq.tempos[0].qpm > 0) {
+      Tone.Transport.bpm.value = seq.tempos[0].qpm;
+    } else {
+      Tone.Transport.bpm.value = constants.DEFAULT_QUARTERS_PER_MINUTE;
+    }
+    if (isQuantized) {
       seq = sequences.unquantizeSequence(seq, qpm);
     } else if (qpm) {
       throw new Error('Cannot specify a `qpm` for a non-quantized sequence.');
@@ -140,6 +159,9 @@ export abstract class BasePlayer {
         }, t);
       }
     }, seq.notes.map(n => [n.startTime, n]));
+    if (this.desiredQPM) {
+      Tone.Transport.bpm.value = this.desiredQPM;
+    }
     this.currentPart.start();
     if (Tone.Transport.state !== 'started') {
       Tone.Transport.start();
@@ -164,7 +186,8 @@ export abstract class BasePlayer {
       this.currentPart = null;
     }
     Tone.Transport.clear(this.scheduledStop);
-    this.scheduledStop = null;
+    this.scheduledStop = undefined;
+    this.desiredQPM = undefined;
   }
 
   isPlaying() {

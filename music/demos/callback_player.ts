@@ -149,7 +149,7 @@ class MetronomeCallback extends mm.BasePlayerCallback {
 }
 
 
-function generateDrums() {
+function generateDrumsAndMelodies() {
   const callback = new MetronomeCallback();
   let playClicks = [true, false];
   let buttonSuffixes = [' with click', ' without click']
@@ -207,7 +207,7 @@ function generateDrums() {
 }
 
 try {
-  Promise.all([generateDrums()]);
+  Promise.all([generateDrumsAndMelodies()]);
 } catch (err) {
   console.error(err);
 }
