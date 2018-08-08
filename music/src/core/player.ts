@@ -93,7 +93,7 @@ export abstract class BasePlayer {
    */
   setTempo(qpm: number) {
     this.desiredQPM = qpm;
-    if (Tone.Transport.state == 'started') {
+    if (Tone.Transport.state === 'started') {
       Tone.Transport.bpm.value = qpm;
     }
   }

@@ -105,6 +105,7 @@
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="_core_player_.baseplayer.html#callbackobject" class="tsd-kind-icon">callback<wbr>Object</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="_core_player_.baseplayer.html#currentpart" class="tsd-kind-icon">current<wbr>Part</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="_core_player_.baseplayer.html#desiredqpm" class="tsd-kind-icon">desiredQPM</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="_core_player_.baseplayer.html#playclick" class="tsd-kind-icon">play<wbr>Click</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="_core_player_.baseplayer.html#scheduledstop" class="tsd-kind-icon">scheduled<wbr>Stop</a></li>
 							</ul>
@@ -114,6 +115,7 @@
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_player_.baseplayer.html#isplaying" class="tsd-kind-icon">is<wbr>Playing</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><a href="_core_player_.baseplayer.html#playnote" class="tsd-kind-icon">play<wbr>Note</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_player_.baseplayer.html#settempo" class="tsd-kind-icon">set<wbr>Tempo</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_player_.baseplayer.html#start" class="tsd-kind-icon">start</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_player_.baseplayer.html#stop" class="tsd-kind-icon">stop</a></li>
 							</ul>
@@ -133,7 +135,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L72">core/player.ts:72</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L73">core/player.ts:73</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -182,6 +184,16 @@
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+					<a name="desiredqpm" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagProtected">Protected</span> desiredQPM</h3>
+					<div class="tsd-signature tsd-kind-icon">desiredQPM<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L71">core/player.ts:71</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected">
 					<a name="playclick" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> play<wbr>Click</h3>
 					<div class="tsd-signature tsd-kind-icon">play<wbr>Click<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
@@ -214,7 +226,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L170">core/player.ts:170</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L193">core/player.ts:193</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
@@ -231,7 +243,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L72">core/player.ts:72</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L73">core/player.ts:73</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -248,6 +260,37 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="settempo" class="tsd-anchor"></a>
+					<h3>set<wbr>Tempo</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">set<wbr>Tempo<span class="tsd-signature-symbol">(</span>qpm<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L94">core/player.ts:94</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Changes the tempo of the playback.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>qpm: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The new qpm to use.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 					<a name="start" class="tsd-anchor"></a>
 					<h3>start</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -257,7 +300,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L121">core/player.ts:121</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L132">core/player.ts:132</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -298,7 +341,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L161">core/player.ts:161</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L183">core/player.ts:183</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -373,6 +416,9 @@
 								<a href="_core_player_.baseplayer.html#currentpart" class="tsd-kind-icon">current<wbr>Part</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+								<a href="_core_player_.baseplayer.html#desiredqpm" class="tsd-kind-icon">desiredQPM</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected">
 								<a href="_core_player_.baseplayer.html#playclick" class="tsd-kind-icon">play<wbr>Click</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected">
@@ -383,6 +429,9 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-protected">
 								<a href="_core_player_.baseplayer.html#playnote" class="tsd-kind-icon">play<wbr>Note</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_core_player_.baseplayer.html#settempo" class="tsd-kind-icon">set<wbr>Tempo</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_core_player_.baseplayer.html#start" class="tsd-kind-icon">start</a>
