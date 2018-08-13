@@ -68,7 +68,7 @@
 				<p><img src="https://cdn.rawgit.com/tensorflow/magenta/master/magenta/models/sketch_rnn/assets/sketch_rnn_examples.svg" alt="Example Images"></p>
 				<p><em>Examples of vector images produced by this generative model.</em></p>
 				<h2 id="sketchrnn">SketchRNN</h2>
-				<p>This document is an introduction on how to use the Sketch RNN model in Javascript to generate images.  The Sketch RNN model is trained on stroke-based vector drawings. The model implementation here is able to handle unconditional (decoder-only) generation of vector images.</p>
+				<p>This document is an introduction on how to use the Sketch RNN model in JavaScript to generate images.  The Sketch RNN model is trained on stroke-based vector drawings. The model implementation here is able to handle unconditional (decoder-only) generation of vector images.</p>
 				<p>For more information, please read original <a href="https://magenta.tensorflow.org/sketch_rnn">model</a> description and for the Python TensorFlow implementation.</p>
 				<h2 id="getting-started">Getting started</h2>
 				<p>In the .html files, we need to include <code>magentasketch.js</code>. Our example sketch are built with p5.js and stored in a file such as <code>sketch.js</code>, so we have also included p5 libraries here too. Please see this minimal example:</p>
@@ -85,12 +85,12 @@
 <span class="hljs-tag">&lt;/<span class="hljs-name">html</span>&gt;</span>
 </code></pre>
 				<h2 id="building-the-model">Building the Model</h2>
-				<p>The implementation was written in TypeScript and built with the yarn tool:</p>
+				<p>The implementation was written in TypeScript and built with the <code>yarn</code> tool:</p>
 				<p><code>yarn install</code> to install dependencies.</p>
 				<p><code>yarn build</code> to compile ts into js</p>
 				<p><code>yarn bundle</code> to produce a bundled version in <code>dist/</code>.</p>
 				<h2 id="pre-trained-models">Pre-trained models</h2>
-				<p>We have provided around 100 pre-trained sketch-rnn models. We have trained the models with a .gen.json extension.</p>
+				<p>We have provided around 100 pre-trained sketch-rnn models. We have trained the models with a <code>.gen.json</code> extension.</p>
 				<p>The models are located in:</p>
 				<p><code>https://storage.googleapis.com/quickdraw-models/sketchRNN/large_models/category.gen.json</code></p>
 				<p>where <em>category</em> is a quickdraw category such as <em>cat</em>, <em>dog</em>, <em>the_mona_lisa</em> etc., Some models are trained on more than one category, such as <em>catpig</em> or <em>crabrabbitfacepig</em>.</p>
@@ -343,11 +343,13 @@ model = <span class="hljs-keyword">new</span> ms.SketchRNN(<span class="hljs-str
   prev_pen = [pen_down, pen_up, pen_end];
 };
 </code></pre>
-				<h2 id="train-own-model">Train own model</h2>
+				<h2 id="train-own-model">Train your own model</h2>
 				<p>There is a small IPython <a href="https://github.com/tensorflow/magenta-demos/blob/master/jupyter-notebooks/Sketch_RNN_TF_To_JS_Tutorial.ipynb">notebook</a> to show how to quickly train a sketch-rnn model with Python-based TensorFlow model, and convert that model over to the JSON format that can be used by by this model.</p>
 				<h2 id="demos">Demos</h2>
 				<p>A few demos are available in <code>demos</code> directory built to use the Sketch RNN model.  You can look at the corresponding code to study in detail how the model works.  To run these examples, it is recommended to use a simple local webserver, such as the http-server that can be obtained using npm, or the <code>yarn run-demos</code> command, and load the local html file from the local server.  Some examples require this, since they need to dynamically load .json model files, and local static session doesn&#39;t allow for this in many browsers.</p>
-				<p>If you use <code>yarn run-demos</code>, running something would be like putting <code>http://localhost:8080/demos/simple.html</code> in the address tab in Chrome.  For debugging, it is recommended you open a console tab on the side of the screen to look at the log messages.</p>
+				<p>If you run <code>yarn run-demos</code>, the demos will be available under <code>http://localhost:8080/demos</code>. For example, navigating to
+          <code>http://localhost:8080/demos/simple.html</code> in your browser will run the first demo below. For debugging, you can use the browser's developer tools to see each demo's log messages
+        </p>
 				<h3 id="1-simple-html-simple-js">1) simple.html / simple.js</h3>
 				<p>This demo simply generates a bird using the model, using the example code in the earlier section.</p>
 				<p>Run the <a href="https://storage.googleapis.com/quickdraw-models/sketchRNN/demo_tfjs/simple.html">simple</a> demo.</p>
