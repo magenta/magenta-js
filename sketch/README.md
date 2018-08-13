@@ -23,7 +23,7 @@ In the .html files, we need to include `magentasketch.js`. Our example sketch ar
 <head>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.1/p5.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.1/addons/p5.dom.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@magenta/sketch@0.1.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@magenta/sketch"></script>
   <script src="sketch.js"></script>
 </head>
 <body>
@@ -41,6 +41,30 @@ The implementation was written in TypeScript and built with the yarn tool:
 `yarn build` to compile ts into js
 
 `yarn bundle` to produce a bundled version in `dist/`.
+
+## Demos
+
+Three demos are available in `demos` directory built to use the Sketch RNN model.  You can look at the corresponding code to study in detail how the model works.  To run these examples, launch the `yarn run-demos`. This command will first build the library `magentasketch.js` from the TypeScript source files, and then launch the server, where you can put in `http://127.0.0.1:8080` into your web browser to select the demos. For debugging, it is recommended you open a console tab on the side of the screen to look at the log messages.
+
+### 1) simple.html / simple.js
+
+This demo simply generates a bird using the model, using the example code in the earlier section.
+
+Run the [simple](https://storage.googleapis.com/quickdraw-models/sketchRNN/demo_tfjs/simple.html) demo.
+
+### 2) predict.html / predict.js
+
+This demo attempts to finish the drawing given starting set of strokes. If the user doesn't draw anything, the computer will keep on drawing stuff from scratch.
+
+In this demo, you can also select other classes, like "cat", "ant", "bus", etc.  The demo will dynamically load the json files in the models directory but cache previously loaded json models. Hitting restart will clear the current drawing and start from scratch.
+
+Run the [predict](https://storage.googleapis.com/quickdraw-models/sketchRNN/demo_tfjs/predict.html) demo.
+
+### 3) interactive\_predict.html / interactive\_predict.js
+
+Same as the previous demo, but made to be interactive so the user can draw the beginning of a sketch on the canvas. Similar to the first [AI experiment](https://magenta.tensorflow.org/sketch-rnn-demo). Hitting restart will clear the current human-entered drawing and start from scratch.
+
+Run the [interactive predict](https://storage.googleapis.com/quickdraw-models/sketchRNN/demo_tfjs/interactive_predict.html) demo.
 
 ## Pre-trained models
 
@@ -168,32 +192,6 @@ function draw() {
 ## Train own model
 
 There is a small IPython [notebook](https://github.com/tensorflow/magenta-demos/blob/master/jupyter-notebooks/Sketch_RNN_TF_To_JS_Tutorial.ipynb) to show how to quickly train a sketch-rnn model with Python-based TensorFlow model, and convert that model over to the JSON format that can be used by by this model.
-
-## Demos
-
-A few demos are available in `demos` directory built to use the Sketch RNN model.  You can look at the corresponding code to study in detail how the model works.  To run these examples, it is recommended to use a simple local webserver, such as the http-server that can be obtained using npm, or the `yarn run-demos` command, and load the local html file from the local server.  Some examples require this, since they need to dynamically load .json model files, and local static session doesn't allow for this in many browsers.
-
-If you use `yarn run-demos`, running something would be like putting `http://localhost:8080/demos/simple.html` in the address tab in Chrome.  For debugging, it is recommended you open a console tab on the side of the screen to look at the log messages.
-
-### 1) simple.html / simple.js
-
-This demo simply generates a bird using the model, using the example code in the earlier section.
-
-Run the [simple](https://storage.googleapis.com/quickdraw-models/sketchRNN/demo_tfjs/simple.html) demo.
-
-### 2) predict.html / predict.js
-
-This demo attempts to finish the drawing given starting set of strokes. If the user doesn't draw anything, the computer will keep on drawing stuff from scratch.
-
-In this demo, you can also select other classes, like "cat", "ant", "bus", etc.  The demo will dynamically load the json files in the models directory but cache previously loaded json models. Hitting restart will clear the current drawing and start from scratch.
-
-Run the [predict](https://storage.googleapis.com/quickdraw-models/sketchRNN/demo_tfjs/predict.html) demo.
-
-### 3) interactive\_predict.html / interactive\_predict.js
-
-Same as the previous demo, but made to be interactive so the user can draw the beginning of a sketch on the canvas. Similar to the first [AI experiment](https://magenta.tensorflow.org/sketch-rnn-demo). Hitting restart will clear the current human-entered drawing and start from scratch.
-
-Run the [interactive predict](https://storage.googleapis.com/quickdraw-models/sketchRNN/demo_tfjs/interactive_predict.html) demo.
 
 ## Additional Notes
 
