@@ -205,6 +205,34 @@ export class MusicRNN {
   async continueSequence(
       sequence: INoteSequence, steps: number, temperature?: number,
       chordProgression?: string[]): Promise<INoteSequence> {
+    const result = await this.continueSequenceImpl(
+        sequence, steps, temperature, chordProgression, false);
+    return result.sequence;
+  }
+
+  /**
+   * Continues a provided quantized NoteSequence containing a monophonic melody,
+   * and returns the sequence of probabilities at each step.
+   *
+   * @param sequence The sequence to continue. Must be quantized.
+   * @param steps How many steps to continue.
+   * @param temperature (Optional) The softmax temperature to use when sampling
+   * from the logits. Argmax is used if not provided.
+   * @param chordProgression (Optional) Chord progression to use as
+   * conditioning.
+   */
+  async continueSequenceAndReturnProbabilities(
+      sequence: INoteSequence, steps: number, temperature?: number,
+      chordProgression?: string[]):
+      Promise<{sequence: Promise<INoteSequence>; probs: tf.Tensor[]}> {
+    return this.continueSequenceImpl(
+        sequence, steps, temperature, chordProgression, true);
+  }
+
+  private async continueSequenceImpl(
+      sequence: INoteSequence, steps: number, temperature?: number,
+      chordProgression?: string[], computeProbs?: boolean):
+      Promise<{sequence: Promise<INoteSequence>; probs: tf.Tensor[]}> {
     sequences.assertIsRelativeQuantizedSequence(sequence);
 
     if (this.chordEncoder && !chordProgression) {
@@ -232,20 +260,25 @@ export class MusicRNN {
                   auxInput => auxInput.getTensors(length + steps)),
               1) :
           undefined;
-      const samples =
-          this.sampleRnn(inputs, steps, temperature, controls, auxInputs);
-      return tf.stack(samples).as2D(samples.length, outputSize);
+      const rnnResult = this.sampleRnn(
+          inputs, steps, temperature, controls, auxInputs, computeProbs);
+      const samples = rnnResult.samples;
+      return {
+        samples: tf.stack(samples).as2D(samples.length, outputSize),
+        probs: rnnResult.probs
+      };
     });
 
+    const samplesAndProbs = await oh;
     const result = this.dataConverter.toNoteSequence(
-        await oh, sequence.quantizationInfo.stepsPerQuarter);
-    oh.dispose();
-    return result;
+        samplesAndProbs.samples, sequence.quantizationInfo.stepsPerQuarter);
+    oh.samples.dispose();
+    return {sequence: result, probs: samplesAndProbs.probs};
   }
 
   private sampleRnn(
       inputs: tf.Tensor2D, steps: number, temperature: number,
-      controls?: tf.Tensor2D, auxInputs?: tf.Tensor2D) {
+      controls?: tf.Tensor2D, auxInputs?: tf.Tensor2D, computeProbs?: boolean) {
     const length: number = inputs.shape[0];
     const outputSize: number = inputs.shape[1];
 
@@ -263,6 +296,7 @@ export class MusicRNN {
     // Initialize with input.
     inputs = inputs.toFloat();
     const samples: tf.Tensor1D[] = [];
+    const probs: tf.Tensor[] = [];
     const splitInputs = tf.split(inputs.toFloat(), length);
     const splitControls =
         controls ? tf.split(controls, controls.shape[0]) : undefined;
@@ -275,17 +309,29 @@ export class MusicRNN {
       } else {
         const logits =
             lastOutput.matMul(this.lstmFcW).add(this.lstmFcB) as tf.Tensor2D;
-        const sampledOutput =
-            (temperature ?
-                 tf.multinomial(
-                       logits.div(tf.scalar(temperature)) as tf.Tensor2D, 1)
-                     .as1D() :
-                 logits.argMax(1).as1D());
+
+        let sampledOutput;
+        if (computeProbs) {
+          // We are also returning the sequence of probabilities, so calculate
+          // those before sampling.
+          const theseProbs = temperature ?
+              tf.softmax(logits.div(tf.scalar(temperature))) :
+              tf.softmax(logits);
+          probs.push(theseProbs);
+          sampledOutput =
+              tf.multinomial(theseProbs as tf.Tensor2D, 1, null, true).as1D();
+        } else {
+          sampledOutput =
+              (temperature ?
+                   tf.multinomial(
+                         logits.div(tf.scalar(temperature)) as tf.Tensor2D, 1)
+                       .as1D() :
+                   logits.argMax(1).as1D());
+        }
         nextInput = tf.oneHot(sampledOutput, outputSize).toFloat();
         // Save samples as bool to reduce data sync time.
         samples.push(nextInput.as1D().toBool());
       }
-
       // No need to run an RNN step once we have all our samples.
       if (i === length + steps - 1) {
         break;
@@ -313,6 +359,6 @@ export class MusicRNN {
         lastOutput = h[h.length - 1];
       }
     }
-    return samples;
+    return {samples: samples, probs: probs};
   }
 }
