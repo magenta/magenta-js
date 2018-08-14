@@ -8,19 +8,19 @@ For the Python TensorFlow implementations, see the [main Magenta repo](https://g
 
 ## Contents
 
-* [Example Applcations](#example-applications)
-* [Supported Models](#supported-models)
-* [Getting Started](#getting-started)
-* [Model Checkpoints](#model-checkpoints)
+- [Example Applications](#example-applications)
+- [Supported Models](#supported-models)
+- [Getting Started](#getting-started)
+- [Model Checkpoints](#model-checkpoints)
 
 ## Example Applications
 
 Here are a few applications built with MagentaMusic.js:
 
-* [Beat Blender](https://g.co/beatblender) by [Google Creative Lab](https://github.com/googlecreativelab)
-* [Melody Mixer](https://g.co/melodymixer) by [Google Creative Lab](https://github.com/googlecreativelab)
-* [Latent Loops](https://goo.gl/magenta/latent-loops) by [Google Pie Shop](https://github.com/teampieshop)
-* [Neural Drum Machine](https://codepen.io/teropa/pen/RMGxOQ) by [Tero Parviainen](https://github.com/teropa)
+- [Beat Blender](https://g.co/beatblender) by [Google Creative Lab](https://github.com/googlecreativelab)
+- [Melody Mixer](https://g.co/melodymixer) by [Google Creative Lab](https://github.com/googlecreativelab)
+- [Latent Loops](https://goo.gl/magenta/latent-loops) by [Google Pie Shop](https://github.com/teampieshop)
+- [Neural Drum Machine](https://codepen.io/teropa/pen/RMGxOQ) by [Tero Parviainen](https://github.com/teropa)
 
 ## Supported Models
 
@@ -87,9 +87,10 @@ import * as mm from '@magenta/music';
 const model = new mm.MusicVAE('/path/to/checkpoint');
 const player = new mm.Player();
 
-model.initialize()
-    .then(() => model.sample(1))
-    .then((samples) => player.start(samples[0]));
+model
+  .initialize()
+  .then(() => model.sample(1))
+  .then(samples => player.start(samples[0]));
 ```
 
 See our [demos](./demos) for example usage.
@@ -135,20 +136,21 @@ The model configuration should be placed in a JSON file named `config.json` in t
 ```json
 {
   "type": "MusicRNN",
-    "dataConverter": {
-      "type": "MelodyConverter",
-      "args": {
-        "minPitch": 48,
-        "maxPitch": 83
-      }
-    },
-    "chordEncoder": "PitchChordEncoder"
+  "dataConverter": {
+    "type": "MelodyConverter",
+    "args": {
+      "minPitch": 48,
+      "maxPitch": 83
+    }
+  },
+  "chordEncoder": "PitchChordEncoder"
 }
 ```
 
 This configuration corresponds to a chord-conditioned melody MusicRNN model.
 
 <!-- links -->
+
 [melody-rnn]: https://github.com/tensorflow/magenta/tree/master/magenta/models/melody_rnn
 [drums-rnn]: https://github.com/tensorflow/magenta/tree/master/magenta/models/drums_rnn
 [improv-rnn]: https://github.com/tensorflow/magenta/tree/master/magenta/models/improv_rnn
