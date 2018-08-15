@@ -321,9 +321,7 @@ export class MusicRNN {
             lastOutput.matMul(this.lstmFcW).add(this.lstmFcB) as tf.Tensor2D;
 
         let sampledOutput;
-        if (returnProbs) {
-          // We are also returning the sequence of probabilities, so calculate
-          // those before sampling.
+        if (returnProbs || temperature) {
           const theseProbs = temperature ?
               tf.softmax(logits.div(tf.scalar(temperature))) :
               tf.softmax(logits);
@@ -332,12 +330,7 @@ export class MusicRNN {
               tf.multinomial(theseProbs as tf.Tensor2D, 1, undefined, true)
                   .as1D();
         } else {
-          sampledOutput =
-              (temperature ?
-                   tf.multinomial(
-                         logits.div(tf.scalar(temperature)) as tf.Tensor2D, 1)
-                       .as1D() :
-                   logits.argMax(1).as1D());
+          sampledOutput = logits.argMax(1).as1D();
         }
         nextInput = tf.oneHot(sampledOutput, outputSize).toFloat();
         // Save samples as bool to reduce data sync time.
