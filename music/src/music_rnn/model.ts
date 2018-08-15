@@ -359,6 +359,6 @@ export class MusicRNN {
         lastOutput = h[h.length - 1];
       }
     }
-    return {samples: samples, probs: probs};
+    return {samples, probs};
   }
 }
