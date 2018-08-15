@@ -275,7 +275,6 @@ export class MusicRNN {
 
     // Convert the array of 2D tensors into an array of arrays.
     const probs: Float32Array[] = [];
-
     if (returnProbs) {
       for (let i = 0; i < samplesAndProbs.probs.length; i++) {
         probs.push(await samplesAndProbs.probs[i].data() as Float32Array);
@@ -284,7 +283,7 @@ export class MusicRNN {
     }
 
     oh.samples.dispose();
-    return {sequence: result, probs: probs};
+    return {sequence: result, probs};
   }
 
   private sampleRnn(
