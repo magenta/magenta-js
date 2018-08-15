@@ -193,7 +193,7 @@ export class MusicRNN {
   }
 
   /**
-   * Continues a provided quantized NoteSequence containing a monophonic melody.
+   * Continues a provided quantized NoteSequence containing a melody.
    *
    * @param sequence The sequence to continue. Must be quantized.
    * @param steps How many steps to continue.
@@ -211,8 +211,8 @@ export class MusicRNN {
   }
 
   /**
-   * Continues a provided quantized NoteSequence containing a monophonic melody,
-   * and returns the sequence of probabilities at each step.
+   * Continues a provided quantized NoteSequence containing a melody,
+   * and returns the computed probability distribution at each step.
    *
    * @param sequence The sequence to continue. Must be quantized.
    * @param steps How many steps to continue.
@@ -224,15 +224,15 @@ export class MusicRNN {
   async continueSequenceAndReturnProbabilities(
       sequence: INoteSequence, steps: number, temperature?: number,
       chordProgression?: string[]):
-      Promise<{sequence: Promise<INoteSequence>; probs: tf.Tensor[]}> {
+      Promise<{sequence: Promise<INoteSequence>; probs: Float32Array[]}> {
     return this.continueSequenceImpl(
         sequence, steps, temperature, chordProgression, true);
   }
 
   private async continueSequenceImpl(
       sequence: INoteSequence, steps: number, temperature?: number,
-      chordProgression?: string[], computeProbs?: boolean):
-      Promise<{sequence: Promise<INoteSequence>; probs: tf.Tensor[]}> {
+      chordProgression?: string[], returnProbs?: boolean):
+      Promise<{sequence: Promise<INoteSequence>; probs: Float32Array[]}> {
     sequences.assertIsRelativeQuantizedSequence(sequence);
 
     if (this.chordEncoder && !chordProgression) {
@@ -261,7 +261,7 @@ export class MusicRNN {
               1) :
           undefined;
       const rnnResult = this.sampleRnn(
-          inputs, steps, temperature, controls, auxInputs, computeProbs);
+          inputs, steps, temperature, controls, auxInputs, returnProbs);
       const samples = rnnResult.samples;
       return {
         samples: tf.stack(samples).as2D(samples.length, outputSize),
@@ -272,13 +272,24 @@ export class MusicRNN {
     const samplesAndProbs = await oh;
     const result = this.dataConverter.toNoteSequence(
         samplesAndProbs.samples, sequence.quantizationInfo.stepsPerQuarter);
+
+    // Convert the array of 2D tensors into an array of arrays.
+    const probs: Float32Array[] = [];
+
+    if (returnProbs) {
+      for (let i = 0; i < samplesAndProbs.probs.length; i++) {
+        probs.push(await samplesAndProbs.probs[i].data() as Float32Array);
+        samplesAndProbs.probs[i].dispose();
+      }
+    }
+
     oh.samples.dispose();
-    return {sequence: result, probs: samplesAndProbs.probs};
+    return {sequence: result, probs: probs};
   }
 
   private sampleRnn(
       inputs: tf.Tensor2D, steps: number, temperature: number,
-      controls?: tf.Tensor2D, auxInputs?: tf.Tensor2D, computeProbs?: boolean) {
+      controls?: tf.Tensor2D, auxInputs?: tf.Tensor2D, returnProbs?: boolean) {
     const length: number = inputs.shape[0];
     const outputSize: number = inputs.shape[1];
 
@@ -296,7 +307,7 @@ export class MusicRNN {
     // Initialize with input.
     inputs = inputs.toFloat();
     const samples: tf.Tensor1D[] = [];
-    const probs: tf.Tensor[] = [];
+    const probs: tf.Tensor2D[] = [];
     const splitInputs = tf.split(inputs.toFloat(), length);
     const splitControls =
         controls ? tf.split(controls, controls.shape[0]) : undefined;
@@ -311,15 +322,16 @@ export class MusicRNN {
             lastOutput.matMul(this.lstmFcW).add(this.lstmFcB) as tf.Tensor2D;
 
         let sampledOutput;
-        if (computeProbs) {
+        if (returnProbs) {
           // We are also returning the sequence of probabilities, so calculate
           // those before sampling.
           const theseProbs = temperature ?
               tf.softmax(logits.div(tf.scalar(temperature))) :
               tf.softmax(logits);
-          probs.push(theseProbs);
+          probs.push(theseProbs as tf.Tensor2D);
           sampledOutput =
-              tf.multinomial(theseProbs as tf.Tensor2D, 1, null, true).as1D();
+              tf.multinomial(theseProbs as tf.Tensor2D, 1, undefined, true)
+                  .as1D();
         } else {
           sampledOutput =
               (temperature ?
