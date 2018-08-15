@@ -193,7 +193,7 @@ export class MusicRNN {
   }
 
   /**
-   * Continues a provided quantized NoteSequence containing a melody.
+   * Continues a provided quantized NoteSequence.
    *
    * @param sequence The sequence to continue. Must be quantized.
    * @param steps How many steps to continue.
@@ -211,8 +211,8 @@ export class MusicRNN {
   }
 
   /**
-   * Continues a provided quantized NoteSequence containing a melody,
-   * and returns the computed probability distribution at each step.
+   * Continues a provided quantized NoteSequence, and returns the computed
+   * probability distribution at each step.
    *
    * @param sequence The sequence to continue. Must be quantized.
    * @param steps How many steps to continue.
@@ -306,7 +306,7 @@ export class MusicRNN {
     // Initialize with input.
     inputs = inputs.toFloat();
     const samples: tf.Tensor1D[] = [];
-    const probs: tf.Tensor2D[] = [];
+    const probs: tf.Tensor1D[] = [];
     const splitInputs = tf.split(inputs.toFloat(), length);
     const splitControls =
         controls ? tf.split(controls, controls.shape[0]) : undefined;
@@ -325,7 +325,7 @@ export class MusicRNN {
           const theseProbs = temperature ?
               tf.softmax(logits.div(tf.scalar(temperature))) :
               tf.softmax(logits);
-          probs.push(theseProbs as tf.Tensor2D);
+          probs.push(theseProbs as tf.Tensor1D);
           sampledOutput =
               tf.multinomial(theseProbs as tf.Tensor2D, 1, undefined, true)
                   .as1D();
