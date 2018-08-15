@@ -127,9 +127,10 @@
 <span class="hljs-keyword">const</span> model = <span class="hljs-keyword">new</span> mm.MusicVAE(<span class="hljs-string">'/path/to/checkpoint'</span>);
 <span class="hljs-keyword">const</span> player = <span class="hljs-keyword">new</span> mm.Player();
 
-model.initialize()
-    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> model.sample(<span class="hljs-number">1</span>))
-    .then(<span class="hljs-function">(<span class="hljs-params">samples</span>) =&gt;</span> player.start(samples[<span class="hljs-number">0</span>]));
+model
+  .initialize()
+  .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> model.sample(<span class="hljs-number">1</span>))
+  .then(<span class="hljs-function"><span class="hljs-params">samples</span> =&gt;</span> player.start(samples[<span class="hljs-number">0</span>]));
 </code></pre>
 				<p>See our <a href="./demos">demos</a> for example usage.</p>
 				<h4 id="example-commands">Example Commands</h4>
@@ -153,14 +154,14 @@ model.initialize()
 				<p>The model configuration should be placed in a JSON file named <code>config.json</code> in the same directory as your checkpoint. This configuration file contains all the information needed (besides the weights) to instantiate and run your model: the model type and data converter specification plus optional chord encoding, auxiliary inputs, and attention length. An example <code>config.json</code> file might look like:</p>
 				<pre><code class="lang-json">{
   <span class="hljs-attr">"type"</span>: <span class="hljs-string">"MusicRNN"</span>,
-    <span class="hljs-attr">"dataConverter"</span>: {
-      <span class="hljs-attr">"type"</span>: <span class="hljs-string">"MelodyConverter"</span>,
-      <span class="hljs-attr">"args"</span>: {
-        <span class="hljs-attr">"minPitch"</span>: <span class="hljs-number">48</span>,
-        <span class="hljs-attr">"maxPitch"</span>: <span class="hljs-number">83</span>
-      }
-    },
-    <span class="hljs-attr">"chordEncoder"</span>: <span class="hljs-string">"PitchChordEncoder"</span>
+  <span class="hljs-attr">"dataConverter"</span>: {
+    <span class="hljs-attr">"type"</span>: <span class="hljs-string">"MelodyConverter"</span>,
+    <span class="hljs-attr">"args"</span>: {
+      <span class="hljs-attr">"minPitch"</span>: <span class="hljs-number">48</span>,
+      <span class="hljs-attr">"maxPitch"</span>: <span class="hljs-number">83</span>
+    }
+  },
+  <span class="hljs-attr">"chordEncoder"</span>: <span class="hljs-string">"PitchChordEncoder"</span>
 }
 </code></pre>
 				<p>This configuration corresponds to a chord-conditioned melody MusicRNN model.</p>
