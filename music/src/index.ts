@@ -18,7 +18,7 @@
 import * as tf from '@tensorflow/tfjs';
 export {tf};
 
-export * from './core/index';
-export * from './music_rnn/index';
-export * from './music_vae/index';
-export * from './protobuf/index';
+export * from './core';
+export * from './music_rnn';
+export * from './music_vae';
+export * from './protobuf';
