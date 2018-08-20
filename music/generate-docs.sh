@@ -26,10 +26,11 @@ npx typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tr
 cd ../docs/music/classes/
 
 for path in ./*.html; do
-  # Since we have to manually hardcode the correct paths, only look
-  # in the custom exception classes that we know this definitely happens for.
   filename=$(basename $path .html)
-  if [[ $filename = *"exception"* ]]; then
+
+  if grep -Fq "Users" $path; then
+    echo "Fixing local paths in: $path"
+
     path1=`expr "$filename" : '_\(.*\)_.*_'`  # core
     path2=`expr "$filename" : '_.*_\(.*\)_.*'`  # chords
     correct_source_file=$path1/$path2.ts
