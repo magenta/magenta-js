@@ -97,6 +97,7 @@
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_music_rnn_model_.musicrnn.html#continuesequence" class="tsd-kind-icon">continue<wbr>Sequence</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_music_rnn_model_.musicrnn.html#continuesequenceandreturnprobabilities" class="tsd-kind-icon">continue<wbr>Sequence<wbr>And<wbr>Return<wbr>Probabilities</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_music_rnn_model_.musicrnn.html#dispose" class="tsd-kind-icon">dispose</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_music_rnn_model_.musicrnn.html#initialize" class="tsd-kind-icon">initialize</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_music_rnn_model_.musicrnn.html#isinitialized" class="tsd-kind-icon">is<wbr>Initialized</a></li>
@@ -167,7 +168,7 @@
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Continues a provided quantized NoteSequence containing a monophonic melody.</p>
+									<p>Continues a provided quantized NoteSequence.</p>
 								</div>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -200,6 +201,58 @@
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="continuesequenceandreturnprobabilities" class="tsd-anchor"></a>
+					<h3>continue<wbr>Sequence<wbr>And<wbr>Return<wbr>Probabilities</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">continue<wbr>Sequence<wbr>And<wbr>Return<wbr>Probabilities<span class="tsd-signature-symbol">(</span>sequence<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span>, steps<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, temperature<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, chordProgression<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">object</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_rnn/model.ts#L224">music_rnn/model.ts:224</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Continues a provided quantized NoteSequence, and returns the computed
+									probability distribution at each step.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>sequence: <span class="tsd-signature-type">INoteSequence</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The sequence to continue. Must be quantized.</p>
+									</div>
+								</li>
+								<li>
+									<h5>steps: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>How many steps to continue.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> temperature: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>(Optional) The softmax temperature to use when sampling
+										from the logits. Argmax is used if not provided.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> chordProgression: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>(Optional) Chord progression to use as
+										conditioning.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">object</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -323,6 +376,9 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_music_rnn_model_.musicrnn.html#continuesequence" class="tsd-kind-icon">continue<wbr>Sequence</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_music_rnn_model_.musicrnn.html#continuesequenceandreturnprobabilities" class="tsd-kind-icon">continue<wbr>Sequence<wbr>And<wbr>Return<wbr>Probabilities</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_music_rnn_model_.musicrnn.html#dispose" class="tsd-kind-icon">dispose</a>
