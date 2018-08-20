@@ -30,25 +30,26 @@ export class Visualizer {
   private ctx: CanvasRenderingContext2D;
   private height: number;
   public noteSequence: INoteSequence;
-  private minPitch: number;
-  private maxPitch: number;
 
   /**
    *   `Visualizer` constructor.
    *
    *   @param sequence The `NoteSequence` to be visualized
    *   @param canvas The element where the visualization should be displayed.
+   *   @param config Visualization configuration options
    */
 
-  constructor(sequence: INoteSequence, canvas: HTMLCanvasElement) {
-    // NOTE: In the future this could be a configurable parameter.
+  constructor(
+      sequence: INoteSequence, canvas: HTMLCanvasElement,
+      config = {} as VisualizerConfig) {
     this.config = {
-      noteHeight: 6,
-      noteSpacing: 1,
-      pixelsPerTimeStep:
-          30,  // The bigger this number the "wider" a note looks,
-      noteRGB: '8, 41, 64',
-      activeNoteRGB: '240, 84, 119'
+      noteHeight: config.noteHeight || 6,
+      noteSpacing: config.noteSpacing || 1,
+      pixelsPerTimeStep: config.pixelsPerTimeStep || 30,
+      noteRGB: config.noteRGB || '8, 41, 64',
+      activeNoteRGB: config.activeNoteRGB || '240, 84, 119',
+      minPitch: config.minPitch,
+      maxPitch: config.maxPitch,
     };
 
     this.noteSequence = sequence;
@@ -97,8 +98,8 @@ export class Visualizer {
 
       // The canvas' y=0 is at the top, but a smaller pitch is actually
       // lower, so we're kind of painting backwards.
-      const y =
-          this.height - ((note.pitch - this.minPitch) * this.config.noteHeight);
+      const y = this.height -
+          ((note.pitch - this.config.minPitch) * this.config.noteHeight);
 
       // Color of this note.
       const opacityBaseline = 0.2;  // Shift all the opacities up a little.
@@ -118,24 +119,31 @@ export class Visualizer {
   }
 
   private getCanvasSize(): {width: number; height: number} {
-    this.minPitch = 100;
-    this.maxPitch = -1;
-    // Find the smallest pitch so that we cans scale the drawing correctly.
-    for (const note of this.noteSequence.notes) {
-      if (note.pitch < this.minPitch) {
-        this.minPitch = note.pitch;
+    // If the pitches haven't been specified already, figure them out
+    // from the NoteSequence.
+    if (this.config.minPitch === undefined ||
+        this.config.maxPitch === undefined) {
+      this.config.minPitch = 100;
+      this.config.maxPitch = -1;
+
+      // Find the smallest pitch so that we cans scale the drawing correctly.
+      for (const note of this.noteSequence.notes) {
+        if (note.pitch < this.config.minPitch) {
+          this.config.minPitch = note.pitch;
+        }
+        if (note.pitch > this.config.maxPitch) {
+          this.config.maxPitch = note.pitch;
+        }
       }
-      if (note.pitch > this.maxPitch) {
-        this.maxPitch = note.pitch;
-      }
+
+      // Add a little bit of padding at the top and the bottom;
+      this.config.minPitch -= 2;
+      this.config.maxPitch += 2;
     }
 
-    // Add a little bit of padding at the top and the bottom;
-    this.minPitch -= 2;
-    this.maxPitch += 2;
-
     // Height of the canvas based on the range of pitches in the sequence
-    const height = (this.maxPitch - this.minPitch) * this.config.noteHeight;
+    const height =
+        (this.config.maxPitch - this.config.minPitch) * this.config.noteHeight;
 
     // Calculate a nice width based on the length of the sequence we're playing.
     const numNotes = this.noteSequence.notes.length;
@@ -184,6 +192,8 @@ interface VisualizerConfig {
   noteSpacing?: number;
   // The bigger this number the "wider" a note looks
   pixelsPerTimeStep?: number;
-  noteRGB: string;
-  activeNoteRGB: string;
+  noteRGB?: string;
+  activeNoteRGB?: string;
+  minPitch?: number;
+  maxPitch?: number;
 }
