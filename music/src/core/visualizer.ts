@@ -75,7 +75,6 @@ export class Visualizer {
    * of the screen.
    */
   redraw(activeNote?: NoteSequence.INote): number {
-    console.log(activeNote);
     // TODO: this is not super optimal, and might start being too slow for
     // larger sequences. Instead, we should figure out a way to store the
     // "last painted active notes" and repaint those, as well as the new
@@ -104,14 +103,10 @@ export class Visualizer {
 
       const isActive =
           activeNote && this.isPaintingActiveNote(note, activeNote);
-      if (isActive) {
-        console.log('active: ', note);
-      }
       this.ctx.fillStyle =
           `rgba(${isActive ? this.config.activeNoteRGB : this.config.noteRGB},
           ${opacity})`;
       this.ctx.fillRect(x, y, w, this.config.noteHeight);
-
       if (isActive) {
         activeNotePosition = x;
       }
@@ -147,11 +142,19 @@ export class Visualizer {
   }
 
   private getNoteStartTime(note: NoteSequence.INote) {
-    return note.quantizedStartStep || note.startTime;
+    const result = note.quantizedStartStep || note.startTime;
+    // The above can equal `undefined` if the `quantizedStartStep` is 0
+    // and `startTime` is undefined (because JavaScript), so return a sensible
+    // value in that case.
+    return !result ? 0 : result;
   }
 
   private getNoteEndTime(note: NoteSequence.INote) {
-    return note.quantizedEndStep || note.endTime;
+    const result = note.quantizedEndStep || note.endTime;
+    // The above can equal `undefined` if the `quantizedEndStep` is 0
+    // and `endTime` is undefined (because JavaScript), so return a sensible
+    // value in that case.
+    return !result ? 0 : result;
   }
 
   private isPaintingActiveNote(

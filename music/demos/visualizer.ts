@@ -49,6 +49,8 @@ urlBtn.addEventListener('click', () => fetchMidi(MIDI_URL));
 playBtn.addEventListener('click', () => startOrStop());
 seqBtn.addEventListener('click', () => initPlayerAndVisualizer(FULL_TWINKLE));
 fileInput.addEventListener('change', loadFile);
+tempoInput.addEventListener(
+    'change', () => {player.setTempo(parseInt(tempoInput.value))});
 
 function fetchMidi(url: string) {
   fetch(url)
