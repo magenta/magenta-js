@@ -23,12 +23,12 @@ import {INoteSequence, NoteSequence} from '../protobuf';
  *
  */
 export class Visualizer {
-  private config: any;
+  private config: VisualizerConfig;
   private ctx: CanvasRenderingContext2D;
   private height: number;
   public noteSequence: INoteSequence;
-  private minPitch: number = 100;
-  private maxPitch: number = -1;
+  private minPitch = 100;
+  private maxPitch = -1;
 
   /**
    *   `Visualizer` constructor.
@@ -121,7 +121,7 @@ export class Visualizer {
 
   private getCanvasSize(): {width: number; height: number} {
     // Find the smallest pitch so that we cans scale the drawing correctly.
-    for (let note of this.noteSequence.notes) {
+    for (const note of this.noteSequence.notes) {
       if (note.pitch < this.minPitch) {
         this.minPitch = note.pitch;
       }
@@ -139,7 +139,7 @@ export class Visualizer {
 
     // Calculate a nice width based on the length of the sequence we're playing.
     const numNotes = this.noteSequence.notes.length;
-    const endTime = this.getNoteEndTime(this.noteSequence.notes[numNotes - 1])
+    const endTime = this.getNoteEndTime(this.noteSequence.notes[numNotes - 1]);
     const width = (numNotes * this.config.noteSpacing) +
         (endTime * this.config.pixelsPerTimeStep);
 
@@ -159,11 +159,23 @@ export class Visualizer {
     // A note is active if it's literally the same as the note we are
     // playing (aka activeNote), or if it overlaps because it's a held note.
     const isPlayedNote =
-        this.getNoteStartTime(note) == this.getNoteStartTime(playedNote);
+        this.getNoteStartTime(note) === this.getNoteStartTime(playedNote);
     const heldDownDuringPlayedNote =
         this.getNoteStartTime(note) <= this.getNoteStartTime(playedNote) &&
         this.getNoteEndTime(note) >= this.getNoteEndTime(playedNote);
 
     return isPlayedNote || heldDownDuringPlayedNote;
   }
+}
+
+/**
+ * An interface for providing configurable properties to a Visualizer.
+ */
+interface VisualizerConfig {
+  noteHeight?: number;
+  noteSpacing?: number;
+  // The bigger this number the "wider" a note looks
+  pixelsPerTimeStep?: number;
+  noteRGB: string;
+  activeNoteRGB: string;
 }
