@@ -39,7 +39,7 @@
     "build-demos": "cd demos && ./build-demos.sh",
     "run-demos": "yarn build-demos && http-server demos/",
     "proto": "pbjs --force-number -t static-module -w commonjs -o src/protobuf/proto.js ../../protobuf/music.proto && pbts -o src/protobuf/proto.d.ts src/protobuf/proto.js",
-    "doc": "typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/music/src/' --out ../docs/music src --mode modules --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals"
+    "doc": "sh generate-docs.sh"
   },
   "author": "Magenta",
   "license": "Apache-2.0",
