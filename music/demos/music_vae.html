@@ -21,97 +21,86 @@ limitations under the License.
 <body>
   <br>
   <h1>MusicVAE Demo</h1>
-  <tt><div id="generate-all"></div></tt>
+  <code id="generate-all"></code></p>
 
   <h2>Drums OneHot</h2>
-  <h3>Interpolation (3x3 steps)</h3>
-  <tt><div id="generate-drums"></div></tt>
-  <p>Time:</p>
-  <tt><div id="drums-interp-time"></div></tt>
-  <p>Inputs:</p>
-  <tt><div id="drums-inputs"></div></tt>
-  <p>Results:</p>
-  <tt><div id="drums-interp"></div></tt>
-  <h3>Sample</h3>
-  <p>Time:</p>
-  <tt><div id="drums-sample-time"></div></tt>
-  <p>Samples:</p>
-  <tt><div id="drums-samples"></div></tt>
+  <section>
+    <h3>Interpolation (3x3 steps) <span id="generate-drums"></span></h3>
+
+    <p><b>Input:</b> <code id="drums-inputs"></code></p>
+    <p><b>Result:</b> <code id="drums-interp"></code></p>
+    <p><b>It took:</b> <code id="drums-interp-time"></code></p>
+
+    <h3>Sampling</h3>
+    <p><b>It took:</b> <code id="drums-sample-time"></code></p>
+    <p><b>Samples:</b> <code id="drums-samples"></code></p>
+  </section>
 
   <h2>Drums NADE</h2>
-  <h3>Interpolation(3x3 steps)</h3>
-  <tt><div id="generate-drums-nade"></div></tt>
-  <p>Time:</p>
-  <tt><div id="nade-interp-time"></div></tt>
-  <p>Inputs:</p>
-      <tt><div id="nade-inputs"></div></tt>
-  <p>Results:</p>
-  <tt><div id="nade-interp"></div></tt>
-  <h3>Sampling</h3>
-  <p>Time:</p>
-  <tt><div id="nade-sample-time"></div></tt>
-  <p>Samples:</p>
-  <tt><div id="nade-samples"></div></tt>
+  <section>
+    <h3>Interpolation(3x3 steps) <span id="generate-drums-nade"></span></h3>
+
+    <p><b>Input:</b> <code id="nade-inputs"></code></p>
+    <p><b>Result:</b> <code id="nade-interp"></code></p>
+    <p><b>It took:</b> <code id="nade-interp-time"></code></p>
+
+    <h3>Sampling</h3>
+    <p><b>It took:</b> <code id="nade-sample-time"></code></p>
+    <p><b>Samples:</b> <code id="nade-samples"></code></p>
+  </section>
 
   <h2>Melody OneHot</h2>
-  <h3>Interpolation (5 steps)</h3>
-  <tt><div id="generate-melody"></div></tt>
-  <p>Time:</p>
-  <tt><div id="mel-interp-time"></div></tt>
-  <p>Inputs:</p>
-  <tt><div id="mel-inputs"></div></tt>
-  <p>Results:</p>
-  <tt><div id="mel-interp"></div></tt>
-  <h3>Sampling</h3>
-  <p>Time:</p>
-  <tt><div id="mel-sample-time"></div></tt>
-  <p>Samples:</p>
-  <tt><div id="mel-samples"></div></tt>
+  <section>
+    <h3>Interpolation (5 steps) <span id="generate-melody"></span></h3>
+
+    <p><b>Input:</b> <code id="mel-inputs"></code></p>
+    <p><b>Result:</b> <code id="mel-interp"></code></p>
+    <p><b>It took:</b> <code id="mel-interp-time"></code></p>
+
+    <h3>Sampling</h3>
+    <p><b>It took:</b> <code id="mel-sample-time"></code></p>
+    <p><b>Samples:</b> <code id="mel-samples"></code></p>
+  </section>
 
   <h2>Chord-Conditioned Melody OneHot</h2>
-  <h3>Interpolation (5 steps)</h3>
-  <tt><div id="generate-melody-chord"></div></tt>
-  <p>Time:</p>
-  <tt><div id="mel-chords-interp-time"></div></tt>
-  <p>Inputs:</p>
-  <tt><div id="mel-chords-inputs"></div></tt>
-  <p>Results:</p>
-  <tt><div id="mel-chords-interp"></div></tt>
-  <h3>Sampling</h3>
-  <p>Time:</p>
-  <tt><div id="mel-chords-sample-time"></div></tt>
-  <p>Samples:</p>
-  <tt><div id="mel-chords-samples"></div></tt>
+  <section>
+    <h3>Interpolation (5 steps) <span id="generate-melody-chord"></span></h3>
 
-  <h2>Melody 16-bar Conductor OneHot</h2>
-  <h3>Interpolation (5 steps)</h3>
-  <tt><div id="generate-melody-16"></div></tt>
-  <p>Time:</p>
-  <tt><div id="mel16-interp-time"></div></tt>
-  <p>Inputs:</p>
-  <tt><div id="mel16-inputs"></div></tt>
-  <p>Results:</p>
-  <tt><div id="mel16-interp"></div></tt>
-  <h3>Sampling</h3>
-  <p>Time:</p>
-  <tt><div id="mel16-sample-time"></div></tt>
-  <p>Samples:</p>
-  <tt><div id="mel16-samples"></div></tt>
+    <p><b>Input:</b> <code id="mel-chords-inputs"></code></p>
+    <p><b>Result:</b> <code id="mel-chords-interp"></code></p>
+    <p><b>It took:</b> <code id="mel-chords-interp-time"></code></p>
 
-  <h2>Trio 4-bar</h2>
-  <h3>Reconstruction</h3>
-  <tt><div id="generate-trio"></div></tt>
-  <p>Time:</p>
-  <tt><div id="trio-recon-time"></div></tt>
-  <p>Inputs:</p>
-  <tt><div id="trio-inputs"></div></tt>
-  <p>Results:</p>
-  <tt><div id="trio-recon"></div></tt>
-  <h3>Sampling</h3>
-  <p>Time:</p>
-  <tt><div id="trio-sample-time"></div></tt>
-  <p>Samples:</p>
-  <tt><div id="trio-samples"></div></tt>
+    <h3>Sampling</h3>
+    <p><b>It took:</b> <code id="mel-chords-sample-time"></code></p>
+    <p><b>Samples:</b> <code id="mel-chords-samples"></code></p>
+  </section>
+
+  <section>
+    <h2>Melody 16-bar Conductor OneHot</h2>
+    <h3>Interpolation (5 steps) <span id="generate-melody-16"></span></h3>
+
+    <p><b>Input:</b> <code id="mel16-inputs"></code></p>
+    <p><b>Result:</b> <code id="mel16-interp"></code></p>
+    <p><b>It took:</b> <code id="mel16-interp-time"></code></p>
+
+    <h3>Sampling</h3>
+    <p><b>It took:</b> <code id="mel16-sample-time"></code></p>
+    <p><b>Samples:</b> <code id="mel16-samples"></code></p>
+  </section>
+
+  <section>
+    <h2>Trio 4-bar</h2>
+    <h3>Reconstruction <span id="generate-trio"></span></h3>
+
+    <p><b>Input:</b> <code id="trio-inputs"></code></p>
+    <p><b>Result:</b> <code id="trio-recon"></code></p>
+    <p><b>It took:</b> <code id="trio-recon-time"></code></p>
+
+    <h3>Sampling</h3>
+    <p><b>It took:</b> <code id="trio-sample-time"></code></p>
+    <p><b>Samples:</b> <code id="trio-samples"></code></p>
+  </section>
+
 
   <script src="music_vae_bundle.js"></script>
 </body>

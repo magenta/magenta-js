@@ -264,7 +264,11 @@ export function writeNoteSeqs(
     element.removeChild(element.firstChild);
   }
   seqs.forEach(seq => {
-    const seqWrap = document.createElement('div');
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = 'View NoteSequence';
+    details.appendChild(summary);
+
     const seqText = document.createElement('span');
     seqText.innerHTML = '[' +
         seq.notes
@@ -278,10 +282,10 @@ export function writeNoteSeqs(
             })
             .join(', ') +
         ']';
-    seqWrap.appendChild(seqText);
-    seqWrap.appendChild(
+    details.appendChild(seqText)
+    details.appendChild(
         useSoundFontPlayer ? createSoundFontPlayer(seq) : createPlayer(seq));
-    element.appendChild(seqWrap);
+    element.appendChild(details);
   });
 }
 

@@ -147,10 +147,13 @@ export class Visualizer {
 
     // Calculate a nice width based on the length of the sequence we're playing.
     const numNotes = this.noteSequence.notes.length;
-    const endTime = this.getNoteEndTime(this.noteSequence.notes[numNotes - 1]);
-    const width = (numNotes * this.config.noteSpacing) +
-        (endTime * this.config.pixelsPerTimeStep);
-
+    let width = 0;
+    if (numNotes !== 0) {
+      const endTime =
+          this.getNoteEndTime(this.noteSequence.notes[numNotes - 1]);
+      width = (numNotes * this.config.noteSpacing) +
+          (endTime * this.config.pixelsPerTimeStep);
+    }
     return {width, height};
   }
 

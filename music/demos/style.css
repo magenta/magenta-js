@@ -49,7 +49,8 @@ button:hover {
 }
 
 .player-container {
-  margin: 14px 0;
+  margin-top: 14px;
+  margin-bottom: 24px;
 }
 .visualizer-container {
   background: white;
