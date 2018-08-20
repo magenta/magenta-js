@@ -198,9 +198,7 @@ export const FULL_TWINKLE: mm.INoteSequence = {
     {pitch: 62, quantizedStartStep: 90, quantizedEndStep: 92, program: 0},
     {pitch: 60, quantizedStartStep: 92, quantizedEndStep: 96, program: 0}
   ],
-  tempos: [
-    {time: 0, qpm: 60}
-  ],
+  tempos: [{time: 0, qpm: 60}],
   quantizationInfo: {stepsPerQuarter: 4}
 };
 
@@ -249,12 +247,8 @@ export const FULL_TWINKLE_UNQUANTIZED: mm.INoteSequence = {
     {pitch: 62, startTime: 22.5, endTime: 23.0, program: 0},
     {pitch: 60, startTime: 23.0, endTime: 24.0, program: 0}
   ],
-  timeSignatures: [
-    {time: 0, numerator: 4, denominator: 4}
-  ],
-  tempos: [
-    {time: 0, qpm: 60}
-  ],
+  timeSignatures: [{time: 0, numerator: 4, denominator: 4}],
+  tempos: [{time: 0, qpm: 60}],
   totalTime: 24
 };
 
@@ -291,8 +285,14 @@ export function writeNoteSeqs(
   });
 }
 
-function createPlayerButton(seq: mm.INoteSequence, withClick: boolean) {
-  const player = new mm.Player(withClick);
+function createPlayerButton(
+    seq: mm.INoteSequence, withClick: boolean, canvas: HTMLElement) {
+  const visualizer = new mm.Visualizer(seq, canvas as HTMLCanvasElement);
+  const player = new mm.Player(withClick, {
+    run: (note: mm.NoteSequence.Note) => visualizer.redraw(note),
+    stop: () => {}
+  });
+
   const button = document.createElement('button');
   let playText = withClick ? 'Play With Click' : 'Play';
   button.textContent = playText;
@@ -309,10 +309,18 @@ function createPlayerButton(seq: mm.INoteSequence, withClick: boolean) {
 }
 
 function createPlayer(seq: mm.INoteSequence) {
+  const div = document.createElement('div');
+  div.classList.add('player-container');
+  const containerDiv = document.createElement('div');
+  containerDiv.classList.add('visualizer-container');
+  const canvas = document.createElement('canvas');
+  containerDiv.appendChild(canvas);
   const buttonsDiv = document.createElement('div');
-  buttonsDiv.appendChild(createPlayerButton(seq, false));
-  buttonsDiv.appendChild(createPlayerButton(seq, true));
-  return buttonsDiv;
+  buttonsDiv.appendChild(createPlayerButton(seq, false, canvas));
+  buttonsDiv.appendChild(createPlayerButton(seq, true, canvas));
+  div.appendChild(buttonsDiv);
+  div.appendChild(containerDiv);
+  return div;
 }
 
 function createSoundFontPlayer(seq: mm.INoteSequence) {
