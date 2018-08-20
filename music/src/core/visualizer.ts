@@ -19,7 +19,10 @@
 import {INoteSequence, NoteSequence} from '../protobuf';
 
 /**
- * A NoteSequence visualizer.
+ * A NoteSequence visualizer that displays a series of lines for every note. The
+ * position of the line is given by the pitch and the start/end times of the
+ * note. When connected to a player, the visualizer can also highlight the
+ * notes being currently played.
  *
  */
 export class Visualizer {
@@ -27,8 +30,8 @@ export class Visualizer {
   private ctx: CanvasRenderingContext2D;
   private height: number;
   public noteSequence: INoteSequence;
-  private minPitch = 100;
-  private maxPitch = -1;
+  private minPitch: number;
+  private maxPitch: number;
 
   /**
    *   `Visualizer` constructor.
@@ -115,6 +118,8 @@ export class Visualizer {
   }
 
   private getCanvasSize(): {width: number; height: number} {
+    this.minPitch = 100;
+    this.maxPitch = -1;
     // Find the smallest pitch so that we cans scale the drawing correctly.
     for (const note of this.noteSequence.notes) {
       if (note.pitch < this.minPitch) {
