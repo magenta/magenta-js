@@ -16,11 +16,17 @@ limitations under the License.
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
   <link rel="stylesheet" href="./style.css">
-  <title>MusicVAE Demo</title>
+  <title>MusicVAE</title>
 </head>
 <body>
-  <br>
-  <h1>MusicVAE Demo</h1>
+  <h1>MusicVADemo</h1>
+  <p><code>MusicVAE</code> implements several configurations of Magenta's variational
+    autoencoder model, including melody and drum "loop" models, 4- and 16-bar
+    "trio" models, and chord-conditioned "multi-track" models. In the demos below,
+    we encode the input <code>NoteSequences</code>, and call <code>sample()</code> to
+    obtain a new <code>NoteSequence</code> that matches them. Each section uses a
+    different model  checkpoint (melody, drums or trio) to generate the samples.
+  </p>
   <code id="generate-all"></code></p>
 
   <h2>Drums OneHot</h2>

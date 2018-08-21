@@ -15,10 +15,17 @@ limitations under the License.
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
   <link rel="stylesheet" href="./style.css">
-  <title>MusicRnn Demo</title>
+  <title>MusicRNN</title>
 </head>
 <body>
-  <h1>MusicRnn Demo</h1>
+  <h1>MusicRNN</h1>
+  <p>
+    <code>MusicRNN</code> implements Magenta's LSTM-based language models, which
+    are useful if you want to generate a <code>NoteSequence</code> to continue an
+    input one. In the demos below, we call <code>continueSequence()</code> with the
+    provided input, and display the result. Each section uses a different model
+    checkpoint (melody, drums or chord pitches) to generate the output sequence.
+  </p>
 
   <h2>Melody Continuation</h2>
   <section>

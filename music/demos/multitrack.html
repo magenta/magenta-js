@@ -20,7 +20,12 @@ limitations under the License.
 </head>
 <body>
   <h1>Multitrack MusicVAE Demo</h1>
-
+  <p>These demos use the <code>MusicVAE</code> model to encode a multi-instrument
+    <code>NoteSequence</code>, and call <code>sample()</code> to
+    obtain a new <code>NoteSequence</code> that matches it. Each section uses a
+    different model  checkpoint (melody, or chords) to generate the samples.
+  </p>
+  <p><b>Note: </b>This demo takes a couple seconds to complete.</p>
   <h2>Unconditioned</h2>
 
   <section>
