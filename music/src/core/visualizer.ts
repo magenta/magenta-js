@@ -17,26 +17,51 @@
  */
 
 import {INoteSequence, NoteSequence} from '../protobuf';
+import {sequences} from '.';
+import {MAX_MIDI_PITCH, MIN_MIDI_PITCH} from './constants';
 
 /**
- * A NoteSequence visualizer that displays a series of lines for every note. The
- * position of the line is given by the pitch and the start/end times of the
- * note. When connected to a player, the visualizer can also highlight the
+ * An interface for providing configurable properties to a Visualizer.
+ * @param noteHeight The vertical height in pixels of a note.
+ * @param noteSpacing Number of horizontal pixels between each note.
+ * @param pixelsPerTimeStep The horizontal scale at which notes are drawn. The
+ * bigger this value, the "wider" a note looks.
+ * @param noteRGB The color (as an RGB comma separated string) of a note.
+ * @param activeNoteRGB The color (as an RGB comma separated string) of an
+ * active note being played.
+ * @param minPitch The smallest pitch to be included in the visualization. If
+ * undefined, this will be computed from the NoteSequence being visualized.
+ * @param maxPitch The biggest pitch to be included in the visualization. If
+ * undefined, this will be computed from the NoteSequence being visualized.
+ */
+interface VisualizerConfig {
+  noteHeight?: number;
+  noteSpacing?: number;
+  pixelsPerTimeStep?: number;
+  noteRGB?: string;
+  activeNoteRGB?: string;
+  minPitch?: number;
+  maxPitch?: number;
+}
+
+/**
+ * Displays a pianoroll with pitches on the vertical axis and time on the
+ * horizontal. When connected to a player, the visualizer can also highlight the
  * notes being currently played.
- *
  */
 export class Visualizer {
   private config: VisualizerConfig;
   private ctx: CanvasRenderingContext2D;
   private height: number;
   public noteSequence: INoteSequence;
+  private sequenceIsQuantized: boolean;
 
   /**
    *   `Visualizer` constructor.
    *
-   *   @param sequence The `NoteSequence` to be visualized
+   *   @param sequence The `NoteSequence` to be visualized.
    *   @param canvas The element where the visualization should be displayed.
-   *   @param config Visualization configuration options
+   *   @param config Visualization configuration options.
    */
 
   constructor(
@@ -53,6 +78,7 @@ export class Visualizer {
     };
 
     this.noteSequence = sequence;
+    this.sequenceIsQuantized = sequences.isQuantizedSequence(this.noteSequence);
 
     // Initialize the canvas.
     this.ctx = canvas.getContext('2d');
@@ -72,7 +98,7 @@ export class Visualizer {
   /**
    * Redraws the entire note sequence, optionally painting a note as
    * active
-   * @param activeNote (Optional) If specificed, this `Note` will be painted
+   * @param activeNote (Optional) If specified, this `Note` will be painted
    * in the active color.
    * @returns The x position of the painted active note. Useful for
    * automatically advancing the visualization if the note was painted outside
@@ -123,54 +149,42 @@ export class Visualizer {
     // from the NoteSequence.
     if (this.config.minPitch === undefined ||
         this.config.maxPitch === undefined) {
-      this.config.minPitch = 100;
-      this.config.maxPitch = -1;
+      this.config.minPitch = MAX_MIDI_PITCH;
+      this.config.maxPitch = MIN_MIDI_PITCH;
 
-      // Find the smallest pitch so that we cans scale the drawing correctly.
+      // Find the smallest pitch so that we can scale the drawing correctly.
       for (const note of this.noteSequence.notes) {
-        if (note.pitch < this.config.minPitch) {
-          this.config.minPitch = note.pitch;
-        }
-        if (note.pitch > this.config.maxPitch) {
-          this.config.maxPitch = note.pitch;
-        }
+        this.config.minPitch = Math.min(note.pitch, this.config.minPitch);
+        this.config.maxPitch = Math.max(note.pitch, this.config.maxPitch);
       }
 
-      // Add a little bit of padding at the top and the bottom;
+      // Add a little bit of padding at the top and the bottom.
       this.config.minPitch -= 2;
       this.config.maxPitch += 2;
     }
 
-    // Height of the canvas based on the range of pitches in the sequence
+    // Height of the canvas based on the range of pitches in the sequence.
     const height =
         (this.config.maxPitch - this.config.minPitch) * this.config.noteHeight;
 
     // Calculate a nice width based on the length of the sequence we're playing.
     const numNotes = this.noteSequence.notes.length;
-    let width = 0;
-    if (numNotes !== 0) {
-      const endTime =
-          this.getNoteEndTime(this.noteSequence.notes[numNotes - 1]);
-      width = (numNotes * this.config.noteSpacing) +
-          (endTime * this.config.pixelsPerTimeStep);
-    }
+    const endTime = this.sequenceIsQuantized ?
+        this.noteSequence.totalQuantizedSteps :
+        this.noteSequence.totalTime;
+
+    const width = (numNotes * this.config.noteSpacing) +
+        (endTime * this.config.pixelsPerTimeStep);
+
     return {width, height};
   }
 
   private getNoteStartTime(note: NoteSequence.INote) {
-    const result = note.quantizedStartStep || note.startTime;
-    // The above can equal `undefined` if the `quantizedStartStep` is 0
-    // and `startTime` is undefined (because JavaScript), so return a sensible
-    // value in that case.
-    return !result ? 0 : result;
+    return this.sequenceIsQuantized ? note.quantizedStartStep : note.startTime;
   }
 
   private getNoteEndTime(note: NoteSequence.INote) {
-    const result = note.quantizedEndStep || note.endTime;
-    // The above can equal `undefined` if the `quantizedEndStep` is 0
-    // and `endTime` is undefined (because JavaScript), so return a sensible
-    // value in that case.
-    return !result ? 0 : result;
+    return this.sequenceIsQuantized ? note.quantizedEndStep : note.endTime;
   }
 
   private isPaintingActiveNote(
@@ -185,18 +199,4 @@ export class Visualizer {
 
     return isPlayedNote || heldDownDuringPlayedNote;
   }
-}
-
-/**
- * An interface for providing configurable properties to a Visualizer.
- */
-interface VisualizerConfig {
-  noteHeight?: number;
-  noteSpacing?: number;
-  // The bigger this number the "wider" a note looks
-  pixelsPerTimeStep?: number;
-  noteRGB?: string;
-  activeNoteRGB?: string;
-  minPitch?: number;
-  maxPitch?: number;
 }

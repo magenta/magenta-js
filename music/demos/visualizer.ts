@@ -18,8 +18,7 @@
 import * as mm from '../src/index';
 import {FULL_TWINKLE} from './common';
 
-const MIDI_URL =
-    'https://cdn.glitch.com/3312a3b4-6418-4bed-a0bd-3a0ca4dfa2fb%2Fchopin.mid?1534369337985';
+const MIDI_URL = './melody.mid';
 
 let visualizer: mm.Visualizer;
 const player = new mm.Player(false, {
