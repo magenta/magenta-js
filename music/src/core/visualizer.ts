@@ -17,6 +17,7 @@
  */
 
 import {INoteSequence, NoteSequence} from '../protobuf';
+import {MAX_MIDI_PITCH, MIN_MIDI_PITCH} from './constants';
 
 /**
  * A NoteSequence visualizer that displays a series of lines for every note. The
@@ -34,9 +35,9 @@ export class Visualizer {
   /**
    *   `Visualizer` constructor.
    *
-   *   @param sequence The `NoteSequence` to be visualized
+   *   @param sequence The `NoteSequence` to be visualized.
    *   @param canvas The element where the visualization should be displayed.
-   *   @param config Visualization configuration options
+   *   @param config Visualization configuration options.
    */
 
   constructor(
@@ -123,34 +124,29 @@ export class Visualizer {
     // from the NoteSequence.
     if (this.config.minPitch === undefined ||
         this.config.maxPitch === undefined) {
-      this.config.minPitch = 100;
-      this.config.maxPitch = -1;
+      this.config.minPitch = MAX_MIDI_PITCH;
+      this.config.maxPitch = MIN_MIDI_PITCH;
 
-      // Find the smallest pitch so that we cans scale the drawing correctly.
+      // Find the smallest pitch so that we can scale the drawing correctly.
       for (const note of this.noteSequence.notes) {
-        if (note.pitch < this.config.minPitch) {
-          this.config.minPitch = note.pitch;
-        }
-        if (note.pitch > this.config.maxPitch) {
-          this.config.maxPitch = note.pitch;
-        }
+        this.config.minPitch = Math.min(note.pitch, this.config.minPitch);
+        this.config.maxPitch = Math.max(note.pitch, this.config.maxPitch);
       }
 
-      // Add a little bit of padding at the top and the bottom;
+      // Add a little bit of padding at the top and the bottom.
       this.config.minPitch -= 2;
       this.config.maxPitch += 2;
     }
 
-    // Height of the canvas based on the range of pitches in the sequence
+    // Height of the canvas based on the range of pitches in the sequence.
     const height =
         (this.config.maxPitch - this.config.minPitch) * this.config.noteHeight;
 
     // Calculate a nice width based on the length of the sequence we're playing.
     const numNotes = this.noteSequence.notes.length;
-    const endTime = this.getNoteEndTime(this.noteSequence.notes[numNotes - 1]);
+    const endTime = this.noteSequence.totalTime;
     const width = (numNotes * this.config.noteSpacing) +
         (endTime * this.config.pixelsPerTimeStep);
-
     return {width, height};
   }
 
@@ -186,11 +182,22 @@ export class Visualizer {
 
 /**
  * An interface for providing configurable properties to a Visualizer.
+ * @param noteHeight The vertical height in pixels of a note.
+ * @param noteSpacing Number of horizontal pixels between each note.
+ * @param pixelsPerTimeStep The horizontal scale at which notes are drawn. The
+ * bigger this value, the "wider" a note looks.
+ * @param noteRGB The color (as an RGB comma separated string) of a note.
+ * @param activeNoteRGB The color (as an RGB comma separated string) of an
+ * active note being played.
+ * @param minPitch The smallest pitch to be included in the visualization. If
+ * undefined, this will be computed from the NoteSequence being visualized.
+ * @param maxPitch The biggest pitch to be included in the visualization. If
+ * undefined, this will be computed from the NoteSequence being visualized.
  */
+
 interface VisualizerConfig {
   noteHeight?: number;
   noteSpacing?: number;
-  // The bigger this number the "wider" a note looks
   pixelsPerTimeStep?: number;
   noteRGB?: string;
   activeNoteRGB?: string;
