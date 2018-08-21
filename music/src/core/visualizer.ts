@@ -99,7 +99,7 @@ export class Visualizer {
   /**
    * Redraws the entire note sequence, optionally painting a note as
    * active
-   * @param activeNote (Optional) If specificed, this `Note` will be painted
+   * @param activeNote (Optional) If specified, this `Note` will be painted
    * in the active color.
    * @returns The x position of the painted active note. Useful for
    * automatically advancing the visualization if the note was painted outside
