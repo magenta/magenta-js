@@ -24,3 +24,4 @@ export {aux_inputs, chords, constants, data, sequences};
 
 export * from './midi_io';
 export * from './player';
+export * from './visualizer';
