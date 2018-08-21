@@ -17,6 +17,7 @@
  */
 
 import {INoteSequence, NoteSequence} from '../protobuf';
+import {sequences} from '.';
 import {MAX_MIDI_PITCH, MIN_MIDI_PITCH} from './constants';
 
 /**
@@ -44,11 +45,9 @@ interface VisualizerConfig {
 }
 
 /**
- * A NoteSequence visualizer that displays a series of lines for every note. The
- * position of the line is given by the pitch and the start/end times of the
- * note. When connected to a player, the visualizer can also highlight the
+ * Displays a pianoroll with pitches on the vertical axis and time on the
+ * horizontal. When connected to a player, the visualizer can also highlight the
  * notes being currently played.
- *
  */
 export class Visualizer {
   private config: VisualizerConfig;
@@ -79,7 +78,7 @@ export class Visualizer {
     };
 
     this.noteSequence = sequence;
-    this.sequenceIsQuantized = this.noteSequence.totalQuantizedSteps !== 0;
+    this.sequenceIsQuantized = sequences.isQuantizedSequence(this.noteSequence);
 
     // Initialize the canvas.
     this.ctx = canvas.getContext('2d');
