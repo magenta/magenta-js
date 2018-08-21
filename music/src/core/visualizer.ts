@@ -20,6 +20,30 @@ import {INoteSequence, NoteSequence} from '../protobuf';
 import {MAX_MIDI_PITCH, MIN_MIDI_PITCH} from './constants';
 
 /**
+ * An interface for providing configurable properties to a Visualizer.
+ * @param noteHeight The vertical height in pixels of a note.
+ * @param noteSpacing Number of horizontal pixels between each note.
+ * @param pixelsPerTimeStep The horizontal scale at which notes are drawn. The
+ * bigger this value, the "wider" a note looks.
+ * @param noteRGB The color (as an RGB comma separated string) of a note.
+ * @param activeNoteRGB The color (as an RGB comma separated string) of an
+ * active note being played.
+ * @param minPitch The smallest pitch to be included in the visualization. If
+ * undefined, this will be computed from the NoteSequence being visualized.
+ * @param maxPitch The biggest pitch to be included in the visualization. If
+ * undefined, this will be computed from the NoteSequence being visualized.
+ */
+interface VisualizerConfig {
+  noteHeight?: number;
+  noteSpacing?: number;
+  pixelsPerTimeStep?: number;
+  noteRGB?: string;
+  activeNoteRGB?: string;
+  minPitch?: number;
+  maxPitch?: number;
+}
+
+/**
  * A NoteSequence visualizer that displays a series of lines for every note. The
  * position of the line is given by the pitch and the start/end times of the
  * note. When connected to a player, the visualizer can also highlight the
@@ -177,29 +201,4 @@ export class Visualizer {
 
     return isPlayedNote || heldDownDuringPlayedNote;
   }
-}
-
-/**
- * An interface for providing configurable properties to a Visualizer.
- * @param noteHeight The vertical height in pixels of a note.
- * @param noteSpacing Number of horizontal pixels between each note.
- * @param pixelsPerTimeStep The horizontal scale at which notes are drawn. The
- * bigger this value, the "wider" a note looks.
- * @param noteRGB The color (as an RGB comma separated string) of a note.
- * @param activeNoteRGB The color (as an RGB comma separated string) of an
- * active note being played.
- * @param minPitch The smallest pitch to be included in the visualization. If
- * undefined, this will be computed from the NoteSequence being visualized.
- * @param maxPitch The biggest pitch to be included in the visualization. If
- * undefined, this will be computed from the NoteSequence being visualized.
- */
-
-interface VisualizerConfig {
-  noteHeight?: number;
-  noteSpacing?: number;
-  pixelsPerTimeStep?: number;
-  noteRGB?: string;
-  activeNoteRGB?: string;
-  minPitch?: number;
-  maxPitch?: number;
 }
