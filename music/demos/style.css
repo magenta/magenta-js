@@ -9,6 +9,8 @@ body {
   color: #111;
   background-color: #fdfdfd;
   -webkit-font-smoothing: antialiased;
+  width: 100%;
+  max-width: 1000px;
 }
 
 section {
@@ -29,7 +31,7 @@ a:hover {
   text-decoration: none;
 }
 
-button {
+button, .button {
   font-family: "Roboto", Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
   text-transform: uppercase;
   font-weight: 700;

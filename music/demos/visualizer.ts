@@ -40,6 +40,7 @@ const playBtn = document.getElementById('playBtn') as HTMLButtonElement;
 const urlBtn = document.getElementById('urlBtn') as HTMLButtonElement;
 const seqBtn = document.getElementById('seqBtn') as HTMLButtonElement;
 const tempoInput = document.getElementById('tempoInput') as HTMLInputElement;
+const tempoValue = document.getElementById('tempoValue') as HTMLDivElement;
 const fileInput = document.getElementById('fileInput') as HTMLInputElement;
 const container = document.getElementById('container') as HTMLDivElement;
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -49,8 +50,10 @@ urlBtn.addEventListener('click', () => fetchMidi(MIDI_URL));
 playBtn.addEventListener('click', () => startOrStop());
 seqBtn.addEventListener('click', () => initPlayerAndVisualizer(FULL_TWINKLE));
 fileInput.addEventListener('change', loadFile);
-tempoInput.addEventListener(
-    'change', () => {player.setTempo(parseInt(tempoInput.value))});
+tempoInput.addEventListener('input', () => {
+  player.setTempo(parseInt(tempoInput.value));
+  tempoValue.textContent = tempoInput.value;
+});
 
 function fetchMidi(url: string) {
   fetch(url)
@@ -80,7 +83,7 @@ function initPlayerAndVisualizer(seq: mm.INoteSequence) {
 
   const tempo = seq.tempos[0].qpm;
   player.setTempo(tempo);
-  tempoInput.value = '' + tempo;
+  tempoValue.textContent = tempoInput.value = '' + tempo;
 
   // Enable the UI
   playBtn.disabled = false;

@@ -12,7 +12,11 @@ limitations under the License.
 ==============================================================================-->
 <html>
 <head>
-  <title>Visualizer Demo</title>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+  <link rel="stylesheet" href="./style.css">
+  <title>mm.Visualizer</title>
   <style>
     input[type="file"] {
       width: 0;
@@ -21,33 +25,38 @@ limitations under the License.
       cursor: pointer;
       display: none;
     }
-    #container {
-      margin: 14px 0;
-      width: 500px;
-      overflow-x: auto;
-      border: 1px solid black;
-    }
   </style>
 </head>
 <body>
-  <h1>Visualizer Demo</h1>
+  <h1>mm.Visualizer</h1>
+  <p>
+    <code>mm.Visualizer</code> is a midi or <code>NoteSequence</code> visualizer.
+    You can connect it to an <code>mm.Player</code> to update the visualization
+    in sync with the audio. Every time the <code>mm.Visualizer</code> redraws,
+    it will return the position of the active note being played, so that you
+    can implement an auto-scrolling visualizer, if you want.
+  </p>
 
-  <div>
+  <section>
+    <p>Load a melody in any of these formats:</p>
     <button id="urlBtn">Load URL</button>
     <button id="seqBtn">Load NoteSequence</button>
-    <label class="input">
-        <input type="file" id="fileInput">
-          Load midi file
+    <label class="button">
+      Load midi file
+      <input type="file" id="fileInput">
     </label>
-    <br>
+    <br><br>
     <button id="playBtn" disabled>wait...</button>
-    <span class="input">tempo: <input id="tempoInput" value="100" placeholder="tempo"></span>
+    <span class="input">
+      <b>Tempo:</b>
+      <input id="tempoInput" value="100" type="range" min="20" max="240" value="120" step="1">
+      <span id="tempoValue"></span>
+    </span>
 
-  </div>
-
-  <div id="container">
-    <canvas id="canvas"></canvas>
-  </div>
+    <div class="visualizer-container" id="container">
+      <canvas id="canvas"></canvas>
+    </div>
+  </section>
 
   <script src="visualizer_bundle.js"></script>
 </body>
