@@ -3,7 +3,7 @@
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-    http://www.apache.org/licenses/LICENSE-2.0
+    http:</b>//www.apache.org/licenses/LICENSE-2.0
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,32 +22,31 @@ limitations under the License.
   <h1>Multitrack MusicVAE Demo</h1>
 
   <h2>Unconditioned</h2>
-  <h3>Reconstruction</h3>
-  <p>Time:</p>
-  <tt><div id="multitrack-recon-time"></div></tt>
-  <p>Inputs:</p>
-  <tt><div id="multitrack-inputs"></div></tt>
-  <p>Results:</p>
-  <tt><div id="multitrack-recon"></div></tt>
-  <h3>Sampling</h3>
-  <p>Time:</p>
-  <tt><div id="multitrack-sample-time"></div></tt>
-  <p>Samples:</p>
-  <tt><div id="multitrack-samples"></div></tt>
+
+  <section>
+    <h3>Reconstruction</h3>
+
+    <p><b>Input:</b> <code id="multitrack-inputs"></code></p>
+    <p><b>Result:</b> <code id="multitrack-recon">Loading...</code></p>
+    <p><b>It took:</b> <code id="multitrack-recon-time"></code></p>
+
+    <h3>Sampling</h3>
+    <p><b>It took:</b> <code id="multitrack-sample-time"></code></p>
+    <p><b>Samples:</b> <code id="multitrack-samples"></code></p>
+  </section>
 
   <h2>Chord-Conditioned</h2>
-  <h3>Reconstruction</h3>
-  <p>Time:</p>
-  <tt><div id="multitrack-chords-recon-time"></div></tt>
-  <p>Inputs:</p>
-  <tt><div id="multitrack-chords-inputs"></div></tt>
-  <p>Results:</p>
-  <tt><div id="multitrack-chords-recon"></div></tt>
-  <h3>Sampling</h3>
-  <p>Time:</p>
-  <tt><div id="multitrack-chords-sample-time"></div></tt>
-  <p>Samples:</p>
-  <tt><div id="multitrack-chords-samples"></div></tt>
+  <section>
+    <h3>Reconstruction</h3>
+
+    <p><b>Input:</b> <code id="multitrack-chords-inputs"></code></p>
+    <p><b>Result:</b> <code id="multitrack-chords-recon">Loading...</code></p>
+    <p><b>It took:</b> <code id="multitrack-chords-recon-time"></code></p>
+
+    <h3>Sampling</h3>
+    <p><b>It took:</b> <code id="multitrack-chords-sample-time"></code></p>
+    <p><b>Samples:</b> <code id="multitrack-chords-samples"></code></p>
+  </section>
 
   <script src="multitrack_bundle.js"></script>
 </body>

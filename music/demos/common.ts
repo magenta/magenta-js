@@ -313,12 +313,14 @@ function createPlayerButton(
 }
 
 function createPlayer(seq: mm.INoteSequence) {
+  // Visualizer
   const div = document.createElement('div');
   div.classList.add('player-container');
   const containerDiv = document.createElement('div');
   containerDiv.classList.add('visualizer-container');
   const canvas = document.createElement('canvas');
   containerDiv.appendChild(canvas);
+
   const buttonsDiv = document.createElement('div');
   buttonsDiv.appendChild(createPlayerButton(seq, false, canvas));
   buttonsDiv.appendChild(createPlayerButton(seq, true, canvas));
@@ -328,6 +330,10 @@ function createPlayer(seq: mm.INoteSequence) {
 }
 
 function createSoundFontPlayer(seq: mm.INoteSequence) {
+  // Visualizer
+  const div = document.createElement('div');
+  div.classList.add('player-container');
+
   const player = new mm.SoundFontPlayer(SOUNDFONT_URL);
   const button = document.createElement('button');
   button.textContent = 'Play';
@@ -342,5 +348,7 @@ function createSoundFontPlayer(seq: mm.INoteSequence) {
       button.textContent = 'Stop';
     }
   });
-  return button;
+
+  div.appendChild(button);
+  return div;
 }
