@@ -183,6 +183,7 @@ async function runMel16() {
 
 async function runTrio() {
   const inputs = [TRIO_EXAMPLE];
+  TRIO_EXAMPLE.totalQuantizedSteps = 64;
   writeNoteSeqs('trio-inputs', inputs);
 
   const mvae = new mm.MusicVAE(TRIO_CKPT);

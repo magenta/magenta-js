@@ -37,7 +37,8 @@ export const DRUM_SEQS: mm.INoteSequence[] = [
       {pitch: 36, quantizedStartStep: 16}, {pitch: 36, quantizedStartStep: 24},
       {pitch: 36, quantizedStartStep: 28}, {pitch: 42, quantizedStartStep: 30}
     ],
-    quantizationInfo: {stepsPerQuarter: 4}
+    quantizationInfo: {stepsPerQuarter: 4},
+    totalQuantizedSteps: 30,
   },
   {
     notes: [
@@ -67,7 +68,8 @@ export const DRUM_SEQS: mm.INoteSequence[] = [
       {pitch: 38, quantizedStartStep: 28}, {pitch: 42, quantizedStartStep: 28},
       {pitch: 42, quantizedStartStep: 30}, {pitch: 48, quantizedStartStep: 30}
     ],
-    quantizationInfo: {stepsPerQuarter: 4}
+    quantizationInfo: {stepsPerQuarter: 4},
+    totalQuantizedSteps: 30
   },
   {
     notes: [
@@ -90,7 +92,8 @@ export const DRUM_SEQS: mm.INoteSequence[] = [
       {pitch: 36, quantizedStartStep: 30}, {pitch: 42, quantizedStartStep: 30},
       {pitch: 45, quantizedStartStep: 30}
     ],
-    quantizationInfo: {stepsPerQuarter: 4}
+    quantizationInfo: {stepsPerQuarter: 4},
+    totalQuantizedSteps: 30,
   },
   {
     notes: [
@@ -115,7 +118,8 @@ export const MEL_A_QUARTERS: mm.INoteSequence = {
     {pitch: 69, quantizedStartStep: 24, quantizedEndStep: 28, program: 0},
     {pitch: 69, quantizedStartStep: 28, quantizedEndStep: 32, program: 0},
   ],
-  quantizationInfo: {stepsPerQuarter: 4}
+  quantizationInfo: {stepsPerQuarter: 4},
+  totalQuantizedSteps: 32,
 };
 
 export const MEL_TEAPOT: mm.INoteSequence = {
@@ -130,7 +134,8 @@ export const MEL_TEAPOT: mm.INoteSequence = {
     {pitch: 81, quantizedStartStep: 20, quantizedEndStep: 24, program: 0},
     {pitch: 76, quantizedStartStep: 24, quantizedEndStep: 32, program: 0}
   ],
-  quantizationInfo: {stepsPerQuarter: 4}
+  quantizationInfo: {stepsPerQuarter: 4},
+  totalQuantizedSteps: 32,
 };
 
 export const MEL_TWINKLE: mm.INoteSequence = {
@@ -150,7 +155,8 @@ export const MEL_TWINKLE: mm.INoteSequence = {
     {pitch: 62, quantizedStartStep: 26, quantizedEndStep: 28, program: 0},
     {pitch: 60, quantizedStartStep: 28, quantizedEndStep: 32, program: 0}
   ],
-  quantizationInfo: {stepsPerQuarter: 4}
+  quantizationInfo: {stepsPerQuarter: 4},
+  totalQuantizedSteps: 32,
 };
 
 export const FULL_TWINKLE: mm.INoteSequence = {
@@ -293,8 +299,17 @@ export function writeNoteSeqs(
 function createPlayerButton(
     seq: mm.INoteSequence, withClick: boolean, canvas: HTMLElement) {
   const visualizer = new mm.Visualizer(seq, canvas as HTMLCanvasElement);
+  const container = canvas.parentElement as HTMLDivElement;
   const player = new mm.Player(withClick, {
-    run: (note: mm.NoteSequence.Note) => visualizer.redraw(note),
+    run: (note: mm.NoteSequence.Note) => {
+      const currentNotePosition = visualizer.redraw(note);
+
+      // See if we need to scroll the container.
+      const containerWidth = container.getBoundingClientRect().width;
+      if (currentNotePosition > (container.scrollLeft + containerWidth)) {
+        container.scrollLeft = currentNotePosition - 20;
+      }
+    },
     stop: () => {}
   });
 
