@@ -199,7 +199,7 @@ export const FULL_TWINKLE: mm.INoteSequence = {
     {pitch: 60, quantizedStartStep: 92, quantizedEndStep: 96, program: 0}
   ],
   tempos: [{time: 0, qpm: 60}],
-  totalTime: 96,
+  totalQuantizedSteps: 96,
   quantizationInfo: {stepsPerQuarter: 4}
 };
 

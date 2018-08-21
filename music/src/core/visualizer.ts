@@ -31,6 +31,7 @@ export class Visualizer {
   private ctx: CanvasRenderingContext2D;
   private height: number;
   public noteSequence: INoteSequence;
+  private sequenceIsQuantized: boolean;
 
   /**
    *   `Visualizer` constructor.
@@ -54,6 +55,7 @@ export class Visualizer {
     };
 
     this.noteSequence = sequence;
+    this.sequenceIsQuantized = this.noteSequence.totalQuantizedSteps !== 0;
 
     // Initialize the canvas.
     this.ctx = canvas.getContext('2d');
@@ -144,26 +146,23 @@ export class Visualizer {
 
     // Calculate a nice width based on the length of the sequence we're playing.
     const numNotes = this.noteSequence.notes.length;
-    const endTime = this.noteSequence.totalTime;
+
+    const endTime = this.sequenceIsQuantized ?
+        this.noteSequence.totalQuantizedSteps :
+        this.noteSequence.totalTime;
+
     const width = (numNotes * this.config.noteSpacing) +
         (endTime * this.config.pixelsPerTimeStep);
+
     return {width, height};
   }
 
   private getNoteStartTime(note: NoteSequence.INote) {
-    const result = note.quantizedStartStep || note.startTime;
-    // The above can equal `undefined` if the `quantizedStartStep` is 0
-    // and `startTime` is undefined (because JavaScript), so return a sensible
-    // value in that case.
-    return !result ? 0 : result;
+    return this.sequenceIsQuantized ? note.quantizedStartStep : note.startTime;
   }
 
   private getNoteEndTime(note: NoteSequence.INote) {
-    const result = note.quantizedEndStep || note.endTime;
-    // The above can equal `undefined` if the `quantizedEndStep` is 0
-    // and `endTime` is undefined (because JavaScript), so return a sensible
-    // value in that case.
-    return !result ? 0 : result;
+    return this.sequenceIsQuantized ? note.quantizedEndStep : note.endTime;
   }
 
   private isPaintingActiveNote(
