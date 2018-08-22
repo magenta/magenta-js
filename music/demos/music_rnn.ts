@@ -112,11 +112,13 @@ const DRUMS_NS: mm.INoteSequence = {
 };
 
 async function runMelodyRnn() {
+  // Display the input.
+  const qns = mm.sequences.quantizeNoteSequence(MELODY_NS, 4);
+  writeNoteSeqs('melody-cont-inputs', [qns]);
+
   const melodyRnn = new mm.MusicRNN(MEL_CHECKPOINT);
   await melodyRnn.initialize();
 
-  const qns = mm.sequences.quantizeNoteSequence(MELODY_NS, 4);
-  writeNoteSeqs('melody-cont-inputs', [qns]);
   const start = performance.now();
   const continuation = await melodyRnn.continueSequence(qns, 20);
   writeTimer('melody-cont-time', start);
@@ -128,11 +130,13 @@ async function runMelodyRnn() {
 }
 
 async function runDrumsRnn() {
+  // Display the input.
+  const qns = mm.sequences.quantizeNoteSequence(DRUMS_NS, 4);
+  writeNoteSeqs('drums-cont-inputs', [qns]);
+
   const drumsRnn = new mm.MusicRNN(DRUMS_CHECKPOINT);
   await drumsRnn.initialize();
 
-  const qns = mm.sequences.quantizeNoteSequence(DRUMS_NS, 4);
-  writeNoteSeqs('drums-cont-inputs', [qns]);
   const start = performance.now();
   const continuation = await drumsRnn.continueSequence(qns, 20);
   writeTimer('drums-cont-time', start);
@@ -144,11 +148,13 @@ async function runDrumsRnn() {
 }
 
 async function runImprovRnn() {
+  // Display the input.
+  const qns = mm.sequences.quantizeNoteSequence(MELODY_NS, 4);
+  writeNoteSeqs('improv-cont-inputs', [qns]);
+
   const improvRnn = new mm.MusicRNN(IMPROV_CHECKPOINT);
   await improvRnn.initialize();
 
-  const qns = mm.sequences.quantizeNoteSequence(MELODY_NS, 4);
-  writeNoteSeqs('improv-cont-inputs', [qns]);
   const start = performance.now();
   const continuation = await improvRnn.continueSequence(qns, 20, 1.0, ['Cm']);
   writeTimer('improv-cont-time', start);

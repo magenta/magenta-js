@@ -35,7 +35,8 @@ const MEL_NS = NoteSequence.create({
     {pitch: 80, quantizedStartStep: 20, quantizedEndStep: 24},
     {pitch: 75, quantizedStartStep: 24, quantizedEndStep: 28}
   ],
-  quantizationInfo: {stepsPerQuarter: 2}
+  quantizationInfo: {stepsPerQuarter: 2},
+  totalQuantizedSteps: 32,
 });
 
 const DRUM_NS = NoteSequence.create({
@@ -46,7 +47,6 @@ const DRUM_NS = NoteSequence.create({
     {pitch: 36, quantizedStartStep: 12}, {pitch: 42, quantizedStartStep: 14},
     {pitch: 36, quantizedStartStep: 16}, {pitch: 36, quantizedStartStep: 24},
     {pitch: 36, quantizedStartStep: 28}, {pitch: 42, quantizedStartStep: 30}
-
   ],
   quantizationInfo: {stepsPerQuarter: 2}
 });
@@ -54,6 +54,7 @@ DRUM_NS.notes.forEach(n => {
   n.isDrum = true;
   n.quantizedEndStep = (n.quantizedStartStep as number) + 1;
 });
+DRUM_NS.totalQuantizedSteps = 32;
 
 const TRIO_NS = NoteSequence.create();
 TRIO_NS.quantizationInfo =
@@ -73,6 +74,7 @@ sequences.clone(DRUM_NS).notes.forEach(n => {
   n.instrument = 2;
   TRIO_NS.notes.push(n);
 });
+TRIO_NS.totalQuantizedSteps = 32;
 
 const MULTITRACK_NS = NoteSequence.create({
   notes: [
@@ -173,7 +175,8 @@ test('Test DrumConverters', (t: test.Test) => {
   t.deepEqual(drumOneHotTensor.shape, [32, 512]);
   t.equal(
       tf.tidy(
-        () => drumOneHotTensor.sum(1).equal(tf.scalar(1, 'int32')).sum().get()),
+          () =>
+              drumOneHotTensor.sum(1).equal(tf.scalar(1, 'int32')).sum().get()),
       32);
 
   const drumRollTensorOutput = drumRollTensor.slice([0, 0], [32, 9]);
@@ -200,8 +203,9 @@ test('Test TrioConverter', (t: test.Test) => {
 
   const trioTensor = trioConverter.toTensor(TRIO_NS);
   t.deepEqual(trioTensor.shape, [32, 90 + 90 + 512]);
-  t.equal(tf.tidy(
-    () => trioTensor.sum(1).equal(tf.scalar(3, 'int32')).sum().get()), 32);
+  t.equal(
+      tf.tidy(() => trioTensor.sum(1).equal(tf.scalar(3, 'int32')).sum().get()),
+      32);
 
   trioConverter.toNoteSequence(trioTensor, 2)
       .then(ns => t.deepEqual(ns.toJSON(), TRIO_NS.toJSON()));

@@ -56,11 +56,11 @@ DRUM_SEQS[0].notes.forEach(n => {
 });
 
 async function runMultitrack() {
-  const mvae = new mm.MusicVAE(MULTITRACK_CKPT);
-  await mvae.initialize();
-
   const inputs = [MULTITRACK_EXAMPLE];
   writeNoteSeqs('multitrack-inputs', inputs, true);
+
+  const mvae = new mm.MusicVAE(MULTITRACK_CKPT);
+  await mvae.initialize();
 
   let start = performance.now();
   const z = await mvae.encode(inputs);
@@ -78,11 +78,11 @@ async function runMultitrack() {
 }
 
 async function runMultitrackChords() {
-  const mvae = new mm.MusicVAE(MULTITRACK_CHORDS_CKPT);
-  await mvae.initialize();
-
   const inputs = [MULTITRACK_EXAMPLE];
   writeNoteSeqs('multitrack-chords-inputs', inputs, true);
+
+  const mvae = new mm.MusicVAE(MULTITRACK_CHORDS_CKPT);
+  await mvae.initialize();
 
   let start = performance.now();
   const z = await mvae.encode(inputs, ['C']);

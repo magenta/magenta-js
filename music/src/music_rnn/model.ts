@@ -97,7 +97,7 @@ export class MusicRNN {
   }
 
   /**
-   * Returns true iff model is intialized.
+   * Returns true iff model is initialized.
    */
   isInitialized() {
     return this.initialized;

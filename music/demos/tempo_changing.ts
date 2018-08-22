@@ -21,12 +21,20 @@ import {FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED} from './common';
 function generateMelodies() {
   // Set up listener for changing tempo.
   var rng = (<HTMLInputElement>document.getElementById('tempo'));
-  const player = new mm.Player(true, null);
+
+  let visualizer: mm.Visualizer;
+  const player = new mm.Player(true, {
+    run: (note: mm.NoteSequence.Note) => visualizer.redraw(note),
+    stop: () => {}
+  });
+
   var listener = function() {
     player.setTempo(+rng.value);
   };
   rng.addEventListener('input', listener);
   const buttonDiv = document.getElementById('button-div');
+  const canvasDiv = document.getElementById('canvas') as HTMLCanvasElement;
+
   let melodies = [FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED];
   let strings = ['Quantized', 'Unquantized'];
   for (let i = 0; i < melodies.length; ++i) {
@@ -38,9 +46,10 @@ function generateMelodies() {
         player.stop();
         playButton.textContent = playString;
       } else {
+        visualizer = new mm.Visualizer(melodies[i], canvasDiv);
         player.setTempo(+rng.value);
-        player.start(melodies[i]).then(() => (
-          playButton.textContent = playString));
+        player.start(melodies[i])
+            .then(() => (playButton.textContent = playString));
         playButton.textContent = 'Stop';
       }
     });

@@ -37,7 +37,8 @@ export const DRUM_SEQS: mm.INoteSequence[] = [
       {pitch: 36, quantizedStartStep: 16}, {pitch: 36, quantizedStartStep: 24},
       {pitch: 36, quantizedStartStep: 28}, {pitch: 42, quantizedStartStep: 30}
     ],
-    quantizationInfo: {stepsPerQuarter: 4}
+    quantizationInfo: {stepsPerQuarter: 4},
+    totalQuantizedSteps: 30,
   },
   {
     notes: [
@@ -67,7 +68,8 @@ export const DRUM_SEQS: mm.INoteSequence[] = [
       {pitch: 38, quantizedStartStep: 28}, {pitch: 42, quantizedStartStep: 28},
       {pitch: 42, quantizedStartStep: 30}, {pitch: 48, quantizedStartStep: 30}
     ],
-    quantizationInfo: {stepsPerQuarter: 4}
+    quantizationInfo: {stepsPerQuarter: 4},
+    totalQuantizedSteps: 30
   },
   {
     notes: [
@@ -90,7 +92,8 @@ export const DRUM_SEQS: mm.INoteSequence[] = [
       {pitch: 36, quantizedStartStep: 30}, {pitch: 42, quantizedStartStep: 30},
       {pitch: 45, quantizedStartStep: 30}
     ],
-    quantizationInfo: {stepsPerQuarter: 4}
+    quantizationInfo: {stepsPerQuarter: 4},
+    totalQuantizedSteps: 30,
   },
   {
     notes: [
@@ -115,7 +118,8 @@ export const MEL_A_QUARTERS: mm.INoteSequence = {
     {pitch: 69, quantizedStartStep: 24, quantizedEndStep: 28, program: 0},
     {pitch: 69, quantizedStartStep: 28, quantizedEndStep: 32, program: 0},
   ],
-  quantizationInfo: {stepsPerQuarter: 4}
+  quantizationInfo: {stepsPerQuarter: 4},
+  totalQuantizedSteps: 32,
 };
 
 export const MEL_TEAPOT: mm.INoteSequence = {
@@ -130,7 +134,8 @@ export const MEL_TEAPOT: mm.INoteSequence = {
     {pitch: 81, quantizedStartStep: 20, quantizedEndStep: 24, program: 0},
     {pitch: 76, quantizedStartStep: 24, quantizedEndStep: 32, program: 0}
   ],
-  quantizationInfo: {stepsPerQuarter: 4}
+  quantizationInfo: {stepsPerQuarter: 4},
+  totalQuantizedSteps: 32,
 };
 
 export const MEL_TWINKLE: mm.INoteSequence = {
@@ -150,7 +155,8 @@ export const MEL_TWINKLE: mm.INoteSequence = {
     {pitch: 62, quantizedStartStep: 26, quantizedEndStep: 28, program: 0},
     {pitch: 60, quantizedStartStep: 28, quantizedEndStep: 32, program: 0}
   ],
-  quantizationInfo: {stepsPerQuarter: 4}
+  quantizationInfo: {stepsPerQuarter: 4},
+  totalQuantizedSteps: 32,
 };
 
 export const FULL_TWINKLE: mm.INoteSequence = {
@@ -198,9 +204,8 @@ export const FULL_TWINKLE: mm.INoteSequence = {
     {pitch: 62, quantizedStartStep: 90, quantizedEndStep: 92, program: 0},
     {pitch: 60, quantizedStartStep: 92, quantizedEndStep: 96, program: 0}
   ],
-  tempos: [
-    {time: 0, qpm: 60}
-  ],
+  tempos: [{time: 0, qpm: 60}],
+  totalQuantizedSteps: 96,
   quantizationInfo: {stepsPerQuarter: 4}
 };
 
@@ -249,12 +254,8 @@ export const FULL_TWINKLE_UNQUANTIZED: mm.INoteSequence = {
     {pitch: 62, startTime: 22.5, endTime: 23.0, program: 0},
     {pitch: 60, startTime: 23.0, endTime: 24.0, program: 0}
   ],
-  timeSignatures: [
-    {time: 0, numerator: 4, denominator: 4}
-  ],
-  tempos: [
-    {time: 0, qpm: 60}
-  ],
+  timeSignatures: [{time: 0, numerator: 4, denominator: 4}],
+  tempos: [{time: 0, qpm: 60}],
   totalTime: 24
 };
 
@@ -270,7 +271,11 @@ export function writeNoteSeqs(
     element.removeChild(element.firstChild);
   }
   seqs.forEach(seq => {
-    const seqWrap = document.createElement('div');
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = 'View NoteSequence';
+    details.appendChild(summary);
+
     const seqText = document.createElement('span');
     seqText.innerHTML = '[' +
         seq.notes
@@ -284,15 +289,30 @@ export function writeNoteSeqs(
             })
             .join(', ') +
         ']';
-    seqWrap.appendChild(seqText);
-    seqWrap.appendChild(
+    details.appendChild(seqText)
+    details.appendChild(
         useSoundFontPlayer ? createSoundFontPlayer(seq) : createPlayer(seq));
-    element.appendChild(seqWrap);
+    element.appendChild(details);
   });
 }
 
-function createPlayerButton(seq: mm.INoteSequence, withClick: boolean) {
-  const player = new mm.Player(withClick);
+function createPlayerButton(
+    seq: mm.INoteSequence, withClick: boolean, canvas: HTMLElement) {
+  const visualizer = new mm.Visualizer(seq, canvas as HTMLCanvasElement);
+  const container = canvas.parentElement as HTMLDivElement;
+  const player = new mm.Player(withClick, {
+    run: (note: mm.NoteSequence.Note) => {
+      const currentNotePosition = visualizer.redraw(note);
+
+      // See if we need to scroll the container.
+      const containerWidth = container.getBoundingClientRect().width;
+      if (currentNotePosition > (container.scrollLeft + containerWidth)) {
+        container.scrollLeft = currentNotePosition - 20;
+      }
+    },
+    stop: () => {}
+  });
+
   const button = document.createElement('button');
   let playText = withClick ? 'Play With Click' : 'Play';
   button.textContent = playText;
@@ -309,13 +329,27 @@ function createPlayerButton(seq: mm.INoteSequence, withClick: boolean) {
 }
 
 function createPlayer(seq: mm.INoteSequence) {
+  // Visualizer
+  const div = document.createElement('div');
+  div.classList.add('player-container');
+  const containerDiv = document.createElement('div');
+  containerDiv.classList.add('visualizer-container');
+  const canvas = document.createElement('canvas');
+  containerDiv.appendChild(canvas);
+
   const buttonsDiv = document.createElement('div');
-  buttonsDiv.appendChild(createPlayerButton(seq, false));
-  buttonsDiv.appendChild(createPlayerButton(seq, true));
-  return buttonsDiv;
+  buttonsDiv.appendChild(createPlayerButton(seq, false, canvas));
+  buttonsDiv.appendChild(createPlayerButton(seq, true, canvas));
+  div.appendChild(buttonsDiv);
+  div.appendChild(containerDiv);
+  return div;
 }
 
 function createSoundFontPlayer(seq: mm.INoteSequence) {
+  // Visualizer
+  const div = document.createElement('div');
+  div.classList.add('player-container');
+
   const player = new mm.SoundFontPlayer(SOUNDFONT_URL);
   const button = document.createElement('button');
   button.textContent = 'Play';
@@ -330,5 +364,7 @@ function createSoundFontPlayer(seq: mm.INoteSequence) {
       button.textContent = 'Stop';
     }
   });
-  return button;
+
+  div.appendChild(button);
+  return div;
 }

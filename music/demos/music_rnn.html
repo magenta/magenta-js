@@ -11,34 +11,43 @@ limitations under the License.
 ==============================================================================-->
 <html>
 <head>
-  <title>MusicRnn Demo</title>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+  <link rel="stylesheet" href="./style.css">
+  <title>MusicRNN</title>
 </head>
 <body>
-  <h1>MusicRnn Demo</h1>
+  <h1>MusicRNN</h1>
+  <p>
+    <code>MusicRNN</code> implements Magenta's LSTM-based language models, which
+    are useful if you want to generate a <code>NoteSequence</code> to continue an
+    input one. In the demos below, we call <code>continueSequence()</code> with the
+    provided input, and display the result. Each section uses a different model
+    checkpoint (melody, drums or chord pitches) to generate the output sequence.
+  </p>
 
   <h2>Melody Continuation</h2>
-  <p>Time:</p>
-  <tt><div id="melody-cont-time"></div></tt>
-  <p>Inputs:</p>
-  <tt><div id="melody-cont-inputs"></div></tt>
-  <p>Results:</p>
-  <tt><div id="melody-cont-results"></div></tt>
+  <section>
+    <p><b>Input NoteSequence: </b><code id="melody-cont-inputs">Loading...</code></p>
+    <p><b>Result: </b><code id="melody-cont-results">Loading...</code></p>
+    <p><b>It took: </b><code id="melody-cont-time"></code></p>
+
+  </section>
 
   <h2>Drums Continuation</h2>
-  <p>Time:</p>
-  <tt><div id="drums-cont-time"></div></tt>
-  <p>Inputs:</p>
-  <tt><div id="drums-cont-inputs"></div></tt>
-  <p>Results:</p>
-  <tt><div id="drums-cont-results"></div></tt>
+  <section>
+    <p><b>Input NoteSequence: </b><code id="drums-cont-inputs"></code></p>
+    <p><b>Result: </b><code id="drums-cont-results">Loading...</code></p>
+    <p><b>It took: </b><code id="drums-cont-time"></code></p>
+  </section>
 
   <h2>Chord Pitches Improv Continuation</h2>
-  <p>Time:</p>
-  <tt><div id="improv-cont-time"></div></tt>
-  <p>Inputs:</p>
-  <tt><div id="improv-cont-inputs"></div></tt>
-  <p>Results:</p>
-  <tt><div id="improv-cont-results"></div></tt>
+  <section>
+    <p><b>Input NoteSequence: </b><code id="improv-cont-inputs"></code></p>
+    <p><b>Result: </b><code id="improv-cont-results">Loading...</code></p>
+    <p><b>It took: </b><code id="improv-cont-time"></code></p>
+  </section>
 
   <script src="music_rnn_bundle.js"></script>
 </body>

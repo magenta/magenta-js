@@ -1,22 +1,41 @@
 <html>
   <head>
-    <title>Player with Tempo changing demo</title>
-    <style>body{color: white}</style>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <link rel="stylesheet" href="./style.css">
+    <title>Player with tempo changes</title>
+    <style>
+      button {
+        min-width: 230px;
+      }
+      input {
+        vertical-align: middle;
+      }
+    </style>
   </head>
-  <body bgcolor='brown'>
-    <br>
-    <h1>Player with Tempo changing demo</h1>
-    <div class="control">
-        <p class="range-field grey-text">
-          Tempo:
-          <input type="range" id="tempo" min="20" max="240" value="120" step="1"
-           oninput="tempoValue.value = tempo.value">
-          <output id="tempoValue">120</output>
-        </p>
+  <body>
+    <h1>Player with tempo changes</h1>
+    <p>You can update the tempo at which a <code>mm.Player</code> is playing a
+      <code>NoteSequence</code> by calling <code>setTempo()</code>. To see this,
+      start one of the melodies below, and adjust the tempo slider.
+    </p>
+    <section>
+      <div class="control">
+          <p class="range-field grey-text">
+            <b>Tempo:</b>
+            <input type="range" id="tempo" min="20" max="240" value="120" step="1"
+            oninput="tempoValue.value = tempo.value">
+            <output id="tempoValue">120</output>
+          </p>
+        </div>
       </div>
-    </div>
-    <div id='button-div'></div>
 
+      <div id='button-div'></div>
+      <div class="visualizer-container">
+        <canvas id="canvas"></canvas>
+      </div>
+    </section>
     <script src="tempo_changing_bundle.js"></script>
   </body>
 </html>

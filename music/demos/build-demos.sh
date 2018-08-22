@@ -23,7 +23,7 @@
 if [[ -n $1 ]]; then
   demos=( "${1}" )
 else
-  demos=( "music_rnn.ts" "music_vae.ts" "multitrack.ts" "callback_player.ts" "tempo_changing.ts" )
+  demos=( "music_rnn.ts" "music_vae.ts" "multitrack.ts" "callback_player.ts" "tempo_changing.ts" "visualizer.ts" )
 fi
 
 echo "Building ${demos[@]}..."
