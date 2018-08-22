@@ -1,0 +1,63 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 20px;
+  font: 300 16px/1.5 "Roboto", Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+  color: #111;
+  background-color: #fdfdfd;
+  -webkit-font-smoothing: antialiased;
+  width: 100%;
+  max-width: 1000px;
+}
+
+section {
+  background: #F2F2F2;
+  padding: 14px;
+  margin-bottom: 48px;
+}
+
+a {
+  color: #2a7ae2;
+  text-decoration: none;
+}
+a:visited {
+  color: #1756a9;
+}
+a:hover {
+  color: #111;
+  text-decoration: none;
+}
+
+button, .button {
+  font-family: "Roboto", Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 16px;
+  padding: 4px 14px;
+  margin-right: 8px;
+  border: 3px solid #222;
+  background: transparent;
+  outline: none;
+  color: #222;
+  background: white;
+  cursor: pointer;
+}
+button:hover {
+  background: #6FC9C6;
+  color: white;
+}
+
+.player-container {
+  margin-top: 14px;
+  margin-bottom: 24px;
+}
+.visualizer-container {
+  background: white;
+  padding: 14px;
+  overflow-x: auto;
+  border: 3px solid black;
+  margin-top: -3px;  /* so that the border doesn't overlap with the play buttons */
+}

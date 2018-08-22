@@ -70,10 +70,10 @@ concatNoteSequences([DRUM_SEQS[0], DRUM_SEQS[0]], 32).notes.map(n => {
 });
 
 async function runDrums() {
+  writeNoteSeqs('drums-inputs', DRUM_SEQS);
+
   const mvae = new mm.MusicVAE(DRUMS_CKPT);
   await mvae.initialize();
-
-  writeNoteSeqs('drums-inputs', DRUM_SEQS);
 
   let start = performance.now();
   const interp = await mvae.interpolate(DRUM_SEQS, 3);
@@ -89,10 +89,10 @@ async function runDrums() {
 }
 
 async function runDrumsNade() {
+  writeNoteSeqs('nade-inputs', DRUM_SEQS);
+
   const mvae = new mm.MusicVAE(DRUMS_NADE_CKPT);
   await mvae.initialize();
-
-  writeNoteSeqs('nade-inputs', DRUM_SEQS);
 
   let start = performance.now();
   const interp = await mvae.interpolate(DRUM_SEQS, 3);
@@ -108,11 +108,11 @@ async function runDrumsNade() {
 }
 
 async function runMel() {
-  const mvae = new mm.MusicVAE(MEL_CKPT);
-  await mvae.initialize();
-
   const inputs = [MEL_TEAPOT, MEL_TWINKLE];
   writeNoteSeqs('mel-inputs', inputs);
+
+  const mvae = new mm.MusicVAE(MEL_CKPT);
+  await mvae.initialize();
 
   let start = performance.now();
   const interp = await mvae.interpolate(inputs, 5);
@@ -128,11 +128,11 @@ async function runMel() {
 }
 
 async function runMelChords() {
-  const mvae = new mm.MusicVAE(MEL_CHORDS_CKPT);
-  await mvae.initialize();
-
   const inputs = [MEL_A_QUARTERS, MEL_TEAPOT];
   writeNoteSeqs('mel-chords-inputs', inputs);
+
+  const mvae = new mm.MusicVAE(MEL_CHORDS_CKPT);
+  await mvae.initialize();
 
   let start = performance.now();
   const interp = await mvae.interpolate(inputs, 5, null, ['A', 'A', 'D', 'A']);
@@ -148,9 +148,6 @@ async function runMelChords() {
 }
 
 async function runMel16() {
-  const mvae = new mm.MusicVAE(MEL_16_CKPT);
-  await mvae.initialize();
-
   const inputs: mm.INoteSequence[] = [
     concatNoteSequences(
         [
@@ -168,6 +165,9 @@ async function runMel16() {
 
   writeNoteSeqs('mel16-inputs', inputs);
 
+  const mvae = new mm.MusicVAE(MEL_16_CKPT);
+  await mvae.initialize();
+
   let start = performance.now();
   const interp = await mvae.interpolate(inputs, 5);
   writeTimer('mel16-interp-time', start);
@@ -182,11 +182,12 @@ async function runMel16() {
 }
 
 async function runTrio() {
+  const inputs = [TRIO_EXAMPLE];
+  TRIO_EXAMPLE.totalQuantizedSteps = 64;
+  writeNoteSeqs('trio-inputs', inputs);
+
   const mvae = new mm.MusicVAE(TRIO_CKPT);
   await mvae.initialize();
-
-  const inputs = [TRIO_EXAMPLE];
-  writeNoteSeqs('trio-inputs', inputs);
 
   let start = performance.now();
   const z = await mvae.encode(inputs);

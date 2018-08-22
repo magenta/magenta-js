@@ -169,7 +169,6 @@ export class Visualizer {
 
     // Calculate a nice width based on the length of the sequence we're playing.
     const numNotes = this.noteSequence.notes.length;
-
     const endTime = this.sequenceIsQuantized ?
         this.noteSequence.totalQuantizedSteps :
         this.noteSequence.totalTime;

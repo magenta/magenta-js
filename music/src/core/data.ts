@@ -240,6 +240,7 @@ export class DrumsConverter extends DataConverter {
         }
       }
     }
+    noteSequence.totalQuantizedSteps = labels.length;
     return noteSequence;
   }
 }
@@ -279,6 +280,7 @@ export class DrumRollConverter extends DrumsConverter {
         }
       }
     }
+    noteSequence.totalQuantizedSteps = roll.shape[0];
     return noteSequence;
   }
 }
@@ -425,6 +427,7 @@ export class MelodyConverter extends DataConverter {
       currNote.quantizedEndStep = labels.length;
       noteSequence.notes.push(currNote);
     }
+    noteSequence.totalQuantizedSteps = labels.length;
     return noteSequence;
   }
 }
