@@ -31,25 +31,26 @@ export abstract class BaseRecorderCallback {
 }
 
 /**
- * Records
+ * Class that records MIDI from any MIDI connected instrument, and converts it
+ * to a `NoteSequence`.
  */
 export class Recorder {
-  private _isRecording: boolean;
+  private recording: boolean;
   public callbackObject: BaseRecorderCallback;
   private firstNoteTimestamp: number;
   private notes: NoteSequence.Note[] = [];
   private downNotes: {[pitch: number]: NoteSequence.Note} = {};
 
   /**
-   *    `Recorder` constructor.
+   * `Recorder` constructor.
    *
-   *     @param callbackObject An optional BasePlayerCallback, specifies an
-   *     object that contains run() and stop() methods to invode during
-   *     playback.
+   * @param callbackObject An optional BasePlayerCallback, specifies an
+   * object that contains run() and stop() methods to invode during
+   * playback.
    */
   constructor(callbackObject?: BaseRecorderCallback) {
     this.callbackObject = callbackObject;
-    this._isRecording = false;
+    this.recording = false;
   }
 
   /**
@@ -58,7 +59,7 @@ export class Recorder {
    * they will be ignored until `startRecording()` is called.
    */
   async initialize() {
-    // Start up WebMidi
+    // Start up WebMidi.
     await (navigator as Navigator)
         .requestMIDIAccess()
         .then(
@@ -67,6 +68,7 @@ export class Recorder {
   }
 
   private midiReady(midi: WebMidi.MIDIAccess) {
+    console.log('Initialized Recorder');
     const inputs = midi.inputs.values();
     for (let input = inputs.next(); input && !input.done;
          input = inputs.next()) {
@@ -78,14 +80,14 @@ export class Recorder {
   }
 
   isRecording() {
-    return this._isRecording;
+    return this.recording;
   }
 
   /**
    * Starts listening to MIDI events and records any messages received.
    */
   startRecording() {
-    this._isRecording = true;
+    this.recording = true;
 
     // Reset all the things needed for the recording.
     this.firstNoteTimestamp = undefined;
@@ -100,7 +102,7 @@ export class Recorder {
    * @returns a `NoteSequence` containing all the recorded notes.
    */
   stopRecording(): NoteSequence {
-    this._isRecording = false;
+    this.recording = false;
     if (this.notes.length === 0) {
       return null;
     }
@@ -123,7 +125,7 @@ export class Recorder {
 
   midiMessageReceived(event: WebMidi.MIDIMessageEvent) {
     // Don't care about any messages we're receiving while we're not recording.
-    if (!this._isRecording) {
+    if (!this.recording) {
       return;
     }
 
