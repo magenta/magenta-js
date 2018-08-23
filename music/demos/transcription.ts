@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import * as tf from '@tensorflow/tfjs-core';
 import * as mm from '../src/index';
 
 // import {CHECKPOINTS_DIR} from './common';
@@ -36,10 +37,11 @@ async function transcribe() {
   const ns = await oaf.transcribeFromMelSpec(melSpec);
   writeTimer('transcription-time', start);
   writeNoteSeqs('transcription-results', [ns]);
+  oaf.dispose();
 }
 
 try {
-  Promise.all([transcribe()]);
+  Promise.all([transcribe()]).then(() => console.log(tf.memory()));
 } catch (err) {
   console.error(err);
 }

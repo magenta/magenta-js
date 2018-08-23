@@ -21,6 +21,7 @@
  * Imports
  */
 import * as tf from '@tensorflow/tfjs';
+import {tidy} from '@tensorflow/tfjs';
 
 import {NoteSequence} from '../protobuf';
 
@@ -58,19 +59,20 @@ export class OnsetsAndFrames {
     this.checkpointURL = checkpointURL;
   }
 
+  dispose() {
+    this.initialized = false;
+  }
+
   async initialize() {
-    // this.dispose();
+    this.dispose();
 
-    const rawVars =
-        await fetch(`${this.checkpointURL}/weights_manifest.json`)
-            .then((response) => response.json())
-            .then(
-                (manifest: tf.io.WeightsManifestConfig) =>
-                    tf.io.loadWeights(manifest, this.checkpointURL));
-    const vars = new Map<string, tf.Tensor>();
-    Object.keys(rawVars).map(name => vars.set(name, rawVars[name]));
-
+    const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
+                     .then((response) => response.json())
+                     .then(
+                         (manifest: tf.io.WeightsManifestConfig) =>
+                             tf.io.loadWeights(manifest, this.checkpointURL));
     this.build(vars);
+    Object.keys(vars).map(name => vars[name].dispose());
     this.initialized = true;
     console.log('Initialized OnsetsAndFrames.');
   }
@@ -83,31 +85,45 @@ export class OnsetsAndFrames {
   }
 
   async transcribeFromMelSpec(melSpec: number[][]) {
-    if (!this.isInitialized) {
+    if (!this.isInitialized()) {
       this.initialize();
     }
     // Add batch dim.
     const melSpecBatch = tf.tensor2d(melSpec).expandDims(0).expandDims(-1);
 
-    const onsetProbs = this.onsetsModel.predict(melSpecBatch) as tf.Tensor3D;
-    const velocities = this.velocityModel.predict(melSpecBatch) as tf.Tensor3D;
-    const activationProbs =
-        this.activationModel.predict(melSpecBatch) as tf.Tensor3D;
-    const frameProbs =
-        this.frameModel.predict([onsetProbs, activationProbs]) as tf.Tensor3D;
+    const [frameProbs, onsetProbs, velocities] = tidy(() => {
+      const onsetProbs = this.onsetsModel.predict(melSpecBatch) as tf.Tensor3D;
+      const velocities =
+          this.velocityModel.predict(melSpecBatch) as tf.Tensor3D;
+      const activationProbs =
+          this.activationModel.predict(melSpecBatch) as tf.Tensor3D;
+      const frameProbs =
+          this.frameModel.predict([onsetProbs, activationProbs]) as tf.Tensor3D;
+      // Squeeze batch dims.
+      return [
+        frameProbs.squeeze() as tf.Tensor2D, onsetProbs.squeeze(),
+        velocities.squeeze()
+      ];
+    });
 
-    // Squeeze batch dims.
-    return pianorollToNoteSequence(
-        frameProbs.squeeze(), onsetProbs.squeeze(), velocities.squeeze());
+    const ns = pianorollToNoteSequence(
+        frameProbs as tf.Tensor2D, onsetProbs as tf.Tensor2D,
+        velocities as tf.Tensor2D);
+    frameProbs.dispose();
+    onsetProbs.dispose();
+    velocities.dispose();
+    return ns;
   }
 
-  private build(vars: Map<string, tf.Tensor>) {
+  private build(vars: tf.NamedTensorMap) {
     function getVar(name: string) {
-      if (!vars.has(name)) {
+      let v = vars[name];
+      if (v === undefined) {
         throw Error(`Variable not found: ${name}`);
       }
-      return vars.get(name);
+      return v;
     }
+
     function convWeights(prefix: string) {
       return [
         getVar(`${prefix}/conv1/weights`),
@@ -158,41 +174,44 @@ export class OnsetsAndFrames {
       return [getVar(`${prefix}/weights`), getVar(`${prefix}/biases`)];
     }
 
-    const onsetsModel = this.getAcousticModel('sigmoid', true);
-    onsetsModel.setWeights(convWeights('onsets').concat(
-        lstmWeights('onsets'), denseWeights('onsets/onset_probs')));
+    tidy(() => {
+      const onsetsModel = this.getAcousticModel('sigmoid', true);
+      onsetsModel.setWeights(convWeights('onsets').concat(
+          lstmWeights('onsets'), denseWeights('onsets/onset_probs')));
 
-    const velocityModel = this.getAcousticModel('linear', false);
-    velocityModel.setWeights(
-        convWeights('velocity')
-            .concat(denseWeights('velocity/onset_velocities')));
+      const velocityModel = this.getAcousticModel('linear', false);
+      velocityModel.setWeights(
+          convWeights('velocity')
+              .concat(denseWeights('velocity/onset_velocities')));
 
-    const activationModel = this.getAcousticModel('sigmoid', false);
-    activationModel.setWeights(
-        convWeights('frame').concat(denseWeights('frame/activation_probs')));
+      const activationModel = this.getAcousticModel('sigmoid', false);
+      activationModel.setWeights(
+          convWeights('frame').concat(denseWeights('frame/activation_probs')));
 
-    const onsetsInput =
-        tf.input({batchShape: onsetsModel.outputShape as number[]});
-    const activationInput =
-        tf.input({batchShape: activationModel.outputShape as number[]});
-    let net = tf.layers.concatenate().apply([onsetsInput, activationInput]);
+      const onsetsInput =
+          tf.input({batchShape: onsetsModel.outputShape as number[]});
+      const activationInput =
+          tf.input({batchShape: activationModel.outputShape as number[]});
+      let net = tf.layers.concatenate().apply([onsetsInput, activationInput]);
 
-    net = getBidiLstm().apply(net);
-    net =
-        tf.layers
-            .dense(
-                {units: MIDI_PITCHES, activation: 'sigmoid', trainable: false})
-            .apply(net) as tf.SymbolicTensor;
-    const frameModel =
-        tf.model({inputs: [onsetsInput, activationInput], outputs: net});
-    frameModel.trainable = false;
-    frameModel.setWeights(
-        lstmWeights('frame').concat(denseWeights('frame/frame_probs')));
-
-    this.frameModel = frameModel;
-    this.onsetsModel = onsetsModel;
-    this.velocityModel = velocityModel;
-    this.activationModel = activationModel;
+      net = getBidiLstm().apply(net);
+      net = tf.layers
+                .dense({
+                  units: MIDI_PITCHES,
+                  activation: 'sigmoid',
+                  trainable: false
+                })
+                .apply(net) as tf.SymbolicTensor;
+      const frameModel =
+          tf.model({inputs: [onsetsInput, activationInput], outputs: net});
+      frameModel.trainable = false;
+      frameModel.setWeights(
+          lstmWeights('frame').concat(denseWeights('frame/frame_probs')));
+      this.frameModel = frameModel;
+      this.onsetsModel = onsetsModel;
+      this.velocityModel = velocityModel;
+      this.activationModel = activationModel;
+    });
   }
 
   private getAcousticModel(finalActivation: string, hasLstm: boolean) {
@@ -249,17 +268,26 @@ export class OnsetsAndFrames {
 export async function pianorollToNoteSequence(
     frameProbs: tf.Tensor2D, onsetProbs: tf.Tensor2D,
     velocityValues: tf.Tensor2D, onsetThreshold = 0.5, frameThreshold = 0.5) {
-  let onsetPredictions = tf.greater(onsetProbs, onsetThreshold) as tf.Tensor2D;
-  let framePredictions = tf.greater(frameProbs, frameThreshold) as tf.Tensor2D;
+  const [splitFrames, splitOnsets, splitVelocities] = tf.tidy(() => {
+    let onsetPredictions =
+        tf.greater(onsetProbs, onsetThreshold) as tf.Tensor2D;
+    let framePredictions =
+        tf.greater(frameProbs, frameThreshold) as tf.Tensor2D;
 
-  // Add silent frame at the end so we can do a final loop and terminate any
-  // notes that are still active.
-  onsetPredictions = onsetPredictions.pad([[0, 1], [0, 0]]);
-  framePredictions = framePredictions.pad([[0, 1], [0, 0]]);
-  velocityValues = velocityValues.pad([[0, 1], [0, 0]]);
+    // Add silent frame at the end so we can do a final loop and terminate any
+    // notes that are still active.
+    onsetPredictions = onsetPredictions.pad([[0, 1], [0, 0]]);
+    framePredictions = framePredictions.pad([[0, 1], [0, 0]]);
+    velocityValues = velocityValues.pad([[0, 1], [0, 0]]);
 
-  // Ensure that any frame with an onset prediction is considered active.
-  framePredictions = tf.logicalOr(framePredictions, onsetPredictions);
+    // Ensure that any frame with an onset prediction is considered active.
+    framePredictions = tf.logicalOr(framePredictions, onsetPredictions);
+
+    return [
+      tf.unstack(framePredictions), tf.unstack(onsetPredictions),
+      tf.unstack(velocityValues)
+    ];
+  });
 
   const ns = NoteSequence.create();
 
@@ -301,13 +329,13 @@ export async function pianorollToNoteSequence(
     }
   }
 
-  const splitFrames = tf.unstack(framePredictions);
-  const splitOnsets = tf.unstack(onsetPredictions);
-  const splitVelocities = tf.unstack(velocityValues);
   for (let f = 0; f < splitFrames.length; ++f) {
     frame = await splitFrames[f].data() as Uint8Array;
     onsets = await splitOnsets[f].data() as Uint8Array;
     const velocities = await splitVelocities[f].data() as Uint8Array;
+    splitFrames[f].dispose();
+    splitOnsets[f].dispose();
+    splitVelocities[f].dispose();
     for (let p = 0; p < frame.length; ++p) {
       if (onsets[p]) {
         processOnset(p, f, unscaleVelocity(velocities[p]));
