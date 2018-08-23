@@ -29,14 +29,6 @@ limitations under the License.
     and converts it to a  <code>NoteSequence</code>.
   </p>
   <section>
-    <button id="startClick">Start click</button>
-    <button id="stopClick">Stop click</button>
-    <span class="input">
-      <b>Tempo:</b>
-      <input id="tempoInput" value="100" type="range" min="20" max="240" value="120" step="1">
-      <span id="tempoValue"></span>
-    </span>
-    <br><br>
     <button id="record" disabled>Record</button>
     <button id="stop" disabled>Stop</button>
     <div id="output"></div>
@@ -44,8 +36,8 @@ limitations under the License.
 
   <h2>Streaming</h2>
   <section>
-    <button id="startStream">Record Stream</button>
-    <button id="stopStream">Stop</button>
+    <button id="startStream" disabled>Record Stream</button>
+    <button id="stopStream" disabled>Stop</button>
     <div class="visualizer-container" id="container">
       <canvas id="canvas"></canvas>
     </div>

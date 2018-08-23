@@ -10,7 +10,8 @@ const stopStreamBtnBtn =
 
 const recorder = new mm.Recorder();
 recorder.initialize().then(() => {
-  recordBtn.disabled = stopBtn.disabled = false;
+  recordBtn.disabled = stopBtn.disabled = startStreamBtn.disabled =
+      stopStreamBtnBtn.disabled = false;
 });
 
 // Basic recording.
@@ -19,6 +20,7 @@ recordBtn.addEventListener('click', () => {
   recordBtn.textContent = '...';
   recorder.startRecording();
 });
+
 stopBtn.addEventListener('click', () => {
   recordBtn.textContent = 'Record';
   const seq = recorder.stopRecording();
@@ -41,6 +43,7 @@ startStreamBtn.addEventListener('click', () => {
   startStreamBtn.textContent = '...';
   recorder.startRecording();
 });
+
 stopStreamBtnBtn.addEventListener('click', () => {
   startStreamBtn.textContent = 'Record';
   const seq = recorder.stopRecording();
