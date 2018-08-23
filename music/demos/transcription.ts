@@ -36,6 +36,7 @@ async function transcribe() {
   const ns = await oaf.transcribeFromMelSpec(melSpec);
   writeTimer('transcription-time', start);
   writeNoteSeqs('transcription-results', [ns]);
+  debugger
 }
 
 try {
