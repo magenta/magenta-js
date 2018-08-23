@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+import {saveAs} from 'file-saver';
 import * as mm from '../src/index';
 
 export const CHECKPOINTS_DIR =
@@ -328,6 +329,15 @@ function createPlayerButton(
   return button;
 }
 
+function createDownloadButton(seq: mm.INoteSequence) {
+  const button = document.createElement('button');
+  button.textContent = 'Save MIDI';
+  button.addEventListener('click', () => {
+    saveAs(new File([mm.sequenceProtoToMidi(seq)], 'saved.mid'));
+  });
+  return button;
+}
+
 function createPlayer(seq: mm.INoteSequence) {
   // Visualizer
   const div = document.createElement('div');
@@ -340,6 +350,7 @@ function createPlayer(seq: mm.INoteSequence) {
   const buttonsDiv = document.createElement('div');
   buttonsDiv.appendChild(createPlayerButton(seq, false, canvas));
   buttonsDiv.appendChild(createPlayerButton(seq, true, canvas));
+  buttonsDiv.appendChild(createDownloadButton(seq));
   div.appendChild(buttonsDiv);
   div.appendChild(containerDiv);
   return div;

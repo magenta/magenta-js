@@ -22,7 +22,7 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
-import {INoteSequence, NoteSequence} from '../protobuf';
+import {NoteSequence} from '../protobuf';
 
 const MIN_MIDI_PITCH = 21;
 const MAX_MIDI_PITCH = 108;
@@ -31,6 +31,19 @@ const MIDI_PITCHES = MAX_MIDI_PITCH - MIN_MIDI_PITCH + 1;
 const SAMPLE_RATE = 16000;
 const SPEC_HOP_LENGTH = 512;
 const FRAME_LENGTH_SECONDS = SPEC_HOP_LENGTH / SAMPLE_RATE;
+
+const LSTM_UNITS = 128;
+
+function getBidiLstm() {
+  const lstm = tf.layers.lstm({
+    units: LSTM_UNITS,
+    returnSequences: true,
+    unitForgetBias: true,
+    trainable: false
+  }) as tf.RNN;
+  return tf.layers.bidirectional(
+      {layer: lstm, mergeMode: 'concat', trainable: false});
+}
 
 export class OnsetsAndFrames {
   private checkpointURL: string;
@@ -58,7 +71,8 @@ export class OnsetsAndFrames {
     Object.keys(rawVars).map(name => vars.set(name, rawVars[name]));
 
     this.build(vars);
-    this.initialized = true
+    this.initialized = true;
+    console.log('Initialized OnsetsAndFrames.');
   }
 
   /**
@@ -73,7 +87,10 @@ export class OnsetsAndFrames {
       this.initialize();
     }
     // Add batch dim.
-    const melSpecBatch = tf.tensor3d([melSpec]);
+    const melSpecBatch = tf.tensor2d(melSpec)
+                             .slice([0, 0], [375, -1])
+                             .expandDims(0)
+                             .expandDims(-1);
 
     const onsetProbs = this.onsetsModel.predict(melSpecBatch) as tf.Tensor3D;
     const velocities = this.velocityModel.predict(melSpecBatch) as tf.Tensor3D;
@@ -88,59 +105,90 @@ export class OnsetsAndFrames {
   }
 
   private build(vars: Map<string, tf.Tensor>) {
+    function getVar(name: string) {
+      if (!vars.has(name)) {
+        throw Error(`Variable not found: ${name}`);
+      }
+      return vars.get(name);
+    }
     function convWeights(prefix: string) {
       return [
-        vars.get(`{prefix}/conv1/weights`),
-        vars.get(`{prefix}/conv1/BatchNorm/beta`),
-        vars.get(`{prefix}/conv1/BatchNorm/moving_mean`),
-        vars.get(`{prefix}/conv1/BatchNorm/moving_variance`),
-        vars.get(`{prefix}/conv2/weights`),
-        vars.get(`{prefix}/conv2/BatchNorm/beta`),
-        vars.get(`{prefix}/conv2/BatchNorm/moving_mean`),
-        vars.get(`{prefix}/conv2/BatchNorm/moving_variance`),
-        vars.get(`{prefix}/conv3/weights`),
-        vars.get(`{prefix}/conv3/BatchNorm/beta`),
-        vars.get(`{prefix}/conv3/BatchNorm/moving_mean`),
-        vars.get(`{prefix}/conv3/BatchNorm/moving_variance`),
-        vars.get(`{prefix}/fc5/weights`),
-        vars.get(`{prefix}/fc5/biases`),
-        vars.get(`{prefix}/bidirectional_rnn/bw/lstm_cell/kernel`),
-        vars.get(`{prefix}/bidirectional_rnn/bw/lstm_cell/bias`),
+        getVar(`${prefix}/conv1/weights`),
+        getVar(`${prefix}/conv1/BatchNorm/beta`),
+        getVar(`${prefix}/conv1/BatchNorm/moving_mean`),
+        getVar(`${prefix}/conv1/BatchNorm/moving_variance`),
+        getVar(`${prefix}/conv2/weights`),
+        getVar(`${prefix}/conv2/BatchNorm/beta`),
+        getVar(`${prefix}/conv2/BatchNorm/moving_mean`),
+        getVar(`${prefix}/conv2/BatchNorm/moving_variance`),
+        getVar(`${prefix}/conv3/weights`),
+        getVar(`${prefix}/conv3/BatchNorm/beta`),
+        getVar(`${prefix}/conv3/BatchNorm/moving_mean`),
+        getVar(`${prefix}/conv3/BatchNorm/moving_variance`),
+        getVar(`${prefix}/fc5/weights`),
+        getVar(`${prefix}/fc5/biases`),
       ];
-    }
-    function lstmWeights(prefix: string) {
-      return [
-        vars.get(`{prefix}/bidirectional_rnn/bw/lstm_cell/kernel`),
-        vars.get(`{prefix}/bidirectional_rnn/bw/lstm_cell/bias`)
-      ];
-    }
-    function denseWeights(prefix: string) {
-      return [vars.get(`{prefix}/weights`), vars.get(`{prefix}/biases`)];
     }
 
-    const onsetsModel = this.getAcousticModel('sigmoid');
+    function lstmWeights(prefix: string) {
+      // The gate ordering differs in Keras.
+      const reorderGates = ((weights: tf.Tensor) => {
+        const [i, c, f, o] = tf.split(weights, 4, -1);
+        return tf.concat([i, f, c, o], -1);
+      });
+      // The kernel is split into the input and recurrent kernels in Keras.
+      const splitAndReorderKernel =
+          ((kernel: tf.Tensor2D) => tf.split(
+               reorderGates(kernel) as tf.Tensor2D,
+               [kernel.shape[0] - LSTM_UNITS, LSTM_UNITS]));
+
+      const [fwKernel, fwRecurrentKernel] = splitAndReorderKernel(
+          getVar(`${prefix}/bidirectional_rnn/fw/lstm_cell/kernel`) as
+          tf.Tensor2D);
+
+      const [bwKernel, bwRecurrentKernel] = splitAndReorderKernel(
+          getVar(`${prefix}/bidirectional_rnn/bw/lstm_cell/kernel`) as
+          tf.Tensor2D);
+      return [
+        fwKernel, fwRecurrentKernel,
+        reorderGates(getVar(`${prefix}/bidirectional_rnn/fw/lstm_cell/bias`)),
+        bwKernel, bwRecurrentKernel,
+        reorderGates(getVar(`${prefix}/bidirectional_rnn/bw/lstm_cell/bias`))
+      ];
+    }
+
+    function denseWeights(prefix: string) {
+      return [getVar(`${prefix}/weights`), getVar(`${prefix}/biases`)];
+    }
+
+    const onsetsModel = this.getAcousticModel('sigmoid', true);
     onsetsModel.setWeights(convWeights('onsets').concat(
         lstmWeights('onsets'), denseWeights('onsets/onset_probs')));
 
-    const velocityModel = this.getAcousticModel(undefined);
+    const velocityModel = this.getAcousticModel('linear', false);
     velocityModel.setWeights(
         convWeights('velocity')
             .concat(denseWeights('velocity/onset_velocities')));
 
-    const activationModel = this.getAcousticModel('sigmoid');
+    const activationModel = this.getAcousticModel('sigmoid', false);
     activationModel.setWeights(
         convWeights('frame').concat(denseWeights('frame/activation_probs')));
 
-    const onsetsInput = tf.input({shape: onsetsModel.outputShape as number[]})
+    const onsetsInput =
+        tf.input({batchShape: onsetsModel.outputShape as number[]});
     const activationInput =
-        tf.input({shape: activationModel.outputShape as number[]})
+        tf.input({batchShape: activationModel.outputShape as number[]});
     let net = tf.layers.concatenate().apply([onsetsInput, activationInput]);
-    const rnn = tf.layers.lstm({units: 128}) as tf.RNN;
-    net = tf.layers.bidirectional({layer: rnn, mergeMode: 'concat'}).apply(net);
-    net = tf.layers.dense({units: MIDI_PITCHES, activation: 'sigmoid'})
-              .apply(net) as tf.SymbolicTensor;
+
+    net = getBidiLstm().apply(net);
+    net =
+        tf.layers
+            .dense(
+                {units: MIDI_PITCHES, activation: 'sigmoid', trainable: false})
+            .apply(net) as tf.SymbolicTensor;
     const frameModel =
         tf.model({inputs: [onsetsInput, activationInput], outputs: net});
+    frameModel.trainable = false;
     frameModel.setWeights(
         lstmWeights('frame').concat(denseWeights('frame/frame_probs')));
 
@@ -150,48 +198,52 @@ export class OnsetsAndFrames {
     this.activationModel = activationModel;
   }
 
-  private getAcousticModel(finalActivation?: string) {
+  private getAcousticModel(finalActivation: string, hasLstm: boolean) {
     const acousticModel = tf.sequential();
+    // tslint:disable-next-line:no-any
     const convConfig: any = {
       filters: 32,
       kernelSize: [3, 3],
-      activation: 'none',
+      activation: 'linear',
       useBias: false,
       padding: 'same',
       dilationRate: [1, 1],
-      inputShape: [null, 229, 1]
+      inputShape: [null, 229, 1],
+      trainable: false
     };
+    const batchNormConfig = {scale: false, trainable: false};
 
     acousticModel.add(tf.layers.conv2d(convConfig));
-    acousticModel.add(tf.layers.batchNormalization({scale: false}));
+    acousticModel.add(tf.layers.batchNormalization(batchNormConfig));
     acousticModel.add(tf.layers.activation({activation: 'relu'}));
 
     convConfig.inputShape = null;
     acousticModel.add(tf.layers.conv2d(convConfig));
-    acousticModel.add(tf.layers.batchNormalization({scale: false}));
+    acousticModel.add(tf.layers.batchNormalization(batchNormConfig));
     acousticModel.add(tf.layers.activation({activation: 'relu'}));
     acousticModel.add(
-        tf.layers.maxPooling2d({poolSize: [1, 2], strides: [1, 2]}))
+        tf.layers.maxPooling2d({poolSize: [1, 2], strides: [1, 2]}));
 
-    convConfig.filters = 64
+    convConfig.filters = 64;
     acousticModel.add(tf.layers.conv2d(convConfig));
-    acousticModel.add(tf.layers.batchNormalization({scale: false}));
+    acousticModel.add(tf.layers.batchNormalization(batchNormConfig));
     acousticModel.add(tf.layers.activation({activation: 'relu'}));
     acousticModel.add(
-        tf.layers.maxPooling2d({poolSize: [1, 2], strides: [1, 2]}))
+        tf.layers.maxPooling2d({poolSize: [1, 2], strides: [1, 2]}));
 
     const dims = acousticModel.outputShape as number[];
     acousticModel.add(
-        tf.layers.reshape({targetShape: [-1, dims[1], dims[2] * dims[3]]}));
-
-    acousticModel.add(tf.layers.dense({units: 512, activation: 'relu'}));
-
-    const rnn = tf.layers.lstm({units: 128}) as tf.RNN;
-    acousticModel.add(
-        tf.layers.bidirectional({layer: rnn, mergeMode: 'concat'}));
+        tf.layers.reshape({targetShape: [dims[1], dims[2] * dims[3]]}));
 
     acousticModel.add(
-        tf.layers.dense({units: MIDI_PITCHES, activation: finalActivation}));
+        tf.layers.dense({units: 512, activation: 'relu', trainable: false}));
+
+    if (hasLstm) {
+      acousticModel.add(getBidiLstm());
+    }
+
+    acousticModel.add(tf.layers.dense(
+        {units: MIDI_PITCHES, activation: finalActivation, trainable: false}));
 
     return acousticModel;
   }
@@ -215,8 +267,8 @@ export class OnsetsAndFrames {
     const ns = NoteSequence.create();
 
     // Store (step + 1) with 0 signifying no active note.
-    let pitchStartStepPlusOne = new Uint8Array(MIDI_PITCHES);
-    let onsetVelocities = new Uint8Array(MIDI_PITCHES);
+    const pitchStartStepPlusOne = new Uint8Array(MIDI_PITCHES);
+    const onsetVelocities = new Uint8Array(MIDI_PITCHES);
     let frame: Uint8Array;
     let onsets: Uint8Array;
     let previousOnsets = new Uint8Array(MIDI_PITCHES);
@@ -228,14 +280,11 @@ export class OnsetsAndFrames {
 
     function endPitch(pitch: number, endFrame: number) {
       // End an active pitch.
-      const startTime =
-          (pitchStartStepPlusOne[pitch] - 1) * FRAME_LENGTH_SECONDS;
-      const endTime = endFrame * FRAME_LENGTH_SECONDS;
 
       ns.notes.push(NoteSequence.Note.create({
         pitch: pitch + MIN_MIDI_PITCH,
-        startTime: startTime,
-        endTime: endTime,
+        startTime: (pitchStartStepPlusOne[pitch] - 1) * FRAME_LENGTH_SECONDS,
+        endTime: endFrame * FRAME_LENGTH_SECONDS,
         velocity: onsetVelocities[pitch]
       }));
 
@@ -246,13 +295,13 @@ export class OnsetsAndFrames {
       if (pitchStartStepPlusOne[p]) {
         // Pitch is already active, but if this is a new onset, we should end
         // the note and start a new one.
-        if (onsets[p] && previousOnsets[p]) {
+        if (onsets[p] && !previousOnsets[p]) {
           pitchStartStepPlusOne[p] = f + 1;
           endPitch(p, f);
           onsetVelocities[p] = velocity;
         }
       } else {
-        // Only allow a new note to star if we've predicted an onset.
+        // Only allow a new note to start if we've predicted an onset.
         if (onsets[p]) {
           pitchStartStepPlusOne[p] = f + 1;
           onsetVelocities[p] = velocity;
