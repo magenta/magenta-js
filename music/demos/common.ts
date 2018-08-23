@@ -302,6 +302,11 @@ export function writeNoteSeqs(
   });
 }
 
+export function writeMemory(bytes: number) {
+  document.getElementById('leaked-memory').innerHTML =
+      bytes.toString() + ' bytes';
+}
+
 function createPlayerButton(
     seq: mm.INoteSequence, withClick: boolean, canvas: HTMLElement) {
   const visualizer = new mm.Visualizer(seq, canvas as HTMLCanvasElement);

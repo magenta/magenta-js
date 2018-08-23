@@ -18,7 +18,7 @@ import * as tf from '@tensorflow/tfjs-core';
 import * as mm from '../src/index';
 
 // import {CHECKPOINTS_DIR} from './common';
-import {writeNoteSeqs, writeTimer} from './common';
+import {writeMemory, writeNoteSeqs, writeTimer} from './common';
 
 const CHECKPOINTS_DIR = 'checkpoints'
 const CKPT = `${CHECKPOINTS_DIR}/onsets_and_frames`;
@@ -41,7 +41,7 @@ async function transcribe() {
 }
 
 try {
-  Promise.all([transcribe()]).then(() => console.log(tf.memory()));
+  Promise.all([transcribe()]).then(() => writeMemory(tf.memory().numBytes));
 } catch (err) {
   console.error(err);
 }

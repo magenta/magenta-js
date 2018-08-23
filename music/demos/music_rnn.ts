@@ -16,10 +16,11 @@
  */
 
 import * as tf from '@tensorflow/tfjs-core';
+
 import * as mm from '../src/index';
 
 import {CHECKPOINTS_DIR} from './common';
-import {writeNoteSeqs, writeTimer} from './common';
+import {writeMemory, writeNoteSeqs, writeTimer} from './common';
 
 const MEL_CHECKPOINT = `${CHECKPOINTS_DIR}/music_rnn/basic_rnn`;
 const DRUMS_CHECKPOINT = `${CHECKPOINTS_DIR}/music_rnn/drum_kit_rnn`;
@@ -165,6 +166,14 @@ async function runImprovRnn() {
   console.log(tf.memory());
 }
 
-runMelodyRnn();
-runDrumsRnn();
-runImprovRnn();
+try {
+  Promise
+      .all([
+        runMelodyRnn(),
+        runDrumsRnn(),
+        runImprovRnn(),
+      ])
+      .then(() => writeMemory(tf.memory().numBytes));
+} catch (err) {
+  console.error(err);
+}

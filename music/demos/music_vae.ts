@@ -20,7 +20,7 @@ import * as clone from 'clone';
 
 import * as mm from '../src/index';
 
-import {CHECKPOINTS_DIR} from './common';
+import {CHECKPOINTS_DIR, writeMemory} from './common';
 import {DRUM_SEQS, MEL_A_QUARTERS, MEL_TEAPOT, MEL_TWINKLE} from './common';
 import {writeNoteSeqs, writeTimer} from './common';
 
@@ -292,7 +292,7 @@ try {
         generateMelButton(), generateMelChordsButton(), generateMel16Button(),
         generateTrioButton()
       ])
-      .then(() => console.log(tf.memory()));
+      .then(() => writeMemory(tf.memory().numBytes));
 } catch (err) {
   console.error(err);
 }
