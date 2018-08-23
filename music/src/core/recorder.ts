@@ -59,11 +59,11 @@ export class Recorder {
    */
   async initialize() {
     // Start up WebMidi
-    await (<any>navigator)
+    await (navigator as Navigator)
         .requestMIDIAccess()
         .then(
             (midi: WebMidi.MIDIAccess) => this.midiReady(midi),
-            (err: any) => console.log('Something went wrong', err));
+            (err: Error) => console.log('Something went wrong', err));
   }
 
   private midiReady(midi: WebMidi.MIDIAccess) {
@@ -133,6 +133,7 @@ export class Recorder {
     }
 
     // MIDI commands we care about. See
+    // tslint:disable-next-line
     // http://webaudio.github.io/web-midi-api/#a-simple-monophonic-sine-wave-midi-synthesizer.
     const NOTE_DOWN = 9;
     const NOTE_UP = 8;

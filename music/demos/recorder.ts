@@ -48,22 +48,3 @@ stopStreamBtnBtn.addEventListener('click', () => {
     writeNoteSeqs('streamOutput', [seq]);
   }
 });
-
-const tempoInput = document.getElementById('tempoInput') as HTMLInputElement;
-const tempoValue = document.getElementById('tempoValue') as HTMLDivElement;
-
-tempoInput.addEventListener('input', () => {
-  clickPlayer.setTempo(parseInt(tempoInput.value));
-  console.log(clickPlayer.getTempo());
-  tempoValue.textContent = tempoInput.value;
-});
-
-let shouldStop = false;
-const clickPlayer: mm.Player = new mm.Player(false, {
-  run: () => {},
-  stop: () => {
-    if (!shouldStop) {
-      clickPlayer.start(beep)
-    };
-  }
-});
