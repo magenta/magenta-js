@@ -98,10 +98,10 @@ export class OnsetsAndFrames {
     if (!this.isInitialized()) {
       this.initialize();
     }
-    // Add batch dim.
-    const melSpecBatch = tf.tensor2d(melSpec).expandDims(0).expandDims(-1);
 
     const [frameProbs, onsetProbs, velocities] = tidy(() => {
+      // Add batch dim.
+      const melSpecBatch = tf.tensor2d(melSpec).expandDims(0).expandDims(-1);
       const onsetProbs = this.onsetsModel.predict(melSpecBatch) as tf.Tensor3D;
       const velocities =
           this.velocityModel.predict(melSpecBatch) as tf.Tensor3D;
