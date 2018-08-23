@@ -87,10 +87,7 @@ export class OnsetsAndFrames {
       this.initialize();
     }
     // Add batch dim.
-    const melSpecBatch = tf.tensor2d(melSpec)
-                             .slice([0, 0], [375, -1])
-                             .expandDims(0)
-                             .expandDims(-1);
+    const melSpecBatch = tf.tensor2d(melSpec).expandDims(0).expandDims(-1);
 
     const onsetProbs = this.onsetsModel.predict(melSpecBatch) as tf.Tensor3D;
     const velocities = this.velocityModel.predict(melSpecBatch) as tf.Tensor3D;
@@ -100,7 +97,7 @@ export class OnsetsAndFrames {
         this.frameModel.predict([onsetProbs, activationProbs]) as tf.Tensor3D;
 
     // Squeeze batch dims.
-    return this.pianorollToNoteSequence(
+    return pianorollToNoteSequence(
         frameProbs.squeeze(), onsetProbs.squeeze(), velocities.squeeze());
   }
 
@@ -267,7 +264,7 @@ export async function pianorollToNoteSequence(
   const ns = NoteSequence.create();
 
   // Store (step + 1) with 0 signifying no active note.
-  const pitchStartStepPlusOne = new Uint8Array(MIDI_PITCHES);
+  const pitchStartStepPlusOne = new Uint32Array(MIDI_PITCHES);
   const onsetVelocities = new Uint8Array(MIDI_PITCHES);
   let frame: Uint8Array;
   let onsets: Uint8Array;
@@ -286,7 +283,6 @@ export async function pianorollToNoteSequence(
       endTime: endFrame * FRAME_LENGTH_SECONDS,
       velocity: onsetVelocities[pitch]
     }));
-
     pitchStartStepPlusOne[pitch] = 0;
   }
 

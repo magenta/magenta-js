@@ -18,12 +18,11 @@ import * as tf from '@tensorflow/tfjs-core';
 import * as test from 'tape';
 
 import {NoteSequence} from '../protobuf';
-
 import {FRAME_LENGTH_SECONDS, MIDI_PITCHES, MIN_MIDI_PITCH, pianorollToNoteSequence} from './model';
 
 test('PianorollToNoteSequence', (t: test.Test) => {
-  const frames = tf.buffer([100, MIDI_PITCHES]);
-  const onsets = tf.buffer([100, MIDI_PITCHES]);
+  const frames = tf.buffer([300, MIDI_PITCHES]);
+  const onsets = tf.buffer([300, MIDI_PITCHES]);
   // Activate key 39 for the middle 50 frames and last 10 frames.
   for (let i = 25; i < 75; ++i) {
     frames.set(0.6, i, 39);
@@ -34,7 +33,7 @@ test('PianorollToNoteSequence', (t: test.Test) => {
   // Add an onset for the first occurrence.
   onsets.set(0.6, 25, 39);
   // Add an onset for a note that doesn't have an active frame.
-  onsets.set(0.6, 80, 49);
+  onsets.set(0.6, 260, 49);
 
   const expectedNs = NoteSequence.create({
     notes: [
@@ -46,17 +45,17 @@ test('PianorollToNoteSequence', (t: test.Test) => {
       },
       {
         pitch: 49 + MIN_MIDI_PITCH,
-        startTime: 80 * FRAME_LENGTH_SECONDS,
-        endTime: 81 * FRAME_LENGTH_SECONDS,
+        startTime: 260 * FRAME_LENGTH_SECONDS,
+        endTime: 261 * FRAME_LENGTH_SECONDS,
         velocity: 90
       },
     ],
-    totalTime: 101 * FRAME_LENGTH_SECONDS
+    totalTime: 301 * FRAME_LENGTH_SECONDS
   });
 
   pianorollToNoteSequence(
       frames.toTensor() as tf.Tensor2D, onsets.toTensor() as tf.Tensor2D,
-      tf.ones([100, MIDI_PITCHES]))
+      tf.ones([300, MIDI_PITCHES]))
       .then((ns) => {
         t.deepEqual(ns, expectedNs);
         t.end();

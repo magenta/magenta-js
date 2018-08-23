@@ -21,7 +21,7 @@ import {writeNoteSeqs, writeTimer} from './common';
 
 const CHECKPOINTS_DIR = 'checkpoints'
 const CKPT = `${CHECKPOINTS_DIR}/onsets_and_frames`;
-const MEL_SPEC_URL = `${CHECKPOINTS_DIR}/onsets_and_frames/melSpec.json`;
+const MEL_SPEC_URL = 'data/MAPS_MUS-mz_331_3_ENSTDkCl.melspec-250frames.json';
 
 async function transcribe() {
   // Set up listener for changing tempo.
@@ -36,7 +36,6 @@ async function transcribe() {
   const ns = await oaf.transcribeFromMelSpec(melSpec);
   writeTimer('transcription-time', start);
   writeNoteSeqs('transcription-results', [ns]);
-  debugger
 }
 
 try {

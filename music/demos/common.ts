@@ -278,12 +278,17 @@ export function writeNoteSeqs(
     details.appendChild(summary);
 
     const seqText = document.createElement('span');
+    const isQuantized = mm.sequences.isQuantizedSequence(seq);
     seqText.innerHTML = '[' +
         seq.notes
             .map(n => {
-              let s = '{p:' + n.pitch + ' s:' + n.quantizedStartStep;
-              if (n.quantizedEndStep != null) {
-                s += ' e:' + n.quantizedEndStep;
+              let s = '{p:' + n.pitch + ' s:' +
+                  (isQuantized ? n.quantizedStartStep :
+                                 n.startTime.toPrecision(2));
+              const end =
+                  isQuantized ? n.quantizedEndStep : n.endTime.toPrecision(2);
+              if (end != null) {
+                s += ' e:' + end;
               }
               s += '}';
               return s;
