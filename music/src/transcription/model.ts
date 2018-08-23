@@ -60,6 +60,16 @@ export class OnsetsAndFrames {
   }
 
   dispose() {
+    if (!this.initialized) {
+      return;
+    }
+    const disposeLayer = ((layer: tf.layers.Layer) => {
+      layer.getWeights().forEach((w) => w.dispose());
+    });
+    disposeLayer(this.onsetsModel);
+    disposeLayer(this.velocityModel);
+    disposeLayer(this.activationModel);
+    disposeLayer(this.frameModel);
     this.initialized = false;
   }
 
