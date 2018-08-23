@@ -24,13 +24,13 @@ import * as tf from '@tensorflow/tfjs';
 
 import {NoteSequence} from '../protobuf';
 
-const MIN_MIDI_PITCH = 21;
-const MAX_MIDI_PITCH = 108;
-const MIDI_PITCHES = MAX_MIDI_PITCH - MIN_MIDI_PITCH + 1;
+export const MIN_MIDI_PITCH = 21;
+export const MAX_MIDI_PITCH = 108;
+export const MIDI_PITCHES = MAX_MIDI_PITCH - MIN_MIDI_PITCH + 1;
 
 const SAMPLE_RATE = 16000;
 const SPEC_HOP_LENGTH = 512;
-const FRAME_LENGTH_SECONDS = SPEC_HOP_LENGTH / SAMPLE_RATE;
+export const FRAME_LENGTH_SECONDS = SPEC_HOP_LENGTH / SAMPLE_RATE;
 
 const LSTM_UNITS = 128;
 
@@ -247,85 +247,80 @@ export class OnsetsAndFrames {
 
     return acousticModel;
   }
+}
 
-  private async pianorollToNoteSequence(
-      frameProbs: tf.Tensor2D, onsetProbs: tf.Tensor2D,
-      velocityValues: tf.Tensor2D, onsetThreshold = 0.5, frameThreshold = 0.5) {
-    let onsetPredictions =
-        tf.greater(onsetProbs, onsetThreshold) as tf.Tensor2D;
-    let framePredictions =
-        tf.greater(frameProbs, frameThreshold) as tf.Tensor2D;
+export async function pianorollToNoteSequence(
+    frameProbs: tf.Tensor2D, onsetProbs: tf.Tensor2D,
+    velocityValues: tf.Tensor2D, onsetThreshold = 0.5, frameThreshold = 0.5) {
+  let onsetPredictions = tf.greater(onsetProbs, onsetThreshold) as tf.Tensor2D;
+  let framePredictions = tf.greater(frameProbs, frameThreshold) as tf.Tensor2D;
 
-    // Add silent frame at the end so we can do a final loop and terminate any
-    // notes that are still active.
-    onsetPredictions = onsetPredictions.pad([[0, 1], [0, 0]]);
-    framePredictions = framePredictions.pad([[0, 1], [0, 0]]);
-    velocityValues = velocityValues.pad([[0, 1], [0, 0]]);
+  // Add silent frame at the end so we can do a final loop and terminate any
+  // notes that are still active.
+  onsetPredictions = onsetPredictions.pad([[0, 1], [0, 0]]);
+  framePredictions = framePredictions.pad([[0, 1], [0, 0]]);
+  velocityValues = velocityValues.pad([[0, 1], [0, 0]]);
 
-    // Ensure that any frame with an onset prediction is considered active.
-    framePredictions = tf.logicalOr(framePredictions, onsetPredictions);
+  // Ensure that any frame with an onset prediction is considered active.
+  framePredictions = tf.logicalOr(framePredictions, onsetPredictions);
 
-    const ns = NoteSequence.create();
+  const ns = NoteSequence.create();
 
-    // Store (step + 1) with 0 signifying no active note.
-    const pitchStartStepPlusOne = new Uint8Array(MIDI_PITCHES);
-    const onsetVelocities = new Uint8Array(MIDI_PITCHES);
-    let frame: Uint8Array;
-    let onsets: Uint8Array;
-    let previousOnsets = new Uint8Array(MIDI_PITCHES);
+  // Store (step + 1) with 0 signifying no active note.
+  const pitchStartStepPlusOne = new Uint8Array(MIDI_PITCHES);
+  const onsetVelocities = new Uint8Array(MIDI_PITCHES);
+  let frame: Uint8Array;
+  let onsets: Uint8Array;
+  let previousOnsets = new Uint8Array(MIDI_PITCHES);
 
-    function unscaleVelocity(velocity: number) {
-      // Translates a velocity estimate to a MIDI velocity value
-      return Math.floor(Math.max(Math.min(velocity, 1.), 0) * 80. + 10.);
-    }
-
-    function endPitch(pitch: number, endFrame: number) {
-      // End an active pitch.
-
-      ns.notes.push(NoteSequence.Note.create({
-        pitch: pitch + MIN_MIDI_PITCH,
-        startTime: (pitchStartStepPlusOne[pitch] - 1) * FRAME_LENGTH_SECONDS,
-        endTime: endFrame * FRAME_LENGTH_SECONDS,
-        velocity: onsetVelocities[pitch]
-      }));
-
-      pitchStartStepPlusOne[pitch] = 0;
-    }
-
-    function processActivePitch(p: number, f: number, velocity: number) {
-      if (pitchStartStepPlusOne[p]) {
-        // Pitch is already active, but if this is a new onset, we should end
-        // the note and start a new one.
-        if (onsets[p] && !previousOnsets[p]) {
-          pitchStartStepPlusOne[p] = f + 1;
-          endPitch(p, f);
-          onsetVelocities[p] = velocity;
-        }
-      } else {
-        // Only allow a new note to start if we've predicted an onset.
-        if (onsets[p]) {
-          pitchStartStepPlusOne[p] = f + 1;
-          onsetVelocities[p] = velocity;
-        }
-      }
-    }
-    const splitFrames = tf.unstack(framePredictions);
-    const splitOnsets = tf.unstack(onsetPredictions);
-    const splitVelocities = tf.unstack(velocityValues);
-    for (let f = 0; f < splitFrames.length; ++f) {
-      frame = await splitFrames[f].data() as Uint8Array;
-      onsets = await splitOnsets[f].data() as Uint8Array;
-      const velocities = await splitVelocities[f].data() as Uint8Array;
-      for (let p = 0; p < frame.length; ++p) {
-        if (frame[p]) {
-          processActivePitch(p, f, unscaleVelocity(velocities[p]));
-        } else if (pitchStartStepPlusOne[p]) {
-          endPitch(p, f);
-        }
-      }
-      previousOnsets = onsets;
-    }
-    ns.totalTime = splitFrames.length * FRAME_LENGTH_SECONDS;
-    return ns;
+  function unscaleVelocity(velocity: number) {
+    // Translates a velocity estimate to a MIDI velocity value
+    return Math.floor(Math.max(Math.min(velocity, 1.), 0) * 80. + 10.);
   }
+
+  function endPitch(pitch: number, endFrame: number) {
+    // End an active pitch.
+    ns.notes.push(NoteSequence.Note.create({
+      pitch: pitch + MIN_MIDI_PITCH,
+      startTime: (pitchStartStepPlusOne[pitch] - 1) * FRAME_LENGTH_SECONDS,
+      endTime: endFrame * FRAME_LENGTH_SECONDS,
+      velocity: onsetVelocities[pitch]
+    }));
+
+    pitchStartStepPlusOne[pitch] = 0;
+  }
+
+  function processOnset(p: number, f: number, velocity: number) {
+    if (pitchStartStepPlusOne[p]) {
+      // Pitch is already active, but if this is a new onset, we should end
+      // the note and start a new one.
+      if (!previousOnsets[p]) {
+        endPitch(p, f);
+        pitchStartStepPlusOne[p] = f + 1;
+        onsetVelocities[p] = velocity;
+      }
+    } else {
+      pitchStartStepPlusOne[p] = f + 1;
+      onsetVelocities[p] = velocity;
+    }
+  }
+
+  const splitFrames = tf.unstack(framePredictions);
+  const splitOnsets = tf.unstack(onsetPredictions);
+  const splitVelocities = tf.unstack(velocityValues);
+  for (let f = 0; f < splitFrames.length; ++f) {
+    frame = await splitFrames[f].data() as Uint8Array;
+    onsets = await splitOnsets[f].data() as Uint8Array;
+    const velocities = await splitVelocities[f].data() as Uint8Array;
+    for (let p = 0; p < frame.length; ++p) {
+      if (onsets[p]) {
+        processOnset(p, f, unscaleVelocity(velocities[p]));
+      } else if (!frame[p] && pitchStartStepPlusOne[p]) {
+        endPitch(p, f);
+      }
+    }
+    previousOnsets = onsets;
+  }
+  ns.totalTime = splitFrames.length * FRAME_LENGTH_SECONDS;
+  return ns;
 }
