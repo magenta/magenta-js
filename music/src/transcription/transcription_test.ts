@@ -41,13 +41,13 @@ test('PianorollToNoteSequence', (t: test.Test) => {
         pitch: 39 + MIN_MIDI_PITCH,
         startTime: 25 * FRAME_LENGTH_SECONDS,
         endTime: 75 * FRAME_LENGTH_SECONDS,
-        velocity: 90
+        velocity: 1
       },
       {
         pitch: 49 + MIN_MIDI_PITCH,
         startTime: 260 * FRAME_LENGTH_SECONDS,
         endTime: 261 * FRAME_LENGTH_SECONDS,
-        velocity: 90
+        velocity: 1
       },
     ],
     totalTime: 301 * FRAME_LENGTH_SECONDS
@@ -85,19 +85,19 @@ test('PianorollToNoteSequenceWithOverlappingFrames', (t: test.Test) => {
         pitch: 39 + MIN_MIDI_PITCH,
         startTime: 25 * FRAME_LENGTH_SECONDS,
         endTime: 30 * FRAME_LENGTH_SECONDS,
-        velocity: 90
+        velocity: 1
       },
       {
         pitch: 39 + MIN_MIDI_PITCH,
         startTime: 30 * FRAME_LENGTH_SECONDS,
         endTime: 35 * FRAME_LENGTH_SECONDS,
-        velocity: 90
+        velocity: 1
       },
       {
         pitch: 39 + MIN_MIDI_PITCH,
         startTime: 35 * FRAME_LENGTH_SECONDS,
         endTime: 75 * FRAME_LENGTH_SECONDS,
-        velocity: 90
+        velocity: 1
       },
     ],
     totalTime: 101 * FRAME_LENGTH_SECONDS

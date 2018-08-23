@@ -35,6 +35,9 @@ export const FRAME_LENGTH_SECONDS = SPEC_HOP_LENGTH / SAMPLE_RATE;
 
 const LSTM_UNITS = 128;
 
+/**
+ * Helper function to create a Bidirecitonal LSTM layer.
+ */
 function getBidiLstm() {
   const lstm = tf.layers.lstm({
     units: LSTM_UNITS,
@@ -46,6 +49,9 @@ function getBidiLstm() {
       {layer: lstm, mergeMode: 'concat', trainable: false});
 }
 
+/**
+ * Main "Onsets And Frames" piano transcription model class.
+ */
 export class OnsetsAndFrames {
   private checkpointURL: string;
   private initialized: boolean;
@@ -55,24 +61,19 @@ export class OnsetsAndFrames {
   private activationModel: tf.Sequential;
   private frameModel: tf.Model;
 
+
+  /**
+   * `OnsetsAndFrames` constructor.
+   *
+   * @param checkpointURL Path to the checkpoint directory.
+   */
   constructor(checkpointURL: string) {
     this.checkpointURL = checkpointURL;
   }
 
-  dispose() {
-    if (!this.initialized) {
-      return;
-    }
-    const disposeLayer = ((layer: tf.layers.Layer) => {
-      layer.getWeights().forEach((w) => w.dispose());
-    });
-    disposeLayer(this.onsetsModel);
-    disposeLayer(this.velocityModel);
-    disposeLayer(this.activationModel);
-    disposeLayer(this.frameModel);
-    this.initialized = false;
-  }
-
+  /**
+   * Loads variables from the checkpoint and builds the model graph.
+   */
   async initialize() {
     this.dispose();
 
@@ -88,12 +89,35 @@ export class OnsetsAndFrames {
   }
 
   /**
+   * Disposes of any untracked `Tensors` to avoid GPU memory leaks.
+   */
+  dispose() {
+    if (!this.initialized) {
+      return;
+    }
+    const disposeLayer = ((layer: tf.layers.Layer) => {
+      layer.getWeights().forEach((w) => w.dispose());
+    });
+    disposeLayer(this.onsetsModel);
+    disposeLayer(this.velocityModel);
+    disposeLayer(this.activationModel);
+    disposeLayer(this.frameModel);
+    this.initialized = false;
+  }
+
+  /**
    * Returns true iff model is intialized.
    */
   isInitialized() {
     return this.initialized;
   }
 
+  /**
+   * Transcribes a piano performance from a mel spectrogram.
+   *
+   * @param melSpec A mel spectrogram shaped `[frame, bin]`.
+   * @returns A `NoteSequence` containing the transcribed piano performance.
+   */
   async transcribeFromMelSpec(melSpec: number[][]) {
     if (!this.isInitialized()) {
       this.initialize();
@@ -103,8 +127,13 @@ export class OnsetsAndFrames {
       // Add batch dim.
       const melSpecBatch = tf.tensor2d(melSpec).expandDims(0).expandDims(-1);
       const onsetProbs = this.onsetsModel.predict(melSpecBatch) as tf.Tensor3D;
-      const velocities =
+      const scaledVelocities =
           this.velocityModel.predict(melSpecBatch) as tf.Tensor3D;
+      // Translates a velocity estimate to a MIDI velocity value.
+      const velocities = tf.clipByValue(scaledVelocities, 0, 1)
+                             .mul(tf.scalar(80))
+                             .add(tf.scalar(10))
+                             .toInt();
       const activationProbs =
           this.activationModel.predict(melSpecBatch) as tf.Tensor3D;
       const frameProbs =
@@ -125,6 +154,9 @@ export class OnsetsAndFrames {
     return ns;
   }
 
+  /**
+   * Builds the model with the given variables.
+   */
   private build(vars: tf.NamedTensorMap) {
     function getVar(name: string) {
       let v = vars[name];
@@ -134,26 +166,26 @@ export class OnsetsAndFrames {
       return v;
     }
 
-    function convWeights(prefix: string) {
+    function convWeights(scope: string) {
       return [
-        getVar(`${prefix}/conv1/weights`),
-        getVar(`${prefix}/conv1/BatchNorm/beta`),
-        getVar(`${prefix}/conv1/BatchNorm/moving_mean`),
-        getVar(`${prefix}/conv1/BatchNorm/moving_variance`),
-        getVar(`${prefix}/conv2/weights`),
-        getVar(`${prefix}/conv2/BatchNorm/beta`),
-        getVar(`${prefix}/conv2/BatchNorm/moving_mean`),
-        getVar(`${prefix}/conv2/BatchNorm/moving_variance`),
-        getVar(`${prefix}/conv3/weights`),
-        getVar(`${prefix}/conv3/BatchNorm/beta`),
-        getVar(`${prefix}/conv3/BatchNorm/moving_mean`),
-        getVar(`${prefix}/conv3/BatchNorm/moving_variance`),
-        getVar(`${prefix}/fc5/weights`),
-        getVar(`${prefix}/fc5/biases`),
+        getVar(`${scope}/conv1/weights`),
+        getVar(`${scope}/conv1/BatchNorm/beta`),
+        getVar(`${scope}/conv1/BatchNorm/moving_mean`),
+        getVar(`${scope}/conv1/BatchNorm/moving_variance`),
+        getVar(`${scope}/conv2/weights`),
+        getVar(`${scope}/conv2/BatchNorm/beta`),
+        getVar(`${scope}/conv2/BatchNorm/moving_mean`),
+        getVar(`${scope}/conv2/BatchNorm/moving_variance`),
+        getVar(`${scope}/conv3/weights`),
+        getVar(`${scope}/conv3/BatchNorm/beta`),
+        getVar(`${scope}/conv3/BatchNorm/moving_mean`),
+        getVar(`${scope}/conv3/BatchNorm/moving_variance`),
+        getVar(`${scope}/fc5/weights`),
+        getVar(`${scope}/fc5/biases`),
       ];
     }
 
-    function lstmWeights(prefix: string) {
+    function lstmWeights(scope: string) {
       // The gate ordering differs in Keras.
       const reorderGates = ((weights: tf.Tensor) => {
         const [i, c, f, o] = tf.split(weights, 4, -1);
@@ -166,22 +198,22 @@ export class OnsetsAndFrames {
                [kernel.shape[0] - LSTM_UNITS, LSTM_UNITS]));
 
       const [fwKernel, fwRecurrentKernel] = splitAndReorderKernel(
-          getVar(`${prefix}/bidirectional_rnn/fw/lstm_cell/kernel`) as
+          getVar(`${scope}/bidirectional_rnn/fw/lstm_cell/kernel`) as
           tf.Tensor2D);
 
       const [bwKernel, bwRecurrentKernel] = splitAndReorderKernel(
-          getVar(`${prefix}/bidirectional_rnn/bw/lstm_cell/kernel`) as
+          getVar(`${scope}/bidirectional_rnn/bw/lstm_cell/kernel`) as
           tf.Tensor2D);
       return [
         fwKernel, fwRecurrentKernel,
-        reorderGates(getVar(`${prefix}/bidirectional_rnn/fw/lstm_cell/bias`)),
+        reorderGates(getVar(`${scope}/bidirectional_rnn/fw/lstm_cell/bias`)),
         bwKernel, bwRecurrentKernel,
-        reorderGates(getVar(`${prefix}/bidirectional_rnn/bw/lstm_cell/bias`))
+        reorderGates(getVar(`${scope}/bidirectional_rnn/bw/lstm_cell/bias`))
       ];
     }
 
-    function denseWeights(prefix: string) {
-      return [getVar(`${prefix}/weights`), getVar(`${prefix}/biases`)];
+    function denseWeights(scope: string) {
+      return [getVar(`${scope}/weights`), getVar(`${scope}/biases`)];
     }
 
     tidy(() => {
@@ -224,6 +256,9 @@ export class OnsetsAndFrames {
     });
   }
 
+  /**
+   * Returns an acoustic stack without setting variables.
+   */
   private getAcousticModel(finalActivation: string, hasLstm: boolean) {
     const acousticModel = tf.sequential();
     // tslint:disable-next-line:no-any
@@ -275,6 +310,16 @@ export class OnsetsAndFrames {
   }
 }
 
+
+/**
+ * Converts the model predictions to a NoteSequence.
+ *
+ * @param frameProbs Probabilities of an active frame, shaped `[frame, pitch]`.
+ * @param onsetProbs Probabilities of an onset, shaped `[frame, pitch]`.
+ * @param velocityValues Predicted velocities in the range [0, 127], shaped
+ * `[frame, pitch]`.
+ * @returns A `NoteSequence` containing the transcribed piano performance.
+ */
 export async function pianorollToNoteSequence(
     frameProbs: tf.Tensor2D, onsetProbs: tf.Tensor2D,
     velocityValues: tf.Tensor2D, onsetThreshold = 0.5, frameThreshold = 0.5) {
@@ -307,11 +352,6 @@ export async function pianorollToNoteSequence(
   let frame: Uint8Array;
   let onsets: Uint8Array;
   let previousOnsets = new Uint8Array(MIDI_PITCHES);
-
-  function unscaleVelocity(velocity: number) {
-    // Translates a velocity estimate to a MIDI velocity value
-    return Math.floor(Math.max(Math.min(velocity, 1.), 0) * 80. + 10.);
-  }
 
   function endPitch(pitch: number, endFrame: number) {
     // End an active pitch.
@@ -348,7 +388,7 @@ export async function pianorollToNoteSequence(
     splitVelocities[f].dispose();
     for (let p = 0; p < frame.length; ++p) {
       if (onsets[p]) {
-        processOnset(p, f, unscaleVelocity(velocities[p]));
+        processOnset(p, f, velocities[p]);
       } else if (!frame[p] && pitchStartStepPlusOne[p]) {
         endPitch(p, f);
       }
