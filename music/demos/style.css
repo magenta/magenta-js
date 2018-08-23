@@ -49,6 +49,9 @@ button:hover {
   background: #6FC9C6;
   color: white;
 }
+button[disabled] {
+  opacity: 0.5;
+}
 
 .player-container {
   margin-top: 14px;

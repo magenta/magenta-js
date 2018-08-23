@@ -63,7 +63,6 @@ export class Visualizer {
    *   @param canvas The element where the visualization should be displayed.
    *   @param config Visualization configuration options.
    */
-
   constructor(
       sequence: INoteSequence, canvas: HTMLCanvasElement,
       config = {} as VisualizerConfig) {
