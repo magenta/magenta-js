@@ -28,6 +28,12 @@ limitations under the License.
     <code>mm.Recorder</code> allows you to record MIDI from a MIDI instrument,
     and converts it to a  <code>NoteSequence</code>.
   </p>
+
+  <h2>Basic usage</h2>
+  <p> Once you create an <code>mm.Recorder</code>, it will connect to any MIDI inputs
+    visible. You can use <code>start()</code> and <code>stop()</code> to record
+    a <code>NoteSequence</code>:
+  </p>
   <section>
     <button id="record" disabled>Record</button>
     <button id="stop" disabled>Stop</button>
@@ -35,6 +41,10 @@ limitations under the License.
   </section>
 
   <h2>Streaming</h2>
+  <p> You can also enable the <code>mm.Recorder</code> to record in streaming mode.
+    In this case, the recorder will emit a new <code>NoteSequence</code> every time a new
+    note is recorded, rather than just the entire sequence at the end of the recording:
+    </p>
   <section>
     <button id="startStream" disabled>Record Stream</button>
     <button id="stopStream" disabled>Stop</button>

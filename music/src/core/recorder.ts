@@ -56,7 +56,7 @@ export class Recorder {
   /**
    * Initializes the `Recorder` by requesting MIDI access from the browser,
    * and connecting to any available MIDI inputs. If MIDI events are emitted,
-   * they will be ignored until `startRecording()` is called.
+   * they will be ignored until `start()` is called.
    */
   async initialize() {
     // Start up WebMidi.
@@ -90,22 +90,17 @@ export class Recorder {
   /**
    * Starts listening to MIDI events and records any messages received.
    *
-   * @param input An optional MIDIInput, that specifies which input
-   * to start recording the MIDI. If not specified, all available inputs
-   * will be used.
+   * @param midiInputs An optional list of MIDIInputs, that specifies which
+   * inputs to start listening to MIDI messages for to record. If not specified,
+   * all available inputs will be used.
    */
-  start(midiInput?: WebMidi.MIDIInput) {
+  start(midiInputs?: WebMidi.MIDIInput[]) {
     // Start listening to MIDI messages.
-    if (midiInput) {
-      midiInput.onmidimessage = (event) => {
+    const list = midiInputs ? midiInputs : this.midiInputs;
+    for (const input of list) {
+      input.onmidimessage = (event) => {
         this.midiMessageReceived(event);
       };
-    } else {
-      for (const input of this.midiInputs) {
-        input.onmidimessage = (event) => {
-          this.midiMessageReceived(event);
-        };
-      }
     }
 
     this.recording = true;
