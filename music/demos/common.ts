@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+import {saveAs} from 'file-saver';
 import * as mm from '../src/index';
 
 export const CHECKPOINTS_DIR =
@@ -265,7 +266,8 @@ export function writeTimer(elementId: string, startTime: number) {
 }
 
 export function writeNoteSeqs(
-    elementId: string, seqs: mm.INoteSequence[], useSoundFontPlayer = false) {
+    elementId: string, seqs: mm.INoteSequence[], useSoundFontPlayer = false,
+    writeVelocity = false) {
   const element = document.getElementById(elementId);
   while (element.firstChild) {
     element.removeChild(element.firstChild);
@@ -277,12 +279,20 @@ export function writeNoteSeqs(
     details.appendChild(summary);
 
     const seqText = document.createElement('span');
+    const isQuantized = mm.sequences.isQuantizedSequence(seq);
     seqText.innerHTML = '[' +
         seq.notes
             .map(n => {
-              let s = '{p:' + n.pitch + ' s:' + n.quantizedStartStep;
-              if (n.quantizedEndStep != null) {
-                s += ' e:' + n.quantizedEndStep;
+              let s = '{p:' + n.pitch + ' s:' +
+                  (isQuantized ? n.quantizedStartStep :
+                                 n.startTime.toPrecision(2));
+              const end =
+                  isQuantized ? n.quantizedEndStep : n.endTime.toPrecision(3);
+              if (end != null) {
+                s += ' e:' + end;
+              }
+              if (writeVelocity) {
+                s += ' v:' + n.velocity;
               }
               s += '}';
               return s;
@@ -294,6 +304,11 @@ export function writeNoteSeqs(
         useSoundFontPlayer ? createSoundFontPlayer(seq) : createPlayer(seq));
     element.appendChild(details);
   });
+}
+
+export function writeMemory(bytes: number) {
+  document.getElementById('leaked-memory').innerHTML =
+      bytes.toString() + ' bytes';
 }
 
 function createPlayerButton(
@@ -328,6 +343,15 @@ function createPlayerButton(
   return button;
 }
 
+function createDownloadButton(seq: mm.INoteSequence) {
+  const button = document.createElement('button');
+  button.textContent = 'Save MIDI';
+  button.addEventListener('click', () => {
+    saveAs(new File([mm.sequenceProtoToMidi(seq)], 'saved.mid'));
+  });
+  return button;
+}
+
 function createPlayer(seq: mm.INoteSequence) {
   // Visualizer
   const div = document.createElement('div');
@@ -340,6 +364,7 @@ function createPlayer(seq: mm.INoteSequence) {
   const buttonsDiv = document.createElement('div');
   buttonsDiv.appendChild(createPlayerButton(seq, false, canvas));
   buttonsDiv.appendChild(createPlayerButton(seq, true, canvas));
+  buttonsDiv.appendChild(createDownloadButton(seq));
   div.appendChild(buttonsDiv);
   div.appendChild(containerDiv);
   return div;
