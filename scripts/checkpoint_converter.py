@@ -22,7 +22,7 @@ Setup:
 
 Example usage:
 
-python3 checkpoint_converter /path/to/checkpoint.ckpt /path/to/output \
+$ python checkpoint_converter /path/to/checkpoint.ckpt /path/to/output \
   --remove_variables_regex='.*Adam.*|beta.*_power'
 """
 from __future__ import absolute_import
