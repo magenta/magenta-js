@@ -22,7 +22,7 @@
 import * as Tone from 'tone';
 import {isNullOrUndefined} from 'util';
 
-import {INoteSequence, NoteSequence} from '../protobuf/index';
+import {INoteSequence, NoteSequence} from '../protobuf';
 
 import {sequences} from '.';
 import * as constants from './constants';
@@ -342,7 +342,7 @@ export class Player extends BasePlayer {
       bass.volume.value = 5;
       this.synths.set(instrument, bass);
     } else {
-      this.synths.set(instrument, new Tone.Synth().toMaster());
+      this.synths.set(instrument, new Tone.PolySynth(10).toMaster());
     }
     return this.synths.get(instrument);
   }

@@ -47,15 +47,18 @@ def dump_checkpoint(
       re.compile(remove_variables_regex) if remove_variables_regex else None)
 
   entries = []
-  for var_name in var_to_shape_map:
+  for var_name, shape in var_to_shape_map.items():
     if (remove_variables_regex_re and remove_variables_regex_re.match(var_name)
         or var_name == 'global_step'):
-      print('Ignoring ' + var_name)
+      print('Ignoring Regex Match: ' + var_name)
+      continue
+    if not shape:
+      print('Ignoring Scalar: ' + var_name)
       continue
 
     tensor = reader.get_tensor(var_name)
     entries.append({'name': var_name, 'data': tensor})
-    print('Dumping ' + var_name)
+    print('Dumping %s (%r)' %  (var_name, shape))
 
   write_weights([entries], output_dir, quantization_dtype=quantization_dtype)
 

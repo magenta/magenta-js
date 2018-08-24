@@ -20,7 +20,7 @@ import * as clone from 'clone';
 
 import * as mm from '../src/index';
 
-import {CHECKPOINTS_DIR, DRUM_SEQS, MEL_TWINKLE} from './common';
+import {CHECKPOINTS_DIR, DRUM_SEQS, MEL_TWINKLE, writeMemory} from './common';
 import {writeNoteSeqs, writeTimer} from './common';
 
 const MULTITRACK_CKPT = `${CHECKPOINTS_DIR}/music_vae/multitrack`;
@@ -101,7 +101,7 @@ async function runMultitrackChords() {
 
 try {
   Promise.all([runMultitrack(), runMultitrackChords()])
-      .then(() => console.log(tf.memory()));
+      .then(() => writeMemory(tf.memory().numBytes));
 } catch (err) {
   console.error(err);
 }

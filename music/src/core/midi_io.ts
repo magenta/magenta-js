@@ -24,7 +24,7 @@
 import * as midiconvert from 'midiconvert';
 import {isNullOrUndefined} from 'util';
 
-import {INoteSequence, NoteSequence} from '../protobuf/index';
+import {INoteSequence, NoteSequence} from '../protobuf';
 
 import * as constants from './constants';
 import * as sequences from './sequences';

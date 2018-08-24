@@ -46,6 +46,7 @@ export const NO_CHORD = 'N.C.';
 export const NUM_PITCH_CLASSES = 12;
 export const MIN_MIDI_PITCH = 0;
 export const MAX_MIDI_PITCH = 127;
+export const MIDI_PITCHES = MAX_MIDI_PITCH - MIN_MIDI_PITCH + 1;
 
 // Program-related constants.
 export const MIN_MIDI_PROGRAM = 0;
