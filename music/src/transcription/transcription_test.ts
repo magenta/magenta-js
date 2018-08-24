@@ -18,6 +18,7 @@ import * as tf from '@tensorflow/tfjs-core';
 import * as test from 'tape';
 
 import {NoteSequence} from '../protobuf';
+// tslint:disable-next-line:max-line-length
 import {FRAME_LENGTH_SECONDS, MIDI_PITCHES, MIN_MIDI_PITCH, pianorollToNoteSequence} from './model';
 
 test('PianorollToNoteSequence', (t: test.Test) => {

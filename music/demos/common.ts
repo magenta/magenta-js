@@ -266,7 +266,8 @@ export function writeTimer(elementId: string, startTime: number) {
 }
 
 export function writeNoteSeqs(
-    elementId: string, seqs: mm.INoteSequence[], useSoundFontPlayer = false) {
+    elementId: string, seqs: mm.INoteSequence[], useSoundFontPlayer = false,
+    writeVelocity = false) {
   const element = document.getElementById(elementId);
   while (element.firstChild) {
     element.removeChild(element.firstChild);
@@ -286,9 +287,12 @@ export function writeNoteSeqs(
                   (isQuantized ? n.quantizedStartStep :
                                  n.startTime.toPrecision(2));
               const end =
-                  isQuantized ? n.quantizedEndStep : n.endTime.toPrecision(2);
+                  isQuantized ? n.quantizedEndStep : n.endTime.toPrecision(3);
               if (end != null) {
                 s += ' e:' + end;
+              }
+              if (writeVelocity) {
+                s += ' v:' + n.velocity;
               }
               s += '}';
               return s;

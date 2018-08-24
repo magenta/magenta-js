@@ -15,28 +15,35 @@
  * limitations under the License.
  */
 import * as tf from '@tensorflow/tfjs-core';
+
 import * as mm from '../src/index';
+import {INoteSequence} from '../src/index';
 
 // import {CHECKPOINTS_DIR} from './common';
 import {writeMemory, writeNoteSeqs, writeTimer} from './common';
 
-const CHECKPOINTS_DIR = 'checkpoints'
-const CKPT = `${CHECKPOINTS_DIR}/onsets_and_frames`;
-const MEL_SPEC_URL = 'data/MAPS_MUS-mz_331_3_ENSTDkCl.melspec-250frames.json';
+const TRANS_CKPT_DIR = 'checkpoints/transcription'
+const CKPT_URL = `${TRANS_CKPT_DIR}/onsets_frames_htk0`;
+const MEL_SPEC_URL = `${
+    TRANS_CKPT_DIR}/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl.melhtk0-250frames.spec.json`;
+const EXPECTED_NS_URL = `${
+    TRANS_CKPT_DIR}/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl.melhtk0-250frames.ns.json`;
 
 async function transcribe() {
-  // Set up listener for changing tempo.
-  const melSpec: number[][] = await fetch(MEL_SPEC_URL).then((response) => {
-    return response.json();
-  });
+  const expectedNs: INoteSequence =
+      await fetch(EXPECTED_NS_URL).then((response) => response.json())
+  writeNoteSeqs('expected-ns', [expectedNs], undefined, true)
 
-  const oaf = new mm.OnsetsAndFrames(CKPT);
+  const melSpec: number[][] =
+      await fetch(MEL_SPEC_URL).then((response) => response.json());
+
+  const oaf = new mm.OnsetsAndFrames(CKPT_URL);
   await oaf.initialize();
 
   let start = performance.now();
   const ns = await oaf.transcribeFromMelSpec(melSpec);
   writeTimer('transcription-time', start);
-  writeNoteSeqs('transcription-results', [ns]);
+  writeNoteSeqs('transcription-results', [ns], undefined, true);
   oaf.dispose();
 }
 

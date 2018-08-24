@@ -21,7 +21,6 @@
  * Imports
  */
 import * as tf from '@tensorflow/tfjs';
-import {tidy} from '@tensorflow/tfjs';
 
 import {NoteSequence} from '../protobuf';
 
@@ -61,7 +60,6 @@ export class OnsetsAndFrames {
   private activationModel: tf.Sequential;
   private frameModel: tf.Model;
 
-
   /**
    * `OnsetsAndFrames` constructor.
    *
@@ -95,13 +93,10 @@ export class OnsetsAndFrames {
     if (!this.initialized) {
       return;
     }
-    const disposeLayer = ((layer: tf.layers.Layer) => {
-      layer.getWeights().forEach((w) => w.dispose());
-    });
-    disposeLayer(this.onsetsModel);
-    disposeLayer(this.velocityModel);
-    disposeLayer(this.activationModel);
-    disposeLayer(this.frameModel);
+    this.onsetsModel.dispose();
+    this.velocityModel.dispose();
+    this.activationModel.dispose();
+    this.frameModel.dispose();
     this.initialized = false;
   }
 
@@ -123,16 +118,16 @@ export class OnsetsAndFrames {
       this.initialize();
     }
 
-    const [frameProbs, onsetProbs, velocities] = tidy(() => {
+    const [frameProbs, onsetProbs, velocities] = tf.tidy(() => {
       // Add batch dim.
       const melSpecBatch = tf.tensor2d(melSpec).expandDims(0).expandDims(-1);
       const onsetProbs = this.onsetsModel.predict(melSpecBatch) as tf.Tensor3D;
       const scaledVelocities =
           this.velocityModel.predict(melSpecBatch) as tf.Tensor3D;
       // Translates a velocity estimate to a MIDI velocity value.
-      const velocities = tf.clipByValue(scaledVelocities, 0, 1)
-                             .mul(tf.scalar(80))
-                             .add(tf.scalar(10))
+      const velocities = tf.clipByValue(scaledVelocities, 0., 1.)
+                             .mul(tf.scalar(80.))
+                             .add(tf.scalar(10.))
                              .toInt();
       const activationProbs =
           this.activationModel.predict(melSpecBatch) as tf.Tensor3D;
@@ -159,7 +154,7 @@ export class OnsetsAndFrames {
    */
   private build(vars: tf.NamedTensorMap) {
     function getVar(name: string) {
-      let v = vars[name];
+      const v = vars[name];
       if (v === undefined) {
         throw Error(`Variable not found: ${name}`);
       }
@@ -216,12 +211,12 @@ export class OnsetsAndFrames {
       return [getVar(`${scope}/weights`), getVar(`${scope}/biases`)];
     }
 
-    tidy(() => {
+    tf.tidy(() => {
       const onsetsModel = this.getAcousticModel('sigmoid', true);
       onsetsModel.setWeights(convWeights('onsets').concat(
           lstmWeights('onsets'), denseWeights('onsets/onset_probs')));
 
-      const velocityModel = this.getAcousticModel('linear', false);
+      const velocityModel = this.getAcousticModel(undefined, false);
       velocityModel.setWeights(
           convWeights('velocity')
               .concat(denseWeights('velocity/onset_velocities')));
@@ -309,7 +304,6 @@ export class OnsetsAndFrames {
     return acousticModel;
   }
 }
-
 
 /**
  * Converts the model predictions to a NoteSequence.
