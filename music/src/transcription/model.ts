@@ -107,12 +107,16 @@ export class OnsetsAndFrames {
     return this.initialized;
   }
 
+  // tslint:disable:max-line-length
   /**
    * Transcribes a piano performance from a mel spectrogram.
    *
-   * @param melSpec A mel spectrogram shaped `[frame, bin]`.
+   * @param melSpec A [mel spectrogram]{@link
+   * https://librosa.github.io/librosa/generated/librosa.feature.melspectrogram.html}
+   * shaped `[frame, bin]`.
    * @returns A `NoteSequence` containing the transcribed piano performance.
    */
+  // tslint:enable:max-line-length
   async transcribeFromMelSpec(melSpec: number[][]) {
     if (!this.isInitialized()) {
       this.initialize();

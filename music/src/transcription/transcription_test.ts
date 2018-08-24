@@ -21,20 +21,22 @@ import {NoteSequence} from '../protobuf';
 // tslint:disable-next-line:max-line-length
 import {FRAME_LENGTH_SECONDS, MIDI_PITCHES, MIN_MIDI_PITCH, pianorollToNoteSequence} from './model';
 
+const OVER_THRESHOLD_PROB = 0.6;
+
 test('PianorollToNoteSequence', (t: test.Test) => {
   const frames = tf.buffer([300, MIDI_PITCHES]);
   const onsets = tf.buffer([300, MIDI_PITCHES]);
   // Activate key 39 for the middle 50 frames and last 10 frames.
   for (let i = 25; i < 75; ++i) {
-    frames.set(0.6, i, 39);
+    frames.set(OVER_THRESHOLD_PROB, i, 39);
   }
   for (let i = 90; i < 100; ++i) {
-    frames.set(0.6, i, 39);
+    frames.set(OVER_THRESHOLD_PROB, i, 39);
   }
   // Add an onset for the first occurrence.
-  onsets.set(0.6, 25, 39);
+  onsets.set(OVER_THRESHOLD_PROB, 25, 39);
   // Add an onset for a note that doesn't have an active frame.
-  onsets.set(0.6, 260, 49);
+  onsets.set(OVER_THRESHOLD_PROB, 260, 49);
 
   const expectedNs = NoteSequence.create({
     notes: [
@@ -68,17 +70,17 @@ test('PianorollToNoteSequenceWithOverlappingFrames', (t: test.Test) => {
   const onsets = tf.buffer([100, MIDI_PITCHES]);
   // Activate key 39 for the middle 50 frames and last 10 frames.
   for (let i = 25; i < 75; ++i) {
-    frames.set(0.6, i, 39);
+    frames.set(OVER_THRESHOLD_PROB, i, 39);
   }
   for (let i = 90; i < 100; ++i) {
-    frames.set(0.6, i, 39);
+    frames.set(OVER_THRESHOLD_PROB, i, 39);
   }
   // Add multiple onsets within those frames.
-  onsets.set(0.6, 25, 39);
-  onsets.set(0.6, 30, 39);
+  onsets.set(OVER_THRESHOLD_PROB, 25, 39);
+  onsets.set(OVER_THRESHOLD_PROB, 30, 39);
   // If an onset lasts for multiple frames, it should create only 1 note.
-  onsets.set(0.6, 35, 39);
-  onsets.set(0.6, 36, 39);
+  onsets.set(OVER_THRESHOLD_PROB, 35, 39);
+  onsets.set(OVER_THRESHOLD_PROB, 36, 39);
 
   const expectedNs = NoteSequence.create({
     notes: [
