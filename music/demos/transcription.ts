@@ -33,8 +33,8 @@ const EXPECTED_NS_URL = `${
 
 async function transcribe() {
   const expectedNs: INoteSequence =
-      await fetch(EXPECTED_NS_URL).then((response) => response.json())
-  writeNoteSeqs('expected-ns', [expectedNs], undefined, true)
+      await fetch(EXPECTED_NS_URL).then((response) => response.json());
+  writeNoteSeqs('expected-ns', [expectedNs], undefined, true);
 
   const melSpec: number[][] =
       await fetch(MEL_SPEC_URL).then((response) => response.json());
