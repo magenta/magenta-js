@@ -18,7 +18,7 @@ Download all necessary files from a Magenta.js checkpoint URL.
 
 Example usage:
 
-$ python3 checkpoint_downloader /checkpoint/url/ /path/to/output
+$ python checkpoint_downloader /checkpoint/url/ /path/to/output
 """
 from __future__ import absolute_import
 from __future__ import division
