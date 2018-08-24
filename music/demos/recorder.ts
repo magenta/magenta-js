@@ -18,12 +18,12 @@ recorder.initialize().then(() => {
 recordBtn.addEventListener('click', () => {
   recorder.callbackObject = null;
   recordBtn.textContent = '...';
-  recorder.startRecording();
+  recorder.start();
 });
 
 stopBtn.addEventListener('click', () => {
   recordBtn.textContent = 'Record';
-  const seq = recorder.stopRecording();
+  const seq = recorder.stop();
   if (seq) {
     writeNoteSeqs('output', [seq]);
   }
@@ -34,19 +34,18 @@ startStreamBtn.addEventListener('click', () => {
   recorder.callbackObject = {
     run: (seq: mm.NoteSequence) => {
       if (seq) {
-        console.log(seq);
         new mm.Visualizer(
             seq, document.getElementById('canvas') as HTMLCanvasElement);
       }
     }
   };
   startStreamBtn.textContent = '...';
-  recorder.startRecording();
+  recorder.start();
 });
 
 stopStreamBtnBtn.addEventListener('click', () => {
   startStreamBtn.textContent = 'Record';
-  const seq = recorder.stopRecording();
+  const seq = recorder.stop();
   if (seq) {
     writeNoteSeqs('streamOutput', [seq]);
   }

@@ -25,7 +25,7 @@ export abstract class BaseRecorderCallback {
   /**
    * Will be called for each time a note is recorded.
    *
-   * @param seq The note sequence up to this point
+   * @param seq The note sequence up to this point.
    */
   abstract run(seq: NoteSequence): void;
 }
@@ -39,8 +39,8 @@ export class Recorder {
   public callbackObject: BaseRecorderCallback;
   private firstNoteTimestamp: number;
   private notes: NoteSequence.Note[] = [];
-  private downNotes: {[pitch: number]: NoteSequence.Note} = {};
-
+  private onNotes: Map<number, NoteSequence.Note>;
+  private midiInputs: WebMidi.MIDIInput[] = [];
   /**
    * `Recorder` constructor.
    *
@@ -72,10 +72,7 @@ export class Recorder {
     const inputs = midi.inputs.values();
     for (let input = inputs.next(); input && !input.done;
          input = inputs.next()) {
-      const midiInput = input.value;
-      midiInput.onmidimessage = (event) => {
-        this.midiMessageReceived(event);
-      };
+      this.midiInputs.push(input.value);
     }
   }
 
@@ -84,15 +81,38 @@ export class Recorder {
   }
 
   /**
-   * Starts listening to MIDI events and records any messages received.
+   * Returns a list of all the currently connected MIDI inputs.
    */
-  startRecording() {
-    this.recording = true;
+  getMIDIInputs(): WebMidi.MIDIInput[] {
+    return this.midiInputs;
+  }
 
+  /**
+   * Starts listening to MIDI events and records any messages received.
+   *
+   * @param input An optional MIDIInput, that specifies which input
+   * to start recording the MIDI. If not specified, all available inputs
+   * will be used.
+   */
+  start(midiInput?: WebMidi.MIDIInput) {
+    // Start listening to MIDI messages.
+    if (midiInput) {
+      midiInput.onmidimessage = (event) => {
+        this.midiMessageReceived(event);
+      };
+    } else {
+      for (const input of this.midiInputs) {
+        input.onmidimessage = (event) => {
+          this.midiMessageReceived(event);
+        };
+      }
+    }
+
+    this.recording = true;
     // Reset all the things needed for the recording.
     this.firstNoteTimestamp = undefined;
     this.notes = [];
-    this.downNotes = {};
+    this.onNotes = new Map<number, NoteSequence.Note>();
   }
 
   /**
@@ -101,11 +121,24 @@ export class Recorder {
    * will be ignored.
    * @returns a `NoteSequence` containing all the recorded notes.
    */
-  stopRecording(): NoteSequence {
+  stop(): NoteSequence {
     this.recording = false;
+
+    const timeStamp: number = Date.now();
+    // End any open notes.
+    this.onNotes.forEach((pitch, note) => {
+      this.noteOff(note, timeStamp);
+    });
+
+    // Stop listening to MIDI messages.
+    for (const input of this.midiInputs) {
+      input.onmidimessage = null;
+    }
+
     if (this.notes.length === 0) {
       return null;
     }
+
     return this.getNoteSequence();
   }
 
@@ -129,40 +162,56 @@ export class Recorder {
       return;
     }
 
+    // Can't rely on all apps that simulate MIDI to send the timestamp
+    // correctly. If one doesn't exist, take the current time.
+    const timeStamp: number = event.timeStamp || Date.now();
+
     // Save the first note.
     if (this.firstNoteTimestamp === undefined) {
-      this.firstNoteTimestamp = event.timeStamp;
+      this.firstNoteTimestamp = timeStamp;
     }
 
     // MIDI commands we care about. See
     // tslint:disable-next-line
     // http://webaudio.github.io/web-midi-api/#a-simple-monophonic-sine-wave-midi-synthesizer.
-    const NOTE_DOWN = 9;
-    const NOTE_UP = 8;
+    const NOTE_ON = 9;
+    const NOTE_OFF = 8;
 
     const cmd = event.data[0] >> 4;
     const pitch = event.data[1];
     const velocity = (event.data.length > 2) ? event.data[2] : 1;
-    if (cmd === NOTE_DOWN) {
-      const note = new NoteSequence.Note();
-      note.pitch = pitch;
-      note.startTime = (event.timeStamp - this.firstNoteTimestamp) / 1000;
-      note.velocity = velocity;
-      // Save this note so that we can finish it when we receive the note up
-      this.downNotes[pitch] = note;
-    } else if (cmd === NOTE_UP) {
-      // Find the note that was originall pressed to finish it.
-      const note = this.downNotes[pitch];
-      if (note) {
-        // Notes are saved in seconds, timestamps are in milliseconds.
-        note.endTime = (event.timeStamp - this.firstNoteTimestamp) / 1000;
-        this.notes.push(note);
-      }
-      this.downNotes[pitch] = null;
-
+    if (cmd === NOTE_ON) {
+      this.noteOn(pitch, velocity, timeStamp);
+    } else if (cmd === NOTE_OFF) {
+      this.noteOff(pitch, timeStamp);
       if (this.callbackObject) {
         this.callbackObject.run(this.getNoteSequence());
       }
     }
+  }
+
+  private noteOn(pitch: number, velocity: number, timeStamp: number) {
+    const MILLIS_PER_SECOND = 1000;
+
+    const note = new NoteSequence.Note();
+    note.pitch = pitch;
+    note.startTime = (timeStamp - this.firstNoteTimestamp) / MILLIS_PER_SECOND;
+    note.velocity = velocity;
+
+    // Save this note so that we can finish it when we receive the note up
+    this.onNotes.set(pitch, note);
+  }
+
+  private noteOff(pitch: number, timeStamp: number) {
+    const MILLIS_PER_SECOND = 1000;
+
+    // Find the note that was originally pressed to finish it.
+    const note = this.onNotes.get(pitch);
+    if (note) {
+      // Notes are saved in seconds, timestamps are in milliseconds.
+      note.endTime = (timeStamp - this.firstNoteTimestamp) / MILLIS_PER_SECOND;
+      this.notes.push(note);
+    }
+    this.onNotes.delete(pitch);
   }
 }
