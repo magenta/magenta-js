@@ -81,7 +81,8 @@ export class Recorder {
   }
 
   /**
-   * Returns a list of all the currently connected MIDI inputs.
+   * Returns a list of all the MIDI inputs that are currently available to
+   * record.
    */
   getMIDIInputs(): WebMidi.MIDIInput[] {
     return this.midiInputs;
