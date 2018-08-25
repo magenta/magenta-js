@@ -3,6 +3,10 @@
 
 Short link: https://goo.gl/magenta/js-checkpoints
 
+You can load the pre-trained checkpoints below in your app from our server using
+the links provided. If you would like to download the checkpoint to use locally
+or host yourself, use our [checkpoint downloader script](/scripts/checkpoint_downloader.py).
+
 ## JSON Index
 
 A JSON index of available checkpoints is at

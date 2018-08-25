@@ -42,6 +42,7 @@ function getBidiLstm() {
     units: LSTM_UNITS,
     returnSequences: true,
     unitForgetBias: true,
+    recurrentActivation: 'tanh',
     trainable: false
   }) as tf.RNN;
   return tf.layers.bidirectional(
@@ -117,14 +118,17 @@ export class OnsetsAndFrames {
    * @returns A `NoteSequence` containing the transcribed piano performance.
    */
   // tslint:enable:max-line-length
-  async transcribeFromMelSpec(melSpec: number[][]) {
+  async transcribeFromMelSpec(melSpec: number[][], batchLength: number) {
     if (!this.isInitialized()) {
       this.initialize();
     }
 
     const [frameProbs, onsetProbs, velocities] = tf.tidy(() => {
       // Add batch dim.
-      const melSpecBatch = tf.tensor2d(melSpec).expandDims(0).expandDims(-1);
+      const numBatches = Math.floor(melSpec.length / batchLength);
+      const melSpecBatch =
+          tf.tensor2d(melSpec.slice(0, numBatches * batchLength))
+              .as4D(numBatches, batchLength, -1, 1);
       const onsetProbs = this.onsetsModel.predict(melSpecBatch) as tf.Tensor3D;
       const scaledVelocities =
           this.velocityModel.predict(melSpecBatch) as tf.Tensor3D;
@@ -252,6 +256,7 @@ export class OnsetsAndFrames {
       this.onsetsModel = onsetsModel;
       this.velocityModel = velocityModel;
       this.activationModel = activationModel;
+      debugger
     });
   }
 
