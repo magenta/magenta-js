@@ -41,7 +41,7 @@ function getBidiLstm() {
   const lstm = tf.layers.lstm({
     units: LSTM_UNITS,
     returnSequences: true,
-    unitForgetBias: true,
+    recurrentActivation: 'sigmoid',
     trainable: false
   }) as tf.RNN;
   return tf.layers.bidirectional(
@@ -137,6 +137,7 @@ export class OnsetsAndFrames {
           this.activationModel.predict(melSpecBatch) as tf.Tensor3D;
       const frameProbs =
           this.frameModel.predict([onsetProbs, activationProbs]) as tf.Tensor3D;
+
       // Squeeze batch dims.
       return [
         frameProbs.squeeze() as tf.Tensor2D, onsetProbs.squeeze(),
@@ -186,9 +187,9 @@ export class OnsetsAndFrames {
 
     function lstmWeights(scope: string) {
       // The gate ordering differs in Keras.
-      const reorderGates = ((weights: tf.Tensor) => {
+      const reorderGates = ((weights: tf.Tensor, forgetBias = 0) => {
         const [i, c, f, o] = tf.split(weights, 4, -1);
-        return tf.concat([i, f, c, o], -1);
+        return tf.concat([i, f.add(tf.scalar(forgetBias)), c, o], -1);
       });
       // The kernel is split into the input and recurrent kernels in Keras.
       const splitAndReorderKernel =
@@ -205,9 +206,11 @@ export class OnsetsAndFrames {
           tf.Tensor2D);
       return [
         fwKernel, fwRecurrentKernel,
-        reorderGates(getVar(`${scope}/bidirectional_rnn/fw/lstm_cell/bias`)),
+        reorderGates(
+            getVar(`${scope}/bidirectional_rnn/fw/lstm_cell/bias`), 1.0),
         bwKernel, bwRecurrentKernel,
-        reorderGates(getVar(`${scope}/bidirectional_rnn/bw/lstm_cell/bias`))
+        reorderGates(
+            getVar(`${scope}/bidirectional_rnn/bw/lstm_cell/bias`), 1.0)
       ];
     }
 

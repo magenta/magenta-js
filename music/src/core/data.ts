@@ -24,7 +24,6 @@
  * Imports
  */
 import * as tf from '@tensorflow/tfjs-core';
-import {isNullOrUndefined} from 'util';
 
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
@@ -191,7 +190,7 @@ export class DrumsConverter extends DataConverter {
 
   constructor(args: DrumsConverterArgs) {
     super(args);
-    this.pitchClasses = isNullOrUndefined(args.pitchClasses) ?
+    this.pitchClasses = args.pitchClasses == undefined  ?
         DEFAULT_DRUM_PITCH_CLASSES :
         args.pitchClasses;
     this.pitchToClass = new Map<number, number>();
