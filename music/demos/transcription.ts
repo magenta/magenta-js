@@ -49,8 +49,8 @@ async function transcribe() {
 
   document.getElementById('ns-match').innerHTML =
       notesMatch(ns.notes, expectedNs.notes) ?
-      '<span style="color:green>TRUE</span>' :
-      '<b><span style="color:green>FALSE</span>></b>';
+      '<span style="color:green">TRUE</span>' :
+      '<b><span style="color:red">FALSE</span>></b>';
 }
 
 try {
