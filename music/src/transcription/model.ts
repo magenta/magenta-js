@@ -33,7 +33,8 @@ const SPEC_HOP_LENGTH = 512;
 export const FRAME_LENGTH_SECONDS = SPEC_HOP_LENGTH / SAMPLE_RATE;
 
 const LSTM_UNITS = 128;
-const BATCH_LENGTH = 125
+const BATCH_LENGTH = 125;
+const RF_PAD = 3;
 
 /**
  * Helper function to create a Bidirecitonal LSTM layer.
@@ -135,8 +136,21 @@ export class OnsetsAndFrames {
           tf.tensor2d(melSpec.slice(0, BATCH_LENGTH * batchSize))
               .as3D(batchSize, BATCH_LENGTH, -1);
 
-      const RF_PAD = 3
       // Pad batches.
+      const splitBatch = tf.unstack(melSpecBatch);
+      const firstAndLast =
+          tf.concat(
+                [
+                  splitBatch[0], splitBatch[1].slice(0, RF_PAD),
+                  splitBatch[batchSize - 2].slice(
+                      BATCH_LENGTH - RF_PAD, RF_PAD),
+                  splitBatch[batchSize - 1]
+                ],
+                0)
+              .as4D(2, BATCH_LENGTH + RF_PAD, -1, 1);
+      return this.processBatch(firstAndLast, true);
+
+      /*
       const leftPad = tf.slice(melSpecBatch, [0, BATCH_LENGTH - RF_PAD], [
                           batchSize - 1, -1
                         ]).pad([[1, 0], [0, 0], [0, 0]]);
@@ -145,39 +159,10 @@ export class OnsetsAndFrames {
       ]);
       const melSpecPaddedBatch =
           tf.concat([leftPad, melSpecBatch, rightPad], 1).expandDims(-1);
-
-      debugger;
-
-      const flattenAndCropBatch = ((t: tf.Tensor3D) => {
-        const c = tf.slice(t, [0, RF_PAD], [-1, BATCH_LENGTH]);
-        return tf.reshape(c, [1, batchSize * BATCH_LENGTH, -1]) as tf.Tensor3D;
-      })
-
-      // Flatten the output of the onsets CNN before passing to the RNN.
-      const onsetProbs =
-          this.onsetsRnn.predict(flattenAndCropBatch(
-              this.onsetsCnn.predict(melSpecPaddedBatch) as tf.Tensor3D)) as
-          tf.Tensor3D;
-
-      const activationProbs = flattenAndCropBatch(
-          this.activationCnn.predict(melSpecPaddedBatch) as tf.Tensor3D);
-      const frameProbs =
-          this.frameRnn.predict(tf.concat([onsetProbs, activationProbs], -1)) as
-          tf.Tensor3D;
-
-      const scaledVelocities = flattenAndCropBatch(
-          this.velocityCnn.predict(melSpecPaddedBatch) as tf.Tensor3D);
-      // Translates a velocity estimate to a MIDI velocity value.
-      const velocities = tf.clipByValue(scaledVelocities, 0., 1.)
-                             .mul(tf.scalar(80.))
-                             .add(tf.scalar(10.))
-                             .toInt();
-
-      // Squeeze batch dims.
-      return [
-        tf.unstack(frameProbs)[0], tf.unstack(onsetProbs)[0],
-        tf.unstack(velocities)[0]
-      ];
+      const melSpecPaddedBatch =
+          melSpecBatch.pad([[0, 0], [RF_PAD, RF_PAD], [RF_PAD + 1, RF_PAD + 1]])
+              .expandDims(-1);
+      */
     });
 
     const ns = pianorollToNoteSequence(
@@ -187,6 +172,39 @@ export class OnsetsAndFrames {
     onsetProbs.dispose();
     velocities.dispose();
     return ns;
+  }
+
+  private processBatch(batch: tf.Tensor4D, firstAndLast: boolean) {
+    const flattenAndCropBatch = ((t: tf.Tensor3D) => {
+      if (firstAndLast) {
+        const [first, last] = tf.unstack(t);
+        return tf.concat(
+                     [first.slice(0, BATCH_LENGTH), last.slice(RF_PAD, -1)], 0)
+                   .expandDims(0) as tf.Tensor3D;
+      }
+      const c = tf.slice(t, [0, RF_PAD], [-1, BATCH_LENGTH]);
+      return tf.reshape(c, [1, batch.shape[0] * BATCH_LENGTH, -1]) as
+          tf.Tensor3D;
+    });
+
+    // Flatten the output of the onsets CNN before passing to the RNN.
+    const onsetProbs =
+        this.onsetsRnn.predict(flattenAndCropBatch(
+            this.onsetsCnn.predict(batch) as tf.Tensor3D)) as tf.Tensor3D;
+    const activationProbs =
+        flattenAndCropBatch(this.activationCnn.predict(batch) as tf.Tensor3D);
+    const frameProbs =
+        this.frameRnn.predict(tf.concat([onsetProbs, activationProbs], -1)) as
+        tf.Tensor3D;
+    const scaledVelocities =
+        flattenAndCropBatch(this.velocityCnn.predict(batch) as tf.Tensor3D);
+    // Translates a velocity estimate to a MIDI velocity value.
+    const velocities = tf.clipByValue(scaledVelocities, 0., 1.)
+                           .mul(tf.scalar(80.))
+                           .add(tf.scalar(10.))
+                           .toInt();
+    // Squeeze batch dims.
+    return [frameProbs.squeeze(), onsetProbs.squeeze(), velocities.squeeze()];
   }
 
   /**
@@ -307,7 +325,7 @@ export class OnsetsAndFrames {
       kernelSize: [3, 3],
       activation: 'linear',  // no-op
       useBias: false,
-      padding: 'same',  // Assume the input is pre-padded
+      padding: 'same',
       dilationRate: [1, 1],
       inputShape: [null, 229, 1],
       trainable: false
