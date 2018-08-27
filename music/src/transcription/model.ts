@@ -33,6 +33,7 @@ const SPEC_HOP_LENGTH = 512;
 export const FRAME_LENGTH_SECONDS = SPEC_HOP_LENGTH / SAMPLE_RATE;
 
 const LSTM_UNITS = 128;
+const BATCH_LENGTH = 250
 
 /**
  * Helper function to create a Bidirecitonal LSTM layer.
@@ -41,8 +42,7 @@ function getBidiLstm() {
   const lstm = tf.layers.lstm({
     units: LSTM_UNITS,
     returnSequences: true,
-    unitForgetBias: true,
-    recurrentActivation: 'tanh',
+    recurrentActivation: 'sigmoid',
     trainable: false
   }) as tf.RNN;
   return tf.layers.bidirectional(
@@ -118,17 +118,16 @@ export class OnsetsAndFrames {
    * @returns A `NoteSequence` containing the transcribed piano performance.
    */
   // tslint:enable:max-line-length
-  async transcribeFromMelSpec(melSpec: number[][], batchLength: number) {
+  async transcribeFromMelSpec(melSpec: number[][], batchSize: number) {
     if (!this.isInitialized()) {
       this.initialize();
     }
 
     const [frameProbs, onsetProbs, velocities] = tf.tidy(() => {
       // Add batch dim.
-      const numBatches = Math.floor(melSpec.length / batchLength);
       const melSpecBatch =
-          tf.tensor2d(melSpec.slice(0, numBatches * batchLength))
-              .as4D(numBatches, batchLength, -1, 1);
+          tf.tensor2d(melSpec.slice(0, BATCH_LENGTH * batchSize))
+              .as4D(batchSize, BATCH_LENGTH, -1, 1);
       const onsetProbs = this.onsetsModel.predict(melSpecBatch) as tf.Tensor3D;
       const scaledVelocities =
           this.velocityModel.predict(melSpecBatch) as tf.Tensor3D;
@@ -141,6 +140,7 @@ export class OnsetsAndFrames {
           this.activationModel.predict(melSpecBatch) as tf.Tensor3D;
       const frameProbs =
           this.frameModel.predict([onsetProbs, activationProbs]) as tf.Tensor3D;
+
       // Squeeze batch dims.
       return [
         frameProbs.squeeze() as tf.Tensor2D, onsetProbs.squeeze(),
@@ -190,9 +190,9 @@ export class OnsetsAndFrames {
 
     function lstmWeights(scope: string) {
       // The gate ordering differs in Keras.
-      const reorderGates = ((weights: tf.Tensor) => {
+      const reorderGates = ((weights: tf.Tensor, forgetBias = 0) => {
         const [i, c, f, o] = tf.split(weights, 4, -1);
-        return tf.concat([i, f, c, o], -1);
+        return tf.concat([i, f.add(tf.scalar(forgetBias)), c, o], -1);
       });
       // The kernel is split into the input and recurrent kernels in Keras.
       const splitAndReorderKernel =
@@ -209,9 +209,11 @@ export class OnsetsAndFrames {
           tf.Tensor2D);
       return [
         fwKernel, fwRecurrentKernel,
-        reorderGates(getVar(`${scope}/bidirectional_rnn/fw/lstm_cell/bias`)),
+        reorderGates(
+            getVar(`${scope}/bidirectional_rnn/fw/lstm_cell/bias`), 1.0),
         bwKernel, bwRecurrentKernel,
-        reorderGates(getVar(`${scope}/bidirectional_rnn/bw/lstm_cell/bias`))
+        reorderGates(
+            getVar(`${scope}/bidirectional_rnn/bw/lstm_cell/bias`), 1.0)
       ];
     }
 

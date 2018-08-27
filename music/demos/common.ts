@@ -393,3 +393,29 @@ function createSoundFontPlayer(seq: mm.INoteSequence) {
   div.appendChild(button);
   return div;
 }
+
+function compareNotes(a: mm.NoteSequence.INote, b: mm.NoteSequence.INote) {
+  if (a.startTime < b.startTime) {
+    return -1;
+  }
+  if (a.endTime < b.endTime) {
+    return -1
+  }
+  return a.pitch - b.pitch;
+};
+
+export function notesMatch(
+    a: mm.NoteSequence.INote[], b: mm.NoteSequence.INote[]) {
+  if (a.length != b.length) {
+    return false;
+  }
+  a.sort(compareNotes)
+  b.sort(compareNotes)
+  for (let i = 0; i < a.length; ++i) {
+    if (a[i].startTime != b[i].startTime || a[i].endTime != b[i].endTime ||
+        a[i].velocity != b[i].velocity || a[i].pitch != b[i].pitch) {
+      return false;
+    }
+  }
+  return true;
+}

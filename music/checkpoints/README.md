@@ -3,9 +3,22 @@
 
 Short link: https://goo.gl/magenta/js-checkpoints
 
+<<<<<<< HEAD
 You can load the pre-trained checkpoints below in your app from our server using
 the links provided. If you would like to download the checkpoint to use locally
 or host yourself, use our [checkpoint downloader script](/scripts/checkpoint_downloader.py).
+=======
+You can load the pre-trained checkpoints below in your app directly from our
+server with the links provided. If you would like to download the checkpoint 
+to use locally or host yourself, pass the link to our 
+[checkpoint downloader script](/scripts/checkpoint_downloader.py).
+
+For example, to download the `basic_rnn` checkpoint, you would run:
+
+```bash
+python ./scripts/checkpoint_downloader https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/basic_rnn ./my-checkpoints/
+```
+>>>>>>> oaf
 
 ## JSON Index
 

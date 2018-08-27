@@ -19,8 +19,7 @@ import * as tf from '@tensorflow/tfjs-core';
 import * as mm from '../src/index';
 import {INoteSequence} from '../src/index';
 
-import {CHECKPOINTS_DIR} from './common';
-import {writeMemory, writeNoteSeqs, writeTimer} from './common';
+import {CHECKPOINTS_DIR, notesMatch, writeMemory, writeNoteSeqs, writeTimer} from './common';
 
 const TRANS_CKPT_DIR = `${CHECKPOINTS_DIR}/transcription`
 const CKPT_URL = `${TRANS_CKPT_DIR}/onsets_frames_htk0`;
@@ -43,10 +42,15 @@ async function transcribe() {
   await oaf.initialize();
 
   const start = performance.now();
-  const ns = await oaf.transcribeFromMelSpec(melSpec, 625);
+  const ns = await oaf.transcribeFromMelSpec(melSpec, 1);
   writeTimer('transcription-time', start);
   writeNoteSeqs('transcription-results', [ns], undefined, true);
   oaf.dispose();
+
+  document.getElementById('ns-match').innerHTML =
+      notesMatch(ns.notes, expectedNs.notes) ?
+      '<span style="color:green">TRUE</span>' :
+      '<b><span style="color:red">FALSE</span>></b>';
 }
 
 try {
