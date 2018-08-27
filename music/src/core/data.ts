@@ -190,7 +190,7 @@ export class DrumsConverter extends DataConverter {
 
   constructor(args: DrumsConverterArgs) {
     super(args);
-    this.pitchClasses = args.pitchClasses == undefined  ?
+    this.pitchClasses = args.pitchClasses === undefined  ?
         DEFAULT_DRUM_PITCH_CLASSES :
         args.pitchClasses;
     this.pitchToClass = new Map<number, number>();

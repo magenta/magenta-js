@@ -19,8 +19,7 @@ import * as tf from '@tensorflow/tfjs-core';
 import * as mm from '../src/index';
 import {INoteSequence} from '../src/index';
 
-import {CHECKPOINTS_DIR} from './common';
-import {writeMemory, writeNoteSeqs, writeTimer} from './common';
+import {CHECKPOINTS_DIR, notesMatch, writeMemory, writeNoteSeqs, writeTimer} from './common';
 
 const TRANS_CKPT_DIR = `${CHECKPOINTS_DIR}/transcription`
 const CKPT_URL = `${TRANS_CKPT_DIR}/onsets_frames_htk0`;
@@ -30,33 +29,6 @@ const MEL_SPEC_URL = `${
 const EXPECTED_NS_URL = `${
     TRANS_CKPT_DIR}/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl.melhtk0-250frames.ns.json`;
 // tslint:enable:max-line-length
-
-function sortNotes(notes: mm.NoteSequence.INote[]) {
-  notes.sort((a, b) => {
-    if (a.startTime < b.startTime) {
-      return -1;
-    }
-    if (a.endTime < b.endTime) {
-      return -1
-    }
-    return a.pitch - b.pitch;
-  });
-}
-
-function notesMatch(a: mm.NoteSequence.INote[], b: mm.NoteSequence.INote[]) {
-  if (a.length != b.length) {
-    return false;
-  }
-  sortNotes(a);
-  sortNotes(b);
-  for (let i = 0; i < a.length; ++i) {
-    if (a[i].startTime != b[i].startTime || a[i].endTime != b[i].endTime ||
-        a[i].velocity != b[i].velocity || a[i].pitch != b[i].pitch) {
-      return false;
-    }
-  }
-  return true;
-}
 
 async function transcribe() {
   const expectedNs: INoteSequence =
@@ -77,8 +49,8 @@ async function transcribe() {
 
   document.getElementById('ns-match').innerHTML =
       notesMatch(ns.notes, expectedNs.notes) ?
-      '<font color="green">TRUE</font>' :
-      '<b><font color="red">FALSE</font></b>';
+      '<span style="color:green>TRUE</span>' :
+      '<b><span style="color:green>FALSE</span>></b>';
 }
 
 try {
