@@ -33,20 +33,24 @@ const SPEC_HOP_LENGTH = 512;
 export const FRAME_LENGTH_SECONDS = SPEC_HOP_LENGTH / SAMPLE_RATE;
 
 const LSTM_UNITS = 128;
-const BATCH_LENGTH = 250
+const BATCH_LENGTH = 125
 
 /**
  * Helper function to create a Bidirecitonal LSTM layer.
  */
-function getBidiLstm() {
+function getBidiLstm(inputShape?: number[]) {
   const lstm = tf.layers.lstm({
     units: LSTM_UNITS,
     returnSequences: true,
     recurrentActivation: 'sigmoid',
     trainable: false
   }) as tf.RNN;
-  return tf.layers.bidirectional(
-      {layer: lstm, mergeMode: 'concat', trainable: false});
+  return tf.layers.bidirectional({
+    layer: lstm,
+    mergeMode: 'concat',
+    inputShape: inputShape,
+    trainable: false
+  });
 }
 
 /**
@@ -56,10 +60,11 @@ export class OnsetsAndFrames {
   private checkpointURL: string;
   private initialized: boolean;
 
-  private onsetsModel: tf.Sequential;
-  private velocityModel: tf.Sequential;
-  private activationModel: tf.Sequential;
-  private frameModel: tf.Model;
+  private onsetsCnn: tf.Sequential;
+  private onsetsRnn: tf.Sequential;
+  private activationCnn: tf.Sequential;
+  private frameRnn: tf.Sequential;
+  private velocityCnn: tf.Sequential;
 
   /**
    * `OnsetsAndFrames` constructor.
@@ -94,10 +99,11 @@ export class OnsetsAndFrames {
     if (!this.initialized) {
       return;
     }
-    this.onsetsModel.dispose();
-    this.velocityModel.dispose();
-    this.activationModel.dispose();
-    this.frameModel.dispose();
+    this.onsetsCnn.dispose();
+    this.onsetsRnn.dispose();
+    this.activationCnn.dispose();
+    this.frameRnn.dispose();
+    this.velocityCnn.dispose();
     this.initialized = false;
   }
 
@@ -127,24 +133,50 @@ export class OnsetsAndFrames {
       // Add batch dim.
       const melSpecBatch =
           tf.tensor2d(melSpec.slice(0, BATCH_LENGTH * batchSize))
-              .as4D(batchSize, BATCH_LENGTH, -1, 1);
-      const onsetProbs = this.onsetsModel.predict(melSpecBatch) as tf.Tensor3D;
-      const scaledVelocities =
-          this.velocityModel.predict(melSpecBatch) as tf.Tensor3D;
+              .as3D(batchSize, BATCH_LENGTH, -1);
+
+      const RF_PAD = 3
+      // Pad batches.
+      const leftPad = tf.slice(melSpecBatch, [0, BATCH_LENGTH - RF_PAD], [
+                          batchSize - 1, -1
+                        ]).pad([[1, 0], [0, 0], [0, 0]]);
+      const rightPad = tf.slice(melSpecBatch, [1, 0], [-1, RF_PAD]).pad([
+        [0, 1], [0, 0], [0, 0]
+      ]);
+      const melSpecPaddedBatch =
+          tf.concat([leftPad, melSpecBatch, rightPad], 1).expandDims(-1);
+
+      debugger;
+
+      const flattenAndCropBatch = ((t: tf.Tensor3D) => {
+        const c = tf.slice(t, [0, RF_PAD], [-1, BATCH_LENGTH]);
+        return tf.reshape(c, [1, batchSize * BATCH_LENGTH, -1]) as tf.Tensor3D;
+      })
+
+      // Flatten the output of the onsets CNN before passing to the RNN.
+      const onsetProbs =
+          this.onsetsRnn.predict(flattenAndCropBatch(
+              this.onsetsCnn.predict(melSpecPaddedBatch) as tf.Tensor3D)) as
+          tf.Tensor3D;
+
+      const activationProbs = flattenAndCropBatch(
+          this.activationCnn.predict(melSpecPaddedBatch) as tf.Tensor3D);
+      const frameProbs =
+          this.frameRnn.predict(tf.concat([onsetProbs, activationProbs], -1)) as
+          tf.Tensor3D;
+
+      const scaledVelocities = flattenAndCropBatch(
+          this.velocityCnn.predict(melSpecPaddedBatch) as tf.Tensor3D);
       // Translates a velocity estimate to a MIDI velocity value.
       const velocities = tf.clipByValue(scaledVelocities, 0., 1.)
                              .mul(tf.scalar(80.))
                              .add(tf.scalar(10.))
                              .toInt();
-      const activationProbs =
-          this.activationModel.predict(melSpecBatch) as tf.Tensor3D;
-      const frameProbs =
-          this.frameModel.predict([onsetProbs, activationProbs]) as tf.Tensor3D;
 
       // Squeeze batch dims.
       return [
-        frameProbs.squeeze() as tf.Tensor2D, onsetProbs.squeeze(),
-        velocities.squeeze()
+        tf.unstack(frameProbs)[0], tf.unstack(onsetProbs)[0],
+        tf.unstack(velocities)[0]
       ];
     });
 
@@ -222,104 +254,100 @@ export class OnsetsAndFrames {
     }
 
     tf.tidy(() => {
-      const onsetsModel = this.getAcousticModel('sigmoid', true);
-      onsetsModel.setWeights(convWeights('onsets').concat(
-          lstmWeights('onsets'), denseWeights('onsets/onset_probs')));
+      // Onsets model has a conv net, followed by an LSTM. We separate the two
+      // parts so that we can process the convolution in batch and then flatten
+      // before passing through the LSTM.
+      const onsetsCnn = this.getacousticCnn();
+      onsetsCnn.setWeights(convWeights('onsets'));
+      this.onsetsCnn = onsetsCnn;
 
-      const velocityModel = this.getAcousticModel(undefined, false);
-      velocityModel.setWeights(
+      const onsetsRnn = tf.sequential();
+      onsetsRnn.add(getBidiLstm([null, onsetsCnn.outputShape[2] as number]));
+      onsetsRnn.add(tf.layers.dense(
+          {units: MIDI_PITCHES, activation: 'sigmoid', trainable: false}));
+      onsetsRnn.setWeights(
+          lstmWeights('onsets').concat(denseWeights('onsets/onset_probs')));
+      this.onsetsRnn = onsetsRnn;
+
+      const activationCnn = this.getacousticCnn();
+      activationCnn.add(tf.layers.dense(
+          {units: MIDI_PITCHES, activation: 'sigmoid', trainable: false}));
+      activationCnn.setWeights(
+          convWeights('frame').concat(denseWeights('frame/activation_probs')));
+      this.activationCnn = activationCnn;
+
+      // Frame RNN takes concatenated ouputs of onsetsRnn and activationCnn
+      // as its inputs.
+      const frameRnn = tf.sequential();
+      frameRnn.add(getBidiLstm([null, MIDI_PITCHES * 2]));
+      frameRnn.add(tf.layers.dense(
+          {units: MIDI_PITCHES, activation: 'sigmoid', trainable: false}));
+      frameRnn.setWeights(
+          lstmWeights('frame').concat(denseWeights('frame/frame_probs')));
+      this.frameRnn = frameRnn;
+
+      const velocityCnn = this.getacousticCnn();
+      velocityCnn.add(tf.layers.dense(
+          {units: MIDI_PITCHES, activation: 'linear', trainable: false}));
+      velocityCnn.setWeights(
           convWeights('velocity')
               .concat(denseWeights('velocity/onset_velocities')));
-
-      const activationModel = this.getAcousticModel('sigmoid', false);
-      activationModel.setWeights(
-          convWeights('frame').concat(denseWeights('frame/activation_probs')));
-
-      const onsetsInput =
-          tf.input({batchShape: onsetsModel.outputShape as number[]});
-      const activationInput =
-          tf.input({batchShape: activationModel.outputShape as number[]});
-      let net = tf.layers.concatenate().apply([onsetsInput, activationInput]);
-
-      net = getBidiLstm().apply(net);
-      net = tf.layers
-                .dense({
-                  units: MIDI_PITCHES,
-                  activation: 'sigmoid',
-                  trainable: false
-                })
-                .apply(net) as tf.SymbolicTensor;
-      const frameModel =
-          tf.model({inputs: [onsetsInput, activationInput], outputs: net});
-      frameModel.trainable = false;
-      frameModel.setWeights(
-          lstmWeights('frame').concat(denseWeights('frame/frame_probs')));
-      this.frameModel = frameModel;
-      this.onsetsModel = onsetsModel;
-      this.velocityModel = velocityModel;
-      this.activationModel = activationModel;
-      debugger
+      this.velocityCnn = velocityCnn
     });
   }
 
   /**
    * Returns an acoustic stack without setting variables.
    */
-  private getAcousticModel(finalActivation: string, hasLstm: boolean) {
-    const acousticModel = tf.sequential();
+  private getacousticCnn() {
+    const acousticCnn = tf.sequential();
     // tslint:disable-next-line:no-any
     const convConfig: any = {
       filters: 32,
       kernelSize: [3, 3],
-      activation: 'linear',
+      activation: 'linear',  // no-op
       useBias: false,
-      padding: 'same',
+      padding: 'same',  // Assume the input is pre-padded
       dilationRate: [1, 1],
       inputShape: [null, 229, 1],
       trainable: false
     };
     const batchNormConfig = {scale: false, trainable: false};
 
-    acousticModel.add(tf.layers.conv2d(convConfig));
-    acousticModel.add(tf.layers.batchNormalization(batchNormConfig));
-    acousticModel.add(tf.layers.activation({activation: 'relu'}));
+    acousticCnn.add(tf.layers.conv2d(convConfig));
+    acousticCnn.add(tf.layers.batchNormalization(batchNormConfig));
+    acousticCnn.add(tf.layers.activation({activation: 'relu'}));
 
     convConfig.inputShape = null;
-    acousticModel.add(tf.layers.conv2d(convConfig));
-    acousticModel.add(tf.layers.batchNormalization(batchNormConfig));
-    acousticModel.add(tf.layers.activation({activation: 'relu'}));
-    acousticModel.add(
+    acousticCnn.add(tf.layers.conv2d(convConfig));
+    acousticCnn.add(tf.layers.batchNormalization(batchNormConfig));
+    acousticCnn.add(tf.layers.activation({activation: 'relu'}));
+    acousticCnn.add(
         tf.layers.maxPooling2d({poolSize: [1, 2], strides: [1, 2]}));
 
     convConfig.filters = 64;
-    acousticModel.add(tf.layers.conv2d(convConfig));
-    acousticModel.add(tf.layers.batchNormalization(batchNormConfig));
-    acousticModel.add(tf.layers.activation({activation: 'relu'}));
-    acousticModel.add(
+    acousticCnn.add(tf.layers.conv2d(convConfig));
+    acousticCnn.add(tf.layers.batchNormalization(batchNormConfig));
+    acousticCnn.add(tf.layers.activation({activation: 'relu'}));
+    acousticCnn.add(
         tf.layers.maxPooling2d({poolSize: [1, 2], strides: [1, 2]}));
 
-    const dims = acousticModel.outputShape as number[];
-    acousticModel.add(
+    const dims = acousticCnn.outputShape as number[];
+    acousticCnn.add(
         tf.layers.reshape({targetShape: [dims[1], dims[2] * dims[3]]}));
 
-    acousticModel.add(
+    acousticCnn.add(
         tf.layers.dense({units: 512, activation: 'relu', trainable: false}));
 
-    if (hasLstm) {
-      acousticModel.add(getBidiLstm());
-    }
-
-    acousticModel.add(tf.layers.dense(
-        {units: MIDI_PITCHES, activation: finalActivation, trainable: false}));
-
-    return acousticModel;
+    return acousticCnn;
   }
 }
 
 /**
  * Converts the model predictions to a NoteSequence.
  *
- * @param frameProbs Probabilities of an active frame, shaped `[frame, pitch]`.
+ * @param frameProbs Probabilities of an active frame, shaped `[frame,
+ * pitch]`.
  * @param onsetProbs Probabilities of an onset, shaped `[frame, pitch]`.
  * @param velocityValues Predicted velocities in the range [0, 127], shaped
  * `[frame, pitch]`.
