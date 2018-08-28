@@ -246,7 +246,7 @@ export class OnsetsAndFrames {
       // Onsets model has a conv net, followed by an LSTM. We separate the two
       // parts so that we can process the convolution in batch and then
       // flatten before passing through the LSTM.
-      const onsetsCnn = this.getacousticCnn();
+      const onsetsCnn = this.getAcousticCnn();
       onsetsCnn.setWeights(convWeights('onsets'));
       this.onsetsCnn = onsetsCnn;
 
@@ -258,7 +258,7 @@ export class OnsetsAndFrames {
           lstmWeights('onsets').concat(denseWeights('onsets/onset_probs')));
       this.onsetsRnn = onsetsRnn;
 
-      const activationCnn = this.getacousticCnn();
+      const activationCnn = this.getAcousticCnn();
       activationCnn.add(tf.layers.dense(
           {units: MIDI_PITCHES, activation: 'sigmoid', trainable: false}));
       activationCnn.setWeights(
@@ -275,7 +275,7 @@ export class OnsetsAndFrames {
           lstmWeights('frame').concat(denseWeights('frame/frame_probs')));
       this.frameRnn = frameRnn;
 
-      const velocityCnn = this.getacousticCnn();
+      const velocityCnn = this.getAcousticCnn();
       velocityCnn.add(tf.layers.dense(
           {units: MIDI_PITCHES, activation: 'linear', trainable: false}));
       velocityCnn.setWeights(
@@ -288,7 +288,7 @@ export class OnsetsAndFrames {
   /**
    * Returns an acoustic stack without setting variables.
    */
-  private getacousticCnn() {
+  private getAcousticCnn() {
     const acousticCnn = tf.sequential();
     // tslint:disable-next-line:no-any
     const convConfig: any = {

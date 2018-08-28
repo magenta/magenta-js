@@ -19,6 +19,7 @@ import * as tf from '@tensorflow/tfjs-core';
 import * as mm from '../src/index';
 import {INoteSequence} from '../src/index';
 
+// tslint:disable-next-line:max-line-length
 import {CHECKPOINTS_DIR, notesMatch, writeMemory, writeNoteSeqs, writeTimer} from './common';
 
 const TRANS_CKPT_DIR = `${CHECKPOINTS_DIR}/transcription`

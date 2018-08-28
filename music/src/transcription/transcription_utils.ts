@@ -124,7 +124,7 @@ export function batchInput(input: number[][], batchLength: number) {
  */
 export function unbatchOutput(
     batches: tf.Tensor3D, batchLength: number, totalLength: number) {
-  if (batches.shape[0] == 1) {
+  if (batches.shape[0] === 1) {
     return batches;
   }
   const firstBatch = batches.slice([0, 0], [1, batchLength]);

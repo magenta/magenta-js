@@ -23,6 +23,11 @@ limitations under the License.
     is a deep neural network that transcribes audio of piano performances to
     <code>NoteSequences</code>/<code>MIDI</code>.
   </p>
+  <p>Below we verify that the model properly transcribes a mel spectrogram to match the output
+    of the Python TensorFlow implementation. We found it is necessary to process the convolution
+    in batches for longer inputs to avoid a GPU timeout enforced in Chrome, and we verify that
+    the transcription works properly with different batch sizes that exercise various edge cases.
+  </p>
 
   <h2>From <a href="https://librosa.github.io/librosa/generated/librosa.feature.melspectrogram.html" target="_blank">Mel Spectrogram</a> (250 frames / 8 seconds)</h2>
   <section>
