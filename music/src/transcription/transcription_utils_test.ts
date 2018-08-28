@@ -117,9 +117,9 @@ test('PianorollToNoteSequenceWithOverlappingFrames', (t: test.Test) => {
 });
 
 function fakeInput(l: number, w: number) {
-  let input: number[][] = [];
+  const input: number[][] = [];
   for (let i = 0; i < l; ++i) {
-    let row: number[] = [];
+    const row: number[] = [];
     for (let j = 0; j < w; ++j) {
       row.push(i * w + j);
     }
@@ -153,7 +153,7 @@ test('BatchInputWithOneBatch', (t: test.Test) => {
   t.deepEqual(finalBatch.shape, [1, 103, 4]);
   t.deepEqual(finalBatch.dataSync(), flatten(input));
 
-  t.end()
+  t.end();
 });
 
 test('BatchInputWithTwoBatch', (t: test.Test) => {
@@ -194,7 +194,7 @@ test('BatchInputWithTwoBatch', (t: test.Test) => {
   t.deepEqual(unbatched.shape, [1, 103, 4]);
   t.deepEqual(unbatched.dataSync(), flatten(input));
 
-  t.end()
+  t.end();
 });
 
 test('BatchInputWithOverTwoBatch', (t: test.Test) => {
@@ -258,5 +258,5 @@ test('BatchInputWithOverTwoBatch', (t: test.Test) => {
   t.deepEqual(unbatched.shape, [1, 103, 4]);
   t.deepEqual(unbatched.dataSync(), flatten(input));
 
-  t.end()
+  t.end();
 });
