@@ -25,6 +25,7 @@ import * as tf from '@tensorflow/tfjs';
 // tslint:disable-next-line:max-line-length
 import {batchInput, MIDI_PITCHES, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
 
+const MEL_SPEC_BINS = 229;
 const LSTM_UNITS = 128;
 
 /**
@@ -70,8 +71,11 @@ export class OnsetsAndFrames {
 
   /**
    * Loads variables from the checkpoint and builds the model graph.
+   *
+   * @param warmup Whether to warm up the model by passing through a zero input.
+   * Will make subsequent calls faster.
    */
-  async initialize() {
+  async initialize(warmup = true) {
     this.dispose();
 
     const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
@@ -81,6 +85,9 @@ export class OnsetsAndFrames {
                              tf.io.loadWeights(manifest, this.checkpointURL));
     this.build(vars);
     Object.keys(vars).map(name => vars[name].dispose());
+    if (warmup) {
+      this.processBatches(tf.zeros([1, 16, MEL_SPEC_BINS]), 8, 8, 1);
+    }
     this.initialized = true;
     console.log('Initialized OnsetsAndFrames.');
   }
@@ -298,7 +305,7 @@ export class OnsetsAndFrames {
       useBias: false,
       padding: 'same',
       dilationRate: [1, 1],
-      inputShape: [null, 229, 1],
+      inputShape: [null, MEL_SPEC_BINS, 1],
       trainable: false
     };
     const batchNormConfig = {scale: false, trainable: false};
