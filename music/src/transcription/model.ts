@@ -114,6 +114,8 @@ export class OnsetsAndFrames {
    * @param melSpec A [mel spectrogram]{@link
    * https://librosa.github.io/librosa/generated/librosa.feature.melspectrogram.html}
    * shaped `[frame, bin]`.
+   * @param parallelBatches The number of convolutional batches to compute in
+   * parallel. May need to be reduced if hitting a timeout in the browser.
    * @returns A `NoteSequence` containing the transcribed piano performance.
    */
   // tslint:enable:max-line-length
@@ -124,7 +126,8 @@ export class OnsetsAndFrames {
 
     const [frameProbs, onsetProbs, velocities] = tf.tidy(() => {
       const batches = batchInput(melSpec, this.batchLength);
-      return this.processBatches(batches, this.batchLength, melSpec.length);
+      return this.processBatches(
+          batches, this.batchLength, melSpec.length, parallelBatches);
     });
 
     const ns = pianorollToNoteSequence(
@@ -137,12 +140,14 @@ export class OnsetsAndFrames {
   }
 
   private processBatches(
-      batches: tf.Tensor3D, batchLength: number, fullLength: number) {
+      batches: tf.Tensor3D, batchLength: number, fullLength: number,
+      parallelBatches: number) {
+    const predictConfig = {batchSize: parallelBatches};
     const runCnns =
         ((batch: tf.Tensor3D) =>
-             [this.onsetsCnn.predict(batch) as tf.Tensor3D,
-              this.activationCnn.predict(batch) as tf.Tensor3D,
-              this.velocityCnn.predict(batch) as tf.Tensor3D]);
+             [this.onsetsCnn.predict(batch, predictConfig) as tf.Tensor3D,
+              this.activationCnn.predict(batch, predictConfig) as tf.Tensor3D,
+              this.velocityCnn.predict(batch, predictConfig) as tf.Tensor3D]);
 
     let onsetsCnnOut, activationProbs, scaledVelocities: tf.Tensor3D;
     if (batches.shape[0] === 1) {
