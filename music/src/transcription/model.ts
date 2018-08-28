@@ -22,19 +22,10 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
-import {NoteSequence} from '../protobuf';
-
-export const MIN_MIDI_PITCH = 21;
-export const MAX_MIDI_PITCH = 108;
-export const MIDI_PITCHES = MAX_MIDI_PITCH - MIN_MIDI_PITCH + 1;
-
-const SAMPLE_RATE = 16000;
-const SPEC_HOP_LENGTH = 512;
-export const FRAME_LENGTH_SECONDS = SPEC_HOP_LENGTH / SAMPLE_RATE;
+// tslint:disable-next-line:max-line-length
+import {batchInput, MIDI_PITCHES, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
 
 const LSTM_UNITS = 128;
-const BATCH_LENGTH = 125;
-const RF_PAD = 3;
 
 /**
  * Helper function to create a Bidirecitonal LSTM layer.
@@ -46,12 +37,8 @@ function getBidiLstm(inputShape?: number[]) {
     recurrentActivation: 'sigmoid',
     trainable: false
   }) as tf.RNN;
-  return tf.layers.bidirectional({
-    layer: lstm,
-    mergeMode: 'concat',
-    inputShape: inputShape,
-    trainable: false
-  });
+  return tf.layers.bidirectional(
+      {layer: lstm, mergeMode: 'concat', inputShape, trainable: false});
 }
 
 /**
@@ -59,6 +46,7 @@ function getBidiLstm(inputShape?: number[]) {
  */
 export class OnsetsAndFrames {
   private checkpointURL: string;
+  public batchLength: number;
   private initialized: boolean;
 
   private onsetsCnn: tf.Sequential;
@@ -71,9 +59,13 @@ export class OnsetsAndFrames {
    * `OnsetsAndFrames` constructor.
    *
    * @param checkpointURL Path to the checkpoint directory.
+   * @param batchLength The length of batches (excluding receptive field
+   * padding). Sequences longer than this amount will be split into batches of
+   * this size for processing.
    */
-  constructor(checkpointURL: string) {
+  constructor(checkpointURL: string, batchLength = 250) {
     this.checkpointURL = checkpointURL;
+    this.batchLength = batchLength;
   }
 
   /**
@@ -125,44 +117,14 @@ export class OnsetsAndFrames {
    * @returns A `NoteSequence` containing the transcribed piano performance.
    */
   // tslint:enable:max-line-length
-  async transcribeFromMelSpec(melSpec: number[][], batchSize: number) {
+  async transcribeFromMelSpec(melSpec: number[][], parallelBatches = 32) {
     if (!this.isInitialized()) {
       this.initialize();
     }
 
     const [frameProbs, onsetProbs, velocities] = tf.tidy(() => {
-      // Add batch dim.
-      const melSpecBatch =
-          tf.tensor2d(melSpec.slice(0, BATCH_LENGTH * batchSize))
-              .as3D(batchSize, BATCH_LENGTH, -1);
-
-      // Pad batches.
-      const splitBatch = tf.unstack(melSpecBatch);
-      const firstAndLast =
-          tf.concat(
-                [
-                  splitBatch[0], splitBatch[1].slice(0, RF_PAD),
-                  splitBatch[batchSize - 2].slice(
-                      BATCH_LENGTH - RF_PAD, RF_PAD),
-                  splitBatch[batchSize - 1]
-                ],
-                0)
-              .as4D(2, BATCH_LENGTH + RF_PAD, -1, 1);
-      return this.processBatch(firstAndLast, true);
-
-      /*
-      const leftPad = tf.slice(melSpecBatch, [0, BATCH_LENGTH - RF_PAD], [
-                          batchSize - 1, -1
-                        ]).pad([[1, 0], [0, 0], [0, 0]]);
-      const rightPad = tf.slice(melSpecBatch, [1, 0], [-1, RF_PAD]).pad([
-        [0, 1], [0, 0], [0, 0]
-      ]);
-      const melSpecPaddedBatch =
-          tf.concat([leftPad, melSpecBatch, rightPad], 1).expandDims(-1);
-      const melSpecPaddedBatch =
-          melSpecBatch.pad([[0, 0], [RF_PAD, RF_PAD], [RF_PAD + 1, RF_PAD + 1]])
-              .expandDims(-1);
-      */
+      const [firstBatches, finalBatch] = batchInput(melSpec, this.batchLength);
+      return this.processBatch(finalBatch, firstBatches);
     });
 
     const ns = pianorollToNoteSequence(
@@ -174,30 +136,34 @@ export class OnsetsAndFrames {
     return ns;
   }
 
-  private processBatch(batch: tf.Tensor4D, firstAndLast: boolean) {
-    const flattenAndCropBatch = ((t: tf.Tensor3D) => {
-      if (firstAndLast) {
-        const [first, last] = tf.unstack(t);
-        return tf.concat(
-                     [first.slice(0, BATCH_LENGTH), last.slice(RF_PAD, -1)], 0)
-                   .expandDims(0) as tf.Tensor3D;
-      }
-      const c = tf.slice(t, [0, RF_PAD], [-1, BATCH_LENGTH]);
-      return tf.reshape(c, [1, batch.shape[0] * BATCH_LENGTH, -1]) as
-          tf.Tensor3D;
-    });
+  private processBatch(
+      finalBatch: tf.Tensor3D,
+      batches?: tf.Tensor3D,
+  ) {
+    const runCnns =
+        ((batch: tf.Tensor3D) =>
+             [this.onsetsCnn.predict(batch) as tf.Tensor3D,
+              this.activationCnn.predict(batch) as tf.Tensor3D,
+              this.velocityCnn.predict(batch) as tf.Tensor3D]);
 
-    // Flatten the output of the onsets CNN before passing to the RNN.
-    const onsetProbs =
-        this.onsetsRnn.predict(flattenAndCropBatch(
-            this.onsetsCnn.predict(batch) as tf.Tensor3D)) as tf.Tensor3D;
-    const activationProbs =
-        flattenAndCropBatch(this.activationCnn.predict(batch) as tf.Tensor3D);
+    let onsetsCnnOut, activationProbs, scaledVelocities: tf.Tensor3D;
+    if (batches === undefined) {
+      [onsetsCnnOut, activationProbs, scaledVelocities] =
+          runCnns(finalBatch.expandDims(-1));
+    } else {
+      const batchesOutput = runCnns(batches.expandDims(-1));
+      const finalBatchOutput = runCnns(finalBatch.expandDims(-1));
+      const allOutputs: tf.Tensor3D[] = [];
+      for (let i = 0; i < 3; ++i) {
+        allOutputs.push(unbatchOutput(
+            batchesOutput[i], finalBatchOutput[i], this.batchLength));
+      }
+      [onsetsCnnOut, activationProbs, scaledVelocities] = allOutputs;
+    }
+    const onsetProbs = this.onsetsRnn.predict(onsetsCnnOut) as tf.Tensor3D;
     const frameProbs =
         this.frameRnn.predict(tf.concat([onsetProbs, activationProbs], -1)) as
         tf.Tensor3D;
-    const scaledVelocities =
-        flattenAndCropBatch(this.velocityCnn.predict(batch) as tf.Tensor3D);
     // Translates a velocity estimate to a MIDI velocity value.
     const velocities = tf.clipByValue(scaledVelocities, 0., 1.)
                            .mul(tf.scalar(80.))
@@ -273,8 +239,8 @@ export class OnsetsAndFrames {
 
     tf.tidy(() => {
       // Onsets model has a conv net, followed by an LSTM. We separate the two
-      // parts so that we can process the convolution in batch and then flatten
-      // before passing through the LSTM.
+      // parts so that we can process the convolution in batch and then
+      // flatten before passing through the LSTM.
       const onsetsCnn = this.getacousticCnn();
       onsetsCnn.setWeights(convWeights('onsets'));
       this.onsetsCnn = onsetsCnn;
@@ -310,7 +276,7 @@ export class OnsetsAndFrames {
       velocityCnn.setWeights(
           convWeights('velocity')
               .concat(denseWeights('velocity/onset_velocities')));
-      this.velocityCnn = velocityCnn
+      this.velocityCnn = velocityCnn;
     });
   }
 
@@ -359,93 +325,4 @@ export class OnsetsAndFrames {
 
     return acousticCnn;
   }
-}
-
-/**
- * Converts the model predictions to a NoteSequence.
- *
- * @param frameProbs Probabilities of an active frame, shaped `[frame,
- * pitch]`.
- * @param onsetProbs Probabilities of an onset, shaped `[frame, pitch]`.
- * @param velocityValues Predicted velocities in the range [0, 127], shaped
- * `[frame, pitch]`.
- * @returns A `NoteSequence` containing the transcribed piano performance.
- */
-export async function pianorollToNoteSequence(
-    frameProbs: tf.Tensor2D, onsetProbs: tf.Tensor2D,
-    velocityValues: tf.Tensor2D, onsetThreshold = 0.5, frameThreshold = 0.5) {
-  const [splitFrames, splitOnsets, splitVelocities] = tf.tidy(() => {
-    let onsetPredictions =
-        tf.greater(onsetProbs, onsetThreshold) as tf.Tensor2D;
-    let framePredictions =
-        tf.greater(frameProbs, frameThreshold) as tf.Tensor2D;
-
-    // Add silent frame at the end so we can do a final loop and terminate any
-    // notes that are still active.
-    onsetPredictions = onsetPredictions.pad([[0, 1], [0, 0]]);
-    framePredictions = framePredictions.pad([[0, 1], [0, 0]]);
-    velocityValues = velocityValues.pad([[0, 1], [0, 0]]);
-
-    // Ensure that any frame with an onset prediction is considered active.
-    framePredictions = tf.logicalOr(framePredictions, onsetPredictions);
-
-    return [
-      tf.unstack(framePredictions), tf.unstack(onsetPredictions),
-      tf.unstack(velocityValues)
-    ];
-  });
-
-  const ns = NoteSequence.create();
-
-  // Store (step + 1) with 0 signifying no active note.
-  const pitchStartStepPlusOne = new Uint32Array(MIDI_PITCHES);
-  const onsetVelocities = new Uint8Array(MIDI_PITCHES);
-  let frame: Uint8Array;
-  let onsets: Uint8Array;
-  let previousOnsets = new Uint8Array(MIDI_PITCHES);
-
-  function endPitch(pitch: number, endFrame: number) {
-    // End an active pitch.
-    ns.notes.push(NoteSequence.Note.create({
-      pitch: pitch + MIN_MIDI_PITCH,
-      startTime: (pitchStartStepPlusOne[pitch] - 1) * FRAME_LENGTH_SECONDS,
-      endTime: endFrame * FRAME_LENGTH_SECONDS,
-      velocity: onsetVelocities[pitch]
-    }));
-    pitchStartStepPlusOne[pitch] = 0;
-  }
-
-  function processOnset(p: number, f: number, velocity: number) {
-    if (pitchStartStepPlusOne[p]) {
-      // Pitch is already active, but if this is a new onset, we should end
-      // the note and start a new one.
-      if (!previousOnsets[p]) {
-        endPitch(p, f);
-        pitchStartStepPlusOne[p] = f + 1;
-        onsetVelocities[p] = velocity;
-      }
-    } else {
-      pitchStartStepPlusOne[p] = f + 1;
-      onsetVelocities[p] = velocity;
-    }
-  }
-
-  for (let f = 0; f < splitFrames.length; ++f) {
-    frame = await splitFrames[f].data() as Uint8Array;
-    onsets = await splitOnsets[f].data() as Uint8Array;
-    const velocities = await splitVelocities[f].data() as Uint8Array;
-    splitFrames[f].dispose();
-    splitOnsets[f].dispose();
-    splitVelocities[f].dispose();
-    for (let p = 0; p < frame.length; ++p) {
-      if (onsets[p]) {
-        processOnset(p, f, velocities[p]);
-      } else if (!frame[p] && pitchStartStepPlusOne[p]) {
-        endPitch(p, f);
-      }
-    }
-    previousOnsets = onsets;
-  }
-  ns.totalTime = splitFrames.length * FRAME_LENGTH_SECONDS;
-  return ns;
 }
