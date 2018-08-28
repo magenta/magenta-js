@@ -134,24 +134,21 @@ test('BatchInputWithOneBatch', (t: test.Test) => {
   let input = fakeInput(100, 4);
 
   // Try with perfect split.
-  let [firstBatches, finalBatch] = batchInput(input, 100);
-  t.deepEqual(firstBatches, undefined);
-  t.deepEqual(finalBatch.shape, [1, 100, 4]);
-  t.deepEqual(finalBatch.dataSync(), flatten(input));
+  let batches = batchInput(input, 100);
+  t.deepEqual(batches.shape, [1, 100, 4]);
+  t.deepEqual(batches.dataSync(), flatten(input));
 
   // Try with imperfect split.
-  [firstBatches, finalBatch] = batchInput(input, 150);
-  t.deepEqual(firstBatches, undefined);
-  t.deepEqual(finalBatch.shape, [1, 100, 4]);
-  t.deepEqual(finalBatch.dataSync(), flatten(input));
+  batches = batchInput(input, 150);
+  t.deepEqual(batches.shape, [1, 100, 4]);
+  t.deepEqual(batches.dataSync(), flatten(input));
 
   // Try with an input sightly over the batch length, but less than the
   // receptive field padding.
   input = fakeInput(103, 4);
-  [firstBatches, finalBatch] = batchInput(input, 100);
-  t.deepEqual(firstBatches, undefined);
-  t.deepEqual(finalBatch.shape, [1, 103, 4]);
-  t.deepEqual(finalBatch.dataSync(), flatten(input));
+  batches = batchInput(input, 100);
+  t.deepEqual(batches.shape, [1, 103, 4]);
+  t.deepEqual(batches.dataSync(), flatten(input));
 
   t.end();
 });
@@ -160,37 +157,34 @@ test('BatchInputWithTwoBatch', (t: test.Test) => {
   let input = fakeInput(100, 4);
 
   // Try with perfect split.
-  let [firstBatches, finalBatch] = batchInput(input, 50);
-  t.deepEqual(firstBatches.shape, [1, 53, 4]);
-  t.deepEqual(firstBatches.dataSync(), flatten(input.slice(0, 53)));
-  t.deepEqual(finalBatch.shape, [1, 53, 4]);
-  t.deepEqual(finalBatch.dataSync(), flatten(input.slice(47)));
+  let batches = batchInput(input, 50);
+  t.deepEqual(batches.shape, [2, 56, 4]);
+  t.deepEqual(batches.slice(0, 1).dataSync(), flatten(input.slice(0, 56)));
+  t.deepEqual(batches.slice(1, 1).dataSync(), flatten(input.slice(44)));
   // Reverse.
-  let unbatched = unbatchOutput(firstBatches, finalBatch, 50);
+  let unbatched = unbatchOutput(batches, 50, 100);
   t.deepEqual(unbatched.shape, [1, 100, 4]);
   t.deepEqual(unbatched.dataSync(), flatten(input));
 
   // Try with imperfect split.
-  [firstBatches, finalBatch] = batchInput(input, 75);
-  t.deepEqual(firstBatches.shape, [1, 78, 4]);
-  t.deepEqual(firstBatches.dataSync(), flatten(input.slice(0, 78)));
-  t.deepEqual(finalBatch.shape, [1, 28, 4]);
-  t.deepEqual(finalBatch.dataSync(), flatten(input.slice(72)));
+  batches = batchInput(input, 75);
+  t.deepEqual(batches.shape, [2, 81, 4]);
+  t.deepEqual(batches.slice(0, 1).dataSync(), flatten(input.slice(0, 81)));
+  t.deepEqual(batches.slice(1, 1).dataSync(), flatten(input.slice(19)));
   // Reverse.
-  unbatched = unbatchOutput(firstBatches, finalBatch, 75);
+  unbatched = unbatchOutput(batches, 75, 100);
   t.deepEqual(unbatched.shape, [1, 100, 4]);
   t.deepEqual(unbatched.dataSync(), flatten(input));
 
   // Try with an input sightly over the batch length, but less than the
   // receptive field padding.
   input = fakeInput(103, 4);
-  [firstBatches, finalBatch] = batchInput(input, 50);
-  t.deepEqual(firstBatches.shape, [1, 53, 4]);
-  t.deepEqual(firstBatches.dataSync(), flatten(input.slice(0, 53)));
-  t.deepEqual(finalBatch.shape, [1, 56, 4]);
-  t.deepEqual(finalBatch.dataSync(), flatten(input.slice(47)));
+  batches = batchInput(input, 50);
+  t.deepEqual(batches.shape, [2, 56, 4]);
+  t.deepEqual(batches.slice(0, 1).dataSync(), flatten(input.slice(0, 56)));
+  t.deepEqual(batches.slice(1, 1).dataSync(), flatten(input.slice(47)));
   // Reverse.
-  unbatched = unbatchOutput(firstBatches, finalBatch, 50);
+  unbatched = unbatchOutput(batches, 50, 103);
   t.deepEqual(unbatched.shape, [1, 103, 4]);
   t.deepEqual(unbatched.dataSync(), flatten(input));
 
@@ -201,60 +195,50 @@ test('BatchInputWithOverTwoBatch', (t: test.Test) => {
   let input = fakeInput(100, 4);
 
   // Try with perfect split.
-  let [firstBatches, finalBatch] = batchInput(input, 25);
+  let batches = batchInput(input, 25);
+  t.deepEqual(batches.shape, [4, 31, 4]);
   // First batch.
-  t.deepEqual(firstBatches.shape, [3, 31, 4]);
-  t.deepEqual(firstBatches.slice(0, 1).dataSync(), flatten(input.slice(0, 31)));
+  t.deepEqual(batches.slice(0, 1).dataSync(), flatten(input.slice(0, 31)));
   // Middle batches.
-  t.deepEqual(
-      firstBatches.slice(1, 1).dataSync(), flatten(input.slice(22, 53)));
-  t.deepEqual(
-      firstBatches.slice(2, 1).dataSync(), flatten(input.slice(47, 78)));
+  t.deepEqual(batches.slice(1, 1).dataSync(), flatten(input.slice(22, 53)));
+  t.deepEqual(batches.slice(2, 1).dataSync(), flatten(input.slice(47, 78)));
   // Final batch.
-  t.deepEqual(finalBatch.shape, [1, 28, 4]);
-  t.deepEqual(finalBatch.dataSync(), flatten(input.slice(72)));
+  t.deepEqual(batches.slice(3, 1).dataSync(), flatten(input.slice(69)));
   // Reverse.
-  let unbatched = unbatchOutput(firstBatches, finalBatch, 25);
+  let unbatched = unbatchOutput(batches, 25, 100);
   t.deepEqual(unbatched.shape, [1, 100, 4]);
   t.deepEqual(unbatched.dataSync(), flatten(input));
 
   // Try with imperfect split.
-  [firstBatches, finalBatch] = batchInput(input, 22);
+  batches = batchInput(input, 22);
+  t.deepEqual(batches.shape, [5, 28, 4]);
   // First batch.
-  t.deepEqual(firstBatches.shape, [4, 28, 4]);
-  t.deepEqual(firstBatches.slice(0, 1).dataSync(), flatten(input.slice(0, 28)));
+  t.deepEqual(batches.slice(0, 1).dataSync(), flatten(input.slice(0, 28)));
   // Middle batches.
-  t.deepEqual(
-      firstBatches.slice(1, 1).dataSync(), flatten(input.slice(19, 47)));
-  t.deepEqual(
-      firstBatches.slice(2, 1).dataSync(), flatten(input.slice(41, 69)));
-  t.deepEqual(
-      firstBatches.slice(3, 1).dataSync(), flatten(input.slice(63, 91)));
+  t.deepEqual(batches.slice(1, 1).dataSync(), flatten(input.slice(19, 47)));
+  t.deepEqual(batches.slice(2, 1).dataSync(), flatten(input.slice(41, 69)));
+  t.deepEqual(batches.slice(3, 1).dataSync(), flatten(input.slice(63, 91)));
   // Final batch.
-  t.deepEqual(finalBatch.shape, [1, 15, 4]);
-  t.deepEqual(finalBatch.dataSync(), flatten(input.slice(85)));
+  t.deepEqual(batches.slice(4, 1).dataSync(), flatten(input.slice(100 - 28)));
   // Reverse.
-  unbatched = unbatchOutput(firstBatches, finalBatch, 22);
+  unbatched = unbatchOutput(batches, 22, 100);
   t.deepEqual(unbatched.shape, [1, 100, 4]);
   t.deepEqual(unbatched.dataSync(), flatten(input));
 
   // Try with an input sightly over the batch length, but less than the
   // receptive field padding.
   input = fakeInput(103, 4);
-  [firstBatches, finalBatch] = batchInput(input, 25);
+  batches = batchInput(input, 25);
+  t.deepEqual(batches.shape, [4, 31, 4]);
   // First batch.
-  t.deepEqual(firstBatches.shape, [3, 31, 4]);
-  t.deepEqual(firstBatches.slice(0, 1).dataSync(), flatten(input.slice(0, 31)));
+  t.deepEqual(batches.slice(0, 1).dataSync(), flatten(input.slice(0, 31)));
   // Middle batches.
-  t.deepEqual(
-      firstBatches.slice(1, 1).dataSync(), flatten(input.slice(22, 53)));
-  t.deepEqual(
-      firstBatches.slice(2, 1).dataSync(), flatten(input.slice(47, 78)));
+  t.deepEqual(batches.slice(1, 1).dataSync(), flatten(input.slice(22, 53)));
+  t.deepEqual(batches.slice(2, 1).dataSync(), flatten(input.slice(47, 78)));
   // Final batch.
-  t.deepEqual(finalBatch.shape, [1, 31, 4]);
-  t.deepEqual(finalBatch.dataSync(), flatten(input.slice(72)));
+  t.deepEqual(batches.slice(3, 1).dataSync(), flatten(input.slice(103 - 31)));
   // Reverse.
-  unbatched = unbatchOutput(firstBatches, finalBatch, 25);
+  unbatched = unbatchOutput(batches, 25, 103);
   t.deepEqual(unbatched.shape, [1, 103, 4]);
   t.deepEqual(unbatched.dataSync(), flatten(input));
 

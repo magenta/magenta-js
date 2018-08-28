@@ -123,8 +123,8 @@ export class OnsetsAndFrames {
     }
 
     const [frameProbs, onsetProbs, velocities] = tf.tidy(() => {
-      const [firstBatches, finalBatch] = batchInput(melSpec, this.batchLength);
-      return this.processBatch(finalBatch, firstBatches);
+      const batches = batchInput(melSpec, this.batchLength);
+      return this.processBatches(batches, this.batchLength, melSpec.length);
     });
 
     const ns = pianorollToNoteSequence(
@@ -136,10 +136,8 @@ export class OnsetsAndFrames {
     return ns;
   }
 
-  private processBatch(
-      finalBatch: tf.Tensor3D,
-      batches?: tf.Tensor3D,
-  ) {
+  private processBatches(
+      batches: tf.Tensor3D, batchLength: number, fullLength: number) {
     const runCnns =
         ((batch: tf.Tensor3D) =>
              [this.onsetsCnn.predict(batch) as tf.Tensor3D,
@@ -147,16 +145,18 @@ export class OnsetsAndFrames {
               this.velocityCnn.predict(batch) as tf.Tensor3D]);
 
     let onsetsCnnOut, activationProbs, scaledVelocities: tf.Tensor3D;
-    if (batches === undefined) {
+    if (batches.shape[0] === 1) {
       [onsetsCnnOut, activationProbs, scaledVelocities] =
-          runCnns(finalBatch.expandDims(-1));
+          runCnns(batches.expandDims(-1));
     } else {
       const batchesOutput = runCnns(batches.expandDims(-1));
-      const finalBatchOutput = runCnns(finalBatch.expandDims(-1));
       const allOutputs: tf.Tensor3D[] = [];
       for (let i = 0; i < 3; ++i) {
         allOutputs.push(unbatchOutput(
-            batchesOutput[i], finalBatchOutput[i], this.batchLength));
+            batchesOutput[i],
+            batchLength,
+            fullLength,
+            ));
       }
       [onsetsCnnOut, activationProbs, scaledVelocities] = allOutputs;
     }
