@@ -23,15 +23,52 @@ limitations under the License.
     is a deep neural network that transcribes audio of piano performances to
     <code>NoteSequences</code>/<code>MIDI</code>.
   </p>
+  <p>Below we verify that the model properly transcribes a mel spectrogram to match the output
+    of the Python TensorFlow implementation. We found it is necessary to process the convolution
+    in batches for longer inputs to avoid a GPU timeout enforced in Chrome, and we verify that
+    the transcription works properly with different batch sizes that exercise various edge cases.
+  </p>
 
   <h2>From <a href="https://librosa.github.io/librosa/generated/librosa.feature.melspectrogram.html" target="_blank">Mel Spectrogram</a> (250 frames / 8 seconds)</h2>
   <section>
     <p><b>Original Audio</b><br><audio controls><source type="audio/wav" src="https://storage.googleapis.com/magentadata/js/checkpoints/transcription/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl-250frames.wav"></audio></p>
     <p><b>Expected Transcription:</b> <code id="expected-ns">Loading...</code></p>
-    <p><b>Actual Transcription:</b> <code id="transcription-results">Loading...</code></p>
-    <p><b>Match:</b> <code id="ns-match">Loading...</code></p>
-    <p><b>It took:</b> <code id="transcription-time">Loading...</code></p>
   </section>
+
+  <section>
+    <h3>Batch Length 250 / Batch Size 1</h3>
+    <p><b>Actual Transcription:</b> <code id="250-results">Loading...</code></p>
+    <p><b>Match:</b> <code id="250-match">Loading...</code></p>
+    <p><b>It Took:</b> <code id="250-time">Loading...</code></p>
+  </section>
+
+  <section>
+    <h3>Batch Length 150 / Batch Size 2</h3>
+    <p><b>Actual Transcription:</b> <code id="150-results">Loading...</code></p>
+    <p><b>Match:</b> <code id="150-match">Loading...</code></p>
+    <p><b>It Took:</b> <code id="150-time">Loading...</code></p>
+  </section>
+
+  <section>
+    <h3>Batch Length 80 / Batch Size 4</h3>
+    <p><b>Actual Transcription:</b> <code id="80-results">Loading...</code></p>
+    <p><b>Match:</b> <code id="80-match">Loading...</code></p>
+    <p><b>It Took:</b> <code id="80-time">Loading...</code></p>
+  </section>
+
+  <section>
+      <h3>Batch Length 62 / Batch Size 4</h3>
+      <p><b>Actual Transcription:</b> <code id="62-results">Loading...</code></p>
+      <p><b>Match:</b> <code id="62-match">Loading...</code></p>
+      <p><b>It Took:</b> <code id="62-time">Loading...</code></p>
+  </section>
+
+  <section>
+      <h3>Batch Length 50 / Batch Size 5</h3>
+      <p><b>Actual Transcription:</b> <code id="50-results">Loading...</code></p>
+      <p><b>Match:</b> <code id="50-match">Loading...</code></p>
+      <p><b>It Took:</b> <code id="50-time">Loading...</code></p>
+    </section>
 
   <section>
     <p><b>Total Leaked Memory:</b> <code id="leaked-memory">Loading...</code></b></p>

@@ -19,6 +19,7 @@ import * as tf from '@tensorflow/tfjs-core';
 import * as mm from '../src/index';
 import {INoteSequence} from '../src/index';
 
+// tslint:disable-next-line:max-line-length
 import {CHECKPOINTS_DIR, notesMatch, writeMemory, writeNoteSeqs, writeTimer} from './common';
 
 const TRANS_CKPT_DIR = `${CHECKPOINTS_DIR}/transcription`
@@ -30,7 +31,7 @@ const EXPECTED_NS_URL = `${
     TRANS_CKPT_DIR}/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl.melhtk0-250frames.ns.json`;
 // tslint:enable:max-line-length
 
-async function transcribe() {
+async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
   const expectedNs: INoteSequence =
       await fetch(EXPECTED_NS_URL).then((response) => response.json());
   writeNoteSeqs('expected-ns', [expectedNs], undefined, true);
@@ -38,23 +39,28 @@ async function transcribe() {
   const melSpec: number[][] =
       await fetch(MEL_SPEC_URL).then((response) => response.json());
 
-  const oaf = new mm.OnsetsAndFrames(CKPT_URL);
-  await oaf.initialize();
-
   const start = performance.now();
+  oaf.batchLength = batchLength;
   const ns = await oaf.transcribeFromMelSpec(melSpec);
-  writeTimer('transcription-time', start);
-  writeNoteSeqs('transcription-results', [ns], undefined, true);
-  oaf.dispose();
+  writeTimer(`${batchLength}-time`, start);
+  writeNoteSeqs(`${batchLength}-results`, [ns], undefined, true);
 
-  document.getElementById('ns-match').innerHTML =
+  document.getElementById(`${batchLength}-match`).innerHTML =
       notesMatch(ns.notes, expectedNs.notes) ?
       '<span style="color:green">TRUE</span>' :
       '<b><span style="color:red">FALSE</span>></b>';
 }
 
 try {
-  Promise.all([transcribe()]).then(() => writeMemory(tf.memory().numBytes));
+  const oaf = new mm.OnsetsAndFrames(CKPT_URL);
+  oaf.initialize()
+      .then(() => transcribe(oaf, 250))
+      .then(() => transcribe(oaf, 150))
+      .then(() => transcribe(oaf, 80))
+      .then(() => transcribe(oaf, 62))
+      .then(() => transcribe(oaf, 50))
+      .then(() => oaf.dispose())
+      .then(() => writeMemory(tf.memory().numBytes));
 } catch (err) {
   console.error(err);
 }
