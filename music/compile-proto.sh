@@ -18,11 +18,13 @@
 #
 # To run, execute 'yarn proto'.
 
+TMP_DIR=$(mktemp -d)
 # Clone magenta repo to get proto file
-git clone https://github.com/tensorflow/magenta.git
+git clone https://github.com/tensorflow/magenta.git $TMP_DIR
 # Compile js
 yarn pbjs --force-number -t static-module -w commonjs -o src/protobuf/proto.js magenta/magenta/protobuf/music.proto
+rm -fR $TMP_DIR
 # Compile ts
 yarn pbts -o src/protobuf/proto.d.ts src/protobuf/proto.js
-# Replace Long types with number
+# Replace Long types with number (bug: https://github.com/dcodeIO/protobuf.js/issues/1109)
 sed -i '' 's/reader.int64();/reader.int64().toNumber();/g' src/protobuf/proto.js
