@@ -333,7 +333,7 @@ export class MusicRNN {
 
         nextInput = tf.oneHot(sampledOutput, outputSize).toFloat();
         // Save samples as bool to reduce data sync time.
-        samples.push(nextInput.as1D().toBool());
+        samples.push(nextInput.as1D());
       }
       // No need to run an RNN step once we have all our samples.
       if (i === length + steps - 1) {

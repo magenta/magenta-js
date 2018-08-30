@@ -336,7 +336,6 @@ class BaseDecoder extends Decoder {
         const logits =
             dense(this.outputProjectVars, lstmCell.h[lstmCell.h.length - 1]);
 
-        let timeSamples: tf.Tensor2D;
         if (this.nade == null) {
           const timeLabels =
               (temperature ?
@@ -345,15 +344,13 @@ class BaseDecoder extends Decoder {
                        .as1D() :
                    logits.argMax(1).as1D());
           nextInput = tf.oneHot(timeLabels, this.outputDims).toFloat();
-          timeSamples = nextInput.toBool();
         } else {
           const [encBias, decBias] =
               tf.split(logits, [this.nade.numHidden, this.nade.numDims], 1);
           nextInput =
               this.nade.sample(encBias as tf.Tensor2D, decBias as tf.Tensor2D);
-          timeSamples = nextInput.toBool();
         }
-        samples.push(timeSamples);
+        samples.push(nextInput);
       }
 
       return tf.stack(samples, 1) as tf.Tensor3D;
