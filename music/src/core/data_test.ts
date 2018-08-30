@@ -165,19 +165,24 @@ test('Test MelodyConverterWithPolyphonicInput', (t: test.Test) => {
     'numSteps': 32,
     'minPitch': 21,
     'maxPitch': 108,
-    'disallowPolyphony': false
   });
 
   const polyMelNs = sequences.clone(MEL_NS);
-  // polyMelNs.notes[0].quantizedEndStep = 6;
+  polyMelNs.notes[0].quantizedEndStep = 6;
   polyMelNs.notes.push(NoteSequence.Note.create(
       {pitch: 70, quantizedStartStep: 2, quantizedEndStep: 5}));
   const melTensor = melConverter.toTensor(polyMelNs);
   t.deepEqual(melTensor.shape, [32, 90]);
-
   melConverter.toNoteSequence(melTensor, 2).then(ns => t.deepEqual(ns, MEL_NS));
-
   melTensor.dispose();
+
+  const melConverterDisallowsPolyphony = new data.MelodyConverter({
+    'numSteps': 32,
+    'minPitch': 21,
+    'maxPitch': 108,
+    'disallowPolyphony': true
+  });
+  t.throws(() => melConverterDisallowsPolyphony.toTensor(polyMelNs));
   t.end();
 });
 
