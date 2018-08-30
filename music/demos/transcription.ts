@@ -22,7 +22,7 @@ import {INoteSequence} from '../src/index';
 // tslint:disable-next-line:max-line-length
 import {CHECKPOINTS_DIR, notesMatch, writeMemory, writeNoteSeqs, writeTimer} from './common';
 
-const TRANS_CKPT_DIR = `${CHECKPOINTS_DIR}/transcription`
+const TRANS_CKPT_DIR = `${CHECKPOINTS_DIR}/transcription`;
 const CKPT_URL = `${TRANS_CKPT_DIR}/onsets_frames_htk0`;
 // tslint:disable:max-line-length
 const MEL_SPEC_URL = `${
@@ -31,11 +31,13 @@ const EXPECTED_NS_URL = `${
     TRANS_CKPT_DIR}/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl.melhtk0-250frames.ns.json`;
 // tslint:enable:max-line-length
 
-async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
-  const expectedNs: INoteSequence =
-      await fetch(EXPECTED_NS_URL).then((response) => response.json());
+let expectedNs: INoteSequence;
+fetch(EXPECTED_NS_URL).then((response) => response.json()).then((ns => {
+  expectedNs = ns;
   writeNoteSeqs('expected-ns', [expectedNs], undefined, true);
+}));
 
+async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
   const melSpec: number[][] =
       await fetch(MEL_SPEC_URL).then((response) => response.json());
 
@@ -54,10 +56,10 @@ async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
 try {
   const oaf = new mm.OnsetsAndFrames(CKPT_URL);
   oaf.initialize()
-      .then(() => transcribe(oaf, 250))
-      .then(() => transcribe(oaf, 150))
-      .then(() => transcribe(oaf, 80))
-      .then(() => transcribe(oaf, 62))
+      // .then(() => transcribe(oaf, 250))
+      // .then(() => transcribe(oaf, 150))
+      // .then(() => transcribe(oaf, 80))
+      // .then(() => transcribe(oaf, 62))
       .then(() => transcribe(oaf, 50))
       .then(() => oaf.dispose())
       .then(() => writeMemory(tf.memory().numBytes));

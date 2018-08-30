@@ -16,9 +16,14 @@
  */
 
 import * as mm from '../src/index';
-import {FULL_TWINKLE} from './common';
+
+import {CHECKPOINTS_DIR} from './common';
 
 const MIDI_URL = './melody.mid';
+// tslint:disable:max-line-length
+const EXPECTED_NS_URL = `${
+    CHECKPOINTS_DIR}/transcription/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl.melhtk0-250frames.ns.json`;
+// tslint:enable:max-line-length
 
 let visualizer: mm.Visualizer;
 const player = new mm.Player(false, {
@@ -47,10 +52,15 @@ const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 // Set up some event listeners
 urlBtn.addEventListener('click', () => fetchMidi(MIDI_URL));
 playBtn.addEventListener('click', () => startOrStop());
-seqBtn.addEventListener('click', () => initPlayerAndVisualizer(FULL_TWINKLE));
+seqBtn.addEventListener('click', () => {
+  fetch(EXPECTED_NS_URL).then((response) => response.json()).then((ns => {
+    console.log(ns);
+    initPlayerAndVisualizer(ns);
+  }));
+});
 fileInput.addEventListener('change', loadFile);
 tempoInput.addEventListener('input', () => {
-  player.setTempo(parseInt(tempoInput.value));
+  player.setTempo(parseInt(tempoInput.value, 10));
   tempoValue.textContent = tempoInput.value;
 });
 
@@ -60,7 +70,7 @@ function fetchMidi(url: string) {
         return response.blob();
       })
       .then(parseMidiBlob)
-      .catch(function(error) {
+      .catch((error) => {
         console.log('Well, something went wrong somewhere.', error.message);
       });
 }
@@ -89,6 +99,7 @@ function initPlayerAndVisualizer(seq: mm.INoteSequence) {
   playBtn.textContent = 'Play';
 }
 
+// tslint:disable-next-line:no-any
 function loadFile(e: any) {
   const file = e.target.files[0];
   parseMidiBlob(file);
