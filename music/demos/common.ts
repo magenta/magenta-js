@@ -299,7 +299,7 @@ export function writeNoteSeqs(
             })
             .join(', ') +
         ']';
-    details.appendChild(seqText)
+    details.appendChild(seqText);
     details.appendChild(
         useSoundFontPlayer ? createSoundFontPlayer(seq) : createPlayer(seq));
     element.appendChild(details);
@@ -329,14 +329,15 @@ function createPlayerButton(
   });
 
   const button = document.createElement('button');
-  let playText = withClick ? 'Play With Click' : 'Play';
+  const playText = withClick ? 'Play With Click' : 'Play';
   button.textContent = playText;
   button.addEventListener('click', () => {
     if (player.isPlaying()) {
       player.stop();
       button.textContent = playText;
     } else {
-      player.start(seq).then(() => (button.textContent = playText));
+      player.start(visualizer.noteSequence)
+          .then(() => (button.textContent = playText));
       button.textContent = 'Stop';
     }
   });
@@ -399,21 +400,26 @@ function compareNotes(a: mm.NoteSequence.INote, b: mm.NoteSequence.INote) {
     return -1;
   }
   if (a.endTime < b.endTime) {
-    return -1
+    return -1;
   }
   return a.pitch - b.pitch;
-};
+}
 
 export function notesMatch(
-    a: mm.NoteSequence.INote[], b: mm.NoteSequence.INote[]) {
-  if (a.length != b.length) {
+    aNotes: mm.NoteSequence.INote[], bNotes: mm.NoteSequence.INote[]) {
+  if (aNotes.length !== bNotes.length) {
     return false;
   }
-  a.sort(compareNotes)
-  b.sort(compareNotes)
+  // This sorts the arrays in place, which messes up the Visualizer that's
+  // already connected to this sequence. Make a copy first.
+  const a = JSON.parse(JSON.stringify(aNotes));
+  const b = JSON.parse(JSON.stringify(bNotes));
+
+  a.sort(compareNotes);
+  b.sort(compareNotes);
   for (let i = 0; i < a.length; ++i) {
-    if (a[i].startTime != b[i].startTime || a[i].endTime != b[i].endTime ||
-        a[i].velocity != b[i].velocity || a[i].pitch != b[i].pitch) {
+    if (a[i].startTime !== b[i].startTime || a[i].endTime !== b[i].endTime ||
+        a[i].velocity !== b[i].velocity || a[i].pitch !== b[i].pitch) {
       return false;
     }
   }
