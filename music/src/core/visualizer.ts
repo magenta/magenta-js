@@ -88,8 +88,20 @@ export class Visualizer {
     const size = this.getCanvasSize();
 
     this.height = size.height;
-    this.ctx.canvas.width = size.width;
-    this.ctx.canvas.height = size.height;
+
+    // Use the correct device pixel ratio so that the canvas isn't blurry
+    // on retina screens. See:
+    // https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio
+    const dpr = window.devicePixelRatio || 1;
+    this.ctx.canvas.width = dpr * size.width;
+    this.ctx.canvas.height = dpr * size.height;
+
+    // If we don't do this, then the canvas will look 2x bigger than we
+    // want to.
+    canvas.style.width = `${size.width}`;
+    canvas.style.height = `${size.height}`;
+
+    this.ctx.scale(dpr, dpr);
 
     this.redraw();
   }
