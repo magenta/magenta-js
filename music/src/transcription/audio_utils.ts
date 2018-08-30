@@ -21,6 +21,7 @@ const SR = 44100;
 let melFilterbank: Float32Array[];
 let context: AudioContext = null;
 
+// tslint:disable-next-line:no-default-export
 export default class AudioUtils {
   static loadBuffer(url: string): Promise<AudioBuffer> {
     if (!context) {
@@ -34,7 +35,7 @@ export default class AudioUtils {
       xhr.onload = () => {
         context.decodeAudioData(xhr.response, buffer => {
           resolve(buffer);
-        })
+        });
       };
       xhr.responseType = 'arraybuffer';
       xhr.onerror = (err) => reject(err);
@@ -52,7 +53,6 @@ export default class AudioUtils {
     return transform;
   }
 
-
   /**
    * Calculates the STFT, given a fft size, and a hop size. For example, if fft
    * size is 2048 and hop size is 1024, there will be 50% overlap. Given those
@@ -61,7 +61,7 @@ export default class AudioUtils {
    */
   static stft(y: Float32Array, fftSize = 2048, hopSize = fftSize) {
     function range(count: number): number[] {
-      let out = [];
+      const out = [];
       for (let i = 0; i < count; i++) {
         out.push(i);
       }
@@ -70,13 +70,13 @@ export default class AudioUtils {
 
     // Split the input buffer into sub-buffers of size fftSize.
     const bufferCount = Math.floor((y.length - fftSize) / hopSize) + 1;
-    let matrix = range(bufferCount).map(x => new Float32Array(fftSize));
+    const matrix = range(bufferCount).map(x => new Float32Array(fftSize));
     for (let i = 0; i < bufferCount; i++) {
       const ind = i * hopSize;
       const buffer = y.slice(ind, ind + fftSize);
       // In the end, we will likely have an incomplete buffer, which we should
       // just ignore.
-      if (buffer.length != fftSize) {
+      if (buffer.length !== fftSize) {
         continue;
       }
 
@@ -110,7 +110,7 @@ export default class AudioUtils {
   static lazyCreateMelFilterbank(
       length: number, melCount = 20, lowHz = 300, highHz = 8000, sr = SR) {
     // Lazy-create a Mel filterbank.
-    if (!melFilterbank || melFilterbank.length != length) {
+    if (!melFilterbank || melFilterbank.length !== length) {
       melFilterbank =
           this.createMelFilterbank(length, melCount, lowHz, highHz, sr);
     }
@@ -121,7 +121,7 @@ export default class AudioUtils {
    * calculates the energies. Output is half the size.
    */
   static fftEnergies(y: Float32Array) {
-    let out = new Float32Array(y.length / 2);
+    const out = new Float32Array(y.length / 2);
     for (let i = 0; i < y.length / 2; i++) {
       out[i] = y[i * 2] * y[i * 2] + y[i * 2 + 1] * y[i * 2 + 1];
     }
@@ -132,7 +132,7 @@ export default class AudioUtils {
    * Generates a Hann window of a given length.
    */
   static hannWindow(length: number) {
-    let win = new Float32Array(length);
+    const win = new Float32Array(length);
     for (let i = 0; i < length; i++) {
       win[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (length - 1)));
     }
@@ -143,13 +143,13 @@ export default class AudioUtils {
    * Applies a window to a buffer (point-wise multiplication).
    */
   static applyWindow(buffer: Float32Array, win: Float32Array) {
-    if (buffer.length != win.length) {
+    if (buffer.length !== win.length) {
       console.error(`Buffer length ${buffer.length} != window length
         ${win.length}.`);
       return null;
     }
 
-    let out = new Float32Array(buffer.length);
+    const out = new Float32Array(buffer.length);
     for (let i = 0; i < buffer.length; i++) {
       out[i] = win[i] * buffer[i];
     }
@@ -158,7 +158,7 @@ export default class AudioUtils {
 
   static pointWiseMultiply(
       out: Float32Array, array1: Float32Array, array2: Float32Array) {
-    if (out.length != array1.length || array1.length != array2.length) {
+    if (out.length !== array1.length || array1.length !== array2.length) {
       console.error(`Output length ${out.length} != array1 length
         ${array1.length} != array2 length ${array2.length}.`);
       return null;
@@ -173,7 +173,7 @@ export default class AudioUtils {
       fftSize: number, melCount = 20, lowHz = 300, highHz = 8000, sr = SR) {
     function linearSpace(start: number, end: number, count: number) {
       const delta = (end - start) / (count + 1);
-      let out = [];
+      const out = [];
       for (let i = 0; i < count; i++) {
         out[i] = start + delta * i;
       }
@@ -212,7 +212,7 @@ export default class AudioUtils {
   static applyFilterbank(fftEnergies: Float32Array, filterbank: Float32Array[]):
       number[] {
     function logGtZero(array: Float32Array) {
-      const val = array.reduce(function(a, b) {
+      const val = array.reduce((a, b) => {
         return a + b;
       });
 
@@ -222,7 +222,7 @@ export default class AudioUtils {
       return Math.log(val + offset);
     }
 
-    if (fftEnergies.length != filterbank[0].length) {
+    if (fftEnergies.length !== filterbank[0].length) {
       console.error(`Each entry in filterbank should have dimensions matching
         FFT. |FFT| = ${fftEnergies.length}, |filterbank[0]| = ${
           filterbank[0].length}.`);
@@ -230,7 +230,7 @@ export default class AudioUtils {
     }
 
     // Apply each filter to the whole FFT signal to get one value.
-    let out = [];  // new Float32Array(filterbank.length);
+    const out = [];  // new Float32Array(filterbank.length);
     for (let i = 0; i < filterbank.length; i++) {
       // To calculate filterbank energies we multiply each filterbank with the
       // power spectrum.

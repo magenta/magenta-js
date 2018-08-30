@@ -60,7 +60,7 @@ async function transcribeFromAudio() {
   const melSpec: number[][] =
       await fetch(MEL_SPEC_URL).then((response) => response.json());
   console.log(melSpec);
-  const start = performance.now();
+  // const start = performance.now();
   const melSpec2 = await oaf.getMelSpec(audio);
   console.log(melSpec2);
   // const ns = await oaf.transcribeFromAudio(audio);
