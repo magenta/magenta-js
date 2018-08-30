@@ -54,7 +54,6 @@ urlBtn.addEventListener('click', () => fetchMidi(MIDI_URL));
 playBtn.addEventListener('click', () => startOrStop());
 seqBtn.addEventListener('click', () => {
   fetch(EXPECTED_NS_URL).then((response) => response.json()).then((ns => {
-    console.log(ns);
     initPlayerAndVisualizer(ns);
   }));
 });
