@@ -2,7 +2,6 @@
 "use strict";
 
 var $protobuf = require("protobufjs/minimal");
-
 // Common aliases
 var $Reader = $protobuf.Reader, $Writer = $protobuf.Writer, $util = $protobuf.util;
 
@@ -366,7 +365,7 @@ $root.tensorflow = (function() {
                         message.filename = reader.string();
                         break;
                     case 18:
-                        message.referenceNumber = reader.int64();
+                        message.referenceNumber = reader.int64().toNumber();
                         break;
                     case 3:
                         message.collectionName = reader.string();
@@ -398,7 +397,7 @@ $root.tensorflow = (function() {
                         message.totalTime = reader.double();
                         break;
                     case 16:
-                        message.totalQuantizedSteps = reader.int64();
+                        message.totalQuantizedSteps = reader.int64().toNumber();
                         break;
                     case 10:
                         if (!(message.pitchBends && message.pitchBends.length))
@@ -1160,13 +1159,13 @@ $root.tensorflow = (function() {
                             message.startTime = reader.double();
                             break;
                         case 13:
-                            message.quantizedStartStep = reader.int64();
+                            message.quantizedStartStep = reader.int64().toNumber();
                             break;
                         case 4:
                             message.endTime = reader.double();
                             break;
                         case 14:
-                            message.quantizedEndStep = reader.int64();
+                            message.quantizedEndStep = reader.int64().toNumber();
                             break;
                         case 5:
                             message.numerator = reader.int32();
@@ -2992,7 +2991,7 @@ $root.tensorflow = (function() {
                             message.time = reader.double();
                             break;
                         case 7:
-                            message.quantizedStep = reader.int64();
+                            message.quantizedStep = reader.int64().toNumber();
                             break;
                         case 2:
                             message.controlNumber = reader.int32();
@@ -3879,7 +3878,7 @@ $root.tensorflow = (function() {
                             message.time = reader.double();
                             break;
                         case 4:
-                            message.quantizedStep = reader.int64();
+                            message.quantizedStep = reader.int64().toNumber();
                             break;
                         case 2:
                             message.text = reader.string();
@@ -4595,7 +4594,7 @@ $root.tensorflow = (function() {
                             message.time = reader.double();
                             break;
                         case 4:
-                            message.sectionId = reader.int64();
+                            message.sectionId = reader.int64().toNumber();
                             break;
                         default:
                             reader.skipType(tag & 7);
@@ -4830,7 +4829,7 @@ $root.tensorflow = (function() {
                         var tag = reader.uint32();
                         switch (tag >>> 3) {
                         case 1:
-                            message.sectionId = reader.int64();
+                            message.sectionId = reader.int64().toNumber();
                             break;
                         case 2:
                             message.sectionGroup = $root.tensorflow.magenta.NoteSequence.SectionGroup.decode(reader, reader.uint32());
