@@ -62,13 +62,20 @@ async function transcribeFromAudio() {
   const melSpec: number[][] =
       await fetch(MEL_SPEC_URL).then((response) => response.json());
   console.log(melSpec);
-  // const start = performance.now();
+  const start = performance.now();
   const melSpec2 = await oaf.getMelSpec(audio);
   console.log(melSpec2);
-  // const ns = await oaf.transcribeFromAudio(audio);
-  // writeTimer('transcription-time', start);
-  // writeNoteSeqs('transcription-results', [ns], undefined, true);
+  const ns = await oaf.transcribeFromAudio(audio);
+  writeTimer('audio-time', start);
+  writeNoteSeqs('audio-results', [ns], undefined, true);
   oaf.dispose();
+
+  const expectedNs: INoteSequence =
+      await fetch(EXPECTED_NS_URL).then((response) => response.json());
+  document.getElementById('audio-match').innerHTML =
+      notesMatch(ns.notes, expectedNs.notes) ?
+      '<span style="color:green">TRUE</span>' :
+      '<b><span style="color:red">FALSE</span>></b>';
 }
 
 transcribeFromAudio();
