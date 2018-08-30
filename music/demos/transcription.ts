@@ -56,10 +56,10 @@ async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
 try {
   const oaf = new mm.OnsetsAndFrames(CKPT_URL);
   oaf.initialize()
-      // .then(() => transcribe(oaf, 250))
-      // .then(() => transcribe(oaf, 150))
-      // .then(() => transcribe(oaf, 80))
-      // .then(() => transcribe(oaf, 62))
+      .then(() => transcribe(oaf, 250))
+      .then(() => transcribe(oaf, 150))
+      .then(() => transcribe(oaf, 80))
+      .then(() => transcribe(oaf, 62))
       .then(() => transcribe(oaf, 50))
       .then(() => oaf.dispose())
       .then(() => writeMemory(tf.memory().numBytes));
