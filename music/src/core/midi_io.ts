@@ -22,7 +22,6 @@
  * Imports
  */
 import * as midiconvert from 'midiconvert';
-import {isNullOrUndefined} from 'util';
 
 import {INoteSequence, NoteSequence} from '../protobuf';
 
@@ -166,17 +165,16 @@ export function sequenceProtoToMidi(ns: INoteSequence) {
     const track = {
       id: i,
       notes: [] as Array<{}>,
-      isPercussion: isNullOrUndefined(notes[0].isDrum) ? false :
-                                                         notes[0].isDrum,
+      isPercussion: (notes[0].isDrum === undefined) ? false : notes[0].isDrum,
       channelNumber: notes[0].isDrum ? constants.DRUM_CHANNEL :
                                        constants.DEFAULT_CHANNEL,
-      instrumentNumber: isNullOrUndefined(notes[0].program) ?
+      instrumentNumber: (notes[0].program === undefined) ?
           constants.DEFAULT_PROGRAM :
           notes[0].program
     };
 
     track.notes = notes.map(note => {
-      const velocity = isNullOrUndefined(note.velocity) ?
+      const velocity = (note.velocity === undefined) ?
           constants.DEFAULT_VELOCITY :
           note.velocity;
       return {

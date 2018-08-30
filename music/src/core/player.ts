@@ -20,7 +20,6 @@
  * Imports
  */
 import * as Tone from 'tone';
-import {isNullOrUndefined} from 'util';
 
 import {INoteSequence, NoteSequence} from '../protobuf';
 
@@ -337,7 +336,7 @@ export class Player extends BasePlayer {
   private getSynth(instrument: number, program?: number) {
     if (this.synths.has(instrument)) {
       return this.synths.get(instrument);
-    } else if (!isNullOrUndefined(program) && program >= 32 && program <= 39) {
+    } else if (program !== undefined && program >= 32 && program <= 39) {
       const bass = new Tone.Synth({oscillator: {type: 'triangle'}}).toMaster();
       bass.volume.value = 5;
       this.synths.set(instrument, bass);

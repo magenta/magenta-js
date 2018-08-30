@@ -21,7 +21,6 @@
  * Imports
  */
 import * as tf from '@tensorflow/tfjs-core';
-import {isNullOrUndefined} from 'util';
 
 import * as chords from '../core/chords';
 import * as constants from '../core/constants';
@@ -38,10 +37,10 @@ class LayerVars {
   kernel: tf.Tensor2D;
   bias: tf.Tensor1D;
   constructor(kernel: tf.Tensor2D, bias: tf.Tensor1D) {
-    if (isNullOrUndefined(kernel)) {
+    if (kernel === undefined) {
       throw Error('`kernel` is undefined.');
     }
-    if (isNullOrUndefined(bias)) {
+    if (bias === undefined) {
       throw Error('`bias` is undefined.');
     }
     this.kernel = kernel;
@@ -578,7 +577,7 @@ class MusicVAE {
    * Disposes of any untracked `Tensors` to avoid GPU memory leaks.
    */
   dispose() {
-    if (!isNullOrUndefined(this.rawVars)) {
+    if (this.rawVars !== undefined) {
       Object.keys(this.rawVars).forEach(name => this.rawVars[name].dispose());
     }
     this.encoder = undefined;
