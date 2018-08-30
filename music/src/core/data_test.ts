@@ -180,7 +180,7 @@ test('Test MelodyConverterWithPolyphonicInput', (t: test.Test) => {
     'numSteps': 32,
     'minPitch': 21,
     'maxPitch': 108,
-    'disallowPolyphony': true
+    'ignorePolyphony': false
   });
   t.throws(() => melConverterDisallowsPolyphony.toTensor(polyMelNs));
   t.end();

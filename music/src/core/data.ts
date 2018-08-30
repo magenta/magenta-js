@@ -339,8 +339,8 @@ export class DrumsOneHotConverter extends DrumsConverter {
  * cause an errot to be thrown.
  * @param maxPitch The maximum pitch to model. Those above this value will
  * cause an error to be thrown.
- * @param disallowPolyphony (default: false) If true, an error will be raised
- * when notes start at the same step. If false, the highest pitched note is used
+ * @param ignorePolpyhony (default: trie) If false, an error will be raised
+ * when notes start at the same step. If trie, the highest pitched note is used
  * and others are ignored.
  * @param numSegments (Optional) The number of conductor segments, if
  * applicable.
@@ -348,12 +348,12 @@ export class DrumsOneHotConverter extends DrumsConverter {
 export interface MelodyConverterArgs extends BaseConverterArgs {
   minPitch: number;
   maxPitch: number;
-  disallowPolyphony?: boolean;
+  ignorePolyphony?: boolean;
 }
 export class MelodyConverter extends DataConverter {
   readonly minPitch: number;  // inclusive
   readonly maxPitch: number;  // inclusive
-  readonly disallowPolyphony: boolean;
+  readonly ignorePolyphony: boolean;
   readonly depth: number;
   readonly endTensor: tf.Tensor1D;
 
@@ -366,7 +366,8 @@ export class MelodyConverter extends DataConverter {
     super(args);
     this.minPitch = args.minPitch;
     this.maxPitch = args.maxPitch;
-    this.disallowPolyphony = args.disallowPolyphony;
+    this.ignorePolyphony =
+        (args.ignorePolyphony === undefined) ? true : args.ignorePolyphony;
     this.depth = args.maxPitch - args.minPitch + 1 + this.FIRST_PITCH;
   }
 
@@ -385,7 +386,7 @@ export class MelodyConverter extends DataConverter {
     let lastStart = -1;
     sortedNotes.forEach(n => {
       if (n.quantizedStartStep === lastStart) {
-        if (this.disallowPolyphony) {
+        if (!this.ignorePolyphony) {
           throw new Error('`NoteSequence` is not monophonic.');
         } else {
           // Keep highest note.
