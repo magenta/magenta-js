@@ -18,6 +18,7 @@ import * as tf from '@tensorflow/tfjs-core';
 
 import * as mm from '../src/index';
 import {INoteSequence} from '../src/index';
+import AudioUtils from '../src/transcription/audio_utils';
 
 import {CHECKPOINTS_DIR} from './common';
 import {writeMemory, writeNoteSeqs, writeTimer} from './common';
@@ -49,8 +50,29 @@ async function transcribe() {
   oaf.dispose();
 }
 
+async function transcribeFromAudio() {
+  const audio = await AudioUtils.loadBuffer('./transcription_ground.mp3');
+  const oaf = new mm.OnsetsAndFrames(CKPT_URL);
+  await oaf.initialize();
+
+  const melSpec: number[][] =
+      await fetch(MEL_SPEC_URL).then((response) => response.json());
+  console.log(melSpec);
+  const start = performance.now();
+  const melSpec2 = await oaf.getMelSpec(audio);
+  console.log(melSpec2);
+  debugger
+  const ns = await oaf.transcribeFromAudio(audio);
+  writeTimer('transcription-time', start);
+  writeNoteSeqs('transcription-results', [ns], undefined, true);
+  oaf.dispose();
+}
+
 try {
-  Promise.all([transcribe()]).then(() => writeMemory(tf.memory().numBytes));
+  Promise.all([transcribeFromAudio()])
+      .then(() => writeMemory(tf.memory().numBytes));
+
 } catch (err) {
+  transcribe();
   console.error(err);
 }
