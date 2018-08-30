@@ -389,6 +389,9 @@ export class MelodyConverter extends DataConverter {
         if (this.disallowPolyphony) {
           throw new Error('`NoteSequence` is not monophonic.');
         } else {
+          // Keep highest note.
+          // Notes are sorted by pitch descending, so if a note is already at
+          // this position its the highest pitch.
           return;
         }
       }
