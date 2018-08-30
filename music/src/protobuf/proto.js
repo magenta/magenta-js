@@ -2,6 +2,7 @@
 "use strict";
 
 var $protobuf = require("protobufjs/minimal");
+
 // Common aliases
 var $Reader = $protobuf.Reader, $Writer = $protobuf.Writer, $util = $protobuf.util;
 
@@ -3936,6 +3937,7 @@ $root.tensorflow = (function() {
                             return "annotationType: enum value expected";
                         case 0:
                         case 1:
+                        case 2:
                             break;
                         }
                     return null;
@@ -3974,6 +3976,10 @@ $root.tensorflow = (function() {
                     case "CHORD_SYMBOL":
                     case 1:
                         message.annotationType = 1;
+                        break;
+                    case "BEAT":
+                    case 2:
+                        message.annotationType = 2;
                         break;
                     }
                     return message;
@@ -4033,11 +4039,13 @@ $root.tensorflow = (function() {
                  * @enum {string}
                  * @property {number} UNKNOWN=0 UNKNOWN value
                  * @property {number} CHORD_SYMBOL=1 CHORD_SYMBOL value
+                 * @property {number} BEAT=2 BEAT value
                  */
                 TextAnnotation.TextAnnotationType = (function() {
                     var valuesById = {}, values = Object.create(valuesById);
                     values[valuesById[0] = "UNKNOWN"] = 0;
                     values[valuesById[1] = "CHORD_SYMBOL"] = 1;
+                    values[valuesById[2] = "BEAT"] = 2;
                     return values;
                 })();
 
@@ -5480,6 +5488,216 @@ $root.tensorflow = (function() {
             };
 
             return SequenceMetadata;
+        })();
+
+        magenta.VelocityRange = (function() {
+
+            /**
+             * Properties of a VelocityRange.
+             * @memberof tensorflow.magenta
+             * @interface IVelocityRange
+             * @property {number|null} [min] VelocityRange min
+             * @property {number|null} [max] VelocityRange max
+             */
+
+            /**
+             * Constructs a new VelocityRange.
+             * @memberof tensorflow.magenta
+             * @classdesc Represents a VelocityRange.
+             * @implements IVelocityRange
+             * @constructor
+             * @param {tensorflow.magenta.IVelocityRange=} [properties] Properties to set
+             */
+            function VelocityRange(properties) {
+                if (properties)
+                    for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * VelocityRange min.
+             * @member {number} min
+             * @memberof tensorflow.magenta.VelocityRange
+             * @instance
+             */
+            VelocityRange.prototype.min = 0;
+
+            /**
+             * VelocityRange max.
+             * @member {number} max
+             * @memberof tensorflow.magenta.VelocityRange
+             * @instance
+             */
+            VelocityRange.prototype.max = 0;
+
+            /**
+             * Creates a new VelocityRange instance using the specified properties.
+             * @function create
+             * @memberof tensorflow.magenta.VelocityRange
+             * @static
+             * @param {tensorflow.magenta.IVelocityRange=} [properties] Properties to set
+             * @returns {tensorflow.magenta.VelocityRange} VelocityRange instance
+             */
+            VelocityRange.create = function create(properties) {
+                return new VelocityRange(properties);
+            };
+
+            /**
+             * Encodes the specified VelocityRange message. Does not implicitly {@link tensorflow.magenta.VelocityRange.verify|verify} messages.
+             * @function encode
+             * @memberof tensorflow.magenta.VelocityRange
+             * @static
+             * @param {tensorflow.magenta.IVelocityRange} message VelocityRange message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            VelocityRange.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.min != null && message.hasOwnProperty("min"))
+                    writer.uint32(/* id 1, wireType 0 =*/8).int32(message.min);
+                if (message.max != null && message.hasOwnProperty("max"))
+                    writer.uint32(/* id 2, wireType 0 =*/16).int32(message.max);
+                return writer;
+            };
+
+            /**
+             * Encodes the specified VelocityRange message, length delimited. Does not implicitly {@link tensorflow.magenta.VelocityRange.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof tensorflow.magenta.VelocityRange
+             * @static
+             * @param {tensorflow.magenta.IVelocityRange} message VelocityRange message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            VelocityRange.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes a VelocityRange message from the specified reader or buffer.
+             * @function decode
+             * @memberof tensorflow.magenta.VelocityRange
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {tensorflow.magenta.VelocityRange} VelocityRange
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            VelocityRange.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                var end = length === undefined ? reader.len : reader.pos + length, message = new $root.tensorflow.magenta.VelocityRange();
+                while (reader.pos < end) {
+                    var tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    case 1:
+                        message.min = reader.int32();
+                        break;
+                    case 2:
+                        message.max = reader.int32();
+                        break;
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes a VelocityRange message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof tensorflow.magenta.VelocityRange
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {tensorflow.magenta.VelocityRange} VelocityRange
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            VelocityRange.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies a VelocityRange message.
+             * @function verify
+             * @memberof tensorflow.magenta.VelocityRange
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            VelocityRange.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (message.min != null && message.hasOwnProperty("min"))
+                    if (!$util.isInteger(message.min))
+                        return "min: integer expected";
+                if (message.max != null && message.hasOwnProperty("max"))
+                    if (!$util.isInteger(message.max))
+                        return "max: integer expected";
+                return null;
+            };
+
+            /**
+             * Creates a VelocityRange message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof tensorflow.magenta.VelocityRange
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {tensorflow.magenta.VelocityRange} VelocityRange
+             */
+            VelocityRange.fromObject = function fromObject(object) {
+                if (object instanceof $root.tensorflow.magenta.VelocityRange)
+                    return object;
+                var message = new $root.tensorflow.magenta.VelocityRange();
+                if (object.min != null)
+                    message.min = object.min | 0;
+                if (object.max != null)
+                    message.max = object.max | 0;
+                return message;
+            };
+
+            /**
+             * Creates a plain object from a VelocityRange message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof tensorflow.magenta.VelocityRange
+             * @static
+             * @param {tensorflow.magenta.VelocityRange} message VelocityRange
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            VelocityRange.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                var object = {};
+                if (options.defaults) {
+                    object.min = 0;
+                    object.max = 0;
+                }
+                if (message.min != null && message.hasOwnProperty("min"))
+                    object.min = message.min;
+                if (message.max != null && message.hasOwnProperty("max"))
+                    object.max = message.max;
+                return object;
+            };
+
+            /**
+             * Converts this VelocityRange to JSON.
+             * @function toJSON
+             * @memberof tensorflow.magenta.VelocityRange
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            VelocityRange.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            return VelocityRange;
         })();
 
         return magenta;
