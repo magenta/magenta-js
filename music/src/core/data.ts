@@ -383,7 +383,6 @@ export class MelodyConverter extends DataConverter {
         });
     const mel = tf.buffer([numSteps], 'int32');
     let lastStart = -1;
-    console.log(sortedNotes);
     sortedNotes.forEach(n => {
       if (n.quantizedStartStep === lastStart) {
         if (this.disallowPolyphony) {
