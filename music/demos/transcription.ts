@@ -30,6 +30,8 @@ const MEL_SPEC_URL = `${
     TRANS_CKPT_DIR}/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl.melhtk0-250frames.spec.json`;
 const EXPECTED_NS_URL = `${
     TRANS_CKPT_DIR}/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl.melhtk0-250frames.ns.json`;
+const ORIGINAL_AUDIO_URL =
+    'https://storage.googleapis.com/magentadata/js/checkpoints/transcription/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl-250frames.wav';
 // tslint:enable:max-line-length
 
 async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
@@ -53,7 +55,7 @@ async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
 }
 
 async function transcribeFromAudio() {
-  const audio = await AudioUtils.loadBuffer('./transcription_ground.mp3');
+  const audio = await AudioUtils.loadBuffer(ORIGINAL_AUDIO_URL);
   const oaf = new mm.OnsetsAndFrames(CKPT_URL);
   await oaf.initialize();
 
