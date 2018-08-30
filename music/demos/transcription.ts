@@ -18,17 +18,20 @@ import * as tf from '@tensorflow/tfjs-core';
 
 import * as mm from '../src/index';
 import {INoteSequence} from '../src/index';
+import AudioUtils from '../src/transcription/audio_utils';
 
 // tslint:disable-next-line:max-line-length
 import {CHECKPOINTS_DIR, notesMatch, writeMemory, writeNoteSeqs, writeTimer} from './common';
 
-const TRANS_CKPT_DIR = `${CHECKPOINTS_DIR}/transcription`
+const TRANS_CKPT_DIR = `${CHECKPOINTS_DIR}/transcription`;
 const CKPT_URL = `${TRANS_CKPT_DIR}/onsets_frames_htk0`;
 // tslint:disable:max-line-length
 const MEL_SPEC_URL = `${
     TRANS_CKPT_DIR}/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl.melhtk0-250frames.spec.json`;
 const EXPECTED_NS_URL = `${
     TRANS_CKPT_DIR}/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl.melhtk0-250frames.ns.json`;
+const ORIGINAL_AUDIO_URL =
+    'https://storage.googleapis.com/magentadata/js/checkpoints/transcription/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl-250frames.wav';
 // tslint:enable:max-line-length
 
 async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
@@ -51,6 +54,32 @@ async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
       '<b><span style="color:red">FALSE</span>></b>';
 }
 
+async function transcribeFromAudio() {
+  const audio = await AudioUtils.loadBuffer(ORIGINAL_AUDIO_URL);
+  const oaf = new mm.OnsetsAndFrames(CKPT_URL);
+  await oaf.initialize();
+
+  const melSpec: number[][] =
+      await fetch(MEL_SPEC_URL).then((response) => response.json());
+  console.log(melSpec);
+  const start = performance.now();
+  const melSpec2 = await oaf.getMelSpec(audio);
+  console.log(melSpec2);
+  const ns = await oaf.transcribeFromAudio(audio);
+  writeTimer('audio-time', start);
+  writeNoteSeqs('audio-results', [ns], undefined, true);
+  oaf.dispose();
+
+  const expectedNs: INoteSequence =
+      await fetch(EXPECTED_NS_URL).then((response) => response.json());
+  document.getElementById('audio-match').innerHTML =
+      notesMatch(ns.notes, expectedNs.notes) ?
+      '<span style="color:green">TRUE</span>' :
+      '<b><span style="color:red">FALSE</span>></b>';
+}
+
+transcribeFromAudio();
+
 try {
   const oaf = new mm.OnsetsAndFrames(CKPT_URL);
   oaf.initialize()
@@ -62,5 +91,6 @@ try {
       .then(() => oaf.dispose())
       .then(() => writeMemory(tf.memory().numBytes));
 } catch (err) {
+  // transcribe();
   console.error(err);
 }

@@ -25,6 +25,7 @@
     "file-saver-typescript": "^1.0.1",
     "fs": "^0.0.1-security",
     "http-server": "^0.11.1",
+    "kissfft-js": "^0.1.8",
     "tape": "^4.9.0",
     "ts-node": "^5.0.1",
     "tsify": "^3.0.4",

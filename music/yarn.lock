@@ -1049,6 +1049,10 @@ kind-of@^3.0.2:
   dependencies:
     is-buffer "^1.1.5"
 
+kissfft-js@^0.1.8:
+  version "0.1.8"
+  resolved "https://registry.yarnpkg.com/kissfft-js/-/kissfft-js-0.1.8.tgz#fdc418cd6b8268aad6d2841a7f43db923679e11a"
+
 labeled-stream-splicer@^2.0.0:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/labeled-stream-splicer/-/labeled-stream-splicer-2.0.1.tgz#9cffa32fd99e1612fd1d86a8db962416d5292926"
