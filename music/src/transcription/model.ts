@@ -163,8 +163,7 @@ export class OnsetsAndFrames {
     const stftEnergies = stft.map(fft => AudioUtils.fftEnergies(fft));
 
     // Calculate mel energy spectrogram from STFT.
-    return AudioUtils.logSpectrogram(
-        AudioUtils.melSpectrogram(stftEnergies, melCount));
+    return AudioUtils.melSpectrogram(stftEnergies, melCount);
   }
 
   async transcribeFromAudio(audioBuffer: AudioBuffer) {
