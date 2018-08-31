@@ -339,8 +339,8 @@ export class DrumsOneHotConverter extends DrumsConverter {
  * cause an errot to be thrown.
  * @param maxPitch The maximum pitch to model. Those above this value will
  * cause an error to be thrown.
- * @param ignorePolpyhony (default: trie) If false, an error will be raised
- * when notes start at the same step. If trie, the highest pitched note is used
+ * @param ignorePolpyhony (default: true) If false, an error will be raised
+ * when notes start at the same step. If true, the highest pitched note is used
  * and others are ignored.
  * @param numSegments (Optional) The number of conductor segments, if
  * applicable.
