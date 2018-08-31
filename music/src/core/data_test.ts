@@ -160,6 +160,32 @@ test('Test MelodyConverter', (t: test.Test) => {
   t.end();
 });
 
+test('Test MelodyConverterWithPolyphonicInput', (t: test.Test) => {
+  const melConverter = new data.MelodyConverter({
+    'numSteps': 32,
+    'minPitch': 21,
+    'maxPitch': 108,
+  });
+
+  const polyMelNs = sequences.clone(MEL_NS);
+  polyMelNs.notes[0].quantizedEndStep = 6;
+  polyMelNs.notes.push(NoteSequence.Note.create(
+      {pitch: 70, quantizedStartStep: 2, quantizedEndStep: 5}));
+  const melTensor = melConverter.toTensor(polyMelNs);
+  t.deepEqual(melTensor.shape, [32, 90]);
+  melConverter.toNoteSequence(melTensor, 2).then(ns => t.deepEqual(ns, MEL_NS));
+  melTensor.dispose();
+
+  const melConverterDisallowsPolyphony = new data.MelodyConverter({
+    'numSteps': 32,
+    'minPitch': 21,
+    'maxPitch': 108,
+    'ignorePolyphony': false
+  });
+  t.throws(() => melConverterDisallowsPolyphony.toTensor(polyMelNs));
+  t.end();
+});
+
 test('Test DrumConverters', (t: test.Test) => {
   const drumsConverter = new data.DrumsConverter({'numSteps': 32});
   const drumsOneHotConverter = new data.DrumsOneHotConverter({'numSteps': 32});
