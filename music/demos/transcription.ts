@@ -51,13 +51,11 @@ async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
   document.getElementById(`${batchLength}-match`).innerHTML =
       notesMatch(ns.notes, expectedNs.notes) ?
       '<span style="color:green">TRUE</span>' :
-      '<b><span style="color:red">FALSE</span>></b>';
+      '<b><span style="color:red">FALSE</span></b>';
 }
 
-async function transcribeFromAudio() {
+async function transcribeFromAudio(oaf: mm.OnsetsAndFrames) {
   const audio = await AudioUtils.loadBuffer(ORIGINAL_AUDIO_URL);
-  const oaf = new mm.OnsetsAndFrames(CKPT_URL);
-  await oaf.initialize();
 
   const melSpec: number[][] =
       await fetch(MEL_SPEC_URL).then((response) => response.json());
@@ -68,26 +66,25 @@ async function transcribeFromAudio() {
   const ns = await oaf.transcribeFromAudio(audio);
   writeTimer('audio-time', start);
   writeNoteSeqs('audio-results', [ns], undefined, true);
-  oaf.dispose();
 
   const expectedNs: INoteSequence =
       await fetch(EXPECTED_NS_URL).then((response) => response.json());
   document.getElementById('audio-match').innerHTML =
       notesMatch(ns.notes, expectedNs.notes) ?
       '<span style="color:green">TRUE</span>' :
-      '<b><span style="color:red">FALSE</span>></b>';
+      '<b><span style="color:red">FALSE</span></b>';
 }
-
-transcribeFromAudio();
 
 try {
   const oaf = new mm.OnsetsAndFrames(CKPT_URL);
   oaf.initialize()
-      .then(() => transcribe(oaf, 250))
-      .then(() => transcribe(oaf, 150))
-      .then(() => transcribe(oaf, 80))
-      .then(() => transcribe(oaf, 62))
+
+      // .then(() => transcribe(oaf, 250))
+      // .then(() => transcribe(oaf, 150))
+      // .then(() => transcribe(oaf, 80))
+      // .then(() => transcribe(oaf, 62))
       .then(() => transcribe(oaf, 50))
+      .then(() => transcribeFromAudio(oaf))
       .then(() => oaf.dispose())
       .then(() => writeMemory(tf.memory().numBytes));
 } catch (err) {

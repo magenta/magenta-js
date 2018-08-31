@@ -153,7 +153,7 @@ export class OnsetsAndFrames {
     // ???
     const bufferLength = 1024;
     const hopLength = 512;
-    const melCount = 40;
+    const melCount = 229;
 
     // Calculate STFT from the ArrayBuffer.
     const stft = AudioUtils.stft(arrayBuffer, bufferLength, hopLength);
