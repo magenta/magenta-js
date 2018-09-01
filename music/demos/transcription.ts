@@ -18,7 +18,7 @@ import * as tf from '@tensorflow/tfjs-core';
 
 import * as mm from '../src/index';
 import {INoteSequence} from '../src/index';
-import AudioUtils from '../src/transcription/audio_utils';
+import {loadBufferOffline} from '../src/transcription/audio_utils';
 
 // tslint:disable-next-line:max-line-length
 import {CHECKPOINTS_DIR, notesMatch, writeMemory, writeNoteSeqs, writeTimer} from './common';
@@ -56,7 +56,11 @@ async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
 */
 
 async function transcribeFromAudio(oaf: mm.OnsetsAndFrames) {
-  const audio = await AudioUtils.loadBuffer(ORIGINAL_AUDIO_URL);
+  const audio = await loadBufferOffline(ORIGINAL_AUDIO_URL);
+  const expectedNs: INoteSequence =
+      await fetch(EXPECTED_NS_URL).then((response) => response.json());
+  writeNoteSeqs('expected-ns', [expectedNs], undefined, true);
+
   const melSpec: number[][] =
       await fetch(MEL_SPEC_URL).then((response) => response.json());
   console.log(melSpec);
@@ -67,8 +71,6 @@ async function transcribeFromAudio(oaf: mm.OnsetsAndFrames) {
   writeTimer('audio-time', start);
   writeNoteSeqs('audio-results', [ns], undefined, true);
 
-  const expectedNs: INoteSequence =
-      await fetch(EXPECTED_NS_URL).then((response) => response.json());
   document.getElementById('audio-match').innerHTML =
       notesMatch(ns.notes, expectedNs.notes) ?
       '<span style="color:green">TRUE</span>' :
