@@ -18,13 +18,13 @@ import * as tf from '@tensorflow/tfjs-core';
 
 import * as mm from '../src/index';
 import {INoteSequence} from '../src/index';
-import AudioUtils from '../src/transcription/audio_utils';
+import {loadBufferOffline} from '../src/transcription/audio_utils';
 
 // tslint:disable-next-line:max-line-length
 import {CHECKPOINTS_DIR, notesMatch, writeMemory, writeNoteSeqs, writeTimer} from './common';
 
 const TRANS_CKPT_DIR = `${CHECKPOINTS_DIR}/transcription`;
-const CKPT_URL = `${TRANS_CKPT_DIR}/onsets_frames_htk0`;
+const CKPT_URL = `${TRANS_CKPT_DIR}/onsets_frames_htk1`;
 // tslint:disable:max-line-length
 const MEL_SPEC_URL = `${
     TRANS_CKPT_DIR}/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl.melhtk0-250frames.spec.json`;
@@ -33,7 +33,7 @@ const EXPECTED_NS_URL = `${
 const ORIGINAL_AUDIO_URL =
     'https://storage.googleapis.com/magentadata/js/checkpoints/transcription/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl-250frames.wav';
 // tslint:enable:max-line-length
-
+/*
 async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
   const expectedNs: INoteSequence =
       await fetch(EXPECTED_NS_URL).then((response) => response.json());
@@ -53,9 +53,13 @@ async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
       '<span style="color:green">TRUE</span>' :
       '<b><span style="color:red">FALSE</span></b>';
 }
+*/
 
 async function transcribeFromAudio(oaf: mm.OnsetsAndFrames) {
-  const audio = await AudioUtils.loadBuffer(ORIGINAL_AUDIO_URL);
+  const audio = await loadBufferOffline(ORIGINAL_AUDIO_URL);
+  const expectedNs: INoteSequence =
+      await fetch(EXPECTED_NS_URL).then((response) => response.json());
+  writeNoteSeqs('expected-ns', [expectedNs], undefined, true);
 
   const melSpec: number[][] =
       await fetch(MEL_SPEC_URL).then((response) => response.json());
@@ -67,8 +71,6 @@ async function transcribeFromAudio(oaf: mm.OnsetsAndFrames) {
   writeTimer('audio-time', start);
   writeNoteSeqs('audio-results', [ns], undefined, true);
 
-  const expectedNs: INoteSequence =
-      await fetch(EXPECTED_NS_URL).then((response) => response.json());
   document.getElementById('audio-match').innerHTML =
       notesMatch(ns.notes, expectedNs.notes) ?
       '<span style="color:green">TRUE</span>' :
@@ -83,7 +85,7 @@ try {
       // .then(() => transcribe(oaf, 150))
       // .then(() => transcribe(oaf, 80))
       // .then(() => transcribe(oaf, 62))
-      .then(() => transcribe(oaf, 50))
+      //      .then(() => transcribe(oaf, 50))
       .then(() => transcribeFromAudio(oaf))
       .then(() => oaf.dispose())
       .then(() => writeMemory(tf.memory().numBytes));

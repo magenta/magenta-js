@@ -22,10 +22,11 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
-import AudioUtils from './audio_utils';
+import {melSpectrogram} from './audio_utils';
 // tslint:disable-next-line:max-line-length
 import {batchInput, MIDI_PITCHES, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
 
+const SAMPLE_RATE = 16000;
 const MEL_SPEC_BINS = 229;
 const LSTM_UNITS = 128;
 
@@ -148,26 +149,18 @@ export class OnsetsAndFrames {
   }
 
   getMelSpec(audioBuffer: AudioBuffer) {
-    const arrayBuffer: Float32Array = audioBuffer.getChannelData(0);
-
-    // ???
-    const bufferLength = 1024;
-    const hopLength = 512;
-    const melCount = 229;
-
-    // Calculate STFT from the ArrayBuffer.
-    const stft = AudioUtils.stft(arrayBuffer, bufferLength, hopLength);
-
-    // Each STFT column is an FFT array which is interleaved complex. For STFT
-    // rendering, we want to show only the magnitudes.
-    const stftEnergies = stft.map(fft => AudioUtils.fftEnergies(fft));
-
-    // Calculate mel energy spectrogram from STFT.
-    return AudioUtils.melSpectrogram(stftEnergies, melCount);
+    return melSpectrogram(audioBuffer.getChannelData(0), {
+             sampleRate: SAMPLE_RATE,
+             hopLength: 512,
+             nMels: MEL_SPEC_BINS,
+             nFft: 2048,
+             fMin: 30,
+           })
+        .map(a => Array.from(a));
   }
 
   async transcribeFromAudio(audioBuffer: AudioBuffer) {
-    const melSpec = this.getMelSpec(audioBuffer);
+    const melSpec = await this.getMelSpec(audioBuffer);
     return this.transcribeFromMelSpec(melSpec);
   }
 
