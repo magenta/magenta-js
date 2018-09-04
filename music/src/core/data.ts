@@ -339,16 +339,21 @@ export class DrumsOneHotConverter extends DrumsConverter {
  * cause an errot to be thrown.
  * @param maxPitch The maximum pitch to model. Those above this value will
  * cause an error to be thrown.
+ * @param ignorePolpyhony (default: true) If false, an error will be raised
+ * when notes start at the same step. If true, the highest pitched note is used
+ * and others are ignored.
  * @param numSegments (Optional) The number of conductor segments, if
  * applicable.
  */
 export interface MelodyConverterArgs extends BaseConverterArgs {
   minPitch: number;
   maxPitch: number;
+  ignorePolyphony?: boolean;
 }
 export class MelodyConverter extends DataConverter {
   readonly minPitch: number;  // inclusive
   readonly maxPitch: number;  // inclusive
+  readonly ignorePolyphony: boolean;
   readonly depth: number;
   readonly endTensor: tf.Tensor1D;
 
@@ -361,19 +366,34 @@ export class MelodyConverter extends DataConverter {
     super(args);
     this.minPitch = args.minPitch;
     this.maxPitch = args.maxPitch;
+    this.ignorePolyphony =
+        (args.ignorePolyphony === undefined) ? true : args.ignorePolyphony;
     this.depth = args.maxPitch - args.minPitch + 1 + this.FIRST_PITCH;
   }
 
   toTensor(noteSequence: INoteSequence) {
     sequences.assertIsQuantizedSequence(noteSequence);
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
-    const sortedNotes: NoteSequence.INote[] = noteSequence.notes.sort(
-        (n1, n2) => n1.quantizedStartStep - n2.quantizedStartStep);
+    // Sort by note start times, and secondarily by pitch descending.
+    const sortedNotes: NoteSequence.INote[] =
+        noteSequence.notes.sort((n1, n2) => {
+          if (n1.quantizedStartStep === n2.quantizedStartStep) {
+            return n2.pitch - n1.pitch;
+          }
+          return n1.quantizedStartStep - n2.quantizedStartStep;
+        });
     const mel = tf.buffer([numSteps], 'int32');
-    let lastEnd = -1;
+    let lastStart = -1;
     sortedNotes.forEach(n => {
-      if (n.quantizedStartStep < lastEnd) {
-        throw new Error('`NoteSequence` is not monophonic.');
+      if (n.quantizedStartStep === lastStart) {
+        if (!this.ignorePolyphony) {
+          throw new Error('`NoteSequence` is not monophonic.');
+        } else {
+          // Keep highest note.
+          // Notes are sorted by pitch descending, so if a note is already at
+          // this position its the highest pitch.
+          return;
+        }
       }
       if (n.pitch < this.minPitch || n.pitch > this.maxPitch) {
         throw Error(
@@ -382,7 +402,7 @@ export class MelodyConverter extends DataConverter {
       }
       mel.set(n.pitch - this.minPitch + this.FIRST_PITCH, n.quantizedStartStep);
       mel.set(this.NOTE_OFF, n.quantizedEndStep);
-      lastEnd = n.quantizedEndStep;
+      lastStart = n.quantizedStartStep;
     });
     return tf.tidy(() => tf.oneHot(mel.toTensor() as tf.Tensor1D, this.depth));
   }
