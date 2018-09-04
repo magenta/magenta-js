@@ -1,10 +1,30 @@
+/**
+ * Utiltities for loading audio and computing mel spectrograms, based on
+ * {@link https://github.com/google/web-audio-recognition/blob/librosa-compat}.
+ * TODO(adarob): Rewrite using tfjs.
+ *
+ * @license
+ * Copyright 2018 Google Inc. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 //@ts-ignore
 import * as FFT from 'fft.js';
 
-// tslint:disable-next-line:no-default-export
-export default class DummyClass {}
-let context: AudioContext = null;
+import {SAMPLE_RATE} from './constants';
 
+/**
+ * Parameters for computing a spectrogram from audio.
+ */
 export interface SpecParams {
   sampleRate: number;
   hopLength?: number;
@@ -24,7 +44,7 @@ interface MelParams {
   fMax?: number;
 }
 
-export function magSpectrogram(
+function magSpectrogram(
     stft: Float32Array[], power: number): [Float32Array[], number] {
   // console.log(`magSpectrogram on ${stft.length} x ${stft[0].length}
   // power=${power}`);
@@ -33,7 +53,7 @@ export function magSpectrogram(
   return [spec, nFft];
 }
 
-export function stft(y: Float32Array, params: SpecParams): Float32Array[] {
+function stft(y: Float32Array, params: SpecParams): Float32Array[] {
   const nFft = params.nFft || 2048;
   const winLength = params.winLength || nFft;
   const hopLength = params.hopLength || Math.floor(winLength / 4);
@@ -72,18 +92,25 @@ export function stft(y: Float32Array, params: SpecParams): Float32Array[] {
   return stftMatrix;
 }
 
-export function spectrogram(
-    y: Float32Array, params: SpecParams): Float32Array[] {
-  if (!params.power) {
-    params.power = 1;
-  }
-  const stftMatrix = stft(y, params);
-  const spec = magSpectrogram(stftMatrix, params.power)[0];
-  return spec;
-}
-
+/**
+ * Computes a mel spectrogram from the given AudioBuffer.
+ *
+ * @param audioBuffer A monphonic, 16kHz audio buffer to transcribe.
+ * @param params Options for the mel spectrogram.
+ * @returns The loaded audio in an AudioBuffer.
+ */
 export function melSpectrogram(
-    y: Float32Array, params: SpecParams): Float32Array[] {
+    audioBuffer: AudioBuffer, params: SpecParams): Float32Array[] {
+  if (audioBuffer.numberOfChannels !== 1) {
+    // TODO(adarob): Make stereo audio monohponic.
+    throw Error('Only mono audio is supported.');
+  }
+  if (audioBuffer.sampleRate !== SAMPLE_RATE) {
+    // TODO(adarob): Resample audio
+    throw Error('Only 16kHz audio is supported.');
+  }
+  const y = audioBuffer.getChannelData(0);
+
   if (!params.power) {
     params.power = 2.0;
   }
@@ -95,7 +122,7 @@ export function melSpectrogram(
   return applyWholeFilterbank(spec, melBasis);
 }
 
-export function applyWholeFilterbank(
+function applyWholeFilterbank(
     spec: Float32Array[], filterbank: Float32Array[]): Float32Array[] {
   // Apply a point-wise dot product between the array of arrays.
   const out: Float32Array[] = [];
@@ -105,9 +132,9 @@ export function applyWholeFilterbank(
   return out;
 }
 
-export function applyFilterbank(
+function applyFilterbank(
     mags: Float32Array, filterbank: Float32Array[]): Float32Array {
-  if (mags.length != filterbank[0].length) {
+  if (mags.length !== filterbank[0].length) {
     throw new Error(
         `Each entry in filterbank should have dimensions ` +
         `matching FFT. |mags| = ${mags.length}, ` +
@@ -115,7 +142,7 @@ export function applyFilterbank(
   }
 
   // Apply each filter to the whole FFT signal to get one value.
-  let out = new Float32Array(filterbank.length);
+  const out = new Float32Array(filterbank.length);
   for (let i = 0; i < filterbank.length; i++) {
     // To calculate filterbank energies we multiply each filterbank with the
     // power spectrum.
@@ -126,22 +153,21 @@ export function applyFilterbank(
   return out;
 }
 
-//@ts-ignore
-export function applyWindow(buffer, win) {
+function applyWindow(buffer: Float32Array, win: Float32Array) {
   if (buffer.length !== win.length) {
     console.error(
         `Buffer length ${buffer.length} != window length ${win.length}.`);
     return null;
   }
 
-  let out = new Float32Array(buffer.length);
+  const out = new Float32Array(buffer.length);
   for (let i = 0; i < buffer.length; i++) {
     out[i] = win[i] * buffer[i];
   }
   return out;
 }
 
-export function padCenterToLength(data: Float32Array, length: number) {
+function padCenterToLength(data: Float32Array, length: number) {
   // If data is longer than length, error!
   if (data.length > length) {
     throw new Error('Data is longer than length.');
@@ -152,7 +178,7 @@ export function padCenterToLength(data: Float32Array, length: number) {
   return padConstant(data, [paddingLeft, paddingRight]);
 }
 
-export function padConstant(data: Float32Array, padding: number|number[]) {
+function padConstant(data: Float32Array, padding: number|number[]) {
   let padLeft, padRight;
   if (typeof (padding) === 'object') {
     [padLeft, padRight] = padding;
@@ -164,7 +190,7 @@ export function padConstant(data: Float32Array, padding: number|number[]) {
   return out;
 }
 
-export function padReflect(data: Float32Array, padding: number) {
+function padReflect(data: Float32Array, padding: number) {
   const out = padConstant(data, padding);
   for (let i = 0; i < padding; i++) {
     // Pad the beginning with reflected values.
@@ -179,11 +205,10 @@ export function padReflect(data: Float32Array, padding: number) {
  * Given a timeseries, returns an array of timeseries that are windowed
  * according to the params specified.
  */
-export function frame(
-    data: Float32Array, frameLength: number,
-    hopLength: number): Float32Array[] {
+function frame(data: Float32Array, frameLength: number, hopLength: number):
+    Float32Array[] {
   const bufferCount = Math.floor((data.length - frameLength) / hopLength) + 1;
-  let buffers = range(bufferCount).map(x => new Float32Array(frameLength));
+  const buffers = range(bufferCount).map(x => new Float32Array(frameLength));
   for (let i = 0; i < bufferCount; i++) {
     const ind = i * hopLength;
     const buffer = data.slice(ind, ind + frameLength);
@@ -197,7 +222,7 @@ export function frame(
   return buffers;
 }
 
-export function createMelFilterbank(params: MelParams): Float32Array[] {
+function createMelFilterbank(params: MelParams): Float32Array[] {
   const fMin = params.fMin || 0;
   const fMax = params.fMax || params.sampleRate / 2;
   const nMels = params.nMels || 128;
@@ -234,7 +259,7 @@ export function createMelFilterbank(params: MelParams): Float32Array[] {
   return weights;
 }
 
-export function fft(y: Float32Array) {
+function fft(y: Float32Array) {
   const fft = new FFT(y.length);
   const out = fft.createComplexArray();
   const data = fft.toComplexArray(y);
@@ -242,46 +267,34 @@ export function fft(y: Float32Array) {
   return out;
 }
 
-export function hannWindow(length: number) {
-  let win = new Float32Array(length);
+function hannWindow(length: number) {
+  const win = new Float32Array(length);
   for (let i = 0; i < length; i++) {
     win[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (length - 1)));
   }
   return win;
 }
 
-export function array(arr: number[]) {
-  const out = new Float32Array(arr.length);
-  out.set(arr);
-  return out;
-}
-
 const MIN_VAL = -10;
-//@ts-ignore
-export function logGtZero(val) {
+export function logGtZero(val: number) {
   // Ensure that the log argument is nonnegative.
   const offset = Math.exp(MIN_VAL);
   return Math.log(val + offset);
 }
 
-//@ts-ignore
-export function sum(array) {
-  //@ts-ignore
-  return array.reduce(function(a, b) {
-    return a + b;
-  });
+function sum(array: Float32Array) {
+  return array.reduce((a, b) => a + b);
 }
 
-//@ts-ignore
-export function range(count): number[] {
-  let out = [];
+function range(count: number): number[] {
+  const out = [];
   for (let i = 0; i < count; i++) {
     out.push(i);
   }
   return out;
 }
 
-export function linearSpace(start: number, end: number, count: number) {
+function linearSpace(start: number, end: number, count: number) {
   // Include start and endpoints.
   const delta = (end - start) / (count - 1);
   const out = new Float32Array(count);
@@ -295,8 +308,8 @@ export function linearSpace(start: number, end: number, count: number) {
  * Given an interlaced complex array (y_i is real, y_(i+1) is imaginary),
  * calculates the energies. Output is half the size.
  */
-export function mag(y: Float32Array) {
-  let out = new Float32Array(y.length / 2);
+function mag(y: Float32Array) {
+  const out = new Float32Array(y.length / 2);
   for (let i = 0; i < y.length / 2; i++) {
     out[i] = Math.sqrt(y[i * 2] * y[i * 2] + y[i * 2 + 1] * y[i * 2 + 1]);
   }
@@ -333,32 +346,19 @@ export function powerToDb(
   return logSpec;
 }
 
-export function hzToMel(hz: number): number {
+function hzToMel(hz: number): number {
   return 1125.0 * Math.log(1 + hz / 700.0);
 }
 
-export function melToHz(mel: number): number {
+function melToHz(mel: number): number {
   return 700.0 * (Math.exp(mel / 1125.0) - 1);
 }
 
-export function flatten2D(spec: Float32Array[]) {
-  const length = spec[0].length * spec.length;
-  const out = new Float32Array(length);
-  const height = spec[0].length;
-  const width = spec.length;
-  for (let i = 0; i < width; i++) {
-    for (let j = 0; j < height; j++) {
-      out[j * width + i] = spec[i][j];
-    }
-  }
-  return out;
-}
-
-export function calculateFftFreqs(sampleRate: number, nFft: number) {
+function calculateFftFreqs(sampleRate: number, nFft: number) {
   return linearSpace(0, sampleRate / 2, Math.floor(1 + nFft / 2));
 }
 
-export function calculateMelFreqs(
+function calculateMelFreqs(
     nMels: number, fMin: number, fMax: number): Float32Array {
   const melMin = hzToMel(fMin);
   const melMax = hzToMel(fMax);
@@ -370,7 +370,7 @@ export function calculateMelFreqs(
   return hzs;
 }
 
-export function internalDiff(arr: Float32Array): Float32Array {
+function internalDiff(arr: Float32Array): Float32Array {
   const out = new Float32Array(arr.length - 1);
   for (let i = 0; i < arr.length; i++) {
     out[i] = arr[i + 1] - arr[i];
@@ -378,8 +378,7 @@ export function internalDiff(arr: Float32Array): Float32Array {
   return out;
 }
 
-export function outerSubtract(
-    arr: Float32Array, arr2: Float32Array): Float32Array[] {
+function outerSubtract(arr: Float32Array, arr2: Float32Array): Float32Array[] {
   const out = [];
   for (let i = 0; i < arr.length; i++) {
     out[i] = new Float32Array(arr2.length);
@@ -392,36 +391,22 @@ export function outerSubtract(
   return out;
 }
 
-export function pow(arr: Float32Array, power: number) {
+function pow(arr: Float32Array, power: number) {
   return arr.map(v => Math.pow(v, power));
 }
 
-export function max(arr: Float32Array) {
+function max(arr: Float32Array) {
   return arr.reduce((a, b) => Math.max(a, b));
 }
 
-export function loadBuffer(url: string) {
-  if (!context) {
-    context = new AudioContext();
-  }
-
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    // Load an example of speech being spoken.
-    xhr.open('GET', url);
-    xhr.onload = () => {
-      context.decodeAudioData(xhr.response, buffer => {
-        resolve(buffer);
-      });
-    };
-    xhr.responseType = 'arraybuffer';
-    xhr.onerror = (err) => reject(err);
-    xhr.send();
-  });
-}
-
-export async function loadBufferOffline(url: string) {
-  const offlineCtx = new OfflineAudioContext(1, 16000, 16000);
+/**
+ * Loads an AudioBuffer from a URL to transcribe.
+ *
+ * @param url A path to a audio file to load.
+ * @returns The loaded audio in an AudioBuffer.
+ */
+export async function loadBuffer(url: string) {
+  const offlineCtx = new OfflineAudioContext(1, 16000, SAMPLE_RATE);
   return fetch(url)
       .then(body => body.arrayBuffer())
       .then(buffer => offlineCtx.decodeAudioData(buffer));

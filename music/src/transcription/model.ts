@@ -22,12 +22,12 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
-import {melSpectrogram} from './audio_utils';
-// tslint:disable-next-line:max-line-length
-import {batchInput, MIDI_PITCHES, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
+import {melSpectrogram, powerToDb} from './audio_utils';
+// tslint:disable:max-line-length
+import {MEL_SPEC_BINS, MIDI_PITCHES, SAMPLE_RATE, SPEC_HOP_LENGTH} from './constants';
+import {batchInput, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
+// tslint:enable:max-line-length
 
-const SAMPLE_RATE = 16000;
-const MEL_SPEC_BINS = 229;
 const LSTM_UNITS = 128;
 
 /**
@@ -148,20 +148,23 @@ export class OnsetsAndFrames {
     return ns;
   }
 
-  getMelSpec(audioBuffer: AudioBuffer) {
-    return melSpectrogram(audioBuffer.getChannelData(0), {
-             sampleRate: SAMPLE_RATE,
-             hopLength: 512,
-             nMels: MEL_SPEC_BINS,
-             nFft: 2048,
-             fMin: 30,
-           })
-        .map(a => Array.from(a));
-  }
-
-  async transcribeFromAudio(audioBuffer: AudioBuffer) {
-    const melSpec = await this.getMelSpec(audioBuffer);
-    return this.transcribeFromMelSpec(melSpec);
+  /**
+   * Transcribes a piano performance from audio.
+   *
+   * @param audioBuffer A monphonic, 16kHz audio buffer to transcribe.
+   * @param parallelBatches The number of convolutional batches to compute in
+   * parallel. May need to be reduced if hitting a timeout in the browser.
+   * @returns A `NoteSequence` containing the transcribed piano performance.
+   */
+  async transcribeFromAudio(audioBuffer: AudioBuffer, parallelBatches = 32) {
+    const melSpec = powerToDb(melSpectrogram(audioBuffer, {
+                      sampleRate: SAMPLE_RATE,
+                      hopLength: SPEC_HOP_LENGTH,
+                      nMels: MEL_SPEC_BINS,
+                      nFft: 2048,
+                      fMin: 30,
+                    })).map(a => Array.from(a));
+    return this.transcribeFromMelSpec(melSpec, parallelBatches);
   }
 
   private processBatches(
