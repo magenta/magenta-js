@@ -22,9 +22,9 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
-import {melSpectrogram, powerToDb} from './audio_utils';
+import {preprocessAudio} from './audio_utils';
 // tslint:disable:max-line-length
-import {MEL_SPEC_BINS, MIDI_PITCHES, SAMPLE_RATE, SPEC_HOP_LENGTH} from './constants';
+import {MEL_SPEC_BINS, MIDI_PITCHES} from './constants';
 import {batchInput, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
 // tslint:enable:max-line-length
 
@@ -151,19 +151,14 @@ export class OnsetsAndFrames {
   /**
    * Transcribes a piano performance from audio.
    *
-   * @param audioBuffer A monphonic, 16kHz audio buffer to transcribe.
+   * @param audioBuffer An audio buffer to transcribe.
    * @param parallelBatches The number of convolutional batches to compute in
    * parallel. May need to be reduced if hitting a timeout in the browser.
    * @returns A `NoteSequence` containing the transcribed piano performance.
    */
   async transcribeFromAudio(audioBuffer: AudioBuffer, parallelBatches = 32) {
-    const melSpec = powerToDb(melSpectrogram(audioBuffer, {
-                      sampleRate: SAMPLE_RATE,
-                      hopLength: SPEC_HOP_LENGTH,
-                      nMels: MEL_SPEC_BINS,
-                      nFft: 2048,
-                      fMin: 30,
-                    })).map(a => Array.from(a));
+    const melSpec =
+        (await preprocessAudio(audioBuffer)).map(a => Array.from(a));
     return this.transcribeFromMelSpec(melSpec, parallelBatches);
   }
 

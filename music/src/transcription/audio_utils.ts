@@ -20,7 +20,7 @@
 //@ts-ignore
 import * as FFT from 'fft.js';
 
-import {SAMPLE_RATE} from './constants';
+import {MEL_SPEC_BINS, SAMPLE_RATE, SPEC_HOP_LENGTH} from './constants';
 
 /**
  * Parameters for computing a spectrogram from audio.
@@ -52,13 +52,23 @@ export async function loadBuffer(url: string) {
 }
 
 /**
- * Computes a mel spectrogram from the given AudioBuffer.
+ * Resamples and computes a log mel spectrogram from the given AudioBuffer.
  *
- * @param audioBuffer A monphonic, 16kHz audio buffer to transcribe.
- * @param params Options for the mel spectrogram.
- * @returns The loaded audio in an AudioBuffer.
+ * @param audioBuffer An audio buffer to transcribe.
+ * @returns The log mel spectrogram based on the AudioBuffer.
  */
-export function melSpectrogram(
+export async function preprocessAudio(audioBuffer: AudioBuffer) {
+  const resampledMonoAudio = await resampleAndSetChannels(audioBuffer)
+  return powerToDb(melSpectrogram(resampledMonoAudio, {
+    sampleRate: SAMPLE_RATE,
+    hopLength: SPEC_HOP_LENGTH,
+    nMels: MEL_SPEC_BINS,
+    nFft: 2048,
+    fMin: 30,
+  }));
+}
+
+function melSpectrogram(
     audioBuffer: AudioBuffer, params: SpecParams): Float32Array[] {
   if (audioBuffer.numberOfChannels !== 1) {
     // TODO(adarob): Make stereo audio monohponic.
@@ -91,7 +101,7 @@ export function melSpectrogram(
  * @param amin Minimum threshold for `abs(S)`.
  * @param topDb Threshold the output at `topDb` below the peak.
  */
-export function powerToDb(spec: Float32Array[], amin = 1e-10, topDb = 80.0) {
+function powerToDb(spec: Float32Array[], amin = 1e-10, topDb = 80.0) {
   const width = spec.length;
   const height = spec[0].length;
   const logSpec = [];
@@ -116,6 +126,23 @@ export function powerToDb(spec: Float32Array[], amin = 1e-10, topDb = 80.0) {
     }
   }
   return logSpec;
+}
+
+async function resampleAndSetChannels(
+    audioBuffer: AudioBuffer, targetSr = SAMPLE_RATE, numChannels = 1) {
+  if (audioBuffer.sampleRate === targetSr &&
+      audioBuffer.numberOfChannels === numChannels) {
+    return audioBuffer;
+  }
+  const sourceSr = audioBuffer.sampleRate;
+  const lengthRes = audioBuffer.length * targetSr / sourceSr;
+  const offlineCtx = new OfflineAudioContext(numChannels, lengthRes, targetSr);
+
+  const bufferSource = offlineCtx.createBufferSource();
+  bufferSource.buffer = audioBuffer;
+  bufferSource.connect(offlineCtx.destination);
+  bufferSource.start();
+  return offlineCtx.startRendering();
 }
 
 interface MelParams {
