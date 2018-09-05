@@ -58,7 +58,7 @@ export async function loadBuffer(url: string) {
  * @returns The log mel spectrogram based on the AudioBuffer.
  */
 export async function preprocessAudio(audioBuffer: AudioBuffer) {
-  const resampledMonoAudio = await resampleAndSetChannels(audioBuffer)
+  const resampledMonoAudio = await resampleAndSetChannels(audioBuffer);
   return powerToDb(melSpectrogram(resampledMonoAudio, {
     sampleRate: SAMPLE_RATE,
     hopLength: SPEC_HOP_LENGTH,

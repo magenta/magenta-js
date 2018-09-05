@@ -33,12 +33,15 @@ const ORIGINAL_AUDIO_URL =
     'https://storage.googleapis.com/magentadata/js/checkpoints/transcription/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl-250frames.wav';
 // tslint:enable:max-line-length
 
-async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
-  const expectedNs: INoteSequence =
-      await fetch(`${MEL_CKPT_URL}/${EXPECTED_NS_SUFFIX}`)
-          .then((response) => response.json());
-  writeNoteSeqs('expected-ns', [expectedNs], undefined, true);
+let expectedNs: INoteSequence;
+fetch(`${MEL_CKPT_URL}/${EXPECTED_NS_SUFFIX}`)
+    .then((response) => response.json())
+    .then((ns) => {
+      expectedNs = ns;
+      writeNoteSeqs('expected-ns', [expectedNs], undefined, true);
+    });
 
+async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
   const melSpec: number[][] = await fetch(`${MEL_CKPT_URL}/${MEL_SPEC_SUFFIX}`)
                                   .then((response) => response.json());
 
@@ -56,10 +59,10 @@ async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
 
 async function transcribeFromAudio(oaf: mm.OnsetsAndFrames) {
   const audio = await loadBuffer(ORIGINAL_AUDIO_URL);
-  const expectedNs: INoteSequence =
+  const expectedAudioNs: INoteSequence =
       await fetch(`${MEL_CKPT_URL}/${EXPECTED_NS_SUFFIX}`)
           .then((response) => response.json());
-  writeNoteSeqs('expected-audio-ns', [expectedNs], undefined, true);
+  writeNoteSeqs('expected-audio-ns', [expectedAudioNs], undefined, true);
 
   const start = performance.now();
   const ns = await oaf.transcribeFromAudio(audio);
@@ -67,7 +70,7 @@ async function transcribeFromAudio(oaf: mm.OnsetsAndFrames) {
   writeNoteSeqs('audio-results', [ns], undefined, true);
 
   document.getElementById('audio-match').innerHTML =
-      notesMatch(ns.notes, expectedNs.notes) ?
+      notesMatch(ns.notes, expectedAudioNs.notes) ?
       '<span style="color:green">TRUE</span>' :
       '<b><span style="color:red">FALSE</span></b>';
 }
