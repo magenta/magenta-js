@@ -1,0 +1,40 @@
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+  <link rel="stylesheet" href="./style.css">
+  <title>mm.Player</title>
+</head>
+
+<body>
+  <h1>mm.Player</h1>
+  <p>An <code>mm.Player</code> is a class that playes <code>NoteSequences</code>.
+    Below you can play the same melody using each of the available players</p>
+
+  <h2>Unquantized NoteSequences</h2>
+  <section>
+    <b>Base player (with or without click)</b>
+    <div id="unq-player"></div>
+    <b>SoundFont player (with or without click)</b>
+    <div id="unq-soundfont"></div>
+  </section>
+
+  <h2>Quantized NoteSequences</h2>
+  <section>
+    <b>Base player (with or without click)</b>
+    <div id="q-player"></div>
+    <b>SoundFont player (with or without click)</b>
+    <div id="q-soundfont"></div>
+  </section>
+
+  <h2>Quantized Drum NoteSequences</h2>
+  <section>
+    <div id="d-player"></div>
+  </section>
+
+  <script src="player_bundle.js"></script>
+</body>
+
+</html>
