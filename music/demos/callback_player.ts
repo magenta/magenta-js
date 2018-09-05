@@ -19,10 +19,10 @@ import * as mm from '../src/index';
 import {DRUM_SEQS, MEL_TEAPOT, MEL_TWINKLE} from './common';
 
 class MetronomeCallback extends mm.BasePlayerCallback {
-  private drumClickDivs: any;
-  private pianoClickDivs: any;
-  private drumDivs: any;
-  private keyDivs: any;
+  private drumClickDivs: HTMLElement[];
+  private pianoClickDivs: HTMLElement[];
+  private drumDivs: HTMLElement[];
+  private keyDivs: HTMLElement[][];
   private beatPos: number;
   private currentDrum: number;
   private drumPitchToClass: Map<number, number>;
@@ -102,17 +102,19 @@ class MetronomeCallback extends mm.BasePlayerCallback {
     this.stop();
   }
 
-  greyOut(divs: any, ignorePos: number) {
+  greyOut(divs: HTMLElement[], ignorePos: number) {
     for (let i = 0; i < divs.length; ++i) {
-      if (i == ignorePos) continue;
+      if (i === ignorePos) {
+        continue;
+      }
       divs[i].style.background = 'grey';
     }
   }
 
   colorDrums(n: mm.NoteSequence.INote) {
     // Clicks are handled separately.
-    if (n.pitch != mm.constants.HI_CLICK_PITCH &&
-        n.pitch != mm.constants.LO_CLICK_PITCH) {
+    if (n.pitch !== mm.constants.HI_CLICK_PITCH &&
+        n.pitch !== mm.constants.LO_CLICK_PITCH) {
       this.currentDrum = this.drumPitchToClass.get(n.pitch);
       this.drumDivs[this.currentDrum].style.background = 'green';
       setTimeout(() => {
@@ -122,12 +124,12 @@ class MetronomeCallback extends mm.BasePlayerCallback {
   }
 
   colorKeys(n: mm.NoteSequence.INote) {
-    let relativePitch = (n.pitch - 60) % 12;
+    const relativePitch = (n.pitch - 60) % 12;
     for (let i = 0; i < this.keyDivs[relativePitch].length; ++i) {
       this.keyDivs[relativePitch][i].style.background = 'red';
       let color = 'white';
-      if (relativePitch == 1 || relativePitch == 3 || relativePitch == 6 ||
-          relativePitch == 8 || relativePitch == 10) {
+      if (relativePitch === 1 || relativePitch === 3 || relativePitch === 6 ||
+          relativePitch === 8 || relativePitch === 10) {
         color = 'black';
       }
       setTimeout(() => {
@@ -137,7 +139,7 @@ class MetronomeCallback extends mm.BasePlayerCallback {
   }
 
   colorClick(n: mm.NoteSequence.INote, isPiano: boolean) {
-    if (n.pitch == mm.constants.HI_CLICK_PITCH) {
+    if (n.pitch === mm.constants.HI_CLICK_PITCH) {
       this.beatPos = 0;
       const clickDiv = isPiano ? this.pianoClickDivs[this.beatPos] :
                                  this.drumClickDivs[this.beatPos];
@@ -145,7 +147,7 @@ class MetronomeCallback extends mm.BasePlayerCallback {
       setTimeout(() => {
         clickDiv.style.background = 'grey';
       }, 300);
-    } else if (n.pitch == mm.constants.LO_CLICK_PITCH) {
+    } else if (n.pitch === mm.constants.LO_CLICK_PITCH) {
       if (this.beatPos < this.drumClickDivs.length - 1) {
         ++this.beatPos;
       }
@@ -174,11 +176,10 @@ class MetronomeCallback extends mm.BasePlayerCallback {
   }
 }
 
-
 function generateDrumsAndMelodies() {
   const callback = new MetronomeCallback();
-  let playClicks = [true, false];
-  let buttonSuffixes = [' with click', ' without click'];
+  const playClicks = [true, false];
+  const buttonSuffixes = [' with click', ' without click'];
   for (let i = 0; i < playClicks.length; ++i) {
     const player = new mm.Player(playClicks[i], callback);
     // Add drums buttons.

@@ -22,9 +22,9 @@ TMP_DIR=$(mktemp -d)
 # Clone magenta repo to get proto file
 git clone https://github.com/tensorflow/magenta.git $TMP_DIR
 # Compile js
-yarn pbjs --force-number -t static-module -w commonjs -o src/protobuf/proto.js magenta/magenta/protobuf/music.proto
+yarn pbjs --force-number -t static-module -w commonjs -o src/protobuf/proto.js $TMP_DIR/magenta/protobuf/music.proto
 rm -fR $TMP_DIR
 # Compile ts
 yarn pbts -o src/protobuf/proto.d.ts src/protobuf/proto.js
 # Replace Long types with number (bug: https://github.com/dcodeIO/protobuf.js/issues/1109)
-sed -i '' 's/reader.int64();/reader.int64().toNumber();/g' src/protobuf/proto.js
+sed -i '' 's/reader.int64();/$util.Long?reader.int64().toNumber():reader.int64();/g' src/protobuf/proto.js
