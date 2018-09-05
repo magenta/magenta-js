@@ -36,60 +36,19 @@ export interface SpecParams {
   fMax?: number;
 }
 
-interface MelParams {
-  sampleRate: number;
-  nFft?: number;
-  nMels?: number;
-  fMin?: number;
-  fMax?: number;
-}
-
-function magSpectrogram(
-    stft: Float32Array[], power: number): [Float32Array[], number] {
-  // console.log(`magSpectrogram on ${stft.length} x ${stft[0].length}
-  // power=${power}`);
-  const spec = stft.map(fft => pow(mag(fft), power));
-  const nFft = stft[0].length - 1;
-  return [spec, nFft];
-}
-
-function stft(y: Float32Array, params: SpecParams): Float32Array[] {
-  const nFft = params.nFft || 2048;
-  const winLength = params.winLength || nFft;
-  const hopLength = params.hopLength || Math.floor(winLength / 4);
-
-  let fftWindow = hannWindow(winLength);
-
-  // Pad the window to be the size of nFft.
-  fftWindow = padCenterToLength(fftWindow, nFft);
-
-  // Pad the time series so that the frames are centered.
-  y = padReflect(y, Math.floor(nFft / 2));
-
-  // Window the time series.
-  const yFrames = frame(y, nFft, hopLength);
-  // console.log(`Split audio into ${yFrames.length} frames of
-  // ${yFrames[0].length} each.`);
-  // Pre-allocate the STFT matrix.
-  const stftMatrix = [];
-
-  const width = yFrames.length;
-  const height = nFft + 2;
-  // console.log(`Creating STFT matrix of size ${width} x ${height}.`);
-  for (let i = 0; i < width; i++) {
-    // Each column is a Float32Array of size height.
-    const col = new Float32Array(height);
-    stftMatrix[i] = col;
-  }
-
-  for (let i = 0; i < width; i++) {
-    // Populate the STFT matrix.
-    const winBuffer = applyWindow(yFrames[i], fftWindow);
-    const col = fft(winBuffer);
-    stftMatrix[i].set(col.slice(0, height));
-  }
-
-  return stftMatrix;
+/**
+ * Loads audio into AudioBuffer from a URL to transcribe.
+ *
+ * Audio is loaded at 16kHz monophonic for compatibility with model.
+ *
+ * @param url A path to a audio file to load.
+ * @returns The loaded audio in an AudioBuffer.
+ */
+export async function loadBuffer(url: string) {
+  const offlineCtx = new OfflineAudioContext(1, 16000, SAMPLE_RATE);
+  return fetch(url)
+      .then(body => body.arrayBuffer())
+      .then(buffer => offlineCtx.decodeAudioData(buffer));
 }
 
 /**
@@ -122,6 +81,94 @@ export function melSpectrogram(
   return applyWholeFilterbank(spec, melBasis);
 }
 
+/**
+ * Convert a power spectrogram (amplitude squared) to decibel (dB) units
+ *
+ * Intended to match {@link
+ * https://librosa.github.io/librosa/generated/librosa.core.power_to_db.html
+ * librosa.core.power_to_db}
+ * @param spec Input power.
+ * @param amin Minimum threshold for `abs(S)`.
+ * @param topDb Threshold the output at `topDb` below the peak.
+ */
+export function powerToDb(spec: Float32Array[], amin = 1e-10, topDb = 80.0) {
+  const width = spec.length;
+  const height = spec[0].length;
+  const logSpec = [];
+  for (let i = 0; i < width; i++) {
+    logSpec[i] = new Float32Array(height);
+  }
+  for (let i = 0; i < width; i++) {
+    for (let j = 0; j < height; j++) {
+      const val = spec[i][j];
+      logSpec[i][j] = 10.0 * Math.log10(Math.max(amin, val));
+    }
+  }
+  if (topDb) {
+    if (topDb < 0) {
+      throw new Error(`topDb must be non-negative.`);
+    }
+    for (let i = 0; i < width; i++) {
+      const maxVal = max(logSpec[i]);
+      for (let j = 0; j < height; j++) {
+        logSpec[i][j] = Math.max(logSpec[i][j], maxVal - topDb);
+      }
+    }
+  }
+  return logSpec;
+}
+
+interface MelParams {
+  sampleRate: number;
+  nFft?: number;
+  nMels?: number;
+  fMin?: number;
+  fMax?: number;
+}
+
+function magSpectrogram(
+    stft: Float32Array[], power: number): [Float32Array[], number] {
+  const spec = stft.map(fft => pow(mag(fft), power));
+  const nFft = stft[0].length - 1;
+  return [spec, nFft];
+}
+
+function stft(y: Float32Array, params: SpecParams): Float32Array[] {
+  const nFft = params.nFft || 2048;
+  const winLength = params.winLength || nFft;
+  const hopLength = params.hopLength || Math.floor(winLength / 4);
+
+  let fftWindow = hannWindow(winLength);
+
+  // Pad the window to be the size of nFft.
+  fftWindow = padCenterToLength(fftWindow, nFft);
+
+  // Pad the time series so that the frames are centered.
+  y = padReflect(y, Math.floor(nFft / 2));
+
+  // Window the time series.
+  const yFrames = frame(y, nFft, hopLength);
+  // Pre-allocate the STFT matrix.
+  const stftMatrix = [];
+
+  const width = yFrames.length;
+  const height = nFft + 2;
+  for (let i = 0; i < width; i++) {
+    // Each column is a Float32Array of size height.
+    const col = new Float32Array(height);
+    stftMatrix[i] = col;
+  }
+
+  for (let i = 0; i < width; i++) {
+    // Populate the STFT matrix.
+    const winBuffer = applyWindow(yFrames[i], fftWindow);
+    const col = fft(winBuffer);
+    stftMatrix[i].set(col.slice(0, height));
+  }
+
+  return stftMatrix;
+}
+
 function applyWholeFilterbank(
     spec: Float32Array[], filterbank: Float32Array[]): Float32Array[] {
   // Apply a point-wise dot product between the array of arrays.
@@ -148,7 +195,7 @@ function applyFilterbank(
     // power spectrum.
     const win = applyWindow(mags, filterbank[i]);
     // Then add up the coefficents.
-    out[i] = sum(win);
+    out[i] = win.reduce((a, b) => a + b);
   }
   return out;
 }
@@ -208,7 +255,8 @@ function padReflect(data: Float32Array, padding: number) {
 function frame(data: Float32Array, frameLength: number, hopLength: number):
     Float32Array[] {
   const bufferCount = Math.floor((data.length - frameLength) / hopLength) + 1;
-  const buffers = range(bufferCount).map(x => new Float32Array(frameLength));
+  const buffers = Array.from(
+      {length: bufferCount}, (x, i) => new Float32Array(frameLength));
   for (let i = 0; i < bufferCount; i++) {
     const ind = i * hopLength;
     const buffer = data.slice(ind, ind + frameLength);
@@ -275,25 +323,6 @@ function hannWindow(length: number) {
   return win;
 }
 
-const MIN_VAL = -10;
-export function logGtZero(val: number) {
-  // Ensure that the log argument is nonnegative.
-  const offset = Math.exp(MIN_VAL);
-  return Math.log(val + offset);
-}
-
-function sum(array: Float32Array) {
-  return array.reduce((a, b) => a + b);
-}
-
-function range(count: number): number[] {
-  const out = [];
-  for (let i = 0; i < count; i++) {
-    out.push(i);
-  }
-  return out;
-}
-
 function linearSpace(start: number, end: number, count: number) {
   // Include start and endpoints.
   const delta = (end - start) / (count - 1);
@@ -314,36 +343,6 @@ function mag(y: Float32Array) {
     out[i] = Math.sqrt(y[i * 2] * y[i * 2] + y[i * 2 + 1] * y[i * 2 + 1]);
   }
   return out;
-}
-
-export function powerToDb(
-    spec: Float32Array[], amin = 1e-10, refValue = 1.0, topDb = 80.0) {
-  const width = spec.length;
-  const height = spec[0].length;
-  const logSpec = [];
-  for (let i = 0; i < width; i++) {
-    logSpec[i] = new Float32Array(height);
-  }
-  for (let i = 0; i < width; i++) {
-    for (let j = 0; j < height; j++) {
-      const val = spec[i][j];
-      let logVal = 10.0 * Math.log10(Math.max(amin, val));
-      logVal -= 10.0 * Math.log10(Math.max(amin, refValue));
-      logSpec[i][j] = logVal;
-    }
-  }
-  if (topDb) {
-    if (topDb < 0) {
-      throw new Error(`topDb must be non-negative.`);
-    }
-    for (let i = 0; i < width; i++) {
-      const maxVal = max(logSpec[i]);
-      for (let j = 0; j < height; j++) {
-        logSpec[i][j] = Math.max(logSpec[i][j], maxVal - topDb);
-      }
-    }
-  }
-  return logSpec;
 }
 
 function hzToMel(hz: number): number {
@@ -397,17 +396,4 @@ function pow(arr: Float32Array, power: number) {
 
 function max(arr: Float32Array) {
   return arr.reduce((a, b) => Math.max(a, b));
-}
-
-/**
- * Loads an AudioBuffer from a URL to transcribe.
- *
- * @param url A path to a audio file to load.
- * @returns The loaded audio in an AudioBuffer.
- */
-export async function loadBuffer(url: string) {
-  const offlineCtx = new OfflineAudioContext(1, 16000, SAMPLE_RATE);
-  return fetch(url)
-      .then(body => body.arrayBuffer())
-      .then(buffer => offlineCtx.decodeAudioData(buffer));
 }
