@@ -17,13 +17,9 @@
 
 import * as mm from '../src/index';
 
-import {CHECKPOINTS_DIR} from './common';
+import {FULL_TWINKLE_UNQUANTIZED} from './common';
 
 const MIDI_URL = './melody.mid';
-// tslint:disable:max-line-length
-const EXPECTED_NS_URL = `${
-    CHECKPOINTS_DIR}/transcription/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl.melhtk0-250frames.ns.json`;
-// tslint:enable:max-line-length
 
 let visualizer: mm.Visualizer;
 const player = new mm.Player(false, {
@@ -53,9 +49,7 @@ const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 urlBtn.addEventListener('click', () => fetchMidi(MIDI_URL));
 playBtn.addEventListener('click', () => startOrStop());
 seqBtn.addEventListener('click', () => {
-  fetch(EXPECTED_NS_URL).then((response) => response.json()).then((ns => {
-    initPlayerAndVisualizer(ns);
-  }));
+  initPlayerAndVisualizer(FULL_TWINKLE_UNQUANTIZED);
 });
 fileInput.addEventListener('change', loadFile);
 tempoInput.addEventListener('input', () => {
