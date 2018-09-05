@@ -34,6 +34,25 @@
     <div id="d-player"></div>
   </section>
 
+  <h2>Changing the tempo</h2>
+  <p>You can update the tempo at which a <code>mm.Player</code> is playing a
+    <code>NoteSequence</code> by calling <code>setTempo()</code>. To see this,
+    start one of the melodies below, and adjust the tempo slider.
+  </p>
+
+  <section>
+    <div>
+      <button id="playBtn">Play</button>
+      <b>Tempo:</b>
+      <input type="range" id="tempo" min="20" max="240" value="120" step="1"
+      oninput="tempoValue.value = tempo.value">
+      <output id="tempoValue">120</output>
+    </div>
+    <div class="visualizer-container" id="container">
+      <canvas id="canvas"></canvas>
+    </div>
+  </section>
+
   <script src="player_bundle.js"></script>
 </body>
 

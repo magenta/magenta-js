@@ -14,6 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import * as mm from '../src/index';
+
 // tslint:disable-next-line:max-line-length
 import {DRUM_SEQS, FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED, writeNoteSeqs} from './common';
 
@@ -24,8 +26,38 @@ function generatePlayers() {
   writeNoteSeqs('q-soundfont', [FULL_TWINKLE], true);
   writeNoteSeqs('d-player', [DRUM_SEQS[1]], false);
 }
+
+function generateTempoPlayer() {
+  const visualizer = new mm.Visualizer(
+      FULL_TWINKLE_UNQUANTIZED,
+      document.getElementById('canvas') as HTMLCanvasElement);
+  const player = new mm.Player(false, {
+    run: (note: mm.NoteSequence.Note) => {
+      visualizer.redraw(note);
+    },
+    stop: () => {}
+  });
+
+  const tempoSlider = document.getElementById('tempo') as HTMLInputElement;
+  tempoSlider.addEventListener('change', () => {
+    document.getElementById('tempoValue').textContent = tempoSlider.value;
+    player.setTempo(parseFloat(tempoSlider.value));
+  });
+
+  const playBtn = document.getElementById('playBtn') as HTMLButtonElement;
+  playBtn.addEventListener('click', () => {
+    if (player.isPlaying()) {
+      player.stop();
+      playBtn.textContent = 'Play';
+    } else {
+      player.start(visualizer.noteSequence);
+      playBtn.textContent = 'Stop';
+    }
+  });
+}
+
 try {
-  Promise.all([generatePlayers()]);
+  Promise.all([generatePlayers(), generateTempoPlayer()]);
 } catch (err) {
   console.error(err);
 }
