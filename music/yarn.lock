@@ -770,6 +770,10 @@ evp_bytestokey@^1.0.0, evp_bytestokey@^1.0.3:
     md5.js "^1.3.4"
     safe-buffer "^5.1.1"
 
+fft.js@^4.0.3:
+  version "4.0.3"
+  resolved "https://registry.yarnpkg.com/fft.js/-/fft.js-4.0.3.tgz#b0084efa94188febdd1cffe68691f4c85a0fb8cb"
+
 file-saver-typescript@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/file-saver-typescript/-/file-saver-typescript-1.0.1.tgz#632e89462285e12f4cea83dfeb51e4ce624aaca7"

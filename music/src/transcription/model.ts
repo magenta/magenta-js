@@ -22,10 +22,12 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
-// tslint:disable-next-line:max-line-length
-import {batchInput, MIDI_PITCHES, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
+import {preprocessAudio} from './audio_utils';
+// tslint:disable:max-line-length
+import {MEL_SPEC_BINS, MIDI_PITCHES} from './constants';
+import {batchInput, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
+// tslint:enable:max-line-length
 
-const MEL_SPEC_BINS = 229;
 const LSTM_UNITS = 128;
 
 /**
@@ -144,6 +146,20 @@ export class OnsetsAndFrames {
     onsetProbs.dispose();
     velocities.dispose();
     return ns;
+  }
+
+  /**
+   * Transcribes a piano performance from audio.
+   *
+   * @param audioBuffer An audio buffer to transcribe.
+   * @param parallelBatches The number of convolutional batches to compute in
+   * parallel. May need to be reduced if hitting a timeout in the browser.
+   * @returns A `NoteSequence` containing the transcribed piano performance.
+   */
+  async transcribeFromAudio(audioBuffer: AudioBuffer, parallelBatches = 32) {
+    const melSpec =
+        (await preprocessAudio(audioBuffer)).map(a => Array.from(a));
+    return this.transcribeFromMelSpec(melSpec, parallelBatches);
   }
 
   private processBatches(
