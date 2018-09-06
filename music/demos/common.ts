@@ -17,6 +17,7 @@
 
 import {saveAs} from 'file-saver';
 import * as mm from '../src/index';
+import {sequences} from '../src/index';
 
 export const CHECKPOINTS_DIR =
     // tslint:disable-next-line:max-line-length
@@ -364,7 +365,10 @@ function createPlayer(seq: mm.INoteSequence) {
 
   const buttonsDiv = document.createElement('div');
   buttonsDiv.appendChild(createPlayerButton(seq, false, canvas));
-  buttonsDiv.appendChild(createPlayerButton(seq, true, canvas));
+  // Players with clicks only work for quantized sequences.
+  if (sequences.isQuantizedSequence(seq)) {
+    buttonsDiv.appendChild(createPlayerButton(seq, true, canvas));
+  }
   buttonsDiv.appendChild(createDownloadButton(seq));
   div.appendChild(buttonsDiv);
   div.appendChild(containerDiv);
