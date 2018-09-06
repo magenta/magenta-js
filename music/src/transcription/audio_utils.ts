@@ -45,7 +45,7 @@ export interface SpecParams {
  * @returns The loaded audio in an AudioBuffer.
  */
 export async function loadBuffer(url: string) {
-  const offlineCtx = new OfflineAudioContext(1, 16000, SAMPLE_RATE);
+  const offlineCtx = new OfflineAudioContext(1, 1, SAMPLE_RATE);
   return fetch(url)
       .then(body => body.arrayBuffer())
       .then(buffer => offlineCtx.decodeAudioData(buffer));
