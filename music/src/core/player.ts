@@ -273,17 +273,28 @@ class DrumKit {
                         })
                         .toMaster();
   private pitchPlayers = [
-    (time: number) => this.kick.triggerAttackRelease('C2', '8n', time),
-    (time: number) => this.snare.triggerAttackRelease('16n', time),
-    (time: number) => this.closedHihat.triggerAttack(time, 0.3),
-    (time: number) => this.openHihat.triggerAttack(time, 0.3),
-    (time: number) => this.tomLow.triggerAttack('G3', time, 0.5),
-    (time: number) => this.tomMid.triggerAttack('C4', time, 0.5),
-    (time: number) => this.tomHigh.triggerAttack('F4', time, 0.5),
-    (time: number) => this.crash.triggerAttack(time, 1.0),
-    (time: number) => this.ride.triggerAttack(time, 0.5),
-    (time: number) => this.loClick.triggerAttack('G5', time, 0.5),
-    (time: number) => this.hiClick.triggerAttack('C6', time, 0.5)
+    (time: number, velocity = 1) =>
+        this.kick.triggerAttackRelease('C2', '8n', time, velocity),
+    (time: number, velocity = 1) =>
+        this.snare.triggerAttackRelease('16n', time, velocity),
+    (time: number, velocity?: number) =>
+        this.closedHihat.triggerAttack(time, 0.3, velocity),
+    (time: number, velocity = 1) =>
+        this.openHihat.triggerAttack(time, 0.3, velocity),
+    (time: number, velocity = 0.5) =>
+        this.tomLow.triggerAttack('G3', time, velocity),
+    (time: number, velocity = 0.5) =>
+        this.tomMid.triggerAttack('C4', time, velocity),
+    (time: number, velocity = 0.5) =>
+        this.tomHigh.triggerAttack('F4', time, velocity),
+    (time: number, velocity = 1) =>
+        this.crash.triggerAttack(time, 1.0, velocity),
+    (time: number, velocity = 1) =>
+        this.ride.triggerAttack(time, 0.5, velocity),
+    (time: number, velocity = 0.5) =>
+        this.loClick.triggerAttack('G5', time, velocity),
+    (time: number, velocity = 0.5) =>
+        this.hiClick.triggerAttack('C6', time, velocity)
   ];
 
   private constructor() {
@@ -305,8 +316,8 @@ class DrumKit {
     return DrumKit.instance;
   }
 
-  public playNote(pitch: number, time: number) {
-    this.pitchPlayers[this.DRUM_PITCH_TO_CLASS.get(pitch)](time);
+  public playNote(pitch: number, time: number, velocity?: number) {
+    this.pitchPlayers[this.DRUM_PITCH_TO_CLASS.get(pitch)](time, velocity);
   }
 }
 
@@ -323,13 +334,17 @@ export class Player extends BasePlayer {
   static readonly tone = Tone;  // tslint:disable-line:no-any
 
   protected playNote(time: number, note: NoteSequence.INote) {
+    // If there's a velocity, use it.
+    const velocity = note.velocity ?
+        note.velocity / constants.MAX_MIDI_VELOCITY :
+        note.velocity;
     if (note.isDrum) {
-      this.drumKit.playNote(note.pitch, time);
+      this.drumKit.playNote(note.pitch, time, velocity);
     } else {
       const freq = new Tone.Frequency(note.pitch, 'midi');
       const dur = note.endTime - note.startTime;
       this.getSynth(note.instrument, note.program)
-          .triggerAttackRelease(freq, dur, time);
+          .triggerAttackRelease(freq, dur, time, velocity);
     }
   }
 
