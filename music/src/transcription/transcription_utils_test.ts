@@ -19,8 +19,9 @@ import * as test from 'tape';
 
 import {NoteSequence} from '../protobuf';
 
+import {FRAME_LENGTH_SECONDS, MIDI_PITCHES, MIN_MIDI_PITCH} from './constants';
 // tslint:disable-next-line:max-line-length
-import {batchInput, FRAME_LENGTH_SECONDS, MIDI_PITCHES, MIN_MIDI_PITCH, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
+import {batchInput, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
 
 const OVER_THRESHOLD_PROB = 0.6;
 

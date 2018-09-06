@@ -21,15 +21,10 @@
  * Imports
  */
 import * as tf from '@tensorflow/tfjs';
+
 import {NoteSequence} from '../protobuf';
 
-export const MIN_MIDI_PITCH = 21;
-export const MAX_MIDI_PITCH = 108;
-export const MIDI_PITCHES = MAX_MIDI_PITCH - MIN_MIDI_PITCH + 1;
-
-const SAMPLE_RATE = 16000;
-const SPEC_HOP_LENGTH = 512;
-export const FRAME_LENGTH_SECONDS = SPEC_HOP_LENGTH / SAMPLE_RATE;
+import {FRAME_LENGTH_SECONDS, MIDI_PITCHES, MIN_MIDI_PITCH} from './constants';
 
 // The number of frames of padding needed on each side when splitting into
 // batches to account for the receptive field (which is a total of 7 for this

@@ -88,7 +88,9 @@ export class OnsetsAndFrames {
     this.build(vars);
     Object.keys(vars).map(name => vars[name].dispose());
     if (warmup) {
-      this.processBatches(tf.zeros([1, 16, MEL_SPEC_BINS]), 8, 8, 1);
+      tf.tidy(() => {
+        this.processBatches(tf.zeros([1, 16, MEL_SPEC_BINS]), 8, 8, 1);
+      });
     }
     this.initialized = true;
     console.log('Initialized OnsetsAndFrames.');
