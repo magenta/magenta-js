@@ -34,6 +34,12 @@ const ORIGINAL_AUDIO_URL =
 // tslint:enable:max-line-length
 
 // Transcription from a file.
+document.getElementById('fileInput').addEventListener('change', (e: any) => {
+  const file = e.target.files[0];
+  transcribeFromFile(file);
+  return false;
+});
+
 // Audio transcription.
 document.getElementById('audioBtn').addEventListener('click', () => {
   const oafA = new mm.OnsetsAndFrames(AUD_CKPT_URL);
@@ -96,7 +102,40 @@ async function transcribeFromAudio(oaf: mm.OnsetsAndFrames) {
       '<b><span style="color:red">FALSE</span></b>';
 }
 
-function setLoadingMessage(className) {
+async function getAudioBufferFromBlob(blob: Blob) {
+  const fileReader = new FileReader();
+  return new Promise((resolve, reject) => {
+    fileReader.onerror = () => {
+      fileReader.abort();
+      reject(new DOMException('Something went wrong reading that file.'));
+    };
+    fileReader.onload = () => {
+      resolve(fileReader.result);
+    };
+    fileReader.readAsArrayBuffer(blob);
+  });
+}
+
+async function transcribeFromFile(blob: Blob) {
+  setLoadingMessage('file');
+  const audioCtx = new AudioContext();
+  const arrayBuffer: ArrayBuffer =
+      await getAudioBufferFromBlob(blob) as ArrayBuffer;
+  const audio: AudioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+  const oafA = new mm.OnsetsAndFrames(AUD_CKPT_URL);
+  const start = performance.now();
+  oafA.initialize()
+      .then(async () => {
+        const ns = await oafA.transcribeFromAudio(audio);
+        writeTimer('file-time', start);
+        writeNoteSeqs('file-results', [ns], undefined, true);
+      })
+      .then(() => oafA.dispose())
+      .then(() => writeMemory(tf.memory().numBytes, 'file-leaked-memory'));
+}
+
+function setLoadingMessage(className: string) {
   const els = document.querySelectorAll(`.${className}`);
   for (let i = 0; i < els.length; i++) {
     els[i].textContent = 'Loading...';
