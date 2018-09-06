@@ -16,6 +16,15 @@ limitations under the License.
   <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
   <link rel="stylesheet" href="./style.css">
   <title>Transcription</title>
+  <style>
+    input[type="file"] {
+      width: 0;
+      height: 0;
+      opacity: 0;
+      cursor: pointer;
+      display: none;
+    }
+  </style>
 </head>
 <body>
   <h1>Onsets and Frames</h1>
@@ -24,22 +33,32 @@ limitations under the License.
     <code>NoteSequences</code>/<code>MIDI</code>.
   </p>
 
+  <h2>From your audio file</h2>
+  <p>Mention what kind of audio here</p>
+  <section>
+    <label class="button">
+      Load audio file
+      <input type="file" id="fileInput">
+    </label>
+  </section>
 
   <h2>From Audio (250 frames / 8 seconds)</h2>
   <p>First we verify the model can transcribe a short sequence of piano audio, first computing its
-    <a href="https://librosa.github.io/librosa/generated/librosa.feature.melspectrogram.html" target="_blank"></a>>mel spectogram</a>.
+    <a href="https://librosa.github.io/librosa/generated/librosa.feature.melspectrogram.html" target="_blank"></a>mel spectogram</a>.
   </p>
   <section>
     <p><b>Original Audio</b><br><audio controls><source type="audio/wav" src="https://storage.googleapis.com/magentadata/js/checkpoints/transcription/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl-250frames.wav"></audio></p>
-    <p><b>Expected Transcription:</b> <code id="expected-audio-ns">Loading...</code></p>
-    <p><b>Actual Transcription:</b> <code id="audio-results">Loading...</code></p>
-    <p><b>Match:</b> <code id="audio-match">Loading...</code></p>
-    <p><b>It Took:</b> <code id="audio-time">Loading...</code></p>
+    <p><b>Expected Transcription:</b> <code id="expected-audio-ns"></code></p>
+
+    <button id="audioBtn">Start Audio Transcription</button>
+    <p><b>Actual Transcription:</b> <code id="audio-results" class="audio"></code></p>
+    <p><b>Match:</b> <code id="audio-match" class="audio"></code></p>
+    <p><b>It Took:</b> <code id="audio-time" class="audio"></code></p>
+    <p><b>Total Leaked Memory:</b> <code id="audio-leaked-memory"></code></b></p>
   </section>
 
 
   <h2>From <a href="https://librosa.github.io/librosa/generated/librosa.feature.melspectrogram.html" target="_blank">Mel Spectrogram</a> (250 frames / 8 seconds)</h2>
-
   <p>Below we verify that the model properly transcribes a mel spectrogram to match the output
     of the Python TensorFlow implementation. We found it is necessary to process the convolution
     in batches for longer inputs to avoid a GPU timeout enforced in Chrome, and we verify that
@@ -47,46 +66,47 @@ limitations under the License.
   </p>
   <section>
     <p><b>Original Audio</b><br><audio controls><source type="audio/wav" src="https://storage.googleapis.com/magentadata/js/checkpoints/transcription/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl-250frames.wav"></audio></p>
-    <p><b>Expected Transcription:</b> <code id="expected-ns">Loading...</code></p>
+    <p><b>Expected Transcription:</b> <code id="expected-ns"></code></p>
+    <button id="melBtn">Start Batched Transcription</button>
   </section>
 
   <h3>Batch Length 250 / Batch Size 1</h3>
   <section>
-    <p><b>Actual Transcription:</b> <code id="250-results">Loading...</code></p>
-    <p><b>Match:</b> <code id="250-match">Loading...</code></p>
-    <p><b>It Took:</b> <code id="250-time">Loading...</code></p>
+    <p><b>Actual Transcription:</b> <code id="250-results" class="batch"></code></p>
+    <p><b>Match:</b> <code id="250-match" class="batch"></code></p>
+    <p><b>It Took:</b> <code id="250-time" class="batch"></code></p>
   </section>
 
   <h3>Batch Length 150 / Batch Size 2</h3>
   <section>
-    <p><b>Actual Transcription:</b> <code id="150-results">Loading...</code></p>
-    <p><b>Match:</b> <code id="150-match">Loading...</code></p>
-    <p><b>It Took:</b> <code id="150-time">Loading...</code></p>
+    <p><b>Actual Transcription:</b> <code id="150-results" class="batch"></code></p>
+    <p><b>Match:</b> <code id="150-match" class="batch"></code></p>
+    <p><b>It Took:</b> <code id="150-time" class="batch"></code></p>
   </section>
 
   <h3>Batch Length 80 / Batch Size 4</h3>
   <section>
-    <p><b>Actual Transcription:</b> <code id="80-results">Loading...</code></p>
-    <p><b>Match:</b> <code id="80-match">Loading...</code></p>
-    <p><b>It Took:</b> <code id="80-time">Loading...</code></p>
+    <p><b>Actual Transcription:</b> <code id="80-results" class="batch"></code></p>
+    <p><b>Match:</b> <code id="80-match" class="batch"></code></p>
+    <p><b>It Took:</b> <code id="80-time" class="batch"></code></p>
   </section>
 
   <h3>Batch Length 62 / Batch Size 4</h3>
   <section>
-      <p><b>Actual Transcription:</b> <code id="62-results">Loading...</code></p>
-      <p><b>Match:</b> <code id="62-match">Loading...</code></p>
-      <p><b>It Took:</b> <code id="62-time">Loading...</code></p>
+    <p><b>Actual Transcription:</b> <code id="62-results" class="batch"></code></p>
+    <p><b>Match:</b> <code id="62-match" class="batch"></code></p>
+    <p><b>It Took:</b> <code id="62-time" class="batch"></code></p>
   </section>
 
   <h3>Batch Length 50 / Batch Size 5</h3>
   <section>
-      <p><b>Actual Transcription:</b> <code id="50-results">Loading...</code></p>
-      <p><b>Match:</b> <code id="50-match">Loading...</code></p>
-      <p><b>It Took:</b> <code id="50-time">Loading...</code></p>
-    </section>
+    <p><b>Actual Transcription:</b> <code id="50-results" class="batch"></code></p>
+    <p><b>Match:</b> <code id="50-match" class="batch"></code></p>
+    <p><b>It Took:</b> <code id="50-time" class="batch"></code></p>
+  </section>
 
   <section>
-    <p><b>Total Leaked Memory:</b> <code id="leaked-memory">Loading...</code></b></p>
+    <p><b>Total Leaked Memory:</b> <code id="leaked-memory"></code></b></p>
   </section>
 
   <script src="transcription_bundle.js"></script>
