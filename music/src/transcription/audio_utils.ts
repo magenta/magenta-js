@@ -39,13 +39,15 @@ export interface SpecParams {
 /**
  * Loads audio into AudioBuffer from a URL to transcribe.
  *
- * Audio is loaded at 16kHz monophonic for compatibility with model.
+ * By default, audio is loaded at 16kHz monophonic for compatibility with
+ * model.
  *
  * @param url A path to a audio file to load.
  * @returns The loaded audio in an AudioBuffer.
  */
-export async function loadBuffer(url: string) {
-  const offlineCtx = new OfflineAudioContext(1, 1, SAMPLE_RATE);
+export async function loadBuffer(
+    url: string, numChannels = 1, targetSr = SAMPLE_RATE) {
+  const offlineCtx = new OfflineAudioContext(numChannels, 1, targetSr);
   return fetch(url)
       .then(body => body.arrayBuffer())
       .then(buffer => offlineCtx.decodeAudioData(buffer));
@@ -70,13 +72,10 @@ export async function preprocessAudio(audioBuffer: AudioBuffer) {
 
 function melSpectrogram(
     audioBuffer: AudioBuffer, params: SpecParams): Float32Array[] {
-  if (audioBuffer.numberOfChannels !== 1) {
-    // TODO(adarob): Make stereo audio monohponic.
-    throw Error('Only mono audio is supported.');
-  }
-  if (audioBuffer.sampleRate !== SAMPLE_RATE) {
-    // TODO(adarob): Resample audio
-    throw Error('Only 16kHz audio is supported.');
+  if (audioBuffer.numberOfChannels !== 1 ||
+      audioBuffer.sampleRate !== SAMPLE_RATE) {
+    throw Error(
+        'Only 16kHz audio is supported, call `resampleAndSetChannels` first.');
   }
   const y = audioBuffer.getChannelData(0);
 
