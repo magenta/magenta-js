@@ -123,6 +123,10 @@ async function transcribeFromFile(blob: Blob) {
       await getAudioBufferFromBlob(blob) as ArrayBuffer;
   const audio: AudioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 
+  const audioEl = document.getElementById('filePlayer') as HTMLAudioElement;
+  audioEl.hidden = false;
+  audioEl.src = window.URL.createObjectURL(blob);
+
   const oafA = new mm.OnsetsAndFrames(AUD_CKPT_URL);
   const start = performance.now();
   oafA.initialize()

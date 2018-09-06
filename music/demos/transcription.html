@@ -33,19 +33,21 @@ limitations under the License.
     <code>NoteSequences</code>/<code>MIDI</code>.
   </p>
 
-  <h2>From your audio file</h2>
-  <p>Mention what kind of audio here</p>
+  <h2>From an uploaded audio file</h2>
+  <p>You can use your own piano music file for transcription:</p>
   <section>
     <label class="button">
       Load audio file
       <input type="file" id="fileInput">
     </label>
+    <br>
+    <p><audio id="filePlayer" controls hidden></audio></p>
     <p><b>Actual Transcription:</b> <code id="file-results" class="afileudio"></code></p>
     <p><b>It Took:</b> <code id="file-time" class="file"></code></p>
     <p><b>Total Leaked Memory:</b> <code id="file-leaked-memory"></code></b></p>
   </section>
 
-  <h2>From Audio (250 frames / 8 seconds)</h2>
+  <h2>From a test local audio (250 frames / 8 seconds)</h2>
   <p>First we verify the model can transcribe a short sequence of piano audio, first computing its
     <a href="https://librosa.github.io/librosa/generated/librosa.feature.melspectrogram.html" target="_blank"></a>mel spectogram</a>.
   </p>
