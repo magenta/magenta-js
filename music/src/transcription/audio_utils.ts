@@ -47,7 +47,10 @@ export interface SpecParams {
  */
 export async function loadBuffer(
     url: string, numChannels = 1, targetSr = SAMPLE_RATE) {
-  const offlineCtx = new OfflineAudioContext(numChannels, 1, targetSr);
+  const offlineCtx = new OfflineAudioContext(
+      numChannels,
+      1,  // The length does not seem to matter.
+      targetSr);
   return fetch(url)
       .then(body => body.arrayBuffer())
       .then(buffer => offlineCtx.decodeAudioData(buffer));
