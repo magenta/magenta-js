@@ -1,7 +1,5 @@
 /**
- * A module containing a MIDI recorder. Note that WebMIDI only works natively
- * on Chrome. For this to work on other browsers, you need to load
- * the [WebMIDI polyfill]{@link http://cwilso.github.io/WebMIDIAPIShim/}
+ * A module containing a MIDI recorder.
  *
  * @license
  * Copyright 2018 Google Inc. All Rights Reserved.
