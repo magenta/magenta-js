@@ -24,7 +24,7 @@ function generatePlayers() {
   writeNoteSeqs('unq-soundfont', [FULL_TWINKLE_UNQUANTIZED], true);
   writeNoteSeqs('q-player', [FULL_TWINKLE], false);
   writeNoteSeqs('q-soundfont', [FULL_TWINKLE], true);
-  writeNoteSeqs('d-player', DRUM_SEQS, false);
+  writeNoteSeqs('d-player', [DRUM_SEQS[1]], false);
 }
 
 function generateTempoPlayer() {

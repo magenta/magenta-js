@@ -277,7 +277,7 @@ class DrumKit {
         this.kick.triggerAttackRelease('C2', '8n', time, velocity),
     (time: number, velocity = 1) =>
         this.snare.triggerAttackRelease('16n', time, velocity),
-    (time: number, velocity?: number) =>
+    (time: number, velocity = 1) =>
         this.closedHihat.triggerAttack(time, 0.3, velocity),
     (time: number, velocity = 1) =>
         this.openHihat.triggerAttack(time, 0.3, velocity),
@@ -316,7 +316,7 @@ class DrumKit {
     return DrumKit.instance;
   }
 
-  public playNote(pitch: number, time: number, velocity?: number) {
+  public playNote(pitch: number, time: number, velocity: number) {
     this.pitchPlayers[this.DRUM_PITCH_TO_CLASS.get(pitch)](time, velocity);
   }
 }
@@ -335,9 +335,10 @@ export class Player extends BasePlayer {
 
   protected playNote(time: number, note: NoteSequence.INote) {
     // If there's a velocity, use it.
-    const velocity = note.velocity ?
+    const velocity = note.hasOwnProperty('velocity') ?
         note.velocity / constants.MAX_MIDI_VELOCITY :
-        note.velocity;
+        undefined;
+
     if (note.isDrum) {
       this.drumKit.playNote(note.pitch, time, velocity);
     } else {
