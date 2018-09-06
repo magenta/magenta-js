@@ -47,7 +47,11 @@ export interface SpecParams {
  */
 export async function loadBuffer(
     url: string, numChannels = 1, targetSr = SAMPLE_RATE) {
-  const offlineCtx = new OfflineAudioContext(
+  // tslint:disable-next-line:no-any
+  const appeaseTsLintWindow = (window as any);
+  const offlineCtx = new (
+      appeaseTsLintWindow.OfflineAudioContext ||
+      appeaseTsLintWindow.webkitOfflineAudioContext)(
       numChannels,
       1,  // The length does not seem to matter.
       targetSr);
@@ -138,7 +142,12 @@ async function resampleAndSetChannels(
   }
   const sourceSr = audioBuffer.sampleRate;
   const lengthRes = audioBuffer.length * targetSr / sourceSr;
-  const offlineCtx = new OfflineAudioContext(numChannels, lengthRes, targetSr);
+  // tslint:disable-next-line:no-any
+  const appeaseTsLintWindow = (window as any);
+  const offlineCtx = new (
+      appeaseTsLintWindow.OfflineAudioContext ||
+      appeaseTsLintWindow.webkitOfflineAudioContext)(
+      numChannels, lengthRes, targetSr);
 
   const bufferSource = offlineCtx.createBufferSource();
   bufferSource.buffer = audioBuffer;

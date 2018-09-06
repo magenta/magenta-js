@@ -118,7 +118,11 @@ async function getAudioBufferFromBlob(blob: Blob) {
 
 async function transcribeFromFile(blob: Blob) {
   setLoadingMessage('file');
-  const audioCtx = new AudioContext();
+  // tslint:disable-next-line:no-any
+  const appeaseTsLintWindow = (window as any);
+  const audioCtx = new (
+      appeaseTsLintWindow.AudioContext ||
+      appeaseTsLintWindow.webkitAudioContext)();
   const arrayBuffer: ArrayBuffer =
       await getAudioBufferFromBlob(blob) as ArrayBuffer;
   const audio: AudioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
@@ -128,9 +132,9 @@ async function transcribeFromFile(blob: Blob) {
   audioEl.src = window.URL.createObjectURL(blob);
 
   const oafA = new mm.OnsetsAndFrames(AUD_CKPT_URL);
-  const start = performance.now();
   oafA.initialize()
       .then(async () => {
+        const start = performance.now();
         const ns = await oafA.transcribeFromAudio(audio);
         writeTimer('file-time', start);
         writeNoteSeqs('file-results', [ns], undefined, true);
