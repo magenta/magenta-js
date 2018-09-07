@@ -307,9 +307,8 @@ export function writeNoteSeqs(
   });
 }
 
-export function writeMemory(bytes: number) {
-  document.getElementById('leaked-memory').innerHTML =
-      bytes.toString() + ' bytes';
+export function writeMemory(bytes: number, name = 'leaked-memory') {
+  document.getElementById(name).innerHTML = bytes.toString() + ' bytes';
 }
 
 function createPlayerButton(
