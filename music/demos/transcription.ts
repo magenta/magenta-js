@@ -33,12 +33,44 @@ const ORIGINAL_AUDIO_URL =
     'https://storage.googleapis.com/magentadata/js/checkpoints/transcription/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl-250frames.wav';
 // tslint:enable:max-line-length
 
+// Transcription from a file.
+document.getElementById('fileInput').addEventListener('change', (e: any) => {
+  const file = e.target.files[0];
+  transcribeFromFile(file);
+  return false;
+});
+
+// Audio transcription.
+document.getElementById('audioBtn').addEventListener('click', () => {
+  const oafA = new mm.OnsetsAndFrames(AUD_CKPT_URL);
+  setLoadingMessage('audio');
+  oafA.initialize()
+      .then(() => transcribeFromAudio(oafA))
+      .then(() => oafA.dispose())
+      .then(() => writeMemory(tf.memory().numBytes, 'audio-leaked-memory'));
+});
+
+// Mel transcription.
+document.getElementById('melBtn').addEventListener('click', () => {
+  const oafM = new mm.OnsetsAndFrames(MEL_CKPT_URL);
+  setLoadingMessage('batch');
+  oafM.initialize()
+      .then(() => transcribe(oafM, 250))
+      .then(() => transcribe(oafM, 150))
+      .then(() => transcribe(oafM, 80))
+      .then(() => transcribe(oafM, 62))
+      .then(() => transcribe(oafM, 50))
+      .then(() => oafM.dispose())
+      .then(() => writeMemory(tf.memory().numBytes));
+});
+
 let expectedNs: INoteSequence;
 fetch(`${MEL_CKPT_URL}/${EXPECTED_NS_SUFFIX}`)
     .then((response) => response.json())
     .then((ns) => {
       expectedNs = ns;
       writeNoteSeqs('expected-ns', [expectedNs], undefined, true);
+      writeNoteSeqs('expected-audio-ns', [expectedNs], undefined, true);
     });
 
 async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
@@ -59,36 +91,61 @@ async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
 
 async function transcribeFromAudio(oaf: mm.OnsetsAndFrames) {
   const audio = await loadBuffer(ORIGINAL_AUDIO_URL);
-  const expectedAudioNs: INoteSequence =
-      await fetch(`${MEL_CKPT_URL}/${EXPECTED_NS_SUFFIX}`)
-          .then((response) => response.json());
-  writeNoteSeqs('expected-audio-ns', [expectedAudioNs], undefined, true);
-
   const start = performance.now();
   const ns = await oaf.transcribeFromAudio(audio);
   writeTimer('audio-time', start);
   writeNoteSeqs('audio-results', [ns], undefined, true);
 
   document.getElementById('audio-match').innerHTML =
-      notesMatch(ns.notes, expectedAudioNs.notes) ?
+      notesMatch(ns.notes, expectedNs.notes) ?
       '<span style="color:green">TRUE</span>' :
       '<b><span style="color:red">FALSE</span></b>';
 }
 
-try {
+async function getAudioBufferFromBlob(blob: Blob) {
+  const fileReader = new FileReader();
+  return new Promise((resolve, reject) => {
+    fileReader.onerror = () => {
+      fileReader.abort();
+      reject(new DOMException('Something went wrong reading that file.'));
+    };
+    fileReader.onload = () => {
+      resolve(fileReader.result);
+    };
+    fileReader.readAsArrayBuffer(blob);
+  });
+}
+
+async function transcribeFromFile(blob: Blob) {
+  setLoadingMessage('file');
+  // tslint:disable-next-line:no-any
+  const appeaseTsLintWindow = (window as any);
+  const audioCtx = new (
+      appeaseTsLintWindow.AudioContext ||
+      appeaseTsLintWindow.webkitAudioContext)();
+  const arrayBuffer: ArrayBuffer =
+      await getAudioBufferFromBlob(blob) as ArrayBuffer;
+  const audio: AudioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+  const audioEl = document.getElementById('filePlayer') as HTMLAudioElement;
+  audioEl.hidden = false;
+  audioEl.src = window.URL.createObjectURL(blob);
+
   const oafA = new mm.OnsetsAndFrames(AUD_CKPT_URL);
-  const oafM = new mm.OnsetsAndFrames(MEL_CKPT_URL);
   oafA.initialize()
-      .then(() => transcribeFromAudio(oafA))
-      .then(() => oafM.initialize())
-      .then(() => transcribe(oafM, 250))
-      .then(() => transcribe(oafM, 150))
-      .then(() => transcribe(oafM, 80))
-      .then(() => transcribe(oafM, 62))
-      .then(() => transcribe(oafM, 50))
+      .then(async () => {
+        const start = performance.now();
+        const ns = await oafA.transcribeFromAudio(audio);
+        writeTimer('file-time', start);
+        writeNoteSeqs('file-results', [ns], undefined, true);
+      })
       .then(() => oafA.dispose())
-      .then(() => oafM.dispose())
-      .then(() => writeMemory(tf.memory().numBytes));
-} catch (err) {
-  console.error(err);
+      .then(() => writeMemory(tf.memory().numBytes, 'file-leaked-memory'));
+}
+
+function setLoadingMessage(className: string) {
+  const els = document.querySelectorAll(`.${className}`);
+  for (let i = 0; i < els.length; i++) {
+    els[i].textContent = 'Loading...';
+  }
 }
