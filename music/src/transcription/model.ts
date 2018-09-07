@@ -76,7 +76,7 @@ export class OnsetsAndFrames {
    * @param warmup Whether to warm up the model by passing through a zero input.
    * Will make subsequent calls faster.
    */
-  async initialize(warmup = true) {
+  async initialize(warmup = false) {
     this.dispose();
 
     const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)

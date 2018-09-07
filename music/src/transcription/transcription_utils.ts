@@ -183,6 +183,7 @@ export async function pianorollToNoteSequence(
   const onsetVelocities = new Uint8Array(MIDI_PITCHES);
   let frame: Uint8Array;
   let onsets: Uint8Array;
+  let velocities: Uint8Array;
   let previousOnsets = new Uint8Array(MIDI_PITCHES);
 
   function endPitch(pitch: number, endFrame: number) {
@@ -212,13 +213,15 @@ export async function pianorollToNoteSequence(
   }
 
   for (let f = 0; f < splitFrames.length; ++f) {
-    frame = await splitFrames[f].data() as Uint8Array;
-    onsets = await splitOnsets[f].data() as Uint8Array;
-    const velocities = await splitVelocities[f].data() as Uint8Array;
+    [frame, onsets, velocities] = await Promise.all([
+      splitFrames[f].data() as Promise<Uint8Array>,
+      splitOnsets[f].data() as Promise<Uint8Array>,
+      splitVelocities[f].data() as Promise<Uint8Array>,
+    ]);
     splitFrames[f].dispose();
     splitOnsets[f].dispose();
     splitVelocities[f].dispose();
-    for (let p = 0; p < frame.length; ++p) {
+    for (let p = 0; p < MIDI_PITCHES; ++p) {
       if (onsets[p]) {
         processOnset(p, f, velocities[p]);
       } else if (!frame[p] && pitchStartStepPlusOne[p]) {
