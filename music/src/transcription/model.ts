@@ -23,10 +23,9 @@
 import * as tf from '@tensorflow/tfjs';
 
 import {preprocessAudio} from './audio_utils';
-// tslint:disable:max-line-length
-import {MEL_SPEC_BINS, MIDI_PITCHES} from './constants';
+import {MEL_SPEC_BINS, MIDI_PITCHES, SAMPLE_RATE} from './constants';
+// tslint:disable-next-line:max-line-length
 import {batchInput, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
-// tslint:enable:max-line-length
 
 const LSTM_UNITS = 128;
 
@@ -77,7 +76,7 @@ export class OnsetsAndFrames {
    * @param warmup Whether to warm up the model by passing through a zero input.
    * Will make subsequent calls faster.
    */
-  async initialize(warmup = true) {
+  async initialize(warmup = false) {
     this.dispose();
 
     const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
@@ -87,12 +86,12 @@ export class OnsetsAndFrames {
                              tf.io.loadWeights(manifest, this.checkpointURL));
     this.build(vars);
     Object.keys(vars).map(name => vars[name].dispose());
-    if (warmup) {
-      tf.tidy(() => {
-        this.processBatches(tf.zeros([1, 16, MEL_SPEC_BINS]), 8, 8, 1);
-      });
-    }
     this.initialized = true;
+    if (warmup) {
+      const ctx = new OfflineAudioContext(1, SAMPLE_RATE, SAMPLE_RATE);
+      this.transcribeFromAudio(
+          ctx.createBuffer(1, 8 * SAMPLE_RATE, SAMPLE_RATE));
+    }
     console.log('Initialized OnsetsAndFrames.');
   }
 
@@ -130,7 +129,7 @@ export class OnsetsAndFrames {
    * @returns A `NoteSequence` containing the transcribed piano performance.
    */
   // tslint:enable:max-line-length
-  async transcribeFromMelSpec(melSpec: number[][], parallelBatches = 32) {
+  async transcribeFromMelSpec(melSpec: number[][], parallelBatches = 4) {
     if (!this.isInitialized()) {
       this.initialize();
     }
@@ -158,7 +157,7 @@ export class OnsetsAndFrames {
    * parallel. May need to be reduced if hitting a timeout in the browser.
    * @returns A `NoteSequence` containing the transcribed piano performance.
    */
-  async transcribeFromAudio(audioBuffer: AudioBuffer, parallelBatches = 32) {
+  async transcribeFromAudio(audioBuffer: AudioBuffer, parallelBatches = 4) {
     const melSpec =
         (await preprocessAudio(audioBuffer)).map(a => Array.from(a));
     return this.transcribeFromMelSpec(melSpec, parallelBatches);
@@ -191,14 +190,17 @@ export class OnsetsAndFrames {
       [onsetsCnnOut, activationProbs, scaledVelocities] = allOutputs;
     }
     const onsetProbs = this.onsetsRnn.predict(onsetsCnnOut) as tf.Tensor3D;
+    onsetsCnnOut.dispose();
     const frameProbs =
         this.frameRnn.predict(tf.concat([onsetProbs, activationProbs], -1)) as
         tf.Tensor3D;
+    activationProbs.dispose();
     // Translates a velocity estimate to a MIDI velocity value.
     const velocities = tf.clipByValue(scaledVelocities, 0., 1.)
                            .mul(tf.scalar(80.))
                            .add(tf.scalar(10.))
                            .toInt();
+    scaledVelocities.dispose();
     // Squeeze batch dims.
     return [frameProbs.squeeze(), onsetProbs.squeeze(), velocities.squeeze()];
   }
