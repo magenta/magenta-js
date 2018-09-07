@@ -122,24 +122,27 @@ export function unbatchOutput(
   if (batches.shape[0] === 1) {
     return batches;
   }
-  const firstBatch = batches.slice([0, 0], [1, batchLength]);
-  let finalBatchLength = totalLength % batchLength;
-  if (finalBatchLength <= RF_PAD) {
-    finalBatchLength += batchLength;
-  }
-  const finalBatch = batches.slice(
-      [batches.shape[0] - 1, batches.shape[1] - finalBatchLength], [-1, -1]);
-  let toConcat = [firstBatch, finalBatch];
+  return tf.tidy(() => {
+    const firstBatch = batches.slice([0, 0], [1, batchLength]);
+    let finalBatchLength = totalLength % batchLength;
+    if (finalBatchLength <= RF_PAD) {
+      finalBatchLength += batchLength;
+    }
+    const finalBatch = batches.slice(
+        [batches.shape[0] - 1, batches.shape[1] - finalBatchLength], [-1, -1]);
+    let toConcat = [firstBatch, finalBatch];
 
-  if (batches.shape[0] > 2) {
-    const midBatchSize = batches.shape[0] - 2;
-    const midBatches = batches.slice([1, RF_PAD], [midBatchSize, batchLength]);
-    toConcat = [
-      firstBatch, midBatches.as3D(1, (midBatchSize) * batchLength, -1),
-      finalBatch
-    ];
-  }
-  return tf.concat(toConcat, 1);
+    if (batches.shape[0] > 2) {
+      const midBatchSize = batches.shape[0] - 2;
+      const midBatches =
+          batches.slice([1, RF_PAD], [midBatchSize, batchLength]);
+      toConcat = [
+        firstBatch, midBatches.as3D(1, (midBatchSize) * batchLength, -1),
+        finalBatch
+      ];
+    }
+    return tf.concat(toConcat, 1);
+  });
 }
 
 /**

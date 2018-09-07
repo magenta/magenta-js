@@ -190,14 +190,17 @@ export class OnsetsAndFrames {
       [onsetsCnnOut, activationProbs, scaledVelocities] = allOutputs;
     }
     const onsetProbs = this.onsetsRnn.predict(onsetsCnnOut) as tf.Tensor3D;
+    onsetsCnnOut.dispose();
     const frameProbs =
         this.frameRnn.predict(tf.concat([onsetProbs, activationProbs], -1)) as
         tf.Tensor3D;
+    activationProbs.dispose();
     // Translates a velocity estimate to a MIDI velocity value.
     const velocities = tf.clipByValue(scaledVelocities, 0., 1.)
                            .mul(tf.scalar(80.))
                            .add(tf.scalar(10.))
                            .toInt();
+    scaledVelocities.dispose();
     // Squeeze batch dims.
     return [frameProbs.squeeze(), onsetProbs.squeeze(), velocities.squeeze()];
   }
