@@ -35,11 +35,11 @@ export class OnsetsAndFrames {
   public batchLength: number;
   private initialized: boolean;
 
-  private onsetsCnn: tf.Sequential;
+  private onsetsCnn: AcousticCnn;
   private onsetsRnn: BidiLstm;
-  private activationCnn: tf.Sequential;
+  private activationCnn: AcousticCnn;
   private frameRnn: BidiLstm;
-  private velocityCnn: tf.Sequential;
+  private velocityCnn: AcousticCnn;
 
   /**
    * `OnsetsAndFrames` constructor.
@@ -152,12 +152,11 @@ export class OnsetsAndFrames {
   private processBatches(
       batches: tf.Tensor3D, batchLength: number, fullLength: number,
       parallelBatches: number) {
-    const predictConfig = {batchSize: parallelBatches};
     const runCnns =
         ((batch: tf.Tensor3D) =>
-             [this.onsetsCnn.predict(batch, predictConfig) as tf.Tensor3D,
-              this.activationCnn.predict(batch, predictConfig) as tf.Tensor3D,
-              this.velocityCnn.predict(batch, predictConfig) as tf.Tensor3D]);
+             [this.onsetsCnn.predict(batch, parallelBatches) as tf.Tensor3D,
+              this.activationCnn.predict(batch, parallelBatches) as tf.Tensor3D,
+              this.velocityCnn.predict(batch, parallelBatches) as tf.Tensor3D]);
 
     let onsetsCnnOut, activationProbs, scaledVelocities: tf.Tensor3D;
     if (batches.shape[0] === 1) {
@@ -197,75 +196,41 @@ export class OnsetsAndFrames {
    * Builds the model with the given variables.
    */
   private build(vars: tf.NamedTensorMap) {
-    function getVar(name: string) {
-      const v = vars[name];
-      if (v === undefined) {
-        throw Error(`Variable not found: ${name}`);
-      }
-      return v;
-    }
-
-    function convWeights(scope: string) {
-      return [
-        getVar(`${scope}/conv1/weights`),
-        getVar(`${scope}/conv1/BatchNorm/beta`),
-        getVar(`${scope}/conv1/BatchNorm/moving_mean`),
-        getVar(`${scope}/conv1/BatchNorm/moving_variance`),
-        getVar(`${scope}/conv2/weights`),
-        getVar(`${scope}/conv2/BatchNorm/beta`),
-        getVar(`${scope}/conv2/BatchNorm/moving_mean`),
-        getVar(`${scope}/conv2/BatchNorm/moving_variance`),
-        getVar(`${scope}/conv3/weights`),
-        getVar(`${scope}/conv3/BatchNorm/beta`),
-        getVar(`${scope}/conv3/BatchNorm/moving_mean`),
-        getVar(`${scope}/conv3/BatchNorm/moving_variance`),
-        getVar(`${scope}/fc5/weights`),
-        getVar(`${scope}/fc5/biases`),
-      ];
-    }
-
-    function denseWeights(scope: string) {
-      return [getVar(`${scope}/weights`), getVar(`${scope}/biases`)];
-    }
-
     tf.tidy(() => {
       // Onsets model has a conv net, followed by an LSTM. We separate the two
       // parts so that we can process the convolution in batch and then
       // flatten before passing through the LSTM.
-      const onsetsCnn = this.getAcousticCnn();
-      onsetsCnn.setWeights(convWeights('onsets'));
-      this.onsetsCnn = onsetsCnn;
-
-      this.onsetsRnn = new BidiLstm([null, onsetsCnn.outputShape[2] as number]);
+      this.onsetsCnn = new AcousticCnn();
+      this.onsetsCnn.setWeights(vars, 'onsets');
+      this.onsetsRnn = new BidiLstm([null, this.onsetsCnn.outputShape[2]]);
       this.onsetsRnn.setWeights(vars, 'onsets', 'onset_probs');
 
-      const activationCnn = this.getAcousticCnn();
-      activationCnn.add(tf.layers.dense(
-          {units: MIDI_PITCHES, activation: 'sigmoid', trainable: false}));
-      activationCnn.setWeights(
-          convWeights('frame').concat(denseWeights('frame/activation_probs')));
-      this.activationCnn = activationCnn;
+      this.activationCnn = new AcousticCnn('sigmoid');
+      this.activationCnn.setWeights(vars, 'frame', 'activation_probs');
 
       // Frame RNN takes concatenated ouputs of onsetsRnn and activationCnn
       // as its inputs.
       this.frameRnn = new BidiLstm([null, MIDI_PITCHES * 2]);
       this.frameRnn.setWeights(vars, 'frame', 'frame_probs');
 
-      const velocityCnn = this.getAcousticCnn();
-      velocityCnn.add(tf.layers.dense(
-          {units: MIDI_PITCHES, activation: 'linear', trainable: false}));
-      velocityCnn.setWeights(
-          convWeights('velocity')
-              .concat(denseWeights('velocity/onset_velocities')));
-      this.velocityCnn = velocityCnn;
+      this.velocityCnn = new AcousticCnn('linear');
+      this.velocityCnn.setWeights(vars, 'velocity', 'onset_velocities');
     });
   }
 
-  /**
-   * Returns an acoustic stack without setting variables.
-   */
-  private getAcousticCnn() {
-    const acousticCnn = tf.sequential();
+  private logMessage(msg: string) {
+    console.info('%cO&F', 'background:magenta; color:white', msg);
+  }
+}
+
+/**
+ * Helper class for the acoustic CNN model.
+ */
+class AcousticCnn {
+  readonly outputShape: number[];
+  private readonly nn = tf.sequential();
+
+  constructor(finalDenseActivation?: string) {
     // tslint:disable-next-line:no-any
     const convConfig: any = {
       filters: 32,
@@ -279,41 +244,85 @@ export class OnsetsAndFrames {
     };
     const batchNormConfig = {scale: false, trainable: false};
 
-    acousticCnn.add(tf.layers.conv2d(convConfig));
-    acousticCnn.add(tf.layers.batchNormalization(batchNormConfig));
-    acousticCnn.add(tf.layers.activation({activation: 'relu'}));
+    this.nn.add(tf.layers.conv2d(convConfig));
+    this.nn.add(tf.layers.batchNormalization(batchNormConfig));
+    this.nn.add(tf.layers.activation({activation: 'relu'}));
 
     convConfig.inputShape = null;
-    acousticCnn.add(tf.layers.conv2d(convConfig));
-    acousticCnn.add(tf.layers.batchNormalization(batchNormConfig));
-    acousticCnn.add(tf.layers.activation({activation: 'relu'}));
-    acousticCnn.add(
-        tf.layers.maxPooling2d({poolSize: [1, 2], strides: [1, 2]}));
+    this.nn.add(tf.layers.conv2d(convConfig));
+    this.nn.add(tf.layers.batchNormalization(batchNormConfig));
+    this.nn.add(tf.layers.activation({activation: 'relu'}));
+    this.nn.add(tf.layers.maxPooling2d({poolSize: [1, 2], strides: [1, 2]}));
 
     convConfig.filters = 64;
-    acousticCnn.add(tf.layers.conv2d(convConfig));
-    acousticCnn.add(tf.layers.batchNormalization(batchNormConfig));
-    acousticCnn.add(tf.layers.activation({activation: 'relu'}));
-    acousticCnn.add(
-        tf.layers.maxPooling2d({poolSize: [1, 2], strides: [1, 2]}));
+    this.nn.add(tf.layers.conv2d(convConfig));
+    this.nn.add(tf.layers.batchNormalization(batchNormConfig));
+    this.nn.add(tf.layers.activation({activation: 'relu'}));
+    this.nn.add(tf.layers.maxPooling2d({poolSize: [1, 2], strides: [1, 2]}));
 
-    const dims = acousticCnn.outputShape as number[];
-    acousticCnn.add(
-        tf.layers.reshape({targetShape: [dims[1], dims[2] * dims[3]]}));
+    const dims = this.nn.outputShape as number[];
+    this.nn.add(tf.layers.reshape({targetShape: [dims[1], dims[2] * dims[3]]}));
 
-    acousticCnn.add(
+    this.nn.add(
         tf.layers.dense({units: 512, activation: 'relu', trainable: false}));
-
-    return acousticCnn;
+    if (finalDenseActivation) {
+      this.nn.add(tf.layers.dense({
+        units: MIDI_PITCHES,
+        activation: finalDenseActivation,
+        trainable: false
+      }));
+    }
+    this.outputShape = this.nn.outputShape as number[];
   }
 
-  private logMessage(msg: string) {
-    console.info('%cO&F', 'background:magenta; color:white', msg);
+  dispose() {
+    this.nn.dispose();
+  }
+
+  predict(inputs: tf.Tensor3D, parallelBatches: number) {
+    return this.nn.predict(inputs, {batchSize: parallelBatches});
+  }
+
+  setWeights(vars: tf.NamedTensorMap, scope: string, denseName?: string) {
+    function getVar(name: string) {
+      const v = vars[name];
+      if (v === undefined) {
+        throw Error(`Variable not found: ${name}`);
+      }
+      return v;
+    }
+
+    let weights = [
+      getVar(`${scope}/conv1/weights`),
+      getVar(`${scope}/conv1/BatchNorm/beta`),
+      getVar(`${scope}/conv1/BatchNorm/moving_mean`),
+      getVar(`${scope}/conv1/BatchNorm/moving_variance`),
+      getVar(`${scope}/conv2/weights`),
+      getVar(`${scope}/conv2/BatchNorm/beta`),
+      getVar(`${scope}/conv2/BatchNorm/moving_mean`),
+      getVar(`${scope}/conv2/BatchNorm/moving_variance`),
+      getVar(`${scope}/conv3/weights`),
+      getVar(`${scope}/conv3/BatchNorm/beta`),
+      getVar(`${scope}/conv3/BatchNorm/moving_mean`),
+      getVar(`${scope}/conv3/BatchNorm/moving_variance`),
+      getVar(`${scope}/fc5/weights`),
+      getVar(`${scope}/fc5/biases`),
+    ];
+    if (denseName) {
+      weights = weights.concat([
+        getVar(`${scope}/${denseName}/weights`),
+        getVar(`${scope}/${denseName}/biases`)
+      ]);
+    }
+    this.nn.setWeights(weights);
   }
 }
 
 /**
- * Helper class to create a Bidirecitonal LSTM layer.
+ * Helper for a Bidirecitonal LSTM layer.
+ *
+ * Implments processing the input in chunks, which is significantly more
+ * efficient in tfjs due to memory management and shader cacheing.
  */
 class BidiLstm {
   private readonly fwLstm: tf.Model;
