@@ -129,7 +129,7 @@ export class OnsetsAndFrames {
       frameProbs.dispose();
       onsetProbs.dispose();
       velocities.dispose();
-      this.logMessage(`Transcribed in ${totalSeconds(start)}.`);
+      this.logMessage(`Transcribed in ${totalSeconds(start)}s.`);
     });
     return ns;
   }
