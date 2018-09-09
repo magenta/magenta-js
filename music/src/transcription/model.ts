@@ -49,7 +49,7 @@ export class OnsetsAndFrames {
    * padding). Sequences longer than this amount will be split into batches of
    * this size for processing.
    */
-  constructor(checkpointURL: string, batchLength = 125) {
+  constructor(checkpointURL: string, batchLength = 250) {
     this.checkpointURL = checkpointURL;
     this.batchLength = batchLength;
   }
