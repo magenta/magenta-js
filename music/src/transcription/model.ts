@@ -189,12 +189,35 @@ export class OnsetsAndFrames {
       }
       [onsetsCnnOut, activationProbs, scaledVelocities] = allOutputs;
     }
-    const onsetProbs = this.onsetsRnn.predict(onsetsCnnOut) as tf.Tensor3D;
+    const onsetProbsChunks: tf.Tensor3D[] = [];
+    const CHUNK_SIZE = 250;
+    for (let i = 0; i < Math.ceil(fullLength / CHUNK_SIZE); ++i) {
+      console.log(`onsets${i}`);
+      onsetProbsChunks.push(
+          this.onsetsRnn.predict(onsetsCnnOut.slice([0, i * CHUNK_SIZE], [
+            -1, Math.min(CHUNK_SIZE, fullLength - (i * CHUNK_SIZE))
+          ])) as tf.Tensor3D);
+    }
+    const onsetProbs = onsetProbsChunks.length === 0 ?
+        onsetProbsChunks[0] :
+        tf.concat3d(onsetProbsChunks, 1);
     onsetsCnnOut.dispose();
-    const frameProbs =
-        this.frameRnn.predict(tf.concat([onsetProbs, activationProbs], -1)) as
-        tf.Tensor3D;
+
+    const frameProbInputs = tf.concat3d([onsetProbs, activationProbs], -1);
     activationProbs.dispose();
+    const frameProbsChunks: tf.Tensor3D[] = [];
+    for (let i = 0; i < Math.ceil(fullLength / CHUNK_SIZE); ++i) {
+      console.log(`frames${i}`);
+      frameProbsChunks.push(
+          this.frameRnn.predict(frameProbInputs.slice([0, i * CHUNK_SIZE], [
+            -1, Math.min(CHUNK_SIZE, fullLength - (i * CHUNK_SIZE))
+          ])) as tf.Tensor3D);
+    }
+    frameProbInputs.dispose();
+    const frameProbs = frameProbsChunks.length === 0 ?
+        frameProbsChunks[0] :
+        tf.concat3d(frameProbsChunks, 1);
+
     // Translates a velocity estimate to a MIDI velocity value.
     const velocities = tf.clipByValue(scaledVelocities, 0., 1.)
                            .mul(tf.scalar(80.))
