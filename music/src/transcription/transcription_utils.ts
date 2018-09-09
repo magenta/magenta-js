@@ -173,10 +173,7 @@ export async function pianorollToNoteSequence(
     // Ensure that any frame with an onset prediction is considered active.
     framePredictions = tf.logicalOr(framePredictions, onsetPredictions);
 
-    return [
-      tf.unstack(framePredictions), tf.unstack(onsetPredictions),
-      tf.unstack(velocityValues)
-    ];
+    return [framePredictions, onsetPredictions, velocityValues];
   });
 
   const ns = NoteSequence.create();
@@ -215,24 +212,25 @@ export async function pianorollToNoteSequence(
     }
   }
 
-  for (let f = 0; f < splitFrames.length; ++f) {
-    [frame, onsets, velocities] = await Promise.all([
-      splitFrames[f].data() as Promise<Uint8Array>,
-      splitOnsets[f].data() as Promise<Uint8Array>,
-      splitVelocities[f].data() as Promise<Uint8Array>,
-    ]);
-    splitFrames[f].dispose();
-    splitOnsets[f].dispose();
-    splitVelocities[f].dispose();
+  [frame, onsets, velocities] = await Promise.all([
+    splitFrames.data() as Promise<Uint8Array>,
+    splitOnsets.data() as Promise<Uint8Array>,
+    splitVelocities.data() as Promise<Uint8Array>,
+  ]);
+  splitFrames.dispose();
+  splitOnsets.dispose();
+  splitVelocities.dispose();
+  for (let f = 0; f < splitFrames.shape[0]; ++f) {
     for (let p = 0; p < MIDI_PITCHES; ++p) {
-      if (onsets[p]) {
-        processOnset(p, f, velocities[p]);
-      } else if (!frame[p] && pitchStartStepPlusOne[p]) {
+      const i = f * MIDI_PITCHES + p;
+      if (onsets[i]) {
+        processOnset(p, f, velocities[i]);
+      } else if (!frame[i] && pitchStartStepPlusOne[p]) {
         endPitch(p, f);
       }
     }
     previousOnsets = onsets;
   }
-  ns.totalTime = splitFrames.length * FRAME_LENGTH_SECONDS;
+  ns.totalTime = (splitFrames.shape[0] - 1) * FRAME_LENGTH_SECONDS;
   return ns;
 }
