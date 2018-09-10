@@ -127,9 +127,6 @@ async function runMelodyRnn() {
   writeTimer('melody-cont-time', start);
   writeNoteSeqs('melody-cont-results', [continuation]);
   melodyRnn.dispose();
-
-  console.log(tf.getBackend());
-  console.log(tf.memory());
 }
 
 async function runDrumsRnn() {
@@ -145,9 +142,6 @@ async function runDrumsRnn() {
   writeTimer('drums-cont-time', start);
   writeNoteSeqs('drums-cont-results', [continuation]);
   drumsRnn.dispose();
-
-  console.log(tf.getBackend());
-  console.log(tf.memory());
 }
 
 async function runImprovRnn() {
@@ -163,9 +157,6 @@ async function runImprovRnn() {
   writeTimer('improv-cont-time', start);
   writeNoteSeqs('improv-cont-results', [continuation]);
   improvRnn.dispose();
-
-  console.log(tf.getBackend());
-  console.log(tf.memory());
 }
 
 try {
