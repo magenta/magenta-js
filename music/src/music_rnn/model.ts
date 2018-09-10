@@ -125,6 +125,7 @@ export class MusicRNN {
    */
   async initialize() {
     this.dispose();
+    const startTime = performance.now()
 
     if (!this.spec) {
       await fetch(`${this.checkpointURL}/config.json`)
@@ -180,7 +181,7 @@ export class MusicRNN {
 
     this.rawVars = vars;
     this.initialized = true;
-    logging.log('Initialized model.', 'MusicRNN');
+    logging.logWithDuration('Initialized model', startTime, 'MusicRNN');
   }
 
   dispose() {
