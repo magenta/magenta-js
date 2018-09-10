@@ -25,6 +25,7 @@ import * as tf from '@tensorflow/tfjs-core';
 import * as aux_inputs from '../core/aux_inputs';
 import * as chords from '../core/chords';
 import * as data from '../core/data';
+import * as logging from '../core/logging';
 import * as sequences from '../core/sequences';
 import {INoteSequence} from '../protobuf/index';
 
@@ -179,7 +180,7 @@ export class MusicRNN {
 
     this.rawVars = vars;
     this.initialized = true;
-    console.log('Initialized MusicRNN.');
+    logging.log('Initialized model.', 'MusicRNN');
   }
 
   dispose() {

@@ -23,6 +23,8 @@ import {loadBuffer} from '../src/transcription/audio_utils';
 // tslint:disable-next-line:max-line-length
 import {CHECKPOINTS_DIR, notesMatch, writeMemory, writeNoteSeqs, writeTimer} from './common';
 
+mm.logging.verbosity = mm.logging.Level.DEBUG;
+
 const TRANS_CKPT_DIR = `${CHECKPOINTS_DIR}/transcription`;
 const MEL_CKPT_URL = `${TRANS_CKPT_DIR}/onsets_frames_htk0`;
 const AUD_CKPT_URL = `${TRANS_CKPT_DIR}/onsets_frames_htk1`;

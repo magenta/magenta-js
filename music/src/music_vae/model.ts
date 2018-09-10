@@ -25,6 +25,7 @@ import * as tf from '@tensorflow/tfjs-core';
 import * as chords from '../core/chords';
 import * as constants from '../core/constants';
 import * as data from '../core/data';
+import * as logging from '../core/logging';
 import {INoteSequence} from '../protobuf/index';
 
 /**
@@ -725,7 +726,7 @@ class MusicVAE {
     }
 
     this.initialized = true;
-    console.log('Initialized MusicVAE.');
+    logging.log('Initialized MusicVAE.', 'MusicVAE');
   }
 
   /**

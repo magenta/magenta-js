@@ -21,11 +21,13 @@
  * Imports
  */
 import * as tf from '@tensorflow/tfjs';
+import * as logging from '../core/logging';
 
 import {preprocessAudio} from './audio_utils';
 // tslint:disable:max-line-length
 import {MEL_SPEC_BINS, MIDI_PITCHES} from './constants';
 import {batchInput, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
+
 // tslint:enable:max-line-length
 
 const LSTM_UNITS = 128;
@@ -93,7 +95,7 @@ export class OnsetsAndFrames {
       });
     }
     this.initialized = true;
-    console.log('Initialized OnsetsAndFrames.');
+    logging.log('Initialized model.', 'O&F');
   }
 
   /**
