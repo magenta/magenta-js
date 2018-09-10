@@ -319,10 +319,10 @@ class AcousticCnn {
 }
 
 /**
- * Helper for a Bidirecitonal LSTM layer.
+ * Helper for a Bidirectional LSTM layer.
  *
- * Implments processing the input in chunks, which is significantly more
- * efficient in tfjs due to memory management and shader cacheing.
+ * Implements processing the input in chunks, which is significantly more
+ * efficient in tfjs due to memory management and shader caching.
  */
 class BidiLstm {
   private readonly fwLstm: tf.Model;
@@ -430,16 +430,16 @@ class BidiLstm {
         [tf.zeros([1, this.units]), tf.zeros([1, this.units])];
     for (let i = 0; i < inputChunks.length; ++i) {
       let input = [inputChunks[i], fwState[0], fwState[1]];
-      let res =
+      let result =
           this.fwLstm.predict(input) as [tf.Tensor3D, tf.Tensor2D, tf.Tensor2D];
-      outputFwChunks.push(res[0]);
-      fwState = res.slice(1) as [tf.Tensor2D, tf.Tensor2D];
+      outputFwChunks.push(result[0]);
+      fwState = result.slice(1) as [tf.Tensor2D, tf.Tensor2D];
 
       input = [inputChunks[bwI(i)], bwState[0], bwState[1]];
-      res =
+      result =
           this.bwLstm.predict(input) as [tf.Tensor3D, tf.Tensor2D, tf.Tensor2D];
-      outputBwChunks.push(tf.reverse(res[0], 1));
-      bwState = res.slice(1) as [tf.Tensor2D, tf.Tensor2D];
+      outputBwChunks.push(tf.reverse(result[0], 1));
+      bwState = result.slice(1) as [tf.Tensor2D, tf.Tensor2D];
     }
     inputChunks.forEach(t => t.dispose());
 
