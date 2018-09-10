@@ -248,6 +248,8 @@ export class MusicRNN {
       await this.initialize();
     }
 
+    const startTime = performance.now();
+
     const oh = tf.tidy(() => {
       const inputs = this.dataConverter.toTensor(sequence);
       const length: number = inputs.shape[0];
@@ -285,6 +287,10 @@ export class MusicRNN {
     }
 
     oh.samples.dispose();
+    result.then(
+        () => logging.logWithDuration(
+            'Continuation completed', startTime, 'MusicRNN',
+            logging.Level.DEBUG));
     return {sequence: result, probs};
   }
 

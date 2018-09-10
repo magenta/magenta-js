@@ -1060,12 +1060,17 @@ class MusicVAE {
     if (!this.initialized) {
       await this.initialize();
     }
+    const startTime = performance.now();
+
     const randZs: tf.Tensor2D =
         tf.tidy(() => tf.randomNormal([numSamples, this.decoder.zDims]));
-    const outputSequenes =
+    const outputSequences =
         this.decode(randZs, temperature, chordProgression, stepsPerQuarter);
     randZs.dispose();
-    return outputSequenes;
+    outputSequences.then(
+        () => logging.logWithDuration(
+            'Sampling completed', startTime, 'MusicVAE', logging.Level.DEBUG));
+    return outputSequences;
   }
 }
 
