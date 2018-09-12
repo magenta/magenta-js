@@ -122,24 +122,27 @@ export function unbatchOutput(
   if (batches.shape[0] === 1) {
     return batches;
   }
-  const firstBatch = batches.slice([0, 0], [1, batchLength]);
-  let finalBatchLength = totalLength % batchLength;
-  if (finalBatchLength <= RF_PAD) {
-    finalBatchLength += batchLength;
-  }
-  const finalBatch = batches.slice(
-      [batches.shape[0] - 1, batches.shape[1] - finalBatchLength], [-1, -1]);
-  let toConcat = [firstBatch, finalBatch];
+  return tf.tidy(() => {
+    const firstBatch = batches.slice([0, 0], [1, batchLength]);
+    let finalBatchLength = totalLength % batchLength;
+    if (finalBatchLength <= RF_PAD) {
+      finalBatchLength += batchLength;
+    }
+    const finalBatch = batches.slice(
+        [batches.shape[0] - 1, batches.shape[1] - finalBatchLength], [-1, -1]);
+    let toConcat = [firstBatch, finalBatch];
 
-  if (batches.shape[0] > 2) {
-    const midBatchSize = batches.shape[0] - 2;
-    const midBatches = batches.slice([1, RF_PAD], [midBatchSize, batchLength]);
-    toConcat = [
-      firstBatch, midBatches.as3D(1, (midBatchSize) * batchLength, -1),
-      finalBatch
-    ];
-  }
-  return tf.concat(toConcat, 1);
+    if (batches.shape[0] > 2) {
+      const midBatchSize = batches.shape[0] - 2;
+      const midBatches =
+          batches.slice([1, RF_PAD], [midBatchSize, batchLength]);
+      toConcat = [
+        firstBatch, midBatches.as3D(1, (midBatchSize) * batchLength, -1),
+        finalBatch
+      ];
+    }
+    return tf.concat(toConcat, 1);
+  });
 }
 
 /**
@@ -155,34 +158,11 @@ export function unbatchOutput(
 export async function pianorollToNoteSequence(
     frameProbs: tf.Tensor2D, onsetProbs: tf.Tensor2D,
     velocityValues: tf.Tensor2D, onsetThreshold = 0.5, frameThreshold = 0.5) {
-  const [splitFrames, splitOnsets, splitVelocities] = tf.tidy(() => {
-    let onsetPredictions =
-        tf.greater(onsetProbs, onsetThreshold) as tf.Tensor2D;
-    let framePredictions =
-        tf.greater(frameProbs, frameThreshold) as tf.Tensor2D;
-
-    // Add silent frame at the end so we can do a final loop and terminate
-    // any notes that are still active.
-    onsetPredictions = onsetPredictions.pad([[0, 1], [0, 0]]);
-    framePredictions = framePredictions.pad([[0, 1], [0, 0]]);
-    velocityValues = velocityValues.pad([[0, 1], [0, 0]]);
-
-    // Ensure that any frame with an onset prediction is considered active.
-    framePredictions = tf.logicalOr(framePredictions, onsetPredictions);
-
-    return [
-      tf.unstack(framePredictions), tf.unstack(onsetPredictions),
-      tf.unstack(velocityValues)
-    ];
-  });
-
   const ns = NoteSequence.create();
 
   // Store (step + 1) with 0 signifying no active note.
   const pitchStartStepPlusOne = new Uint32Array(MIDI_PITCHES);
   const onsetVelocities = new Uint8Array(MIDI_PITCHES);
-  let frame: Uint8Array;
-  let onsets: Uint8Array;
   let previousOnsets = new Uint8Array(MIDI_PITCHES);
 
   function endPitch(pitch: number, endFrame: number) {
@@ -211,22 +191,39 @@ export async function pianorollToNoteSequence(
     }
   }
 
-  for (let f = 0; f < splitFrames.length; ++f) {
-    frame = await splitFrames[f].data() as Uint8Array;
-    onsets = await splitOnsets[f].data() as Uint8Array;
-    const velocities = await splitVelocities[f].data() as Uint8Array;
-    splitFrames[f].dispose();
-    splitOnsets[f].dispose();
-    splitVelocities[f].dispose();
-    for (let p = 0; p < frame.length; ++p) {
-      if (onsets[p]) {
-        processOnset(p, f, velocities[p]);
-      } else if (!frame[p] && pitchStartStepPlusOne[p]) {
+  const predictions = tf.tidy(() => {
+    let onsetPredictions =
+        tf.greater(onsetProbs, onsetThreshold) as tf.Tensor2D;
+    let framePredictions =
+        tf.greater(frameProbs, frameThreshold) as tf.Tensor2D;
+
+    // Add silent frame at the end so we can do a final loop and terminate
+    // any notes that are still active.
+    onsetPredictions = onsetPredictions.pad([[0, 1], [0, 0]]);
+    framePredictions = framePredictions.pad([[0, 1], [0, 0]]);
+    velocityValues = velocityValues.pad([[0, 1], [0, 0]]);
+
+    // Ensure that any frame with an onset prediction is considered active.
+    framePredictions = tf.logicalOr(framePredictions, onsetPredictions);
+
+    return [framePredictions, onsetPredictions, velocityValues];
+  });
+
+  const [frames, onsets, velocities] =
+      await Promise.all(predictions.map(t => t.data() as Promise<Uint8Array>));
+  predictions.forEach(t => t.dispose());
+  const numFrames: number = frameProbs.shape[0];
+  for (let f = 0; f < numFrames + 1; ++f) {  // Go 1 past to end notes
+    for (let p = 0; p < MIDI_PITCHES; ++p) {
+      const i = f * MIDI_PITCHES + p;
+      if (onsets[i]) {
+        processOnset(p, f, velocities[i]);
+      } else if (!frames[i] && pitchStartStepPlusOne[p]) {
         endPitch(p, f);
       }
     }
-    previousOnsets = onsets;
+    previousOnsets = onsets.slice(f * MIDI_PITCHES, (f + 1) * MIDI_PITCHES);
   }
-  ns.totalTime = splitFrames.length * FRAME_LENGTH_SECONDS;
+  ns.totalTime = numFrames * FRAME_LENGTH_SECONDS;
   return ns;
 }

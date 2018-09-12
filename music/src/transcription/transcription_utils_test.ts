@@ -39,6 +39,8 @@ test('PianorollToNoteSequence', (t: test.Test) => {
   onsets.set(OVER_THRESHOLD_PROB, 25, 39);
   // Add an onset for a note that doesn't have an active frame.
   onsets.set(OVER_THRESHOLD_PROB, 260, 49);
+  // Add an onset for a note that doesn't have an active frame, at the end.
+  onsets.set(OVER_THRESHOLD_PROB, 299, 50);
 
   const expectedNs = NoteSequence.create({
     notes: [
@@ -54,8 +56,14 @@ test('PianorollToNoteSequence', (t: test.Test) => {
         endTime: 261 * FRAME_LENGTH_SECONDS,
         velocity: 1
       },
+      {
+        pitch: 50 + MIN_MIDI_PITCH,
+        startTime: 299 * FRAME_LENGTH_SECONDS,
+        endTime: 300 * FRAME_LENGTH_SECONDS,
+        velocity: 1
+      },
     ],
-    totalTime: 301 * FRAME_LENGTH_SECONDS
+    totalTime: 300 * FRAME_LENGTH_SECONDS
   });
 
   pianorollToNoteSequence(
@@ -105,7 +113,7 @@ test('PianorollToNoteSequenceWithOverlappingFrames', (t: test.Test) => {
         velocity: 1
       },
     ],
-    totalTime: 101 * FRAME_LENGTH_SECONDS
+    totalTime: 100 * FRAME_LENGTH_SECONDS
   });
 
   pianorollToNoteSequence(
