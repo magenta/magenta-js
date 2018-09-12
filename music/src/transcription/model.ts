@@ -21,6 +21,7 @@
  * Imports
  */
 import * as tf from '@tensorflow/tfjs';
+import * as logging from '../core/logging';
 
 import {preprocessAudio} from './audio_utils';
 import {MEL_SPEC_BINS, MIDI_PITCHES} from './constants';
@@ -59,9 +60,8 @@ export class OnsetsAndFrames {
    */
   async initialize() {
     this.dispose();
-    this.logMessage('Initializing model...');
+    const startTime = performance.now();
 
-    const start = performance.now();
     const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
                      .then((response) => response.json())
                      .then(
@@ -70,8 +70,7 @@ export class OnsetsAndFrames {
     this.build(vars);
     Object.keys(vars).map(name => vars[name].dispose());
     this.initialized = true;
-
-    this.logMessage(`Initialized in ${totalSeconds(start)}s.`);
+    logging.logWithDuration('Initialized model', startTime, 'O&F');
   }
 
   /**
@@ -112,16 +111,18 @@ export class OnsetsAndFrames {
     if (!this.isInitialized()) {
       this.initialize();
     }
-    const start = performance.now();
+    const startTime = performance.now();
+    logging.log(
+        'Computing onsets, frames, and velocities...', 'O&F',
+        logging.Level.DEBUG);
 
-    this.logMessage('Computing onsets, frames, and velocities...');
     const [frameProbs, onsetProbs, velocities] = tf.tidy(() => {
       const batches = batchInput(melSpec, this.batchLength);
       return this.processBatches(
           batches, this.batchLength, melSpec.length, parallelBatches);
     });
 
-    this.logMessage('Converting to NoteSequence...');
+    logging.log('Converting to NoteSequence...', 'O&F', logging.Level.DEBUG);
     const ns = pianorollToNoteSequence(
         frameProbs as tf.Tensor2D, onsetProbs as tf.Tensor2D,
         velocities as tf.Tensor2D);
@@ -129,7 +130,7 @@ export class OnsetsAndFrames {
       frameProbs.dispose();
       onsetProbs.dispose();
       velocities.dispose();
-      this.logMessage(`Transcribed in ${totalSeconds(start)}s.`);
+      logging.logWithDuration('Transcribed from mel spec', startTime, 'O&F');
     });
     return ns;
   }
@@ -143,7 +144,8 @@ export class OnsetsAndFrames {
    * @returns A `NoteSequence` containing the transcribed piano performance.
    */
   async transcribeFromAudio(audioBuffer: AudioBuffer, parallelBatches = 4) {
-    this.logMessage('Converting audio to mel spectrogram...');
+    logging.log(
+        'Converting audio to mel spectrogram...', 'O&F', logging.Level.DEBUG);
     const melSpec =
         (await preprocessAudio(audioBuffer)).map(a => Array.from(a));
     return this.transcribeFromMelSpec(melSpec, parallelBatches);
@@ -216,10 +218,6 @@ export class OnsetsAndFrames {
       this.velocityCnn = new AcousticCnn('linear');
       this.velocityCnn.setWeights(vars, 'velocity', 'onset_velocities');
     });
-  }
-
-  private logMessage(msg: string) {
-    console.info('%cO&F', 'background:magenta; color:white', msg);
   }
 }
 
@@ -452,8 +450,4 @@ class BidiLstm {
     return outputProbs.length === 1 ? outputProbs[0] :
                                       tf.concat3d(outputProbs, 1);
   }
-}
-
-function totalSeconds(start: number) {
-  return ((performance.now() - start) / 1000).toPrecision(3);
 }

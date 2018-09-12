@@ -22,6 +22,8 @@ import * as mm from '../src/index';
 import {CHECKPOINTS_DIR} from './common';
 import {writeMemory, writeNoteSeqs, writeTimer} from './common';
 
+mm.logging.verbosity = mm.logging.Level.DEBUG;
+
 const MEL_CHECKPOINT = `${CHECKPOINTS_DIR}/music_rnn/basic_rnn`;
 const DRUMS_CHECKPOINT = `${CHECKPOINTS_DIR}/music_rnn/drum_kit_rnn`;
 const IMPROV_CHECKPOINT = `${CHECKPOINTS_DIR}/music_rnn/chord_pitches_improv`;
@@ -125,9 +127,6 @@ async function runMelodyRnn() {
   writeTimer('melody-cont-time', start);
   writeNoteSeqs('melody-cont-results', [continuation]);
   melodyRnn.dispose();
-
-  console.log(tf.getBackend());
-  console.log(tf.memory());
 }
 
 async function runDrumsRnn() {
@@ -143,9 +142,6 @@ async function runDrumsRnn() {
   writeTimer('drums-cont-time', start);
   writeNoteSeqs('drums-cont-results', [continuation]);
   drumsRnn.dispose();
-
-  console.log(tf.getBackend());
-  console.log(tf.memory());
 }
 
 async function runImprovRnn() {
@@ -161,9 +157,6 @@ async function runImprovRnn() {
   writeTimer('improv-cont-time', start);
   writeNoteSeqs('improv-cont-results', [continuation]);
   improvRnn.dispose();
-
-  console.log(tf.getBackend());
-  console.log(tf.memory());
 }
 
 try {

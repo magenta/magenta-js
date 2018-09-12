@@ -1,5 +1,7 @@
 /**
- * A module containing a MIDI recorder.
+ * A module containing a MIDI recorder. Note that WebMIDI only works natively
+ * on Chrome. For this to work on other browsers, you need to load
+ * the [WebMIDI polyfill]{@link http://cwilso.github.io/WebMIDIAPIShim/}
  *
  * @license
  * Copyright 2018 Google Inc. All Rights Reserved.
@@ -158,9 +160,10 @@ export class Recorder {
       return;
     }
 
-    // Can't rely on all apps that simulate MIDI to send the timestamp
-    // correctly. If one doesn't exist, take the current time.
-    const timeStamp: number = event.timeStamp || Date.now();
+    // event.timeStamp doesn't seem to work reliably across all
+    // apps and controllers (sometimes it isn't set, sometimes it doesn't
+    // change between notes). Use the actual message time for now.
+    const timeStamp: number = Date.now();
 
     // Save the first note.
     if (this.firstNoteTimestamp === undefined) {
@@ -176,13 +179,15 @@ export class Recorder {
     const cmd = event.data[0] >> 4;
     const pitch = event.data[1];
     const velocity = (event.data.length > 2) ? event.data[2] : 1;
-    if (cmd === NOTE_ON) {
-      this.noteOn(pitch, velocity, timeStamp);
-    } else if (cmd === NOTE_OFF) {
+
+    // Some MIDI controllers don't send a separate NOTE_OFF command.
+    if (cmd === NOTE_OFF || (cmd === NOTE_ON && velocity === 0)) {
       this.noteOff(pitch, timeStamp);
       if (this.callbackObject) {
         this.callbackObject.run(this.getNoteSequence());
       }
+    } else if (cmd === NOTE_ON) {
+      this.noteOn(pitch, velocity, timeStamp);
     }
   }
 
