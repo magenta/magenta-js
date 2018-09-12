@@ -153,9 +153,8 @@ function getMonoAudio(audioBuffer: AudioBuffer) {
 
 async function resampleAndMakeMono(
     audioBuffer: AudioBuffer, targetSr = SAMPLE_RATE): Promise<Float32Array> {
-  if (audioBuffer.sampleRate === targetSr &&
-      audioBuffer.numberOfChannels === 1) {
-    return audioBuffer.getChannelData(0);
+  if (audioBuffer.sampleRate === targetSr) {
+    return getMonoAudio(audioBuffer);
   }
   const sourceSr = audioBuffer.sampleRate;
   const lengthRes = audioBuffer.length * targetSr / sourceSr;
