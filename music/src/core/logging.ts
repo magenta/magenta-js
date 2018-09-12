@@ -25,12 +25,15 @@ export const enum Level {
 }
 
 /**
- * The verbosity level for Magenta.js.
+ * The global verbosity level for Magenta.js.
  */
 export let verbosity: Level = Level.INFO;
 
 /**
  * Logs a message at the given verbosity level.
+ *
+ * If `level` is below the global `verbosity` level, the message is ignored.
+ *
  * @param msg The message to log.
  * @param prefix The prefix of the message, should specify the model or library
  * that is doing the logging.
@@ -48,6 +51,9 @@ export function log(msg: string, prefix = 'Magenta.js', level = Level.INFO) {
 
 /**
  * Logs a message at the given verbosity level, with the duration.
+ *
+ * If `level` is below the global `verbosity` level, the message is ignored.
+ *
  * @param msg The message to log.
  * @param startTime The start time to use for duration calculation, in ms.
  * @param prefix The prefix of the message, should specify the model or library
