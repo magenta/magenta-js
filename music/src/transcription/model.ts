@@ -144,11 +144,15 @@ export class OnsetsAndFrames {
    * @returns A `NoteSequence` containing the transcribed piano performance.
    */
   async transcribeFromAudio(audioBuffer: AudioBuffer, parallelBatches = 4) {
-    logging.log(
-        'Converting audio to mel spectrogram...', 'O&F', logging.Level.DEBUG);
-    const melSpec =
-        (await preprocessAudio(audioBuffer)).map(a => Array.from(a));
-    return this.transcribeFromMelSpec(melSpec, parallelBatches);
+    const startTime = performance.now();
+    const melSpec = preprocessAudio(audioBuffer);
+    melSpec.then(
+        () => logging.logWithDuration(
+            'Converted audio to mel spec', startTime, 'O&F',
+            logging.Level.DEBUG));
+    return melSpec.then(
+        (spec) => this.transcribeFromMelSpec(
+            spec.map(a => Array.from(a), parallelBatches)));
   }
 
   private processBatches(
