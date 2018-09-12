@@ -152,14 +152,14 @@ function getMonoAudio(audioBuffer: AudioBuffer) {
 }
 
 async function resampleAndMakeMono(
-    audioBuffer: AudioBuffer, targetSr = SAMPLE_RATE): Promise<Float32Array> {
+    audioBuffer: AudioBuffer, targetSr = SAMPLE_RATE) {
   if (audioBuffer.sampleRate === targetSr) {
     return getMonoAudio(audioBuffer);
   }
   const sourceSr = audioBuffer.sampleRate;
   const lengthRes = audioBuffer.length * targetSr / sourceSr;
   if (!appeaseTsLintWindow.webkitOfflineAudioContext) {
-    const offlineCtx =
+    const offlineCtx: OfflineAudioContext =
         new appeaseTsLintWindow.OfflineAudioContext(1, lengthRes, targetSr);
 
     const bufferSource = offlineCtx.createBufferSource();
