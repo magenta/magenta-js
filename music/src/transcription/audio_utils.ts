@@ -19,7 +19,6 @@
  */
 //@ts-ignore
 import * as FFT from 'fft.js';
-//@ts-ignore
 import * as ndarray from 'ndarray';
 //@ts-ignore
 import * as resample from 'ndarray-resample';
