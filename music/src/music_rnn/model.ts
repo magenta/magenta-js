@@ -25,6 +25,7 @@ import * as tf from '@tensorflow/tfjs-core';
 import * as aux_inputs from '../core/aux_inputs';
 import * as chords from '../core/chords';
 import * as data from '../core/data';
+import * as logging from '../core/logging';
 import * as sequences from '../core/sequences';
 import {INoteSequence} from '../protobuf/index';
 
@@ -124,6 +125,7 @@ export class MusicRNN {
    */
   async initialize() {
     this.dispose();
+    const startTime = performance.now()
 
     if (!this.spec) {
       await fetch(`${this.checkpointURL}/config.json`)
@@ -179,7 +181,7 @@ export class MusicRNN {
 
     this.rawVars = vars;
     this.initialized = true;
-    console.log('Initialized MusicRNN.');
+    logging.logWithDuration('Initialized model', startTime, 'MusicRNN');
   }
 
   dispose() {
@@ -246,6 +248,8 @@ export class MusicRNN {
       await this.initialize();
     }
 
+    const startTime = performance.now();
+
     const oh = tf.tidy(() => {
       const inputs = this.dataConverter.toTensor(sequence);
       const length: number = inputs.shape[0];
@@ -283,6 +287,10 @@ export class MusicRNN {
     }
 
     oh.samples.dispose();
+    result.then(
+        () => logging.logWithDuration(
+            'Continuation completed', startTime, 'MusicRNN',
+            logging.Level.DEBUG));
     return {sequence: result, probs};
   }
 

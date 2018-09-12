@@ -21,11 +21,13 @@
  * Imports
  */
 import * as tf from '@tensorflow/tfjs';
+import * as logging from '../core/logging';
 
 import {preprocessAudio} from './audio_utils';
 // tslint:disable:max-line-length
 import {MEL_SPEC_BINS, MIDI_PITCHES} from './constants';
 import {batchInput, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
+
 // tslint:enable:max-line-length
 
 const LSTM_UNITS = 128;
@@ -79,6 +81,7 @@ export class OnsetsAndFrames {
    */
   async initialize(warmup = true) {
     this.dispose();
+    const startTime = performance.now();
 
     const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
                      .then((response) => response.json())
@@ -93,7 +96,7 @@ export class OnsetsAndFrames {
       });
     }
     this.initialized = true;
-    console.log('Initialized OnsetsAndFrames.');
+    logging.logWithDuration('Initialized model', startTime, 'O&F');
   }
 
   /**
@@ -134,7 +137,7 @@ export class OnsetsAndFrames {
     if (!this.isInitialized()) {
       this.initialize();
     }
-
+    const startTime = performance.now();
     const [frameProbs, onsetProbs, velocities] = tf.tidy(() => {
       const batches = batchInput(melSpec, this.batchLength);
       return this.processBatches(
@@ -147,6 +150,7 @@ export class OnsetsAndFrames {
     frameProbs.dispose();
     onsetProbs.dispose();
     velocities.dispose();
+    logging.logWithDuration('Transcribed from mel spec', startTime, 'O&F');
     return ns;
   }
 

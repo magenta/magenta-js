@@ -25,6 +25,7 @@ import * as tf from '@tensorflow/tfjs-core';
 import * as chords from '../core/chords';
 import * as constants from '../core/constants';
 import * as data from '../core/data';
+import * as logging from '../core/logging';
 import {INoteSequence} from '../protobuf/index';
 
 /**
@@ -665,6 +666,7 @@ class MusicVAE {
    */
   async initialize() {
     this.dispose();
+    const startTime = performance.now();
 
     if (!this.spec) {
       await fetch(`${this.checkpointURL}/config.json`)
@@ -789,7 +791,7 @@ class MusicVAE {
     }
 
     this.initialized = true;
-    console.log('Initialized MusicVAE.');
+    logging.logWithDuration('Initialized model', startTime, 'MusicVAE');
   }
 
   /**
@@ -844,6 +846,7 @@ class MusicVAE {
     if (!this.initialized) {
       await this.initialize();
     }
+    const startTime = 0;
 
     const inputZs = await this.encode(inputSequences, chordProgression);
     const interpZs = tf.tidy(() => this.getInterpolatedZs(inputZs, numInterps));
@@ -851,6 +854,10 @@ class MusicVAE {
 
     const outputSequenes = this.decode(interpZs, temperature, chordProgression);
     interpZs.dispose();
+    outputSequenes.then(
+        () => logging.logWithDuration(
+            'Interpolation completed', startTime, 'MusicVAE',
+            logging.Level.DEBUG));
     return outputSequenes;
   }
 
@@ -952,6 +959,8 @@ class MusicVAE {
       await this.initialize();
     }
 
+    const startTime = performance.now();
+
     let inputTensors = tf.tidy(
         () => tf.stack(inputSequences.map(
                   t => this.dataConverter.toTensor(t) as tf.Tensor2D)) as
@@ -977,6 +986,8 @@ class MusicVAE {
     // `z`.
     const z = this.encoder.encode(inputTensors, segmentLengths);
     inputTensors.dispose();
+    logging.logWithDuration(
+        'Encoding completed', startTime, 'MusicVAE', logging.Level.DEBUG);
     return z;
   }
 
@@ -1011,7 +1022,7 @@ class MusicVAE {
     if (!this.initialized) {
       await this.initialize();
     }
-
+    const startTime = performance.now();
     const numSteps = this.dataConverter.numSteps;
 
     const ohSeqs: tf.Tensor2D[] = tf.tidy(() => {
@@ -1030,6 +1041,9 @@ class MusicVAE {
           await this.dataConverter.toNoteSequence(oh, stepsPerQuarter));
       oh.dispose();
     }
+
+    logging.logWithDuration(
+        'Decoding completed', startTime, 'MusicVAE', logging.Level.DEBUG);
     return outputSequences;
   }
 
@@ -1110,12 +1124,17 @@ class MusicVAE {
     if (!this.initialized) {
       await this.initialize();
     }
+    const startTime = performance.now();
+
     const randZs: tf.Tensor2D =
         tf.tidy(() => tf.randomNormal([numSamples, this.decoder.zDims]));
-    const outputSequenes =
+    const outputSequences =
         this.decode(randZs, temperature, chordProgression, stepsPerQuarter);
     randZs.dispose();
-    return outputSequenes;
+    outputSequences.then(
+        () => logging.logWithDuration(
+            'Sampling completed', startTime, 'MusicVAE', logging.Level.DEBUG));
+    return outputSequences;
   }
 }
 
