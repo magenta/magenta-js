@@ -64,7 +64,7 @@ function dense(vars: LayerVars, inputs: tf.Tensor2D): tf.Tensor2D {
  * Abstract Encoder class.
  */
 abstract class Encoder {
-  abstract zDims: number;
+  abstract readonly zDims: number;
   abstract encode(sequence: tf.Tensor3D, segmentLengths?: number[]):
       tf.Tensor2D;
 }
@@ -73,10 +73,10 @@ abstract class Encoder {
  * A single-layer bidirectional LSTM encoder.
  */
 class BidirectonalLstmEncoder extends Encoder {
-  lstmFwVars: LayerVars;
-  lstmBwVars: LayerVars;
-  muVars: LayerVars;
-  zDims: number;
+  private lstmFwVars: LayerVars;
+  private lstmBwVars: LayerVars;
+  private muVars: LayerVars;
+  readonly zDims: number;
 
   /**
    * `BidirectonalLstmEncoder` contructor.
@@ -147,10 +147,10 @@ class BidirectonalLstmEncoder extends Encoder {
  * to the subsequent level.
  */
 class HierarchicalEncoder extends Encoder {
-  baseEncoders: Encoder[];
-  numSteps: number[];
-  muVars: LayerVars;
-  zDims: number;
+  private baseEncoders: Encoder[];
+  private numSteps: number[];
+  private muVars: LayerVars;
+  readonly zDims: number;
 
   /**
    * `HierarchicalEncoder` contructor.
@@ -244,8 +244,8 @@ function initLstmCells(
  * Abstract Decoder class.
  */
 abstract class Decoder {
-  abstract outputDims: number;
-  abstract zDims: number;
+  abstract readonly outputDims: number;
+  abstract readonly zDims: number;
 
   abstract decode(
       z: tf.Tensor2D, length: number, initialInput?: tf.Tensor2D,
@@ -253,15 +253,14 @@ abstract class Decoder {
 }
 
 /**
- * LSTM decoder with optional NADE output.
+ * Abstract base LSTM decoder that implements all functionality except sampler.
  */
-class BaseDecoder extends Decoder {
-  lstmCellVars: LayerVars[];
-  zToInitStateVars: LayerVars;
-  outputProjectVars: LayerVars;
-  zDims: number;
-  outputDims: number;
-  nade: Nade;
+abstract class BaseDecoder extends Decoder {
+  protected lstmCellVars: LayerVars[];
+  protected zToInitStateVars: LayerVars;
+  protected outputProjectVars: LayerVars;
+  readonly zDims: number;
+  readonly outputDims: number;
 
   /**
    * `BaseDecoder` contructor.
@@ -279,15 +278,24 @@ class BaseDecoder extends Decoder {
    */
   constructor(
       lstmCellVars: LayerVars[], zToInitStateVars: LayerVars,
-      outputProjectVars: LayerVars, nade?: Nade) {
+      outputProjectVars: LayerVars, outputDims?: number) {
     super();
     this.lstmCellVars = lstmCellVars;
     this.zToInitStateVars = zToInitStateVars;
     this.outputProjectVars = outputProjectVars;
     this.zDims = this.zToInitStateVars.kernel.shape[0];
-    this.outputDims = (nade) ? nade.numDims : outputProjectVars.bias.shape[0];
-    this.nade = nade;
+    this.outputDims = outputDims || outputProjectVars.bias.shape[0];
   }
+
+  /**
+   * Method that returns the sample based on the projected output from the LSTM.
+   *
+   * @param lstmOutput The projected output from the LSTM.
+   * @param temperature Softmax temperature.
+   * @returns The sampled output.
+   */
+  protected abstract sample(lstmOutput: tf.Tensor2D, temperature?: number):
+      tf.Tensor2D;
 
   /**
    * Decodes a batch of latent vectors, `z`.
@@ -333,23 +341,9 @@ class BaseDecoder extends Decoder {
             splitControls ? [nextInput, z, splitControls[i]] : [nextInput, z];
         [lstmCell.c, lstmCell.h] = tf.multiRNNCell(
             lstmCell.cell, tf.concat(toConcat, 1), lstmCell.c, lstmCell.h);
-        const logits =
+        const lstmOutput =
             dense(this.outputProjectVars, lstmCell.h[lstmCell.h.length - 1]);
-
-        if (this.nade == null) {
-          const timeLabels =
-              (temperature ?
-                   tf.multinomial(
-                         logits.div(tf.scalar(temperature)) as tf.Tensor2D, 1)
-                       .as1D() :
-                   logits.argMax(1).as1D());
-          nextInput = tf.oneHot(timeLabels, this.outputDims).toFloat();
-        } else {
-          const [encBias, decBias] =
-              tf.split(logits, [this.nade.numHidden, this.nade.numDims], 1);
-          nextInput =
-              this.nade.sample(encBias as tf.Tensor2D, decBias as tf.Tensor2D);
-        }
+        nextInput = this.sample(lstmOutput, temperature);
         samples.push(nextInput);
       }
 
@@ -359,18 +353,84 @@ class BaseDecoder extends Decoder {
 }
 
 /**
+ * Decoder that samples from a Categorical distributon.
+ *
+ * Uses argmax if no temperature is provided.
+ */
+class CategoricalDecoder extends BaseDecoder {
+  sample(lstmOutput: tf.Tensor2D, temperature?: number) {
+    const logits = lstmOutput;
+    const timeLabels =
+        (temperature ?
+             tf.multinomial(
+                   logits.div(tf.scalar(temperature)) as tf.Tensor2D, 1)
+                 .as1D() :
+             logits.argMax(1).as1D());
+    return tf.oneHot(timeLabels, this.outputDims).toFloat();
+  }
+}
+
+/**
+ * Decoder that samples from a NADE.
+ *
+ * Ignores the temperature, always selects the argmax.
+ */
+class NadeDecoder extends BaseDecoder {
+  private nade: Nade;
+
+  constructor(
+      lstmCellVars: LayerVars[], zToInitStateVars: LayerVars,
+      outputProjectVars: LayerVars, nade: Nade) {
+    super(lstmCellVars, zToInitStateVars, outputProjectVars, nade.numDims);
+    this.nade = nade;
+  }
+
+  sample(lstmOutput: tf.Tensor2D, temperature?: number) {
+    const [encBias, decBias] =
+        tf.split(lstmOutput, [this.nade.numHidden, this.nade.numDims], 1);
+    return this.nade.sample(encBias as tf.Tensor2D, decBias as tf.Tensor2D);
+  }
+}
+
+/**
+ * Decoder that samples a "groove".
+ *
+ * Uses argmax if no temperature is provided.
+ */
+// TODO(adarob): Remove ts-ignore once are using this.
+// @ts-ignore
+class GrooveDecoder extends BaseDecoder {
+  sample(lstmOutput: tf.Tensor2D, temperature?: number) {
+    let [hits, velocities, offsets] = tf.split(lstmOutput, 3, 1);
+
+    velocities = tf.sigmoid(velocities);
+    offsets = tf.tanh(offsets);
+
+    if (temperature) {
+      hits = tf.sigmoid(hits.div(tf.scalar(temperature))) as tf.Tensor2D;
+      const threshold = tf.randomUniform(hits.shape, 0, 1);
+      hits = tf.greater(hits, threshold).toFloat() as tf.Tensor2D;
+    } else {
+      hits = tf.greater(tf.sigmoid(hits), 0.5).toFloat() as tf.Tensor2D;
+    }
+
+    return tf.concat([hits, velocities, offsets], 1);
+  }
+}
+
+/**
  * Hierarchical decoder that produces intermediate embeddings to pass to
  * lower-level `Decoder` objects. The outputs from different decoders are
- * concatenated depth-wise (axis 3), and the outputs from different steps of the
- * conductor are concatenated across time (axis 1).
+ * concatenated depth-wise (axis 3), and the outputs from different steps of
+ * the conductor are concatenated across time (axis 1).
  */
 class ConductorDecoder extends Decoder {
-  coreDecoders: Decoder[];
-  lstmCellVars: LayerVars[];
-  zToInitStateVars: LayerVars;
-  numSteps: number;
-  zDims: number;
-  outputDims: number;
+  private coreDecoders: Decoder[];
+  private lstmCellVars: LayerVars[];
+  private zToInitStateVars: LayerVars;
+  readonly numSteps: number;
+  readonly zDims: number;
+  readonly outputDims: number;
 
   /**
    * `Decoder` contructor.
@@ -379,8 +439,8 @@ class ConductorDecoder extends Decoder {
    * @param lstmCellVars The `LayerVars` for each layer of the conductor LSTM.
    * @param zToInitStateVars The `LayerVars` for projecting from the latent
    * variable `z` to the initial states of the conductor LSTM layers.
-   * @param numSteps The number of embeddings the conductor LSTM should produce
-   * and pass to the lower-level decoder.
+   * @param numSteps The number of embeddings the conductor LSTM should
+   * produce and pass to the lower-level decoder.
    */
   constructor(
       coreDecoders: Decoder[], lstmCellVars: LayerVars[],
@@ -400,8 +460,8 @@ class ConductorDecoder extends Decoder {
    *
    * @param z A batch of latent vectors to decode, sized `[batchSize, zDims]`.
    * @param length The length of decoded sequences.
-   * @param temperature (Optional) The softmax temperature to use when sampling
-   * from the logits. Argmax is used if not provided.
+   * @param temperature (Optional) The softmax temperature to use when
+   * sampling from the logits. Argmax is used if not provided.
    * @param controls (Optional) Control tensors to use for conditioning, sized
    * `[length, controlDepth]`.
    *
@@ -514,8 +574,8 @@ class Nade {
  * Interface for JSON specification of a `MusicVAE` model.
  *
  * @property type The type of the model, `MusicVAE`.
- * @property dataConverter: A `DataConverterSpec` specifying the data converter
- * to use.
+ * @property dataConverter: A `DataConverterSpec` specifying the data
+ * converter to use.
  * @property chordEncoder: (Optional) Type of chord encoder to use when
  * conditioning on chords.
  */
@@ -551,8 +611,8 @@ class MusicVAE {
    * `MusicVAE` constructor.
    *
    * @param checkpointURL Path to the checkpoint directory.
-   * @param spec (Optional) `MusicVAESpec` object. If undefined, will be loaded
-   * from a `config.json` file in the checkpoint directory.
+   * @param spec (Optional) `MusicVAESpec` object. If undefined, will be
+   * loaded from a `config.json` file in the checkpoint directory.
    */
   constructor(checkpointURL: string, spec?: MusicVAESpec) {
     this.checkpointURL = checkpointURL;
@@ -560,8 +620,8 @@ class MusicVAE {
   }
 
   /**
-   * Instantiates data converter, attention length, chord encoder, and auxiliary
-   * inputs from the `MusicVAESpec`.
+   * Instantiates data converter, attention length, chord encoder, and
+   * auxiliary inputs from the `MusicVAESpec`.
    */
   private instantiateFromSpec() {
     this.dataConverter = data.converterFromSpec(this.spec.dataConverter);
@@ -695,15 +755,19 @@ class MusicVAE {
       const decOutputProjection = new LayerVars(
           vars[`${varPrefix}output_projection/kernel`] as tf.Tensor2D,
           vars[`${varPrefix}output_projection/bias`] as tf.Tensor1D);
-      // Optional NADE for the BaseDecoder.
-      const nade =
-          ((`${varPrefix}nade/w_enc` in vars) ?
-               new Nade(
-                   vars[`${varPrefix}nade/w_enc`] as tf.Tensor3D,
-                   vars[`${varPrefix}nade/w_dec_t`] as tf.Tensor3D) :
-               null);
-      return new BaseDecoder(
-          decLstmLayers, decZtoInitState, decOutputProjection, nade);
+
+      if (`${varPrefix}nade/w_enc` in vars) {
+        return new NadeDecoder(
+                   decLstmLayers, decZtoInitState, decOutputProjection,
+                   new Nade(
+                       vars[`${varPrefix}nade/w_enc`] as tf.Tensor3D,
+                       vars[`${varPrefix}nade/w_dec_t`] as tf.Tensor3D)) as
+            Decoder;
+      } else {
+        return new CategoricalDecoder(
+                   decLstmLayers, decZtoInitState, decOutputProjection) as
+            Decoder;
+      }
     });
 
     // ConductorDecoder variables.
@@ -836,10 +900,10 @@ class MusicVAE {
   }
 
   /**
-   * Construct the chord-conditioning tensors. For models where each segment is
-   * a separate track, the same chords should be used for each segment.
-   * Additionally, "no-chord" should be used for the first step (the instrument-
-   * select / skip-track step).
+   * Construct the chord-conditioning tensors. For models where each segment
+   * is a separate track, the same chords should be used for each segment.
+   * Additionally, "no-chord" should be used for the first step (the
+   * instrument- select / skip-track step).
    */
   private encodeChordProgression(chordProgression: string[]) {
     const numSteps = this.dataConverter.numSteps;
