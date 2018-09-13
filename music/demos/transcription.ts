@@ -18,10 +18,11 @@ import * as tf from '@tensorflow/tfjs-core';
 
 import * as mm from '../src/index';
 import {INoteSequence} from '../src/index';
-import {loadBuffer} from '../src/transcription/audio_utils';
 
-// tslint:disable-next-line:max-line-length
+// tslint:disable:max-line-length
+import {loadAudioFromFile, loadAudioFromUrl} from '../src/transcription/audio_utils';
 import {CHECKPOINTS_DIR, notesMatch, writeMemory, writeNoteSeqs, writeTimer} from './common';
+// tslint:enable:max-line-length
 
 mm.logging.verbosity = mm.logging.Level.DEBUG;
 
@@ -92,7 +93,7 @@ async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
 }
 
 async function transcribeFromAudio(oaf: mm.OnsetsAndFrames) {
-  const audio = await loadBuffer(ORIGINAL_AUDIO_URL);
+  const audio = await loadAudioFromUrl(ORIGINAL_AUDIO_URL);
   const start = performance.now();
   const ns = await oaf.transcribeFromAudio(audio);
   writeTimer('audio-time', start);
@@ -104,30 +105,9 @@ async function transcribeFromAudio(oaf: mm.OnsetsAndFrames) {
       '<b><span style="color:red">FALSE</span></b>';
 }
 
-async function getAudioBufferFromBlob(blob: Blob) {
-  const fileReader = new FileReader();
-  return new Promise((resolve, reject) => {
-    fileReader.onerror = () => {
-      fileReader.abort();
-      reject(new DOMException('Something went wrong reading that file.'));
-    };
-    fileReader.onload = () => {
-      resolve(fileReader.result);
-    };
-    fileReader.readAsArrayBuffer(blob);
-  });
-}
-
 async function transcribeFromFile(blob: Blob) {
   setLoadingMessage('file');
-  // tslint:disable-next-line:no-any
-  const appeaseTsLintWindow = (window as any);
-  const audioCtx = new (
-      appeaseTsLintWindow.AudioContext ||
-      appeaseTsLintWindow.webkitAudioContext)();
-  const arrayBuffer: ArrayBuffer =
-      await getAudioBufferFromBlob(blob) as ArrayBuffer;
-  const audio: AudioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+  const audio = await loadAudioFromFile(blob);
 
   const audioEl = document.getElementById('filePlayer') as HTMLAudioElement;
   audioEl.hidden = false;

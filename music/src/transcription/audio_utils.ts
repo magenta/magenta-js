@@ -27,8 +27,16 @@ import * as logging from '../core/logging';
 
 import {MEL_SPEC_BINS, SAMPLE_RATE, SPEC_HOP_LENGTH} from './constants';
 
+// Safari Webkit only supports 44.1kHz audio.
+const WEBKIT_SAMPLE_RATE = 44100;
 // tslint:disable-next-line:no-any
 const appeaseTsLintWindow = (window as any);
+const isSafari = appeaseTsLintWindow.webkitOfflineAudioContext as boolean;
+// tslint:disable-next-line:variable-name
+const offlineCtx = isSafari ?
+    new appeaseTsLintWindow.webkitOfflineAudioContext(
+        1, WEBKIT_SAMPLE_RATE, WEBKIT_SAMPLE_RATE) :
+    new appeaseTsLintWindow.OfflineAudioContext(1, SAMPLE_RATE, SAMPLE_RATE);
 
 /**
  * Parameters for computing a spectrogram from audio.
@@ -48,22 +56,39 @@ export interface SpecParams {
  * Loads audio into AudioBuffer from a URL to transcribe.
  *
  * By default, audio is loaded at 16kHz monophonic for compatibility with
- * model.
+ * model. If Safari, audio must be loaded at 44.1kHz instead.
  *
  * @param url A path to a audio file to load.
  * @returns The loaded audio in an AudioBuffer.
  */
-export async function loadBuffer(
-    url: string, numChannels = 1, targetSr = SAMPLE_RATE) {
-  const offlineCtx = new (
-      appeaseTsLintWindow.webkitOfflineAudioContext ||
-      appeaseTsLintWindow.OfflineAudioContext)(
-      numChannels,
-      targetSr,  // The length does not seem to matter.
-      targetSr);
+export async function loadAudioFromUrl(url: string): Promise<AudioBuffer> {
   return fetch(url)
       .then(body => body.arrayBuffer())
       .then(buffer => offlineCtx.decodeAudioData(buffer));
+}
+
+/**
+ * Loads audio into AudioBuffer from a Blob to transcribe.
+ *
+ * By default, audio is loaded at 16kHz monophonic for compatibility with
+ * model. If Safari, audio must be loaded at 44.1kHz instead.
+ *
+ * @param url A path to a audio file to load.
+ * @returns The loaded audio in an AudioBuffer.
+ */
+export async function loadAudioFromFile(blob: Blob): Promise<AudioBuffer> {
+  const fileReader = new FileReader();
+  const loadFile: Promise<ArrayBuffer> = new Promise((resolve, reject) => {
+    fileReader.onerror = () => {
+      fileReader.abort();
+      reject(new DOMException('Something went wrong reading that file.'));
+    };
+    fileReader.onload = () => {
+      resolve(fileReader.result as ArrayBuffer);
+    };
+    fileReader.readAsArrayBuffer(blob);
+  });
+  return loadFile.then(arrayBuffer => offlineCtx.decodeAudioData(arrayBuffer));
 }
 
 /**
@@ -157,10 +182,7 @@ async function resampleAndMakeMono(
   }
   const sourceSr = audioBuffer.sampleRate;
   const lengthRes = audioBuffer.length * targetSr / sourceSr;
-  if (!appeaseTsLintWindow.webkitOfflineAudioContext) {
-    const offlineCtx: OfflineAudioContext =
-        new appeaseTsLintWindow.OfflineAudioContext(1, lengthRes, targetSr);
-
+  if (!isSafari) {
     const bufferSource = offlineCtx.createBufferSource();
     bufferSource.buffer = audioBuffer;
     bufferSource.connect(offlineCtx.destination);

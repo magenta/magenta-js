@@ -46,9 +46,7 @@ export function log(msg: string, prefix = 'Magenta.js', level = Level.INFO) {
     throw Error('Logging level cannot be NONE.');
   }
   if (verbosity >= level) {
-    const logMethod = (level === Level.WARN) ?
-        console.warn :
-        (level === Level.DEBUG) ? console.debug : console.log;
+    const logMethod = (level === Level.WARN) ? console.warn : console.log;
     logMethod(`%c${prefix}`, 'background:magenta; color:white', msg);
   }
 }
