@@ -20,8 +20,9 @@
  */
 export const enum Level {
   NONE = 0,   // No messages will be logged.
-  INFO = 10,  // INFO messages will be logged.
-  DEBUG = 20  // DEBUG and INFO messages will be logged.
+  WARN = 5,   // WARN messages will be logged.
+  INFO = 10,  // INFO and WARN messages will be logged.
+  DEBUG = 20  // DEBUG, INFO, and WARN messages will be logged.
 }
 
 /**
@@ -45,7 +46,8 @@ export function log(msg: string, prefix = 'Magenta.js', level = Level.INFO) {
     throw Error('Logging level cannot be NONE.');
   }
   if (verbosity >= level) {
-    console.log(`%c${prefix}`, 'background:magenta; color:white', msg);
+    const logMethod = (level === Level.WARN) ? console.warn : console.log;
+    logMethod(`%c${prefix}`, 'background:magenta; color:white', msg);
   }
 }
 

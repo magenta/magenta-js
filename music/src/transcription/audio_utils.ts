@@ -19,8 +19,24 @@
  */
 //@ts-ignore
 import * as FFT from 'fft.js';
+import * as ndarray from 'ndarray';
+//@ts-ignore
+import * as resample from 'ndarray-resample';
+
+import * as logging from '../core/logging';
 
 import {MEL_SPEC_BINS, SAMPLE_RATE, SPEC_HOP_LENGTH} from './constants';
+
+// Safari Webkit only supports 44.1kHz audio.
+const WEBKIT_SAMPLE_RATE = 44100;
+// tslint:disable-next-line:no-any
+const appeaseTsLintWindow = (window as any);
+const isSafari = appeaseTsLintWindow.webkitOfflineAudioContext as boolean;
+// tslint:disable-next-line:variable-name
+const offlineCtx = isSafari ?
+    new appeaseTsLintWindow.webkitOfflineAudioContext(
+        1, WEBKIT_SAMPLE_RATE, WEBKIT_SAMPLE_RATE) :
+    new appeaseTsLintWindow.OfflineAudioContext(1, SAMPLE_RATE, SAMPLE_RATE);
 
 /**
  * Parameters for computing a spectrogram from audio.
@@ -40,24 +56,39 @@ export interface SpecParams {
  * Loads audio into AudioBuffer from a URL to transcribe.
  *
  * By default, audio is loaded at 16kHz monophonic for compatibility with
- * model.
+ * model. In Safari, audio must be loaded at 44.1kHz instead.
  *
  * @param url A path to a audio file to load.
  * @returns The loaded audio in an AudioBuffer.
  */
-export async function loadBuffer(
-    url: string, numChannels = 1, targetSr = SAMPLE_RATE) {
-  // tslint:disable-next-line:no-any
-  const appeaseTsLintWindow = (window as any);
-  const offlineCtx = new (
-      appeaseTsLintWindow.OfflineAudioContext ||
-      appeaseTsLintWindow.webkitOfflineAudioContext)(
-      numChannels,
-      1,  // The length does not seem to matter.
-      targetSr);
+export async function loadAudioFromUrl(url: string): Promise<AudioBuffer> {
   return fetch(url)
       .then(body => body.arrayBuffer())
       .then(buffer => offlineCtx.decodeAudioData(buffer));
+}
+
+/**
+ * Loads audio into AudioBuffer from a Blob to transcribe.
+ *
+ * By default, audio is loaded at 16kHz monophonic for compatibility with
+ * model. In Safari, audio must be loaded at 44.1kHz instead.
+ *
+ * @param url A path to a audio file to load.
+ * @returns The loaded audio in an AudioBuffer.
+ */
+export async function loadAudioFromFile(blob: Blob): Promise<AudioBuffer> {
+  const fileReader = new FileReader();
+  const loadFile: Promise<ArrayBuffer> = new Promise((resolve, reject) => {
+    fileReader.onerror = () => {
+      fileReader.abort();
+      reject(new DOMException('Something went wrong reading that file.'));
+    };
+    fileReader.onload = () => {
+      resolve(fileReader.result as ArrayBuffer);
+    };
+    fileReader.readAsArrayBuffer(blob);
+  });
+  return loadFile.then(arrayBuffer => offlineCtx.decodeAudioData(arrayBuffer));
 }
 
 /**
@@ -67,7 +98,7 @@ export async function loadBuffer(
  * @returns The log mel spectrogram based on the AudioBuffer.
  */
 export async function preprocessAudio(audioBuffer: AudioBuffer) {
-  const resampledMonoAudio = await resampleAndSetChannels(audioBuffer);
+  const resampledMonoAudio = await resampleAndMakeMono(audioBuffer);
   return powerToDb(melSpectrogram(resampledMonoAudio, {
     sampleRate: SAMPLE_RATE,
     hopLength: SPEC_HOP_LENGTH,
@@ -77,15 +108,7 @@ export async function preprocessAudio(audioBuffer: AudioBuffer) {
   }));
 }
 
-function melSpectrogram(
-    audioBuffer: AudioBuffer, params: SpecParams): Float32Array[] {
-  if (audioBuffer.numberOfChannels !== 1 ||
-      audioBuffer.sampleRate !== SAMPLE_RATE) {
-    throw Error(
-        'Only 16kHz audio is supported, call `resampleAndSetChannels` first.');
-  }
-  const y = audioBuffer.getChannelData(0);
-
+function melSpectrogram(y: Float32Array, params: SpecParams): Float32Array[] {
   if (!params.power) {
     params.power = 2.0;
   }
@@ -134,26 +157,51 @@ function powerToDb(spec: Float32Array[], amin = 1e-10, topDb = 80.0) {
   return logSpec;
 }
 
-async function resampleAndSetChannels(
-    audioBuffer: AudioBuffer, targetSr = SAMPLE_RATE, numChannels = 1) {
-  if (audioBuffer.sampleRate === targetSr &&
-      audioBuffer.numberOfChannels === numChannels) {
-    return audioBuffer;
+function getMonoAudio(audioBuffer: AudioBuffer) {
+  if (audioBuffer.numberOfChannels === 1) {
+    return audioBuffer.getChannelData(0);
+  }
+  if (audioBuffer.numberOfChannels !== 2) {
+    throw Error(
+        `${audioBuffer.numberOfChannels} channel audio is not supported.`);
+  }
+  const ch0 = audioBuffer.getChannelData(0);
+  const ch1 = audioBuffer.getChannelData(1);
+
+  const mono = new Float32Array(audioBuffer.length);
+  for (let i = 0; i < audioBuffer.length; ++i) {
+    mono[i] = (ch0[i] + ch1[i]) / 2;
+  }
+  return mono;
+}
+
+async function resampleAndMakeMono(
+    audioBuffer: AudioBuffer, targetSr = SAMPLE_RATE) {
+  if (audioBuffer.sampleRate === targetSr) {
+    return getMonoAudio(audioBuffer);
   }
   const sourceSr = audioBuffer.sampleRate;
   const lengthRes = audioBuffer.length * targetSr / sourceSr;
-  // tslint:disable-next-line:no-any
-  const appeaseTsLintWindow = (window as any);
-  const offlineCtx = new (
-      appeaseTsLintWindow.OfflineAudioContext ||
-      appeaseTsLintWindow.webkitOfflineAudioContext)(
-      numChannels, lengthRes, targetSr);
+  if (!isSafari) {
+    const bufferSource = offlineCtx.createBufferSource();
+    bufferSource.buffer = audioBuffer;
+    bufferSource.connect(offlineCtx.destination);
+    bufferSource.start();
+    return offlineCtx.startRendering().then(
+        (buffer: AudioBuffer) => buffer.getChannelData(0));
+  } else {
+    // Safari does not support resampling with WebAudio.
+    logging.log(
+        'Safari does not support WebAudio resampling, so this may be slow.',
+        'O&F', logging.Level.WARN);
 
-  const bufferSource = offlineCtx.createBufferSource();
-  bufferSource.buffer = audioBuffer;
-  bufferSource.connect(offlineCtx.destination);
-  bufferSource.start();
-  return offlineCtx.startRendering();
+    const originalAudio = getMonoAudio(audioBuffer);
+    const resampledAudio = new Float32Array(lengthRes);
+    resample(
+        ndarray(resampledAudio, [lengthRes]),
+        ndarray(originalAudio, [originalAudio.length]));
+    return resampledAudio;
+  }
 }
 
 interface MelParams {

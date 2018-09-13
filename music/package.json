@@ -8,8 +8,10 @@
   "unpkg": "dist/magentamusic.js",
   "dependencies": {
     "@tensorflow/tfjs": "^0.12.7",
+    "@types/ndarray": "^1.0.6",
     "fft.js": "^4.0.3",
     "midiconvert": "^0.4.7",
+    "ndarray-resample": "^1.0.1",
     "protobufjs": "^6.8.6",
     "tonal": "^2.0.0",
     "tone": "^0.12.80"
