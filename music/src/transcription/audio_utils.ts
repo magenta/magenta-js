@@ -56,7 +56,7 @@ export interface SpecParams {
  * Loads audio into AudioBuffer from a URL to transcribe.
  *
  * By default, audio is loaded at 16kHz monophonic for compatibility with
- * model. If Safari, audio must be loaded at 44.1kHz instead.
+ * model. In Safari, audio must be loaded at 44.1kHz instead.
  *
  * @param url A path to a audio file to load.
  * @returns The loaded audio in an AudioBuffer.
@@ -71,7 +71,7 @@ export async function loadAudioFromUrl(url: string): Promise<AudioBuffer> {
  * Loads audio into AudioBuffer from a Blob to transcribe.
  *
  * By default, audio is loaded at 16kHz monophonic for compatibility with
- * model. If Safari, audio must be loaded at 44.1kHz instead.
+ * model. In Safari, audio must be loaded at 44.1kHz instead.
  *
  * @param url A path to a audio file to load.
  * @returns The loaded audio in an AudioBuffer.
