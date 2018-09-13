@@ -15,13 +15,16 @@
  * limitations under the License.
  */
 import * as tf from '@tensorflow/tfjs-core';
+//@ts-ignore
+import * as MediaRecorder from 'audio-recorder-polyfill';
 
 import * as mm from '../src/index';
 import {INoteSequence} from '../src/index';
-
 // tslint:disable:max-line-length
 import {loadAudioFromFile, loadAudioFromUrl} from '../src/transcription/audio_utils';
+
 import {CHECKPOINTS_DIR, notesMatch, writeMemory, writeNoteSeqs, writeTimer} from './common';
+
 // tslint:enable:max-line-length
 
 mm.logging.verbosity = mm.logging.Level.DEBUG;
@@ -67,6 +70,43 @@ document.getElementById('melBtn').addEventListener('click', () => {
       .then(() => writeMemory(tf.memory().numBytes));
 });
 
+// Audio recording. Only supported natively in Firefox and Safari.
+// See https://caniuse.com/#feat=mediarecorder.
+// For everything else, we use a polyfill.
+
+// tslint:disable-next-line:no-any
+const appeaseTsLintWindow = (window as any);
+if (!appeaseTsLintWindow.MediaRecorder) {
+  mm.logging.log(
+      'Using the MediaRecorder polyfill.', 'Demo', mm.logging.Level.DEBUG);
+  appeaseTsLintWindow.MediaRecorder = MediaRecorder;
+}
+
+// tslint:disable-next-line:no-any
+let recorder: any;
+let isRecording = false;
+const recordBtn = document.getElementById('recordBtn');
+recordBtn.addEventListener('click', () => {
+  if (isRecording) {
+    isRecording = false;
+    recordBtn.textContent = 'Record';
+    recorder.stop();
+  } else {
+    isRecording = true;
+    recordBtn.textContent = 'Stop';
+    // Request permissions to record audio.
+    navigator.mediaDevices.getUserMedia({audio: true}).then(stream => {
+      recorder = new appeaseTsLintWindow.MediaRecorder(stream);
+
+      // tslint:disable-next-line:no-any
+      recorder.addEventListener('dataavailable', (e: any) => {
+        transcribeFromFile(e.data, 'recorder');
+      });
+      recorder.start();
+    });
+  }
+});
+
 let expectedNs: INoteSequence;
 fetch(`${MEL_CKPT_URL}/${EXPECTED_NS_SUFFIX}`)
     .then((response) => response.json())
@@ -105,11 +145,12 @@ async function transcribeFromAudio(oaf: mm.OnsetsAndFrames) {
       '<b><span style="color:red">FALSE</span></b>';
 }
 
-async function transcribeFromFile(blob: Blob) {
-  setLoadingMessage('file');
+async function transcribeFromFile(blob: Blob, prefix = 'file') {
+  setLoadingMessage(prefix);
   const audio = await loadAudioFromFile(blob);
 
-  const audioEl = document.getElementById('filePlayer') as HTMLAudioElement;
+  const audioEl =
+      document.getElementById(`${prefix}Player`) as HTMLAudioElement;
   audioEl.hidden = false;
   audioEl.src = window.URL.createObjectURL(blob);
 
@@ -118,11 +159,11 @@ async function transcribeFromFile(blob: Blob) {
       .then(async () => {
         const start = performance.now();
         const ns = await oafA.transcribeFromAudio(audio);
-        writeTimer('file-time', start);
-        writeNoteSeqs('file-results', [ns], undefined, true);
+        writeTimer(`${prefix}-time`, start);
+        writeNoteSeqs(`${prefix}-results`, [ns], undefined, true);
       })
       .then(() => oafA.dispose())
-      .then(() => writeMemory(tf.memory().numBytes, 'file-leaked-memory'));
+      .then(() => writeMemory(tf.memory().numBytes, `${prefix}-leaked-memory`));
 }
 
 function setLoadingMessage(className: string) {
