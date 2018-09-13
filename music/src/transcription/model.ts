@@ -33,7 +33,7 @@ import {batchInput, pianorollToNoteSequence, unbatchOutput} from './transcriptio
  */
 export class OnsetsAndFrames {
   private checkpointURL: string;
-  public batchLength: number;
+  public chunkLength: number;
   private initialized: boolean;
 
   private onsetsCnn: AcousticCnn;
@@ -46,13 +46,13 @@ export class OnsetsAndFrames {
    * `OnsetsAndFrames` constructor.
    *
    * @param checkpointURL Path to the checkpoint directory.
-   * @param batchLength The length of batches (excluding receptive field
+   * @param chunkLength The length of chunks (excluding receptive field
    * padding). Sequences longer than this amount will be split into batches of
    * this size for processing.
    */
-  constructor(checkpointURL: string, batchLength = 250) {
+  constructor(checkpointURL: string, chunkLength = 250) {
     this.checkpointURL = checkpointURL;
-    this.batchLength = batchLength;
+    this.chunkLength = chunkLength;
   }
 
   /**
@@ -117,9 +117,9 @@ export class OnsetsAndFrames {
         logging.Level.DEBUG);
 
     const [frameProbs, onsetProbs, velocities] = tf.tidy(() => {
-      const batches = batchInput(melSpec, this.batchLength);
+      const batches = batchInput(melSpec, this.chunkLength);
       return this.processBatches(
-          batches, this.batchLength, melSpec.length, parallelBatches);
+          batches, this.chunkLength, melSpec.length, parallelBatches);
     });
 
     logging.log('Converting to NoteSequence...', 'O&F', logging.Level.DEBUG);
@@ -139,11 +139,11 @@ export class OnsetsAndFrames {
    * Transcribes a piano performance from audio.
    *
    * @param audioBuffer An audio buffer to transcribe.
-   * @param parallelBatches The number of convolutional batches to compute in
-   * parallel. May need to be reduced if hitting a timeout in the browser.
+   * @param batchSize The number of chunks to compute in parallel. May
+   * need to be reduced if hitting a timeout in the browser.
    * @returns A `NoteSequence` containing the transcribed piano performance.
    */
-  async transcribeFromAudio(audioBuffer: AudioBuffer, parallelBatches = 4) {
+  async transcribeFromAudio(audioBuffer: AudioBuffer, batchSize = 4) {
     const startTime = performance.now();
     const melSpec = preprocessAudio(audioBuffer);
     melSpec.then(
@@ -152,17 +152,17 @@ export class OnsetsAndFrames {
             logging.Level.DEBUG));
     return melSpec.then(
         (spec) => this.transcribeFromMelSpec(
-            spec.map(a => Array.from(a), parallelBatches)));
+            spec.map(a => Array.from(a), batchSize)));
   }
 
   private processBatches(
-      batches: tf.Tensor3D, batchLength: number, fullLength: number,
-      parallelBatches: number) {
+      batches: tf.Tensor3D, chunkLength: number, fullLength: number,
+      batchSize: number) {
     const runCnns =
         ((batch: tf.Tensor3D) =>
-             [this.onsetsCnn.predict(batch, parallelBatches) as tf.Tensor3D,
-              this.activationCnn.predict(batch, parallelBatches) as tf.Tensor3D,
-              this.velocityCnn.predict(batch, parallelBatches) as tf.Tensor3D]);
+             [this.onsetsCnn.predict(batch, batchSize) as tf.Tensor3D,
+              this.activationCnn.predict(batch, batchSize) as tf.Tensor3D,
+              this.velocityCnn.predict(batch, batchSize) as tf.Tensor3D]);
 
     let onsetsCnnOut, activationProbs, scaledVelocities: tf.Tensor3D;
     if (batches.shape[0] === 1) {
@@ -174,19 +174,19 @@ export class OnsetsAndFrames {
       for (let i = 0; i < 3; ++i) {
         allOutputs.push(unbatchOutput(
             batchesOutput[i],
-            batchLength,
+            chunkLength,
             fullLength,
             ));
       }
       [onsetsCnnOut, activationProbs, scaledVelocities] = allOutputs;
     }
 
-    const onsetProbs = this.onsetsRnn.predict(onsetsCnnOut, this.batchLength);
+    const onsetProbs = this.onsetsRnn.predict(onsetsCnnOut, this.chunkLength);
     onsetsCnnOut.dispose();
 
     const frameProbInputs = tf.concat3d([onsetProbs, activationProbs], -1);
     activationProbs.dispose();
-    const frameProbs = this.frameRnn.predict(frameProbInputs, this.batchLength);
+    const frameProbs = this.frameRnn.predict(frameProbInputs, this.chunkLength);
 
     // Translates a velocity estimate to a MIDI velocity value.
     const velocities = tf.clipByValue(scaledVelocities, 0., 1.)
@@ -281,8 +281,8 @@ class AcousticCnn {
     this.nn.dispose();
   }
 
-  predict(inputs: tf.Tensor3D, parallelBatches: number) {
-    return this.nn.predict(inputs, {batchSize: parallelBatches});
+  predict(inputs: tf.Tensor3D, batchSize: number) {
+    return this.nn.predict(inputs, {batchSize});
   }
 
   setWeights(vars: tf.NamedTensorMap, scope: string, denseName?: string) {
