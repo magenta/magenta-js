@@ -47,6 +47,20 @@ limitations under the License.
     <p><b>Total Leaked Memory:</b> <code id="file-leaked-memory"></code></b></p>
   </section>
 
+  <h2>From a microphone recording</h2>
+  <p>You can record piano audio from a microphoe and transcribe it. If you're recording
+    something other than piano (like your voice), this will be transcribed but it
+    will probably be fairly noisy and incorrect.
+  </p>
+  <section>
+    <button id="recordBtn">Record</button>
+    <br>
+    <p><audio id="recorderPlayer" controls hidden></audio></p>
+    <p><b>Actual Transcription:</b> <code id="recorder-results" class="recorder"></code></p>
+    <p><b>It Took:</b> <code id="recorder-time" class="recorder"></code></p>
+    <p><b>Total Leaked Memory:</b> <code id="recorder-leaked-memory"></code></b></p>
+  </section>
+
   <h2>From a test audio (250 frames / 8 seconds)</h2>
   <p>We verify the model can transcribe a short sequence of piano audio, first computing its
     <a href="https://librosa.github.io/librosa/generated/librosa.feature.melspectrogram.html" target="_blank"></a>mel spectogram</a>.

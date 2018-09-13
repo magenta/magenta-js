@@ -47,7 +47,7 @@ export function log(msg: string, prefix = 'Magenta.js', level = Level.INFO) {
   }
   if (verbosity >= level) {
     const logMethod = (level === Level.WARN) ? console.warn : console.log;
-    logMethod(`%c${prefix}`, 'background:magenta; color:white', msg);
+    logMethod(`%c ${prefix} `, 'background:magenta; color:white', msg);
   }
 }
 
