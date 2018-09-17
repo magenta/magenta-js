@@ -31,7 +31,7 @@ mm.logging.verbosity = mm.logging.Level.DEBUG;
 
 const TRANS_CKPT_DIR = `${CHECKPOINTS_DIR}/transcription`;
 const MEL_CKPT_URL = `${TRANS_CKPT_DIR}/onsets_frames_htk0`;
-const AUD_CKPT_URL = `${TRANS_CKPT_DIR}/onsets_frames_htk1`;
+const AUD_CKPT_URL = `checkpoints/transcription/onsets_frames_uni`;
 const MEL_SPEC_SUFFIX = 'MAPS_MUS-mz_331_3_ENSTDkCl.250frames.melspec.json';
 const EXPECTED_NS_SUFFIX = 'MAPS_MUS-mz_331_3_ENSTDkCl.250frames.ns.json';
 // tslint:disable:max-line-length
@@ -116,17 +116,17 @@ fetch(`${MEL_CKPT_URL}/${EXPECTED_NS_SUFFIX}`)
       writeNoteSeqs('expected-audio-ns', [expectedNs], undefined, true);
     });
 
-async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
+async function transcribe(oaf: mm.OnsetsAndFrames, chunkLength: number) {
   const melSpec: number[][] = await fetch(`${MEL_CKPT_URL}/${MEL_SPEC_SUFFIX}`)
                                   .then((response) => response.json());
 
   const start = performance.now();
-  oaf.batchLength = batchLength;
+  oaf.chunkLength = chunkLength;
   const ns = await oaf.transcribeFromMelSpec(melSpec);
-  writeTimer(`${batchLength}-time`, start);
-  writeNoteSeqs(`${batchLength}-results`, [ns], undefined, true);
+  writeTimer(`${chunkLength}-time`, start);
+  writeNoteSeqs(`${chunkLength}-results`, [ns], undefined, true);
 
-  document.getElementById(`${batchLength}-match`).innerHTML =
+  document.getElementById(`${chunkLength}-match`).innerHTML =
       notesMatch(ns.notes, expectedNs.notes) ?
       '<span style="color:green">TRUE</span>' :
       '<b><span style="color:red">FALSE</span></b>';

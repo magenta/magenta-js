@@ -37,9 +37,9 @@ export class OnsetsAndFrames {
   private initialized: boolean;
 
   private onsetsCnn: AcousticCnn;
-  private onsetsRnn: BidiLstm;
+  private onsetsRnn: Lstm;
   private activationCnn: AcousticCnn;
-  private frameRnn: BidiLstm;
+  private frameRnn: Lstm;
   private velocityCnn: AcousticCnn;
 
   /**
@@ -208,7 +208,7 @@ export class OnsetsAndFrames {
       // flatten before passing through the LSTM.
       this.onsetsCnn = new AcousticCnn();
       this.onsetsCnn.setWeights(vars, 'onsets');
-      this.onsetsRnn = new BidiLstm([null, this.onsetsCnn.outputShape[2]]);
+      this.onsetsRnn = new Lstm([null, this.onsetsCnn.outputShape[2]]);
       this.onsetsRnn.setWeights(vars, 'onsets', 'onset_probs');
 
       this.activationCnn = new AcousticCnn('sigmoid');
@@ -216,7 +216,7 @@ export class OnsetsAndFrames {
 
       // Frame RNN takes concatenated ouputs of onsetsRnn and activationCnn
       // as its inputs.
-      this.frameRnn = new BidiLstm([null, MIDI_PITCHES * 2]);
+      this.frameRnn = new Lstm([null, MIDI_PITCHES * 2], 256);
       this.frameRnn.setWeights(vars, 'frame', 'frame_probs');
 
       this.velocityCnn = new AcousticCnn('linear');
@@ -235,7 +235,7 @@ class AcousticCnn {
   constructor(finalDenseActivation?: string) {
     // tslint:disable-next-line:no-any
     const convConfig: any = {
-      filters: 32,
+      filters: 48,
       kernelSize: [3, 3],
       activation: 'linear',  // no-op
       useBias: false,
@@ -256,7 +256,7 @@ class AcousticCnn {
     this.nn.add(tf.layers.activation({activation: 'relu'}));
     this.nn.add(tf.layers.maxPooling2d({poolSize: [1, 2], strides: [1, 2]}));
 
-    convConfig.filters = 64;
+    convConfig.filters = 96;
     this.nn.add(tf.layers.conv2d(convConfig));
     this.nn.add(tf.layers.batchNormalization(batchNormConfig));
     this.nn.add(tf.layers.activation({activation: 'relu'}));
@@ -266,7 +266,7 @@ class AcousticCnn {
     this.nn.add(tf.layers.reshape({targetShape: [dims[1], dims[2] * dims[3]]}));
 
     this.nn.add(
-        tf.layers.dense({units: 512, activation: 'relu', trainable: false}));
+        tf.layers.dense({units: 768, activation: 'relu', trainable: false}));
     if (finalDenseActivation) {
       this.nn.add(tf.layers.dense({
         units: MIDI_PITCHES,
@@ -295,6 +295,10 @@ class AcousticCnn {
     }
 
     let weights = [
+      getVar(`${scope}/conv0/weights`),
+      getVar(`${scope}/conv0/BatchNorm/beta`),
+      getVar(`${scope}/conv0/BatchNorm/moving_mean`),
+      getVar(`${scope}/conv0/BatchNorm/moving_variance`),
       getVar(`${scope}/conv1/weights`),
       getVar(`${scope}/conv1/BatchNorm/beta`),
       getVar(`${scope}/conv1/BatchNorm/moving_mean`),
@@ -303,12 +307,8 @@ class AcousticCnn {
       getVar(`${scope}/conv2/BatchNorm/beta`),
       getVar(`${scope}/conv2/BatchNorm/moving_mean`),
       getVar(`${scope}/conv2/BatchNorm/moving_variance`),
-      getVar(`${scope}/conv3/weights`),
-      getVar(`${scope}/conv3/BatchNorm/beta`),
-      getVar(`${scope}/conv3/BatchNorm/moving_mean`),
-      getVar(`${scope}/conv3/BatchNorm/moving_variance`),
-      getVar(`${scope}/fc5/weights`),
-      getVar(`${scope}/fc5/biases`),
+      getVar(`${scope}/fc_end/weights`),
+      getVar(`${scope}/fc_end/biases`),
     ];
     if (denseName) {
       weights = weights.concat([
@@ -326,20 +326,18 @@ class AcousticCnn {
  * Implements processing the input in chunks, which is significantly more
  * efficient in tfjs due to memory management and shader caching.
  */
-class BidiLstm {
-  private readonly fwLstm: tf.Model;
-  private readonly bwLstm: tf.Model;
+class Lstm {
+  private readonly lstm: tf.Model;
   private readonly dense = tf.sequential();
   private readonly units: number;
 
-  constructor(inputShape: number[], units = 128) {
+  constructor(inputShape: number[], units = 384) {
     this.units = units;
 
-    function getLstm(goBackwards: boolean) {
+    function getLstm() {
       const lstm = tf.layers.lstm({
         inputShape,
         units,
-        goBackwards,
         returnSequences: true,
         recurrentActivation: 'sigmoid',
         returnState: true,
@@ -356,10 +354,9 @@ class BidiLstm {
       return tf.model({inputs, outputs});
     }
 
-    this.fwLstm = getLstm(false);
-    this.bwLstm = getLstm(true);
+    this.lstm = getLstm();
     this.dense.add(tf.layers.dense({
-      inputShape: [null, units * 2],
+      inputShape: [null, units],
       units: MIDI_PITCHES,
       activation: 'sigmoid',
       trainable: false
@@ -367,8 +364,7 @@ class BidiLstm {
   }
 
   dispose() {
-    this.fwLstm.dispose();
-    this.bwLstm.dispose();
+    this.lstm.dispose();
     this.dense.dispose();
   }
 
@@ -392,17 +388,16 @@ class BidiLstm {
              reorderGates(kernel) as tf.Tensor2D,
              [kernel.shape[0] - this.units, this.units]));
 
-    const setLstmWeights = (lstm: tf.Model, dir: string) => lstm.setWeights(
+    const LSTM_PREFIX =
+        'cudnn_lstm/rnn/multi_rnn_cell/cell_0/cudnn_compatible_lstm_cell';
+    const setLstmWeights = (lstm: tf.Model) => lstm.setWeights(
         splitAndReorderKernel(
-            getVar(`${scope}/bidirectional_rnn/${dir}/lstm_cell/kernel`) as
-            tf.Tensor2D)
+            getVar(`${scope}/${LSTM_PREFIX}/kernel`) as tf.Tensor2D)
             .concat(
-                reorderGates(
-                    getVar(`${scope}/bidirectional_rnn/${dir}/lstm_cell/bias`),
-                    1.0) as tf.Tensor2D));
+                reorderGates(getVar(`${scope}/${LSTM_PREFIX}/bias`), 1.0) as
+                tf.Tensor2D));
 
-    setLstmWeights(this.fwLstm, 'fw');
-    setLstmWeights(this.bwLstm, 'bw');
+    setLstmWeights(this.lstm);
     this.dense.setWeights([
       getVar(`${scope}/${denseName}/weights`),
       getVar(`${scope}/${denseName}/biases`)
@@ -415,43 +410,22 @@ class BidiLstm {
 
   private predictImpl(inputs: tf.Tensor3D, chunkSize: number) {
     const fullLength = inputs.shape[1];
-    const inputChunks: tf.Tensor3D[] = [];
     const numChunks = Math.ceil(fullLength / chunkSize);
-    const bwI = (i: number) => numChunks - i - 1;
 
-    for (let i = 0; i < numChunks; ++i) {
-      inputChunks.push(inputs.slice(
-          [0, i * chunkSize], [-1, (i < numChunks - 1) ? chunkSize : -1]));
-    }
-
-    const outputFwChunks: tf.Tensor3D[] = [];
-    const outputBwChunks: tf.Tensor3D[] = [];
-    let fwState: [tf.Tensor2D, tf.Tensor2D] =
+    let state: [tf.Tensor2D, tf.Tensor2D] =
         [tf.zeros([1, this.units]), tf.zeros([1, this.units])];
-    let bwState: [tf.Tensor2D, tf.Tensor2D] =
-        [tf.zeros([1, this.units]), tf.zeros([1, this.units])];
-    for (let i = 0; i < inputChunks.length; ++i) {
-      let input = [inputChunks[i], fwState[0], fwState[1]];
-      let result =
-          this.fwLstm.predict(input) as [tf.Tensor3D, tf.Tensor2D, tf.Tensor2D];
-      outputFwChunks.push(result[0]);
-      fwState = result.slice(1) as [tf.Tensor2D, tf.Tensor2D];
-
-      input = [inputChunks[bwI(i)], bwState[0], bwState[1]];
-      result =
-          this.bwLstm.predict(input) as [tf.Tensor3D, tf.Tensor2D, tf.Tensor2D];
-      outputBwChunks.push(tf.reverse(result[0], 1));
-      bwState = result.slice(1) as [tf.Tensor2D, tf.Tensor2D];
-    }
-    inputChunks.forEach(t => t.dispose());
-
-    const outputProbs: tf.Tensor3D[] = [];
+    const outputChunks: tf.Tensor3D[] = [];
     for (let i = 0; i < numChunks; ++i) {
-      outputProbs.push(
-          this.dense.predict(tf.concat3d(
-              [outputFwChunks[i], outputBwChunks[bwI(i)]], -1)) as tf.Tensor3D);
+      const chunk = inputs.slice(
+          [0, i * chunkSize], [-1, (i < numChunks - 1) ? chunkSize : -1]);
+      const result = this.lstm.predict([
+        chunk, state[0], state[1]
+      ]) as [tf.Tensor3D, tf.Tensor2D, tf.Tensor2D];
+      outputChunks.push(this.dense.predict(result[0]) as tf.Tensor3D);
+      state = result.slice(1) as [tf.Tensor2D, tf.Tensor2D];
     }
-    return outputProbs.length === 1 ? outputProbs[0] :
-                                      tf.concat3d(outputProbs, 1);
+
+    return outputChunks.length === 1 ? outputChunks[0] :
+                                       tf.concat3d(outputChunks, 1);
   }
 }
