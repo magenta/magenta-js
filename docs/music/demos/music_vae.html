@@ -1,0 +1,116 @@
+
+<!-- Copyright 2017 Google Inc. All Rights Reserved.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================-->
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+  <link rel="stylesheet" href="./style.css">
+  <title>MusicVAE</title>
+</head>
+<body>
+  <h1>MusicVAE</h1>
+  <p><code><a href="https://g.co/magenta/musicvae">MusicVAE</a></code> implements several configurations of Magenta's variational
+    autoencoder model, including melody and drum "loop" models, 4- and 16-bar
+    "trio" models, and chord-conditioned "multi-track" models. In the demos below,
+    we encode the input <code>NoteSequences</code>, and call <code>sample()</code> to
+    obtain a new <code>NoteSequence</code> that matches them. Each section uses a
+    different model  checkpoint (melody, drums or trio) to generate the samples.
+  </p>
+  <code id="generate-all"></code></p>
+
+  <h2>Drums OneHot</h2>
+  <section>
+    <h3>Interpolation (3x3 steps) <span id="generate-drums"></span></h3>
+
+    <p><b>Input:</b> <code id="drums-inputs"></code></p>
+    <p><b>Result:</b> <code id="drums-interp"></code></p>
+    <p><b>It took:</b> <code id="drums-interp-time"></code></p>
+
+    <h3>Sampling</h3>
+    <p><b>It took:</b> <code id="drums-sample-time"></code></p>
+    <p><b>Samples:</b> <code id="drums-samples"></code></p>
+  </section>
+
+  <h2>Drums NADE</h2>
+  <section>
+    <h3>Interpolation(3x3 steps) <span id="generate-drums-nade"></span></h3>
+
+    <p><b>Input:</b> <code id="nade-inputs"></code></p>
+    <p><b>Result:</b> <code id="nade-interp"></code></p>
+    <p><b>It took:</b> <code id="nade-interp-time"></code></p>
+
+    <h3>Sampling</h3>
+    <p><b>It took:</b> <code id="nade-sample-time"></code></p>
+    <p><b>Samples:</b> <code id="nade-samples"></code></p>
+  </section>
+
+  <h2>Melody OneHot</h2>
+  <section>
+    <h3>Interpolation (5 steps) <span id="generate-melody"></span></h3>
+
+    <p><b>Input:</b> <code id="mel-inputs"></code></p>
+    <p><b>Result:</b> <code id="mel-interp"></code></p>
+    <p><b>It took:</b> <code id="mel-interp-time"></code></p>
+
+    <h3>Sampling</h3>
+    <p><b>It took:</b> <code id="mel-sample-time"></code></p>
+    <p><b>Samples:</b> <code id="mel-samples"></code></p>
+  </section>
+
+  <h2>Chord-Conditioned Melody OneHot</h2>
+  <section>
+    <h3>Interpolation (5 steps) <span id="generate-melody-chord"></span></h3>
+
+    <p><b>Input:</b> <code id="mel-chords-inputs"></code></p>
+    <p><b>Result:</b> <code id="mel-chords-interp"></code></p>
+    <p><b>It took:</b> <code id="mel-chords-interp-time"></code></p>
+
+    <h3>Sampling</h3>
+    <p><b>It took:</b> <code id="mel-chords-sample-time"></code></p>
+    <p><b>Samples:</b> <code id="mel-chords-samples"></code></p>
+  </section>
+
+  <section>
+    <h2>Melody 16-bar Conductor OneHot</h2>
+    <h3>Interpolation (5 steps) <span id="generate-melody-16"></span></h3>
+
+    <p><b>Input:</b> <code id="mel16-inputs"></code></p>
+    <p><b>Result:</b> <code id="mel16-interp"></code></p>
+    <p><b>It took:</b> <code id="mel16-interp-time"></code></p>
+
+    <h3>Sampling</h3>
+    <p><b>It took:</b> <code id="mel16-sample-time"></code></p>
+    <p><b>Samples:</b> <code id="mel16-samples"></code></p>
+  </section>
+
+  <section>
+    <h2>Trio 4-bar</h2>
+    <h3>Reconstruction <span id="generate-trio"></span></h3>
+
+    <p><b>Input:</b> <code id="trio-inputs"></code></p>
+    <p><b>Result:</b> <code id="trio-recon"></code></p>
+    <p><b>It took:</b> <code id="trio-recon-time"></code></p>
+
+    <h3>Sampling</h3>
+    <p><b>It took:</b> <code id="trio-sample-time"></code></p>
+    <p><b>Samples:</b> <code id="trio-samples"></code></p>
+  </section>
+
+  <section>
+    <p><b>Total Leaked Memory:</b> <code id="leaked-memory"></code></b></p>
+  </section>
+
+  <script src="music_vae_bundle.js"></script>
+</body>
+</html>
