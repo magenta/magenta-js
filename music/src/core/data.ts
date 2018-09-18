@@ -826,6 +826,7 @@ export interface GrooveConverterArgs extends BaseConverterArgs {
   humanize?: boolean;
   tapify?: boolean;
   pitchClasses?: number[][];
+  splitInstruments?: boolean;
 }
 export class GrooveConverter extends DataConverter {
   readonly stepsPerQuarter: number;
@@ -834,6 +835,7 @@ export class GrooveConverter extends DataConverter {
   readonly pitchToClass: Map<number, number>;
   readonly depth: number;
   readonly endTensor: tf.Tensor1D;
+  readonly splitInstruments: boolean;
 
   constructor(args: GrooveConverterArgs) {
     super(args);
@@ -848,6 +850,7 @@ export class GrooveConverter extends DataConverter {
       });
     }
     this.humanize = args.humanize;
+    this.splitInstruments = args.splitInstruments;
 
     // Each drum hit is represented by 3 numbers -
     // on/off, velocity, and offset
@@ -855,9 +858,14 @@ export class GrooveConverter extends DataConverter {
   }
 
   toTensor(ns: INoteSequence) {
-    const qns = sequences.quantizeNoteSequence(ns, this.stepsPerQuarter);
+    // Check length.
+    const qns = sequences.isRelativeQuantizedSequence(ns) ?
+        ns :
+        sequences.quantizeNoteSequence(ns, this.stepsPerQuarter);
     const numSteps = this.numSteps || qns.totalQuantizedSteps;
-    const stepLength = (60. / qns.tempos[0].qpm) / this.stepsPerQuarter;
+    const qpm = qns.tempos.length ? qns.tempos[0].qpm :
+                                    constants.DEFAULT_QUARTERS_PER_MINUTE;
+    const stepLength = (60. / qpm) / this.stepsPerQuarter;
 
     const stepNotes: Array<Map<number, NoteSequence.INote>> = [];
     for (let i = 0; i < numSteps; ++i) {
@@ -898,14 +906,19 @@ export class GrooveConverter extends DataConverter {
 
     // Flatten so that there is one per drum at every step, then stack the
     // 3 signals.
-    return tf.tidy(
-               () => tf.stack(
-                   [
-                     hitVectors.toTensor().flatten(),
-                     velocityVectors.toTensor().flatten(),
-                     offsetVectors.toTensor().flatten()
-                   ],
-                   1)) as tf.Tensor2D;
+    return tf.tidy(() => {
+      const hits = hitVectors.toTensor();
+      const velocities = hitVectors.toTensor();
+      const offsets = hitVectors.toTensor();
+
+      return tf.concat(
+                 [
+                   this.splitInstruments ? hits.flatten() : hits,
+                   this.splitInstruments ? velocities.flatten() : hits,
+                   this.splitInstruments ? offsets.flatten() : hits,
+                 ],
+                 1) as tf.Tensor2D;
+    });
   }
 
   async toNoteSequence(
@@ -915,7 +928,7 @@ export class GrooveConverter extends DataConverter {
       throw Error('');
     }
     stepsPerQuarter = this.stepsPerQuarter;
-    const numSteps = t.shape[0] / this.pitchClasses.length;
+    const numSteps = t.shape[0];  // this.pitchClasses.length;
     const stepLength = (60. / qpm) / this.stepsPerQuarter;
 
     const ns = NoteSequence.create({totalTime: numSteps * stepLength});
@@ -931,9 +944,14 @@ export class GrooveConverter extends DataConverter {
       const stepResults = results.slice(
           s * numDrums * this.depth, (s + 1) * numDrums * this.depth);
       for (let d = 0; d < numDrums; ++d) {
-        const hitOutput = stepResults[d * this.depth];
-        const velOutput = stepResults[d * this.depth + 1];
-        const offsetOutput = stepResults[d * this.depth + 2];
+        const hitOutput =
+            stepResults[this.splitInstruments ? d * this.depth : d];
+        const velI =
+            this.splitInstruments ? (d * this.depth + 1) : (numDrums + d);
+        const velOutput = stepResults[velI];
+        const offsetI =
+            this.splitInstruments ? (d * this.depth + 2) : (2 * numDrums + d);
+        const offsetOutput = stepResults[offsetI];
         if (hitOutput > 0.5) {
           const velocity = clip(Math.round(velOutput * 127), 0, 127);
           const offset = clip(offsetOutput / 2, -0.5, 0.5);

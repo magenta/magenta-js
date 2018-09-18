@@ -302,7 +302,7 @@ test('Test GrooveConverter', (t: test.Test) => {
 
   grooveConverter.toNoteSequence(grooveTensor, undefined, 60).then(ns => {
     roundNoteTimes(ns.notes);
-    t.deepLooseEqual(ns, GROOVE_NS);
+    t.deepEqual(ns, GROOVE_NS);
   });
 
   grooveTensor.dispose();
@@ -325,7 +325,7 @@ test('Test GrooveConverterHumanize', (t: test.Test) => {
   roundNoteTimes(expectedNs.notes, 4);
 
   grooveConverter.toNoteSequence(grooveTensor, undefined, 60).then(ns => {
-    t.deepLooseEqual(ns, expectedNs);
+    t.deepEqual(ns, expectedNs);
   });
 
   grooveTensor.dispose();
