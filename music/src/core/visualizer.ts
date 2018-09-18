@@ -98,8 +98,8 @@ export class Visualizer {
 
     // If we don't do this, then the canvas will look 2x bigger than we
     // want to.
-    canvas.style.width = `${size.width}`;
-    canvas.style.height = `${size.height}`;
+    canvas.style.width = `${size.width}px`;
+    canvas.style.height = `${size.height}px`;
 
     this.ctx.scale(dpr, dpr);
 
