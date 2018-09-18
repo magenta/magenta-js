@@ -1,0 +1,4 @@
+!*.js
+!*.html
+!*.mid
+!.gitignore
