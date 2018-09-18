@@ -31,7 +31,7 @@ mm.logging.verbosity = mm.logging.Level.DEBUG;
 
 const TRANS_CKPT_DIR = `${CHECKPOINTS_DIR}/transcription`;
 const MEL_CKPT_URL = `${TRANS_CKPT_DIR}/onsets_frames_htk0`;
-const AUD_CKPT_URL = `checkpoints/transcription/onsets_frames_uni`;
+const AUD_CKPT_URL = `${TRANS_CKPT_DIR}/onsets_frames_uni`;
 const MEL_SPEC_SUFFIX = 'MAPS_MUS-mz_331_3_ENSTDkCl.250frames.melspec.json';
 const EXPECTED_NS_SUFFIX = 'MAPS_MUS-mz_331_3_ENSTDkCl.250frames.ns.json';
 // tslint:disable:max-line-length
