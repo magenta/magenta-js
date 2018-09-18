@@ -20,20 +20,19 @@ import * as MediaRecorder from 'audio-recorder-polyfill';
 
 import * as mm from '../src/index';
 import {INoteSequence} from '../src/index';
+
 // tslint:disable-next-line:max-line-length
 import {CHECKPOINTS_DIR, notesMatch, writeMemory, writeNoteSeqs, writeTimer} from './common';
 
 mm.logging.verbosity = mm.logging.Level.DEBUG;
 
-const TRANS_CKPT_DIR = `${CHECKPOINTS_DIR}/transcription`;
-const MEL_CKPT_URL = `${TRANS_CKPT_DIR}/onsets_frames_htk0`;
-const AUD_CKPT_URL = `${TRANS_CKPT_DIR}/onsets_frames_htk1`;
-const MEL_SPEC_SUFFIX = 'MAPS_MUS-mz_331_3_ENSTDkCl.250frames.melspec.json';
-const EXPECTED_NS_SUFFIX = 'MAPS_MUS-mz_331_3_ENSTDkCl.250frames.ns.json';
-// tslint:disable:max-line-length
+const CKPT_URL = `${CHECKPOINTS_DIR}/transcription/onsets_frames_uni`;
+const MEL_SPEC_URL =
+    `${CKPT_URL}/MAPS_MUS-mz_331_3_ENSTDkCl.250frames.melspec.json`;
+const EXPECTED_NS_URL =
+    `${CKPT_URL}/MAPS_MUS-mz_331_3_ENSTDkCl.250frames.ns.json`;
 const ORIGINAL_AUDIO_URL =
-    'https://storage.googleapis.com/magentadata/js/checkpoints/transcription/onsets_frames_htk0/MAPS_MUS-mz_331_3_ENSTDkCl-250frames.wav';
-// tslint:enable:max-line-length
+    `${CKPT_URL}/MAPS_MUS-mz_331_3_ENSTDkCl.250frames.wav`;
 
 // Transcription from a file.
 document.getElementById('fileInput').addEventListener('change', (e: any) => {
@@ -44,7 +43,7 @@ document.getElementById('fileInput').addEventListener('change', (e: any) => {
 
 // Audio transcription.
 document.getElementById('audioBtn').addEventListener('click', () => {
-  const oafA = new mm.OnsetsAndFrames(AUD_CKPT_URL);
+  const oafA = new mm.OnsetsAndFrames(CKPT_URL);
   setLoadingMessage('audio');
   oafA.initialize()
       .then(() => transcribeFromAudio(oafA))
@@ -54,7 +53,7 @@ document.getElementById('audioBtn').addEventListener('click', () => {
 
 // Mel transcription.
 document.getElementById('melBtn').addEventListener('click', () => {
-  const oafM = new mm.OnsetsAndFrames(MEL_CKPT_URL);
+  const oafM = new mm.OnsetsAndFrames(CKPT_URL);
   setLoadingMessage('batch');
   oafM.initialize()
       .then(() => transcribe(oafM, 250))
@@ -104,25 +103,22 @@ recordBtn.addEventListener('click', () => {
 });
 
 let expectedNs: INoteSequence;
-fetch(`${MEL_CKPT_URL}/${EXPECTED_NS_SUFFIX}`)
-    .then((response) => response.json())
-    .then((ns) => {
-      expectedNs = ns;
-      writeNoteSeqs('expected-ns', [expectedNs], undefined, true);
-      writeNoteSeqs('expected-audio-ns', [expectedNs], undefined, true);
-    });
+fetch(EXPECTED_NS_URL).then((response) => response.json()).then((ns) => {
+  expectedNs = ns;
+  writeNoteSeqs('expected-ns', [expectedNs], true, true);
+  writeNoteSeqs('expected-audio-ns', [expectedNs], true, true);
+});
 
-async function transcribe(oaf: mm.OnsetsAndFrames, batchLength: number) {
-  const melSpec: number[][] = await fetch(`${MEL_CKPT_URL}/${MEL_SPEC_SUFFIX}`)
-                                  .then((response) => response.json());
+async function transcribe(oaf: mm.OnsetsAndFrames, chunkLength: number) {
+  const melSpec: number[][] =
+      await fetch(MEL_SPEC_URL).then((response) => response.json());
 
   const start = performance.now();
-  oaf.batchLength = batchLength;
+  oaf.chunkLength = chunkLength;
   const ns = await oaf.transcribeFromMelSpec(melSpec);
-  writeTimer(`${batchLength}-time`, start);
-  writeNoteSeqs(`${batchLength}-results`, [ns], undefined, true);
-
-  document.getElementById(`${batchLength}-match`).innerHTML =
+  writeTimer(`${chunkLength}-time`, start);
+  writeNoteSeqs(`${chunkLength}-results`, [ns], true, true);
+  document.getElementById(`${chunkLength}-match`).innerHTML =
       notesMatch(ns.notes, expectedNs.notes) ?
       '<span style="color:green">TRUE</span>' :
       '<b><span style="color:red">FALSE</span></b>';
@@ -132,7 +128,7 @@ async function transcribeFromAudio(oaf: mm.OnsetsAndFrames) {
   const start = performance.now();
   const ns = await oaf.transcribeFromAudioURL(ORIGINAL_AUDIO_URL);
   writeTimer('audio-time', start);
-  writeNoteSeqs('audio-results', [ns], undefined, true);
+  writeNoteSeqs('audio-results', [ns], true, true);
 
   document.getElementById('audio-match').innerHTML =
       notesMatch(ns.notes, expectedNs.notes) ?
@@ -147,13 +143,13 @@ async function transcribeFromFile(blob: Blob, prefix = 'file') {
   audioEl.hidden = false;
   audioEl.src = window.URL.createObjectURL(blob);
 
-  const oafA = new mm.OnsetsAndFrames(AUD_CKPT_URL);
+  const oafA = new mm.OnsetsAndFrames(CKPT_URL);
   oafA.initialize()
       .then(async () => {
         const start = performance.now();
         const ns = await oafA.transcribeFromAudioFile(blob);
         writeTimer(`${prefix}-time`, start);
-        writeNoteSeqs(`${prefix}-results`, [ns], undefined, true);
+        writeNoteSeqs(`${prefix}-results`, [ns], true, true);
       })
       .then(() => oafA.dispose())
       .then(() => writeMemory(tf.memory().numBytes, `${prefix}-leaked-memory`));

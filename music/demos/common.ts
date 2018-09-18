@@ -27,7 +27,7 @@ export const CHECKPOINTS_DIR =
 // http://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01
 const SOUNDFONT_URL =
     // tslint:disable-next-line:max-line-length
-    'https://storage.googleapis.com/magentadata/js/soundfonts/sgm_v85';
+    'https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus';
 
 export const DRUM_SEQS: mm.INoteSequence[] = [
   {
