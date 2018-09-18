@@ -59,6 +59,7 @@ function generateTempoPlayer() {
 function generateVelocityPlayers() {
   writeNoteSeqs('v-player', [MEL_TWINKLE_WITH_VELOCITIES], false);
   writeNoteSeqs('d-v-player', [DRUM_SEQ_WITH_VELOCITIES], false);
+  writeNoteSeqs('s-v-player', [MEL_TWINKLE_WITH_VELOCITIES], true);
 }
 
 try {

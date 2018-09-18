@@ -352,8 +352,7 @@ export function writeNoteSeqs(
             .join(', ') +
         ']';
     details.appendChild(seqText);
-    details.appendChild(
-        useSoundFontPlayer ? createSoundFontPlayer(seq) : createPlayer(seq));
+    details.appendChild(createPlayer(seq, useSoundFontPlayer));
     element.appendChild(details);
   });
 }
@@ -363,10 +362,12 @@ export function writeMemory(bytes: number, name = 'leaked-memory') {
 }
 
 function createPlayerButton(
-    seq: mm.INoteSequence, withClick: boolean, canvas: HTMLElement) {
+    seq: mm.INoteSequence, withClick: boolean, useSoundFontPlayer: boolean,
+    canvas: HTMLElement) {
   const visualizer = new mm.Visualizer(seq, canvas as HTMLCanvasElement);
   const container = canvas.parentElement as HTMLDivElement;
-  const player = new mm.Player(withClick, {
+
+  const callbackObject = {
     run: (note: mm.NoteSequence.Note) => {
       const currentNotePosition = visualizer.redraw(note);
 
@@ -377,11 +378,22 @@ function createPlayerButton(
       }
     },
     stop: () => {}
-  });
+  };
 
   const button = document.createElement('button');
   const playText = withClick ? 'Play With Click' : 'Play';
   button.textContent = playText;
+
+  // tslint:disable-next-line:no-any
+  let player: any;
+  if (useSoundFontPlayer) {
+    player = new mm.SoundFontPlayer(
+        SOUNDFONT_URL, undefined, undefined, undefined, callbackObject);
+    player.loadSamples(seq).then(() => button.disabled = false);
+  } else {
+    player = new mm.Player(withClick, callbackObject);
+  }
+
   button.addEventListener('click', () => {
     if (player.isPlaying()) {
       player.stop();
@@ -404,7 +416,7 @@ function createDownloadButton(seq: mm.INoteSequence) {
   return button;
 }
 
-function createPlayer(seq: mm.INoteSequence) {
+function createPlayer(seq: mm.INoteSequence, useSoundFontPlayer = false) {
   // Visualizer
   const div = document.createElement('div');
   div.classList.add('player-container');
@@ -414,43 +426,18 @@ function createPlayer(seq: mm.INoteSequence) {
   containerDiv.appendChild(canvas);
 
   const buttonsDiv = document.createElement('div');
-  buttonsDiv.appendChild(createPlayerButton(seq, false, canvas));
-  // Players with clicks only work for quantized sequences.
-  if (sequences.isQuantizedSequence(seq)) {
-    buttonsDiv.appendChild(createPlayerButton(seq, true, canvas));
+  // Regular player.
+  buttonsDiv.appendChild(
+      createPlayerButton(seq, false, useSoundFontPlayer, canvas));
+
+  // Player with click. Only works for quantized sequences.
+  if (!useSoundFontPlayer && sequences.isQuantizedSequence(seq)) {
+    buttonsDiv.appendChild(createPlayerButton(seq, true, false, canvas));
   }
+
+  // Download midi.
   buttonsDiv.appendChild(createDownloadButton(seq));
   div.appendChild(buttonsDiv);
-  div.appendChild(containerDiv);
-  return div;
-}
-
-function createSoundFontPlayer(seq: mm.INoteSequence) {
-  // Visualizer
-  const div = document.createElement('div');
-
-  div.classList.add('player-container');
-  const containerDiv = document.createElement('div');
-  containerDiv.classList.add('visualizer-container');
-  const canvas = document.createElement('canvas');
-  containerDiv.appendChild(canvas);
-  new mm.Visualizer(seq, canvas as HTMLCanvasElement);
-
-  const player = new mm.SoundFontPlayer(SOUNDFONT_URL);
-  const button = document.createElement('button');
-  button.textContent = 'Play';
-  button.disabled = true;
-  player.loadSamples(seq).then(() => button.disabled = false);
-  button.addEventListener('click', () => {
-    if (player.isPlaying()) {
-      player.stop();
-      button.textContent = 'Play';
-    } else {
-      player.start(seq).then(() => (button.textContent = 'Play'));
-      button.textContent = 'Stop';
-    }
-  });
-  div.appendChild(button);
   div.appendChild(containerDiv);
   return div;
 }
