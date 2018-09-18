@@ -391,9 +391,10 @@ export class SoundFontPlayer extends BasePlayer {
 
   constructor(
       soundFontURL: string, output = Tone.Master,
-      programOutputs?: Map<number, any>,  // tslint:disable-line:no-any
-      drumOutputs?: Map<number, any>) {   // tslint:disable-line:no-any
-    super();
+      programOutputs?: Map<number, any>,      // tslint:disable-line:no-any
+      drumOutputs?: Map<number, any>,         // tslint:disable-line:no-any
+      callbackObject?: BasePlayerCallback) {  // tslint:disable-line:no-any
+    super(false, callbackObject);
     this.soundFont = new soundfont.SoundFont(soundFontURL);
     this.output = output;
     this.programOutputs = programOutputs;
@@ -405,8 +406,8 @@ export class SoundFontPlayer extends BasePlayer {
         seq.notes.map((note) => ({
                         pitch: note.pitch,
                         velocity: note.velocity,
-                        program: note.program ? note.program : 0,
-                        isDrum: note.isDrum ? note.isDrum : false
+                        program: note.program || 0,
+                        isDrum: note.isDrum || false
                       })));
   }
 
