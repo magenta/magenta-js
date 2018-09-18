@@ -21,9 +21,10 @@
  * Imports
  */
 import * as tf from '@tensorflow/tfjs';
-import * as logging from '../core/logging';
 
-import {preprocessAudio} from './audio_utils';
+import * as logging from '../core/logging';
+// tslint:disable-next-line:max-line-length
+import {loadAudioFromFile, loadAudioFromUrl, preprocessAudio} from './audio_utils';
 import {MEL_SPEC_BINS, MIDI_PITCHES} from './constants';
 // tslint:disable-next-line:max-line-length
 import {batchInput, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
@@ -136,14 +137,14 @@ export class OnsetsAndFrames {
   }
 
   /**
-   * Transcribes a piano performance from audio.
+   * Transcribes a piano performance from audio buffer.
    *
    * @param audioBuffer An audio buffer to transcribe.
    * @param batchSize The number of chunks to compute in parallel. May
    * need to be reduced if hitting a timeout in the browser.
    * @returns A `NoteSequence` containing the transcribed piano performance.
    */
-  async transcribeFromAudio(audioBuffer: AudioBuffer, batchSize = 4) {
+  async transcribeFromAudioBuffer(audioBuffer: AudioBuffer, batchSize = 4) {
     const startTime = performance.now();
     const melSpec = preprocessAudio(audioBuffer);
     melSpec.then(
@@ -153,6 +154,28 @@ export class OnsetsAndFrames {
     return melSpec.then(
         (spec) => this.transcribeFromMelSpec(
             spec.map(a => Array.from(a), batchSize)));
+  }
+
+  /**
+   * Transcribes a piano performance from an audio file.
+   *
+   * @param blob An audio file blob to transcribe.
+   * @returns A `NoteSequence` containing the transcribed piano performance.
+   */
+  async transcribeFromAudioFile(blob: Blob) {
+    const audio = await loadAudioFromFile(blob);
+    return this.transcribeFromAudioBuffer(audio);
+  }
+
+  /**
+   * Transcribes a piano performance from an audio file ULR.
+   *
+   * @param url The url of the file to transcribe.
+   * @returns A `NoteSequence` containing the transcribed piano performance.
+   */
+  async transcribeFromAudioURL(url: string) {
+    const audio = await loadAudioFromUrl(url);
+    return this.transcribeFromAudioBuffer(audio);
   }
 
   private processBatches(

@@ -20,10 +20,9 @@ import * as MediaRecorder from 'audio-recorder-polyfill';
 
 import * as mm from '../src/index';
 import {INoteSequence} from '../src/index';
-// tslint:disable:max-line-length
-import {loadAudioFromFile, loadAudioFromUrl} from '../src/transcription/audio_utils';
+
+// tslint:disable-next-line:max-line-length
 import {CHECKPOINTS_DIR, notesMatch, writeMemory, writeNoteSeqs, writeTimer} from './common';
-// tslint:enable:max-line-length
 
 mm.logging.verbosity = mm.logging.Level.DEBUG;
 
@@ -127,9 +126,8 @@ async function transcribe(oaf: mm.OnsetsAndFrames, chunkLength: number) {
 }
 
 async function transcribeFromAudio(oaf: mm.OnsetsAndFrames) {
-  const audio = await loadAudioFromUrl(ORIGINAL_AUDIO_URL);
   const start = performance.now();
-  const ns = await oaf.transcribeFromAudio(audio);
+  const ns = await oaf.transcribeFromAudioURL(ORIGINAL_AUDIO_URL);
   writeTimer('audio-time', start);
   writeNoteSeqs('audio-results', [ns], true, true);
 
@@ -141,8 +139,6 @@ async function transcribeFromAudio(oaf: mm.OnsetsAndFrames) {
 
 async function transcribeFromFile(blob: Blob, prefix = 'file') {
   setLoadingMessage(prefix);
-  const audio = await loadAudioFromFile(blob);
-
   const audioEl =
       document.getElementById(`${prefix}Player`) as HTMLAudioElement;
   audioEl.hidden = false;
@@ -152,7 +148,7 @@ async function transcribeFromFile(blob: Blob, prefix = 'file') {
   oafA.initialize()
       .then(async () => {
         const start = performance.now();
-        const ns = await oafA.transcribeFromAudio(audio);
+        const ns = await oafA.transcribeFromAudioFile(blob);
         writeTimer(`${prefix}-time`, start);
         writeNoteSeqs(`${prefix}-results`, [ns], true, true);
       })
