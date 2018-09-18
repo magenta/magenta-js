@@ -442,33 +442,6 @@ function createPlayer(seq: mm.INoteSequence, useSoundFontPlayer = false) {
   return div;
 }
 
-<<<<<<< HEAD
-function createSoundFontPlayer(seq: mm.INoteSequence) {
-  // Visualizer
-  const div = document.createElement('div');
-  div.classList.add('player-container');
-
-  const player = new mm.SoundFontPlayer(SOUNDFONT_URL);
-  const button = document.createElement('button');
-  button.textContent = 'Play';
-  button.disabled = true;
-  player.loadSamples(seq).then(() => button.disabled = false);
-  button.addEventListener('click', () => {
-    if (player.isPlaying()) {
-      player.stop();
-      button.textContent = 'Play';
-    } else {
-      player.start(seq).then(() => (button.textContent = 'Play'));
-      button.textContent = 'Stop';
-    }
-  });
-
-  div.appendChild(button);
-  return div;
-}
-
-=======
->>>>>>> upstream/master
 function compareNotes(a: mm.NoteSequence.INote, b: mm.NoteSequence.INote) {
   if (a.startTime < b.startTime) {
     return -1;
