@@ -77,6 +77,11 @@ export interface MultitrackConverterSpec {
   args: MultitrackConverterArgs;
 }
 
+export interface GrooveConverterSpec {
+  type: 'GrooveConverter';
+  args: GrooveConverterArgs;
+}
+
 /**
  * Interface for JSON specification of a `DataConverter`.
  *
@@ -84,9 +89,9 @@ export interface MultitrackConverterSpec {
  * @property args Map containing values for argments to the constructor of the
  * `DataConverter` class specified above.
  */
-export type ConverterSpec =
-    MelodyConverterSpec|DrumsConverterSpec|DrumRollConverterSpec|
-    TrioConverterSpec|DrumsOneHotConverterSpec|MultitrackConverterSpec;
+export type ConverterSpec = MelodyConverterSpec|DrumsConverterSpec|
+    DrumRollConverterSpec|TrioConverterSpec|DrumsOneHotConverterSpec|
+    MultitrackConverterSpec|GrooveConverterSpec;
 
 /**
  * Builds a `DataConverter` based on the given `ConverterSpec`.
@@ -108,6 +113,8 @@ export function converterFromSpec(spec: ConverterSpec): DataConverter {
       return new DrumsOneHotConverter(spec.args);
     case 'MultitrackConverter':
       return new MultitrackConverter(spec.args);
+    case 'GrooveConverter':
+      return new GrooveConverter(spec.args);
     default:
       throw new Error(`Unknown DataConverter type: ${spec}`);
   }
@@ -136,8 +143,8 @@ export abstract class DataConverter {
   readonly numSegments: number;              // Number of steps for conductor.
   abstract readonly depth: number;           // Size of final output dimension.
   abstract readonly endTensor: tf.Tensor1D;  // Tensor marking segment end.
-  abstract readonly NUM_SPLITS: number;  // Const number of conductor splits.
-  abstract readonly SEGMENTED_BY_TRACK: boolean;  // Segments are tracks.
+  readonly NUM_SPLITS: number = 0;  // Const number of conductor splits.
+  readonly SEGMENTED_BY_TRACK: boolean = false;  // Segments are tracks.
   abstract toTensor(noteSequence: INoteSequence): tf.Tensor2D;
   abstract async toNoteSequence(tensor: tf.Tensor2D, stepsPerQuarter: number):
       Promise<INoteSequence>;
@@ -183,8 +190,6 @@ export interface DrumsConverterArgs extends BaseConverterArgs {
 export class DrumsConverter extends DataConverter {
   readonly pitchClasses: number[][];
   readonly pitchToClass: Map<number, number>;
-  readonly NUM_SPLITS = 0;              // const
-  readonly SEGMENTED_BY_TRACK = false;  // const
   readonly depth: number;
   readonly endTensor: tf.Tensor1D;
 
@@ -357,10 +362,8 @@ export class MelodyConverter extends DataConverter {
   readonly depth: number;
   readonly endTensor: tf.Tensor1D;
 
-  readonly NUM_SPLITS = 0;              // const
-  readonly SEGMENTED_BY_TRACK = false;  // const
-  readonly NOTE_OFF = 1;                // const
-  readonly FIRST_PITCH = 2;             // const
+  readonly NOTE_OFF = 1;     // const
+  readonly FIRST_PITCH = 2;  // const
 
   constructor(args: MelodyConverterArgs) {
     super(args);
@@ -461,7 +464,6 @@ export class TrioConverter extends DataConverter {
   readonly depth: number;
   readonly endTensor: tf.Tensor1D;
   readonly NUM_SPLITS = 3;              // const
-  readonly SEGMENTED_BY_TRACK = false;  // const
   readonly MEL_PROG_RANGE = [0, 31];    // inclusive, const
   readonly BASS_PROG_RANGE = [32, 39];  // inclusive, const
 
@@ -574,7 +576,6 @@ export interface MultitrackConverterArgs extends BaseConverterArgs {
   maxPitch?: number;
 }
 export class MultitrackConverter extends DataConverter {
-  readonly NUM_SPLITS = 0;             // const
   readonly SEGMENTED_BY_TRACK = true;  // const
 
   readonly stepsPerQuarter: number;
@@ -798,5 +799,154 @@ export class MultitrackConverter extends DataConverter {
     });
 
     return noteSequence;
+  }
+}
+
+/**
+ * Converts to and from hit/velocity/offset representations.
+ * In this setting, we represent drum sequences and performances
+ * as triples of (hit, velocity, offset). Each timestep refers to a fixed beat
+ * on a grid, which is by default spaced at 16th notes (when `stepsPerQuarter`
+ * is 4). Drum hits that don't fall exactly on beat are represented through the
+ * offset value, which refers to the relative distance from the nearest
+ * quantized step.
+ *
+ * Hits are binary [0, 1].
+ * Velocities are continuous values in [0, 1].
+ * Offsets are continuous values in [-0.5, 0.5], rescaled to [-1, 1] for
+ * tensors.
+ *
+ * @param stepsPerQuarter The number of quantization steps per quarter note.
+ * @param humanize If True, flatten all input velocities and microtiming. The
+ * model then learns to map from a flattened input to the original sequence.
+ * @param fixedVelocities: If True, flatten all input velocities.
+ */
+export interface GrooveConverterArgs extends BaseConverterArgs {
+  stepsPerQuarter?: number;
+  humanize?: boolean;
+  tapify?: boolean;
+  pitchClasses?: number[][];
+}
+export class GrooveConverter extends DataConverter {
+  readonly stepsPerQuarter: number;
+  readonly humanize: boolean;
+  readonly pitchClasses: number[][];
+  readonly pitchToClass: Map<number, number>;
+  readonly depth: number;
+  readonly endTensor: tf.Tensor1D;
+
+  constructor(args: GrooveConverterArgs) {
+    super(args);
+
+    this.stepsPerQuarter =
+        args.stepsPerQuarter || constants.DEFAULT_STEPS_PER_QUARTER;
+    this.pitchClasses = args.pitchClasses || DEFAULT_DRUM_PITCH_CLASSES;
+    this.pitchToClass = new Map<number, number>();
+    for (let c = 0; c < this.pitchClasses.length; ++c) {  // class
+      this.pitchClasses[c].forEach((p) => {
+        this.pitchToClass.set(p, c);
+      });
+    }
+    this.humanize = args.humanize;
+
+    // Each drum hit is represented by 3 numbers -
+    // on/off, velocity, and offset
+    this.depth = 3;
+  }
+
+  toTensor(ns: INoteSequence) {
+    const qns = sequences.quantizeNoteSequence(ns, this.stepsPerQuarter);
+    const numSteps = this.numSteps || qns.totalQuantizedSteps;
+    const stepLength = (60. / qns.tempos[0].qpm) / this.stepsPerQuarter;
+
+    const stepNotes: Array<Map<number, NoteSequence.INote>> = [];
+    for (let i = 0; i < numSteps; ++i) {
+      stepNotes.push(new Map<number, NoteSequence.INote>());
+    }
+    console.log(stepNotes[0]);
+    qns.notes.forEach(n => {
+      if (this.pitchToClass.has(n.pitch)) {
+        const s = n.quantizedStartStep;
+        const d = this.pitchToClass.get(n.pitch);
+        if (!stepNotes[s].has(d) || stepNotes[s].get(d).velocity < n.velocity) {
+          stepNotes[s].set(d, n);
+        }
+      }
+    });
+
+    const numDrums = this.pitchClasses.length;
+    const hitVectors = tf.buffer([numSteps, numDrums]);
+    const velocityVectors = tf.buffer([numSteps, numDrums]);
+    const offsetVectors = tf.buffer([numSteps, numDrums]);
+
+    function getOffset(n: NoteSequence.INote) {
+      const tOnset = n.startTime;
+      const qOnset = n.quantizedStartStep * stepLength;
+      return 2 * (qOnset - tOnset) / stepLength;
+    }
+    for (let s = 0; s < numSteps; ++s) {
+      // Loop through each drum instrument.
+      for (let d = 0; d < numDrums; ++d) {
+        const note = stepNotes[s].get(d);
+        hitVectors.set(note ? 1 : 0, s, d);
+        if (!this.humanize) {
+          velocityVectors.set(note ? note.velocity / 127 : 0, s, d);
+          offsetVectors.set(note ? getOffset(note) : 0, s, d);
+        }
+      }
+    }
+
+    // Flatten so that there is one per drum at every step, then stack the
+    // 3 signals.
+    return tf.tidy(
+               () => tf.stack(
+                   [
+                     hitVectors.toTensor().flatten(),
+                     velocityVectors.toTensor().flatten(),
+                     offsetVectors.toTensor().flatten()
+                   ],
+                   1)) as tf.Tensor2D;
+  }
+
+  async toNoteSequence(
+      t: tf.Tensor2D, stepsPerQuarter?: number,
+      qpm = constants.DEFAULT_QUARTERS_PER_MINUTE) {
+    if (stepsPerQuarter && stepsPerQuarter !== this.stepsPerQuarter) {
+      throw Error('');
+    }
+    stepsPerQuarter = this.stepsPerQuarter;
+    const numSteps = t.shape[0] / this.pitchClasses.length;
+    const stepLength = (60. / qpm) / this.stepsPerQuarter;
+
+    const ns = NoteSequence.create({totalTime: numSteps * stepLength});
+    ns.tempos.push({qpm});
+
+    const results = await t.data() as Float32Array;
+
+    function clip(v: number, min: number, max: number) {
+      return Math.min(Math.max(v, min), max);
+    }
+    const numDrums = this.pitchClasses.length;
+    for (let s = 0; s < numSteps; ++s) {
+      const stepResults = results.slice(
+          s * numDrums * this.depth, (s + 1) * numDrums * this.depth);
+      for (let d = 0; d < numDrums; ++d) {
+        const hitOutput = stepResults[d * this.depth];
+        const velOutput = stepResults[d * this.depth + 1];
+        const offsetOutput = stepResults[d * this.depth + 2];
+        if (hitOutput > 0.5) {
+          const velocity = clip(Math.round(velOutput * 127), 0, 127);
+          const offset = clip(offsetOutput / 2, -0.5, 0.5);
+          ns.notes.push(NoteSequence.Note.create({
+            pitch: this.pitchClasses[d][0],
+            startTime: (s - offset) * stepLength,
+            endTime: (s - offset + 1) * stepLength,
+            velocity,
+            isDrum: true
+          }));
+        }
+      }
+    }
+    return ns;
   }
 }
