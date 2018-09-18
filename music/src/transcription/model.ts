@@ -23,7 +23,7 @@
 import * as tf from '@tensorflow/tfjs';
 
 import * as logging from '../core/logging';
-
+// tslint:disable-next-line:max-line-length
 import {loadAudioFromFile, loadAudioFromUrl, preprocessAudio} from './audio_utils';
 import {MEL_SPEC_BINS, MIDI_PITCHES} from './constants';
 // tslint:disable-next-line:max-line-length
