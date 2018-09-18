@@ -184,26 +184,27 @@ export const MEL_TWINKLE_WITH_VELOCITIES: mm.INoteSequence = {
 export const DRUM_SEQ_WITH_VELOCITIES: mm.INoteSequence = {
   notes: [
     {pitch: 36, quantizedStartStep: 0, velocity: 10},
-    {pitch: 36, quantizedStartStep: 2, velocity: 80},
-    {pitch: 38, quantizedStartStep: 4, velocity: 10},
-    {pitch: 38, quantizedStartStep: 6, velocity: 80},
-    {pitch: 42, quantizedStartStep: 8, velocity: 10},
-    {pitch: 42, quantizedStartStep: 10, velocity: 80},
-    {pitch: 45, quantizedStartStep: 12, velocity: 10},
-    {pitch: 45, quantizedStartStep: 14, velocity: 80},
-    {pitch: 46, quantizedStartStep: 16, velocity: 10},
-    {pitch: 46, quantizedStartStep: 18, velocity: 80},
-    {pitch: 48, quantizedStartStep: 20, velocity: 10},
-    {pitch: 48, quantizedStartStep: 22, velocity: 80},
-    {pitch: 49, quantizedStartStep: 24, velocity: 10},
-    {pitch: 49, quantizedStartStep: 26, velocity: 80},
-    {pitch: 50, quantizedStartStep: 28, velocity: 10},
-    {pitch: 50, quantizedStartStep: 30, velocity: 80},
-    {pitch: 51, quantizedStartStep: 32, velocity: 10},
-    {pitch: 51, quantizedStartStep: 34, velocity: 80},
+    {pitch: 36, quantizedStartStep: 4, velocity: 80},
+    {pitch: 38, quantizedStartStep: 8, velocity: 10},
+    {pitch: 38, quantizedStartStep: 12, velocity: 80},
+    {pitch: 42, quantizedStartStep: 16, velocity: 10},
+    {pitch: 42, quantizedStartStep: 20, velocity: 80},
+    {pitch: 45, quantizedStartStep: 24, velocity: 10},
+    {pitch: 45, quantizedStartStep: 28, velocity: 80},
+    {pitch: 46, quantizedStartStep: 32, velocity: 10},
+    // This drum is really unhappy if played too quickly twice in a row.
+    {pitch: 46, quantizedStartStep: 38, velocity: 80},
+    {pitch: 48, quantizedStartStep: 40, velocity: 10},
+    {pitch: 48, quantizedStartStep: 44, velocity: 80},
+    {pitch: 49, quantizedStartStep: 48, velocity: 10},
+    {pitch: 49, quantizedStartStep: 52, velocity: 80},
+    {pitch: 50, quantizedStartStep: 56, velocity: 10},
+    {pitch: 50, quantizedStartStep: 60, velocity: 80},
+    {pitch: 51, quantizedStartStep: 64, velocity: 10},
+    {pitch: 51, quantizedStartStep: 68, velocity: 80},
   ],
-  quantizationInfo: {stepsPerQuarter: 2},
-  totalQuantizedSteps: 36
+  quantizationInfo: {stepsPerQuarter: 4},
+  totalQuantizedSteps: 72
 };
 DRUM_SEQ_WITH_VELOCITIES.notes.map(n => {
   n.isDrum = true;
