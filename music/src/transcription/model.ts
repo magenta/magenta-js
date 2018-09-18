@@ -216,7 +216,7 @@ export class OnsetsAndFrames {
 
       // Frame RNN takes concatenated ouputs of onsetsRnn and activationCnn
       // as its inputs.
-      this.frameRnn = new Lstm([null, MIDI_PITCHES * 2], 256);
+      this.frameRnn = new Lstm([null, MIDI_PITCHES * 2]);
       this.frameRnn.setWeights(vars, 'frame', 'frame_probs');
 
       this.velocityCnn = new AcousticCnn('linear');

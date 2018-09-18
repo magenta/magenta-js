@@ -112,8 +112,8 @@ fetch(`${MEL_CKPT_URL}/${EXPECTED_NS_SUFFIX}`)
     .then((response) => response.json())
     .then((ns) => {
       expectedNs = ns;
-      writeNoteSeqs('expected-ns', [expectedNs], undefined, true);
-      writeNoteSeqs('expected-audio-ns', [expectedNs], undefined, true);
+      writeNoteSeqs('expected-ns', [expectedNs], true, true);
+      writeNoteSeqs('expected-audio-ns', [expectedNs], true, true);
     });
 
 async function transcribe(oaf: mm.OnsetsAndFrames, chunkLength: number) {
@@ -124,7 +124,7 @@ async function transcribe(oaf: mm.OnsetsAndFrames, chunkLength: number) {
   oaf.chunkLength = chunkLength;
   const ns = await oaf.transcribeFromMelSpec(melSpec);
   writeTimer(`${chunkLength}-time`, start);
-  writeNoteSeqs(`${chunkLength}-results`, [ns], undefined, true);
+  writeNoteSeqs(`${chunkLength}-results`, [ns], true, true);
 
   document.getElementById(`${chunkLength}-match`).innerHTML =
       notesMatch(ns.notes, expectedNs.notes) ?
@@ -137,7 +137,7 @@ async function transcribeFromAudio(oaf: mm.OnsetsAndFrames) {
   const start = performance.now();
   const ns = await oaf.transcribeFromAudio(audio);
   writeTimer('audio-time', start);
-  writeNoteSeqs('audio-results', [ns], undefined, true);
+  writeNoteSeqs('audio-results', [ns], true, true);
 
   document.getElementById('audio-match').innerHTML =
       notesMatch(ns.notes, expectedNs.notes) ?
@@ -160,7 +160,7 @@ async function transcribeFromFile(blob: Blob, prefix = 'file') {
         const start = performance.now();
         const ns = await oafA.transcribeFromAudio(audio);
         writeTimer(`${prefix}-time`, start);
-        writeNoteSeqs(`${prefix}-results`, [ns], undefined, true);
+        writeNoteSeqs(`${prefix}-results`, [ns], true, true);
       })
       .then(() => oafA.dispose())
       .then(() => writeMemory(tf.memory().numBytes, `${prefix}-leaked-memory`));
