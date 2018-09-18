@@ -31,7 +31,7 @@ const CKPT_URL = `${CHECKPOINTS_DIR}/transcription/onsets_frames_uni`;
 const MEL_SPEC_URL =
     `${CKPT_URL}/MAPS_MUS-mz_331_3_ENSTDkCl.250frames.melspec.json`;
 const EXPECTED_NS_URL =
-    `${CKPT_URL}MAPS_MUS-mz_331_3_ENSTDkCl.250frames.ns.json`;
+    `${CKPT_URL}/MAPS_MUS-mz_331_3_ENSTDkCl.250frames.ns.json`;
 const ORIGINAL_AUDIO_URL =
     `${CKPT_URL}/MAPS_MUS-mz_331_3_ENSTDkCl.250frames.wav`;
 
