@@ -26,7 +26,7 @@ import {CHECKPOINTS_DIR, notesMatch, writeMemory, writeNoteSeqs, writeTimer} fro
 
 mm.logging.verbosity = mm.logging.Level.DEBUG;
 
-const CKPT_URL = `${CHECKPOINTS_DIR}/transcription/onsets_frames_uni`;
+const CKPT_URL = `${CHECKPOINTS_DIR}/transcription/onsets_frames_uni_q2`;
 const MEL_SPEC_URL =
     `${CKPT_URL}/MAPS_MUS-mz_331_3_ENSTDkCl.250frames.melspec.json`;
 const EXPECTED_NS_URL =
@@ -118,7 +118,6 @@ async function transcribe(oaf: mm.OnsetsAndFrames, chunkLength: number) {
   const ns = await oaf.transcribeFromMelSpec(melSpec);
   writeTimer(`${chunkLength}-time`, start);
   writeNoteSeqs(`${chunkLength}-results`, [ns], true, true);
-
   document.getElementById(`${chunkLength}-match`).innerHTML =
       notesMatch(ns.notes, expectedNs.notes) ?
       '<span style="color:green">TRUE</span>' :

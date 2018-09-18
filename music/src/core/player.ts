@@ -401,12 +401,13 @@ export class SoundFontPlayer extends BasePlayer {
   }
 
   async loadSamples(seq: INoteSequence): Promise<void> {
-    await this.soundFont.loadSamples(seq.notes.map((note) => ({
-                                                     pitch: note.pitch,
-                                                     velocity: note.velocity,
-                                                     program: note.program,
-                                                     isDrum: note.isDrum
-                                                   })));
+    await this.soundFont.loadSamples(
+        seq.notes.map((note) => ({
+                        pitch: note.pitch,
+                        velocity: note.velocity,
+                        program: note.program ? note.program : 0,
+                        isDrum: note.isDrum ? note.isDrum : false
+                      })));
   }
 
   start(seq: INoteSequence, qpm?: number): Promise<void> {

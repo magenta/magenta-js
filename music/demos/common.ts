@@ -27,7 +27,7 @@ export const CHECKPOINTS_DIR =
 // http://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01
 const SOUNDFONT_URL =
     // tslint:disable-next-line:max-line-length
-    'https://storage.googleapis.com/magentadata/js/soundfonts/sgm_v85';
+    'https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus';
 
 export const DRUM_SEQS: mm.INoteSequence[] = [
   {
@@ -428,13 +428,7 @@ function createPlayer(seq: mm.INoteSequence) {
 function createSoundFontPlayer(seq: mm.INoteSequence) {
   // Visualizer
   const div = document.createElement('div');
-
   div.classList.add('player-container');
-  const containerDiv = document.createElement('div');
-  containerDiv.classList.add('visualizer-container');
-  const canvas = document.createElement('canvas');
-  containerDiv.appendChild(canvas);
-  new mm.Visualizer(seq, canvas as HTMLCanvasElement);
 
   const player = new mm.SoundFontPlayer(SOUNDFONT_URL);
   const button = document.createElement('button');
@@ -450,8 +444,8 @@ function createSoundFontPlayer(seq: mm.INoteSequence) {
       button.textContent = 'Stop';
     }
   });
+
   div.appendChild(button);
-  div.appendChild(containerDiv);
   return div;
 }
 
