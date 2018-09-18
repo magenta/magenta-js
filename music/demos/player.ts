@@ -17,7 +17,7 @@
 import * as mm from '../src/index';
 
 // tslint:disable-next-line:max-line-length
-import {DRUM_SEQS, FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED, writeNoteSeqs} from './common';
+import {DRUM_SEQ_WITH_VELOCITIES, DRUM_SEQS, FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED, MEL_TWINKLE_WITH_VELOCITIES, writeNoteSeqs} from './common';
 
 function generatePlayers() {
   writeNoteSeqs('unq-player', [FULL_TWINKLE_UNQUANTIZED], false);
@@ -56,8 +56,14 @@ function generateTempoPlayer() {
   });
 }
 
+function generateVelocityPlayers() {
+  writeNoteSeqs('v-player', [MEL_TWINKLE_WITH_VELOCITIES], false);
+  writeNoteSeqs('d-v-player', [DRUM_SEQ_WITH_VELOCITIES], false);
+}
+
 try {
-  Promise.all([generatePlayers(), generateTempoPlayer()]);
+  Promise.all(
+      [generatePlayers(), generateTempoPlayer(), generateVelocityPlayers()]);
 } catch (err) {
   console.error(err);
 }
