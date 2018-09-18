@@ -391,8 +391,8 @@ export class SoundFontPlayer extends BasePlayer {
 
   constructor(
       soundFontURL: string, output = Tone.Master,
-      programOutputs?: Map<number, any>,  // tslint:disable-line:no-any
-      drumOutputs?: Map<number, any>,
+      programOutputs?: Map<number, any>,      // tslint:disable-line:no-any
+      drumOutputs?: Map<number, any>,         // tslint:disable-line:no-any
       callbackObject?: BasePlayerCallback) {  // tslint:disable-line:no-any
     super(false, callbackObject);
     this.soundFont = new soundfont.SoundFont(soundFontURL);
