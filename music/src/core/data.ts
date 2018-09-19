@@ -262,10 +262,9 @@ export class DrumRollConverter extends DrumsConverter {
     const noteSequence = NoteSequence.create();
     noteSequence.quantizationInfo =
         NoteSequence.QuantizationInfo.create({stepsPerQuarter});
-    const rollSplit = tf.split(roll, roll.shape[0]);
+    const flatRoll = await roll.data() as Uint8Array;
     for (let s = 0; s < roll.shape[0]; ++s) {  // step
-      const pitches = await rollSplit[s].data() as Uint8Array;
-      rollSplit[s].dispose();
+      const pitches = flatRoll.slice(s * this.depth, (s + 1) * this.depth);
       for (let p = 0; p < pitches.length; ++p) {  // pitch class
         if (pitches[p]) {
           noteSequence.notes.push(NoteSequence.Note.create({
