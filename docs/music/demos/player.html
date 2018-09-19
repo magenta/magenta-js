@@ -1,0 +1,74 @@
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+  <link rel="stylesheet" href="./style.css">
+  <title>mm.Player</title>
+</head>
+
+<body>
+  <h1>mm.Player</h1>
+  <p>An <code>mm.Player</code> is a class that playes <code>NoteSequences</code>.
+    Below you can play the same melody using each of the available players</p>
+
+  <h2>Unquantized NoteSequences</h2>
+  <section>
+    <b>Base player</b>
+    <div id="unq-player"></div>
+    <b>SoundFont player</b>
+    <div id="unq-soundfont"></div>
+  </section>
+
+  <h2>Quantized NoteSequences</h2>
+  <section>
+    <b>Base player (with or without click)</b>
+    <div id="q-player"></div>
+    <b>SoundFont player</b>
+    <div id="q-soundfont"></div>
+  </section>
+
+  <h2>Quantized Drum NoteSequences</h2>
+  <section>
+    <b>Base player (with or without click)</b>
+    <div id="d-player"></div>
+    <b>SoundFont player</b>
+    <div id="d-soundfont"></div>
+  </section>
+
+  <h2>Changing the tempo</h2>
+  <p>You can update the tempo at which a <code>mm.Player</code> is playing a
+    <code>NoteSequence</code> by calling <code>setTempo()</code>. To see this,
+    start one of the melodies below, and adjust the tempo slider.
+  </p>
+
+  <section>
+    <div>
+      <button id="playBtn">Play</button>
+      <b>Tempo:</b>
+      <input type="range" id="tempo" min="20" max="240" value="120" step="1"
+      oninput="tempoValue.value = tempo.value">
+      <output id="tempoValue">120</output>
+    </div>
+    <div class="visualizer-container" id="container">
+      <canvas id="canvas"></canvas>
+    </div>
+  </section>
+
+  <h2>NoteSequences with velocities</h2>
+  <p>They work!</p>
+  <section>
+    <b>SoundFont player</b>
+    <div id="s-v-player"></div>
+    <b>Base player (with or without click)</b>
+    <div id="v-player"></div>
+    <b>Drum player (with or without click)</b>
+    <div id="d-v-player"></div>
+
+  </section>
+
+  <script src="player_bundle.js"></script>
+</body>
+
+</html>
