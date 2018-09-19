@@ -2,4 +2,4 @@ language: node_js
 node_js: stable
 script:
   - cd music && yarn install
-  - npm run test
+  - yarn lint && yarn test && yarn build
