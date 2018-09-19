@@ -44,7 +44,7 @@
     "lint": "tslint -c ../tslint.json -p . -t verbose",
     "test": "ts-node node_modules/tape/bin/tape src/**/*_test.ts",
     "build-demos": "cd demos && ./build-demos.sh",
-    "publish-demos": "yarn build-demos && cp demos/* ../docs/music/demos",
+    "publish-demos": "yarn build-demos && mkdir -p ../docs/music/demos && cp demos/*.{js,html,mid,css} ../docs/music/demos",
     "run-demos": "yarn build-demos && http-server demos/",
     "proto": "sh compile-proto.sh",
     "doc": "sh generate-docs.sh"
