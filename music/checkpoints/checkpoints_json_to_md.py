@@ -29,6 +29,7 @@ You can load the pre-trained checkpoints below in your app directly from our
 server with the links provided. If you would like to download the checkpoint
 to use locally or host yourself, pass the link to our
 [checkpoint downloader script](/scripts/checkpoint_downloader.py).
+
 For example, to download the `basic_rnn` checkpoint, you would run:
 
 ```bash
