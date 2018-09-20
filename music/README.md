@@ -15,13 +15,14 @@ For the Python TensorFlow implementations, see the [main Magenta repo](https://g
 
 ## Example Applications
 
-Here are a few applications built with MagentaMusic.js:
+Here are a few applications built with `@magenta/music`:
 
 - [Piano Transcription](https://piano-transcription.glitch.me) by [Monica Dinculescu](https://github.com/notwaldorf) and [Adam Roberts](https://github.com/adarob)
 - [Beat Blender](https://g.co/beatblender) by [Google Creative Lab](https://github.com/googlecreativelab)
 - [Melody Mixer](https://g.co/melodymixer) by [Google Creative Lab](https://github.com/googlecreativelab)
 - [Latent Loops](https://goo.gl/magenta/latent-loops) by [Google Pie Shop](https://github.com/teampieshop)
 - [Neural Drum Machine](https://goo.gl/magenta/neuraldrum) by [Tero Parviainen](https://github.com/teropa)
+- [Tenori-Off](https://tenori-off.glitch.me) by [Monica Dinculescu](https://github.com/notwaldorf)
 
 You can also try our [hosted demos](https://tensorflow.github.io/magenta-js/music/demos) for each model and have a look at the [demo code](./demos).
 
