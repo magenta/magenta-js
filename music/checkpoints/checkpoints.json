@@ -116,5 +116,19 @@
     "description": "A larger 1-bar chord-conditioned multitrack model, trained with 256 free bits. Quantized to 1-byte weights.",
     "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/multitrack_med_chords_fb256",
     "size_mb": 96.9
+  },
+  {
+    "id": "onsets_frames_uni",
+    "model": "OnsetsAndFrames",
+    "description": "A unidirectional piano transcription model.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/transcription/onsets_frames_uni",
+    "size_mb": 60
+  },
+  {
+    "id": "onsets_frames_uni_q2",
+    "model": "OnsetsAndFrames",
+    "description": "A unidirectional piano transcription model. Quantized to 2-byte weights.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/transcription/onsets_frames_uni_q2",
+    "size_mb": 30
   }
 ]

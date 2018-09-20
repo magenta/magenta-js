@@ -7,7 +7,6 @@ You can load the pre-trained checkpoints below in your app directly from our
 server with the links provided. If you would like to download the checkpoint
 to use locally or host yourself, pass the link to our
 [checkpoint downloader script](/scripts/checkpoint_downloader.py).
-
 For example, to download the `basic_rnn` checkpoint, you would run:
 
 ```bash
@@ -55,3 +54,5 @@ multitrack_med_fb256|MusicVAE|A larger 1-bar multitrack model, trained with 256 
 multitrack_chords|MusicVAE|A 1-bar chord-conditioned multitrack model, trained with 64 free bits. Quantized to 1-byte weights.|26.9|[Right Click to Copy](https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/multitrack_chords)
 multitrack_med_chords|MusicVAE|A larger 1-bar chord-conditioned multitrack model, trained with 64 free bits. Quantized to 1-byte weights.|96.9|[Right Click to Copy](https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/multitrack_med_chords)
 multitrack_med_chords_fb256|MusicVAE|A larger 1-bar chord-conditioned multitrack model, trained with 256 free bits. Quantized to 1-byte weights.|96.9|[Right Click to Copy](https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/multitrack_med_chords_fb256)
+onsets_frames_uni|OnsetsAndFrames|A unidirectional piano transcription model.|60|[Right Click to Copy](https://storage.googleapis.com/magentadata/js/checkpoints/transcription/onsets_frames_uni)
+onsets_frames_uni_q2|OnsetsAndFrames|A unidirectional piano transcription model. Quantized to 2-byte weights.|30|[Right Click to Copy](https://storage.googleapis.com/magentadata/js/checkpoints/transcription/onsets_frames_uni_q2)
