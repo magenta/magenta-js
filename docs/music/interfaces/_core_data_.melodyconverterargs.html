@@ -97,6 +97,11 @@
 							cause an error to be thrown.</p>
 						</dd>
 						<dt>param</dt>
+						<dd><p>(default: true) If false, an error will be raised
+								when notes start at the same step. If true, the highest pitched note is used
+							and others are ignored.</p>
+						</dd>
+						<dt>param</dt>
 						<dd><p>(Optional) The number of conductor segments, if
 							applicable.</p>
 						</dd>
@@ -123,6 +128,7 @@
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_core_data_.melodyconverterargs.html#ignorepolyphony" class="tsd-kind-icon">ignore<wbr>Polyphony</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_core_data_.melodyconverterargs.html#maxpitch" class="tsd-kind-icon">max<wbr>Pitch</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_core_data_.melodyconverterargs.html#minpitch" class="tsd-kind-icon">min<wbr>Pitch</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="_core_data_.melodyconverterargs.html#numsegments" class="tsd-kind-icon">num<wbr>Segments</a></li>
@@ -135,12 +141,22 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="ignorepolyphony" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> ignore<wbr>Polyphony</h3>
+					<div class="tsd-signature tsd-kind-icon">ignore<wbr>Polyphony<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L350">core/data.ts:350</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
 					<a name="maxpitch" class="tsd-anchor"></a>
 					<h3>max<wbr>Pitch</h3>
 					<div class="tsd-signature tsd-kind-icon">max<wbr>Pitch<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L348">core/data.ts:348</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L349">core/data.ts:349</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -150,7 +166,7 @@
 					<div class="tsd-signature tsd-kind-icon">min<wbr>Pitch<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L347">core/data.ts:347</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L348">core/data.ts:348</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -161,7 +177,7 @@
 					<aside class="tsd-sources">
 						<p>Inherited from <a href="_core_data_.baseconverterargs.html">BaseConverterArgs</a>.<a href="_core_data_.baseconverterargs.html#numsegments">numSegments</a></p>
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L126">core/data.ts:126</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L125">core/data.ts:125</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -172,7 +188,7 @@
 					<aside class="tsd-sources">
 						<p>Inherited from <a href="_core_data_.baseconverterargs.html">BaseConverterArgs</a>.<a href="_core_data_.baseconverterargs.html#numsteps">numSteps</a></p>
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L125">core/data.ts:125</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/data.ts#L124">core/data.ts:124</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -197,6 +213,9 @@
 						<a href="../modules/_core_data_.html">"core/data"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="../modules/_core_logging_.html">"core/logging"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_core_midi_io_.html">"core/midi_<wbr>io"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -206,10 +225,16 @@
 						<a href="../modules/_core_player_.html">"core/player"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="../modules/_core_recorder_.html">"core/recorder"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_core_sequences_.html">"core/sequences"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_core_soundfont_.html">"core/soundfont"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_core_visualizer_.html">"core/visualizer"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_music_rnn_attention_.html">"music_<wbr>rnn/attention"</a>
@@ -219,6 +244,18 @@
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_music_vae_model_.html">"music_<wbr>vae/model"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_transcription_audio_utils_.html">"transcription/audio_<wbr>utils"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_transcription_constants_.html">"transcription/constants"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_transcription_model_.html">"transcription/model"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_transcription_transcription_utils_.html">"transcription/transcription_<wbr>utils"</a>
 					</li>
 				</ul>
 			</nav>
@@ -265,6 +302,9 @@
 					<li class="current tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="_core_data_.melodyconverterargs.html" class="tsd-kind-icon">Melody<wbr>Converter<wbr>Args</a>
 						<ul>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="_core_data_.melodyconverterargs.html#ignorepolyphony" class="tsd-kind-icon">ignore<wbr>Polyphony</a>
+							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
 								<a href="_core_data_.melodyconverterargs.html#maxpitch" class="tsd-kind-icon">max<wbr>Pitch</a>
 							</li>

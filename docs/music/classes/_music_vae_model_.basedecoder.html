@@ -70,7 +70,7 @@
 			<section class="tsd-panel tsd-comment">
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>LSTM decoder with optional NADE output.</p>
+						<p>Abstract base LSTM decoder that implements all functionality except sampler.</p>
 					</div>
 				</div>
 			</section>
@@ -82,6 +82,17 @@
 						<ul class="tsd-hierarchy">
 							<li>
 								<span class="target">BaseDecoder</span>
+								<ul class="tsd-hierarchy">
+									<li>
+										<a href="_music_vae_model_.categoricaldecoder.html" class="tsd-signature-type">CategoricalDecoder</a>
+									</li>
+									<li>
+										<a href="_music_vae_model_.nadedecoder.html" class="tsd-signature-type">NadeDecoder</a>
+									</li>
+									<li>
+										<a href="_music_vae_model_.groovedecoder.html" class="tsd-signature-type">GrooveDecoder</a>
+									</li>
+								</ul>
 							</li>
 						</ul>
 					</li>
@@ -100,18 +111,18 @@
 						<section class="tsd-index-section tsd-is-not-exported">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-not-exported"><a href="_music_vae_model_.basedecoder.html#lstmcellvars" class="tsd-kind-icon">lstm<wbr>Cell<wbr>Vars</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-not-exported"><a href="_music_vae_model_.basedecoder.html#nade" class="tsd-kind-icon">nade</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-not-exported"><a href="_music_vae_model_.basedecoder.html#lstmcellvars" class="tsd-kind-icon">lstm<wbr>Cell<wbr>Vars</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-overwrite tsd-is-not-exported"><a href="_music_vae_model_.basedecoder.html#outputdims" class="tsd-kind-icon">output<wbr>Dims</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-not-exported"><a href="_music_vae_model_.basedecoder.html#outputprojectvars" class="tsd-kind-icon">output<wbr>Project<wbr>Vars</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-not-exported"><a href="_music_vae_model_.basedecoder.html#outputprojectvars" class="tsd-kind-icon">output<wbr>Project<wbr>Vars</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-overwrite tsd-is-not-exported"><a href="_music_vae_model_.basedecoder.html#zdims" class="tsd-kind-icon">z<wbr>Dims</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-not-exported"><a href="_music_vae_model_.basedecoder.html#ztoinitstatevars" class="tsd-kind-icon">z<wbr>ToInit<wbr>State<wbr>Vars</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-not-exported"><a href="_music_vae_model_.basedecoder.html#ztoinitstatevars" class="tsd-kind-icon">z<wbr>ToInit<wbr>State<wbr>Vars</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section tsd-is-not-exported">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-not-exported"><a href="_music_vae_model_.basedecoder.html#decode" class="tsd-kind-icon">decode</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected tsd-is-not-exported"><a href="_music_vae_model_.basedecoder.html#sample" class="tsd-kind-icon">sample</a></li>
 							</ul>
 						</section>
 					</div>
@@ -123,13 +134,13 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-not-exported">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Base<wbr>Decoder<span class="tsd-signature-symbol">(</span>lstmCellVars<span class="tsd-signature-symbol">: </span><a href="_music_vae_model_.layervars.html" class="tsd-signature-type">LayerVars</a><span class="tsd-signature-symbol">[]</span>, zToInitStateVars<span class="tsd-signature-symbol">: </span><a href="_music_vae_model_.layervars.html" class="tsd-signature-type">LayerVars</a>, outputProjectVars<span class="tsd-signature-symbol">: </span><a href="_music_vae_model_.layervars.html" class="tsd-signature-type">LayerVars</a>, nade<span class="tsd-signature-symbol">?: </span><a href="_music_vae_model_.nade.html" class="tsd-signature-type">Nade</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_music_vae_model_.basedecoder.html" class="tsd-signature-type">BaseDecoder</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Base<wbr>Decoder<span class="tsd-signature-symbol">(</span>lstmCellVars<span class="tsd-signature-symbol">: </span><a href="_music_vae_model_.layervars.html" class="tsd-signature-type">LayerVars</a><span class="tsd-signature-symbol">[]</span>, zToInitStateVars<span class="tsd-signature-symbol">: </span><a href="_music_vae_model_.layervars.html" class="tsd-signature-type">LayerVars</a>, outputProjectVars<span class="tsd-signature-symbol">: </span><a href="_music_vae_model_.layervars.html" class="tsd-signature-type">LayerVars</a>, outputDims<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_music_vae_model_.basedecoder.html" class="tsd-signature-type">BaseDecoder</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L265">music_vae/model.ts:265</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L264">music_vae/model.ts:264</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -168,14 +179,7 @@
 									</div>
 								</li>
 								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> nade: <a href="_music_vae_model_.nade.html" class="tsd-signature-type">Nade</a></h5>
-									<div class="tsd-comment tsd-typography">
-										<div class="lead">
-											<p>(optional) A <code>Nade</code> to use for computing the output vectors at
-												each step. If not given, the final projection values are used as logits
-											for a categorical distribution.</p>
-										</div>
-									</div>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> outputDims: <span class="tsd-signature-type">number</span></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="_music_vae_model_.basedecoder.html" class="tsd-signature-type">BaseDecoder</a></h4>
@@ -185,23 +189,13 @@
 			</section>
 			<section class="tsd-panel-group tsd-member-group tsd-is-not-exported">
 				<h2>Properties</h2>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-not-exported">
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-not-exported">
 					<a name="lstmcellvars" class="tsd-anchor"></a>
-					<h3>lstm<wbr>Cell<wbr>Vars</h3>
+					<h3><span class="tsd-flag ts-flagProtected">Protected</span> lstm<wbr>Cell<wbr>Vars</h3>
 					<div class="tsd-signature tsd-kind-icon">lstm<wbr>Cell<wbr>Vars<span class="tsd-signature-symbol">:</span> <a href="_music_vae_model_.layervars.html" class="tsd-signature-type">LayerVars</a><span class="tsd-signature-symbol">[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
 							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L260">music_vae/model.ts:260</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-not-exported">
-					<a name="nade" class="tsd-anchor"></a>
-					<h3>nade</h3>
-					<div class="tsd-signature tsd-kind-icon">nade<span class="tsd-signature-symbol">:</span> <a href="_music_vae_model_.nade.html" class="tsd-signature-type">Nade</a></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L265">music_vae/model.ts:265</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -216,9 +210,9 @@
 						</ul>
 					</aside>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-not-exported">
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-not-exported">
 					<a name="outputprojectvars" class="tsd-anchor"></a>
-					<h3>output<wbr>Project<wbr>Vars</h3>
+					<h3><span class="tsd-flag ts-flagProtected">Protected</span> output<wbr>Project<wbr>Vars</h3>
 					<div class="tsd-signature tsd-kind-icon">output<wbr>Project<wbr>Vars<span class="tsd-signature-symbol">:</span> <a href="_music_vae_model_.layervars.html" class="tsd-signature-type">LayerVars</a></div>
 					<aside class="tsd-sources">
 						<ul>
@@ -237,9 +231,9 @@
 						</ul>
 					</aside>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-not-exported">
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-not-exported">
 					<a name="ztoinitstatevars" class="tsd-anchor"></a>
-					<h3>z<wbr>ToInit<wbr>State<wbr>Vars</h3>
+					<h3><span class="tsd-flag ts-flagProtected">Protected</span> z<wbr>ToInit<wbr>State<wbr>Vars</h3>
 					<div class="tsd-signature tsd-kind-icon">z<wbr>ToInit<wbr>State<wbr>Vars<span class="tsd-signature-symbol">:</span> <a href="_music_vae_model_.layervars.html" class="tsd-signature-type">LayerVars</a></div>
 					<aside class="tsd-sources">
 						<ul>
@@ -261,7 +255,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides <a href="_music_vae_model_.decoder.html">Decoder</a>.<a href="_music_vae_model_.decoder.html#decode">decode</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L314">music_vae/model.ts:314</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L322">music_vae/model.ts:322</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -313,6 +307,44 @@
 						</li>
 					</ul>
 				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-protected tsd-is-not-exported">
+					<a name="sample" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagProtected">Protected</span> <span class="tsd-flag ts-flagAbstract">Abstract</span> sample</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-protected tsd-is-not-exported">
+						<li class="tsd-signature tsd-kind-icon">sample<span class="tsd-signature-symbol">(</span>lstmOutput<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">tf.Tensor2D</span>, temperature<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">tf.Tensor2D</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L298">music_vae/model.ts:298</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Method that returns the sample based on the projected output from the LSTM.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>lstmOutput: <span class="tsd-signature-type">tf.Tensor2D</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The projected output from the LSTM.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> temperature: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Softmax temperature.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">tf.Tensor2D</span></h4>
+							<p>The sampled output.</p>
+						</li>
+					</ul>
+				</section>
 			</section>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
@@ -334,6 +366,9 @@
 						<a href="../modules/_core_data_.html">"core/data"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="../modules/_core_logging_.html">"core/logging"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_core_midi_io_.html">"core/midi_<wbr>io"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -343,10 +378,16 @@
 						<a href="../modules/_core_player_.html">"core/player"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="../modules/_core_recorder_.html">"core/recorder"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_core_sequences_.html">"core/sequences"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_core_soundfont_.html">"core/soundfont"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_core_visualizer_.html">"core/visualizer"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_music_rnn_attention_.html">"music_<wbr>rnn/attention"</a>
@@ -356,6 +397,18 @@
 					</li>
 					<li class="current tsd-kind-external-module">
 						<a href="../modules/_music_vae_model_.html">"music_<wbr>vae/model"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_transcription_audio_utils_.html">"transcription/audio_<wbr>utils"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_transcription_constants_.html">"transcription/constants"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_transcription_model_.html">"transcription/model"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_transcription_transcription_utils_.html">"transcription/transcription_<wbr>utils"</a>
 					</li>
 				</ul>
 			</nav>
@@ -369,26 +422,26 @@
 							<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-not-exported">
 								<a href="_music_vae_model_.basedecoder.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-not-exported">
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-not-exported">
 								<a href="_music_vae_model_.basedecoder.html#lstmcellvars" class="tsd-kind-icon">lstm<wbr>Cell<wbr>Vars</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-not-exported">
-								<a href="_music_vae_model_.basedecoder.html#nade" class="tsd-kind-icon">nade</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-overwrite tsd-is-not-exported">
 								<a href="_music_vae_model_.basedecoder.html#outputdims" class="tsd-kind-icon">output<wbr>Dims</a>
 							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-not-exported">
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-not-exported">
 								<a href="_music_vae_model_.basedecoder.html#outputprojectvars" class="tsd-kind-icon">output<wbr>Project<wbr>Vars</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-overwrite tsd-is-not-exported">
 								<a href="_music_vae_model_.basedecoder.html#zdims" class="tsd-kind-icon">z<wbr>Dims</a>
 							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-not-exported">
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected tsd-is-not-exported">
 								<a href="_music_vae_model_.basedecoder.html#ztoinitstatevars" class="tsd-kind-icon">z<wbr>ToInit<wbr>State<wbr>Vars</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-not-exported">
 								<a href="_music_vae_model_.basedecoder.html#decode" class="tsd-kind-icon">decode</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-protected tsd-is-not-exported">
+								<a href="_music_vae_model_.basedecoder.html#sample" class="tsd-kind-icon">sample</a>
 							</li>
 						</ul>
 					</li>
@@ -398,6 +451,9 @@
 						<a href="_music_vae_model_.bidirectonallstmencoder.html" class="tsd-kind-icon">Bidirectonal<wbr>Lstm<wbr>Encoder</a>
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="_music_vae_model_.categoricaldecoder.html" class="tsd-kind-icon">Categorical<wbr>Decoder</a>
+					</li>
+					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_music_vae_model_.conductordecoder.html" class="tsd-kind-icon">Conductor<wbr>Decoder</a>
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
@@ -405,6 +461,9 @@
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_music_vae_model_.encoder.html" class="tsd-kind-icon">Encoder</a>
+					</li>
+					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="_music_vae_model_.groovedecoder.html" class="tsd-kind-icon">Groove<wbr>Decoder</a>
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_music_vae_model_.hierarchicalencoder.html" class="tsd-kind-icon">Hierarchical<wbr>Encoder</a>
@@ -417,6 +476,9 @@
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_music_vae_model_.nade.html" class="tsd-kind-icon">Nade</a>
+					</li>
+					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="_music_vae_model_.nadedecoder.html" class="tsd-kind-icon">Nade<wbr>Decoder</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="../interfaces/_music_vae_model_.musicvaespec.html" class="tsd-kind-icon">MusicVAESpec</a>

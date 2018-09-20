@@ -72678,37 +72678,29 @@ var DrumRollConverter = (function (_super) {
     DrumRollConverter.prototype.toNoteSequence = function (roll, stepsPerQuarter) {
         if (stepsPerQuarter === void 0) { stepsPerQuarter = constants.DEFAULT_QUARTERS_PER_MINUTE; }
         return __awaiter(this, void 0, void 0, function () {
-            var noteSequence, rollSplit, s, pitches, p;
+            var noteSequence, flatRoll, s, pitches, p;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         noteSequence = index_1.NoteSequence.create();
                         noteSequence.quantizationInfo =
                             index_1.NoteSequence.QuantizationInfo.create({ stepsPerQuarter: stepsPerQuarter });
-                        rollSplit = tf.split(roll, roll.shape[0]);
-                        s = 0;
-                        _a.label = 1;
+                        return [4, roll.data()];
                     case 1:
-                        if (!(s < roll.shape[0])) return [3, 4];
-                        return [4, rollSplit[s].data()];
-                    case 2:
-                        pitches = _a.sent();
-                        rollSplit[s].dispose();
-                        for (p = 0; p < pitches.length; ++p) {
-                            if (pitches[p]) {
-                                noteSequence.notes.push(index_1.NoteSequence.Note.create({
-                                    pitch: this.pitchClasses[p][0],
-                                    quantizedStartStep: s,
-                                    quantizedEndStep: s + 1,
-                                    isDrum: true
-                                }));
+                        flatRoll = _a.sent();
+                        for (s = 0; s < roll.shape[0]; ++s) {
+                            pitches = flatRoll.slice(s * this.depth, (s + 1) * this.depth);
+                            for (p = 0; p < pitches.length; ++p) {
+                                if (pitches[p]) {
+                                    noteSequence.notes.push(index_1.NoteSequence.Note.create({
+                                        pitch: this.pitchClasses[p][0],
+                                        quantizedStartStep: s,
+                                        quantizedEndStep: s + 1,
+                                        isDrum: true
+                                    }));
+                                }
                             }
                         }
-                        _a.label = 3;
-                    case 3:
-                        ++s;
-                        return [3, 1];
-                    case 4:
                         noteSequence.totalQuantizedSteps = roll.shape[0];
                         return [2, noteSequence];
                 }

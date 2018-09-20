@@ -77,8 +77,8 @@
 						<dd><p>type The type of the model, <code>MusicVAE</code>.</p>
 						</dd>
 						<dt>property</dt>
-						<dd><p>dataConverter: A <code>DataConverterSpec</code> specifying the data converter
-							to use.</p>
+						<dd><p>dataConverter: A <code>DataConverterSpec</code> specifying the data
+							converter to use.</p>
 						</dd>
 						<dt>property</dt>
 						<dd><p>chordEncoder: (Optional) Type of chord encoder to use when
@@ -118,7 +118,7 @@
 					<div class="tsd-signature tsd-kind-icon">chord<wbr>Encoder<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">chords.ChordEncoderType</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L529">music_vae/model.ts:529</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L586">music_vae/model.ts:586</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -128,7 +128,7 @@
 					<div class="tsd-signature tsd-kind-icon">data<wbr>Converter<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">data.ConverterSpec</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L528">music_vae/model.ts:528</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L585">music_vae/model.ts:585</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -138,7 +138,7 @@
 					<div class="tsd-signature tsd-kind-icon">type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"MusicVAE"</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L527">music_vae/model.ts:527</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L584">music_vae/model.ts:584</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -163,6 +163,9 @@
 						<a href="../modules/_core_data_.html">"core/data"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="../modules/_core_logging_.html">"core/logging"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_core_midi_io_.html">"core/midi_<wbr>io"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -172,10 +175,16 @@
 						<a href="../modules/_core_player_.html">"core/player"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="../modules/_core_recorder_.html">"core/recorder"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_core_sequences_.html">"core/sequences"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_core_soundfont_.html">"core/soundfont"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_core_visualizer_.html">"core/visualizer"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_music_rnn_attention_.html">"music_<wbr>rnn/attention"</a>
@@ -185,6 +194,18 @@
 					</li>
 					<li class="current tsd-kind-external-module">
 						<a href="../modules/_music_vae_model_.html">"music_<wbr>vae/model"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_transcription_audio_utils_.html">"transcription/audio_<wbr>utils"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_transcription_constants_.html">"transcription/constants"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_transcription_model_.html">"transcription/model"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_transcription_transcription_utils_.html">"transcription/transcription_<wbr>utils"</a>
 					</li>
 				</ul>
 			</nav>
@@ -197,6 +218,9 @@
 						<a href="../classes/_music_vae_model_.bidirectonallstmencoder.html" class="tsd-kind-icon">Bidirectonal<wbr>Lstm<wbr>Encoder</a>
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../classes/_music_vae_model_.categoricaldecoder.html" class="tsd-kind-icon">Categorical<wbr>Decoder</a>
+					</li>
+					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="../classes/_music_vae_model_.conductordecoder.html" class="tsd-kind-icon">Conductor<wbr>Decoder</a>
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
@@ -204,6 +228,9 @@
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="../classes/_music_vae_model_.encoder.html" class="tsd-kind-icon">Encoder</a>
+					</li>
+					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../classes/_music_vae_model_.groovedecoder.html" class="tsd-kind-icon">Groove<wbr>Decoder</a>
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="../classes/_music_vae_model_.hierarchicalencoder.html" class="tsd-kind-icon">Hierarchical<wbr>Encoder</a>
@@ -216,6 +243,9 @@
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="../classes/_music_vae_model_.nade.html" class="tsd-kind-icon">Nade</a>
+					</li>
+					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../classes/_music_vae_model_.nadedecoder.html" class="tsd-kind-icon">Nade<wbr>Decoder</a>
 					</li>
 				</ul>
 				<ul class="current">

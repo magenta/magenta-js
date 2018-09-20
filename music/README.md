@@ -15,12 +15,14 @@ For the Python TensorFlow implementations, see the [main Magenta repo](https://g
 
 ## Example Applications
 
-Here are a few applications built with MagentaMusic.js:
+Here are a few applications built with `@magenta/music`:
 
+- [Piano Transcription](https://piano-transcription.glitch.me) by [Monica Dinculescu](https://github.com/notwaldorf) and [Adam Roberts](https://github.com/adarob)
 - [Beat Blender](https://g.co/beatblender) by [Google Creative Lab](https://github.com/googlecreativelab)
 - [Melody Mixer](https://g.co/melodymixer) by [Google Creative Lab](https://github.com/googlecreativelab)
 - [Latent Loops](https://goo.gl/magenta/latent-loops) by [Google Pie Shop](https://github.com/teampieshop)
-- [Neural Drum Machine](https://codepen.io/teropa/pen/RMGxOQ) by [Tero Parviainen](https://github.com/teropa)
+- [Neural Drum Machine](https://goo.gl/magenta/neuraldrum) by [Tero Parviainen](https://github.com/teropa)
+- [Tenori-Off](https://tenori-off.glitch.me) by [Monica Dinculescu](https://github.com/notwaldorf)
 
 You can also try our [hosted demos](https://tensorflow.github.io/magenta-js/music/demos) for each model and have a look at the [demo code](./demos).
 
@@ -29,13 +31,23 @@ You can also try our [hosted demos](https://tensorflow.github.io/magenta-js/musi
 We have made an effort to port our most useful models, but please file an issue if you think something is
 missing, or feel free to submit a Pull Request!
 
+### Piano Transcription w/ Onsets and Frames
+
+[OnsetsAndFrames](https://tensorflow.github.io/magenta-js/music/classes/_transcription_model_.onsetsandframes.html) implements Magenta's [piano transcription model](g.co/magenta/onsets-frames) for converting raw audio to MIDI in the browser. While it is somewhat flexible, it works best on solo piano recordings. The algorithm takes half the duration of audio to run on most browsers, but due to a [Webkit bug](https://github.com/WebKit/webkit/blob/4a4870b75b95a836b516163d45a5cbd6f5222562/Source/WebCore/Modules/webaudio/AudioContext.cpp#L109), audio resampling will make this it significantly slower on Safari.
+
+**Demo Application:** [Piano Transcription](https://piano-transcription.glitch.me)
+
 ### MusicRNN
 
-[MusicRNN](https://tensorflow.github.io/magenta-js/classes/_music_vae_model_.musicvae.html) implements Magenta's LSTM-based language models. These include [MelodyRNN][melody-rnn], [DrumsRNN][drums-rnn], [ImprovRNN][improv-rnn], and [PerformanceRNN][performance-rnn].
+[MusicRNN](https://tensorflow.github.io/magenta-js/music/classes/_music_rnn_model_.musicrnn.html) implements Magenta's LSTM-based language models. These include [MelodyRNN][melody-rnn], [DrumsRNN][drums-rnn], [ImprovRNN][improv-rnn], and [PerformanceRNN][performance-rnn].
+
+**Demo Application:** [Neural Drum Machine](https://goo.gl/magenta/neuraldrum)
 
 ### MusicVAE
 
-[MusicVAE](https://tensorflow.github.io/magenta-js/classes/_music_rnn_model_.musicrnn.html) implements several configurations of Magenta's variational autoencoder model called [MusicVAE][music-vae] including melody and drum "loop" models, 4- and 16-bar "trio" models, and chord-conditioned "multi-track" models.
+[MusicVAE](https://tensorflow.github.io/magenta-js/music/classes/_music_vae_model_.musicvae.html) implements several configurations of Magenta's variational autoencoder model called [MusicVAE][music-vae] including melody and drum "loop" models, 4- and 16-bar "trio" models, and chord-conditioned "multi-track" models.
+
+**Demo Application:** [Endless Trios](https://goo.gl/magenta/endless-trios)
 
 ## Getting started
 

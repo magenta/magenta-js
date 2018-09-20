@@ -1,6 +1,6 @@
 {
   "name": "@magenta/music",
-  "version": "1.1.14",
+  "version": "1.2.0",
   "description": "Make music with machine learning, in the browser.",
   "main": "es5/index.js",
   "types": "es5/index.d.ts",
@@ -38,7 +38,7 @@
     "typescript": "^2.7.2"
   },
   "scripts": {
-    "prepublish": "yarn lint && yarn test && yarn build && yarn doc && yarn bundle && yarn publish-demos",
+    "prepublish": "yarn lint && yarn test && yarn build && yarn doc && yarn bundle",
     "build": "tsc && cp src/protobuf/proto.* es5/protobuf",
     "bundle": "browserify --standalone mm src/index.ts -p [tsify] > dist/magentamusic.js",
     "lint": "tslint -c ../tslint.json -p . -t verbose",
@@ -47,7 +47,7 @@
     "publish-demos": "yarn build-demos && mkdir -p ../docs/music/demos && cp demos/*.{js,html,mid,css} ../docs/music/demos",
     "run-demos": "yarn build-demos && http-server demos/",
     "proto": "sh compile-proto.sh",
-    "doc": "sh generate-docs.sh"
+    "doc": "sh generate-docs.sh && yarn publish-demos"
   },
   "author": "Magenta",
   "license": "Apache-2.0",

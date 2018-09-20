@@ -32,7 +32,7 @@ import {batchInput, pianorollToNoteSequence, unbatchOutput} from './transcriptio
 /**
  * Main "Onsets And Frames" piano transcription model class.
  */
-export class OnsetsAndFrames {
+class OnsetsAndFrames {
   private checkpointURL: string;
   public chunkLength: number;
   private initialized: boolean;
@@ -452,3 +452,5 @@ class Lstm {
                                        tf.concat3d(outputChunks, 1);
   }
 }
+
+export {OnsetsAndFrames};
