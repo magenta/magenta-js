@@ -17,7 +17,7 @@ For the Python TensorFlow implementations, see the [main Magenta repo](https://g
 
 Here are a few applications built with `@magenta/music`:
 
-- [Piano Transcription](https://piano-transcription.glitch.me) by [Monica Dinculescu](https://github.com/notwaldorf) and [Adam Roberts](https://github.com/adarob)
+- [Piano Scribe](https://piano-scribe.glitch.me) by [Monica Dinculescu](https://github.com/notwaldorf) and [Adam Roberts](https://github.com/adarob)
 - [Beat Blender](https://g.co/beatblender) by [Google Creative Lab](https://github.com/googlecreativelab)
 - [Melody Mixer](https://g.co/melodymixer) by [Google Creative Lab](https://github.com/googlecreativelab)
 - [Latent Loops](https://goo.gl/magenta/latent-loops) by [Google Pie Shop](https://github.com/teampieshop)
@@ -35,7 +35,7 @@ missing, or feel free to submit a Pull Request!
 
 [OnsetsAndFrames](https://tensorflow.github.io/magenta-js/music/classes/_transcription_model_.onsetsandframes.html) implements Magenta's [piano transcription model](g.co/magenta/onsets-frames) for converting raw audio to MIDI in the browser. While it is somewhat flexible, it works best on solo piano recordings. The algorithm takes half the duration of audio to run on most browsers, but due to a [Webkit bug](https://github.com/WebKit/webkit/blob/4a4870b75b95a836b516163d45a5cbd6f5222562/Source/WebCore/Modules/webaudio/AudioContext.cpp#L109), audio resampling will make this it significantly slower on Safari.
 
-**Demo Application:** [Piano Transcription](https://piano-transcription.glitch.me)
+**Demo Application:** [Piano Scribe](https://piano-scribe.glitch.me)
 
 ### MusicRNN
 
