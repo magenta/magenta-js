@@ -333,12 +333,9 @@ export class SoundFont {
 
     const instrumentSamples = new Map<number|'drums', SampleInfo[]>();
     samples.forEach((info) => {
-      if (info.isDrum === undefined) {
-        info.isDrum = false;
-      }
-      if (info.program === undefined) {
-        info.program = 0;
-      }
+      info.isDrum = info.isDrum || false;
+      info.program = info.program || 0;
+
       const instrument = info.isDrum ? 'drums' : info.program;
       const sampleInfo = {pitch: info.pitch, velocity: info.velocity};
       if (!instrumentSamples.has(instrument)) {
