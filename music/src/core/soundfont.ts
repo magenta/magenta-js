@@ -333,6 +333,12 @@ export class SoundFont {
 
     const instrumentSamples = new Map<number|'drums', SampleInfo[]>();
     samples.forEach((info) => {
+      if (info.isDrum === undefined) {
+        info.isDrum = false;
+      }
+      if (info.program === undefined) {
+        info.program = 0;
+      }
       const instrument = info.isDrum ? 'drums' : info.program;
       const sampleInfo = {pitch: info.pitch, velocity: info.velocity};
       if (!instrumentSamples.has(instrument)) {
@@ -366,7 +372,7 @@ export class SoundFont {
    */
   playNote(
       pitch: number, velocity: number, startTime: number, duration: number,
-      program: number, isDrum: boolean,
+      program = 0, isDrum = false,
       output: any) {  // tslint:disable-line:no-any
     const instrument = isDrum ? 'drums' : program;
     if (!this.initialized) {
