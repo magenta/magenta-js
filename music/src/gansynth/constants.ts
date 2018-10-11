@@ -1,4 +1,6 @@
 /**
+ * Constants for transcription.
+ *
  * @license
  * Copyright 2018 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,15 +14,15 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * =============================================================================
  */
+export const SAMPLE_RATE = 16000;
+export const SPEC_HOP_LENGTH = 512;
+export const FRAME_LENGTH_SECONDS = SPEC_HOP_LENGTH / SAMPLE_RATE;
+export const MEL_SPEC_BINS = 229;
 
-import * as tf from '@tensorflow/tfjs';
-export {tf};
+export const N_LATENTS = 256;
+export const N_PITCHES = 61;
 
-export * from './core';
-export * from './music_rnn';
-export * from './music_vae';
-export * from './protobuf';
-export * from './transcription';
-export * from './gansynth';
+export const MIN_MIDI_PITCH = 24;
+export const MAX_MIDI_PITCH = 84;
+export const MIDI_PITCHES = MAX_MIDI_PITCH - MIN_MIDI_PITCH + 1;
