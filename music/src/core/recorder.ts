@@ -18,6 +18,21 @@
  * limitations under the License.
  */
 import {NoteSequence} from '../protobuf';
+import * as Tone from 'tone';
+import {DEFAULT_QUARTERS_PER_MINUTE} from './constants';
+
+/**
+ * An interface for providing configurable properties to a Recorder.
+ * @param qpm The tempo at which to play the click track.
+ * @param playClick Whether to play a click track while recording.
+ * @param playCountIn Whether to play a count-in click at the beginning of
+ * the recording.
+ */
+interface RecorderConfig {
+  qpm?: number;
+  playClick?: boolean;
+  playCountIn?: boolean;
+}
 
 /**
  * An abstract base class for providing arbitrary callbacks for each note
@@ -37,12 +52,29 @@ export abstract class BaseRecorderCallback {
  * to a `NoteSequence`.
  */
 export class Recorder {
-  private recording: boolean;
   public callbackObject: BaseRecorderCallback;
+  private config: RecorderConfig;
+  private recording: boolean;
   private firstNoteTimestamp: number;
   private notes: NoteSequence.Note[] = [];
   private onNotes: Map<number, NoteSequence.Note>;
   private midiInputs: WebMidi.MIDIInput[] = [];
+
+  private loClick = new Tone
+      .MembraneSynth({
+        pitchDecay: 0.008,
+        envelope: {attack: 0.001, decay: 0.3, sustain: 0}
+      })
+      .toMaster();
+  private hiClick = new Tone
+      .MembraneSynth({
+        pitchDecay: 0.008,
+        envelope: {attack: 0.001, decay: 0.3, sustain: 0}
+      })
+      .toMaster();
+  // tslint:disable-next-line:no-any
+  private clickLoop: any;
+
   /**
    * `Recorder` constructor.
    *
@@ -50,9 +82,17 @@ export class Recorder {
    * object that contains run() and stop() methods to invode during
    * playback.
    */
-  constructor(callbackObject?: BaseRecorderCallback) {
+  constructor(config = {} as RecorderConfig,
+              callbackObject?: BaseRecorderCallback) {
+    this.config = {
+      playClick: config.playClick,
+      qpm: config.qpm || DEFAULT_QUARTERS_PER_MINUTE,
+      playCountIn: config.playCountIn
+    };
+
     this.callbackObject = callbackObject;
     this.recording = false;
+    this.onNotes = new Map<number, NoteSequence.Note>();
   }
 
   /**
@@ -83,6 +123,55 @@ export class Recorder {
   }
 
   /**
+   * Changes the tempo of the click loop.
+   *
+   * @param qpm The new qpm to use.
+   */
+  setTempo(qpm: number) {
+    this.config.qpm = qpm;
+    if (Tone.Transport.state === 'started') {
+      Tone.Transport.bpm.value = qpm;
+    }
+  }
+
+  /**
+   * Whether to play a click track while recording. If the recorder is
+   * already recording, changes will not take place until it is restarted.
+   *
+   * @param playClick True if it should play a click track.
+   */
+  enablePlayClick(playClick: boolean) {
+    this.config.playClick = playClick;
+  }
+
+  /**
+   * Whether to play a count in at the beginning of the recording. If the
+   * recorder is already recording, changes will not take place until it
+   * is restarted.
+   *
+   * @param countIn True if it should play a count in.
+   */
+  enablePlayCountIn(countIn: boolean) {
+    this.config.playCountIn = countIn;
+  }
+
+  private initClickLoop() {
+    let clickStep = 0;
+    this.clickLoop = new Tone.Loop((_:number) => {
+      if (clickStep % 4 === 0) {
+        this.loClick.triggerAttack('G5');
+      } else {
+        this.hiClick.triggerAttack('C6');
+      }
+      clickStep++;
+      if (this.config.playCountIn && clickStep === 4) {
+        Tone.Transport.stop();
+        this.clickLoop.stop();
+      }
+    }, '4n');
+  }
+
+  /**
    * Returns a list of all the MIDI inputs that are currently available to
    * record.
    */
@@ -104,6 +193,15 @@ export class Recorder {
       input.onmidimessage = (event) => {
         this.midiMessageReceived(event);
       };
+    }
+
+    if (this.config.playClick || this.config.playCountIn) {
+      this.initClickLoop();
+      Tone.Transport.bpm.value = this.config.qpm;
+      Tone.Transport.start();
+      this.clickLoop.start();
+    } else {
+      this.clickLoop = null;
     }
 
     this.recording = true;
@@ -131,6 +229,10 @@ export class Recorder {
     // Stop listening to MIDI messages.
     for (const input of this.midiInputs) {
       input.onmidimessage = null;
+    }
+    if (this.clickLoop) {
+      Tone.Transport.stop();
+      this.clickLoop.stop();
     }
 
     if (this.notes.length === 0) {
