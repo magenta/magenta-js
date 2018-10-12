@@ -158,6 +158,8 @@ export class Recorder {
   private initClickLoop() {
     let clickStep = 0;
     this.clickLoop = new Tone.Loop((_:number) => {
+      // TODO(notwaldorf): It would be nice if this took into account a
+      // time signature.
       if (clickStep % 4 === 0) {
         this.loClick.triggerAttack('G5');
       } else {
