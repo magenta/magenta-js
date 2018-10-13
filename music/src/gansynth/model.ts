@@ -64,6 +64,17 @@ class GANSynth {
                      .then(
                          (manifest: tf.io.WeightsManifestConfig) =>
                              tf.io.loadWeights(manifest, this.checkpointURL));
+
+    // Rescale for He initialization
+    // Training initialized to N(0,1) and then rescaled output, so here we get
+    // the same result by rescaling the saved weights.
+    for (const v in vars) {
+      if (v.includes('kernel')) {
+        const fanIn = vars[v].shape[0] * vars[v].shape[1] * vars[v].shape[2];
+        vars[v] = tf.mul(vars[v], tf.sqrt(2 / fanIn));
+      }
+    }
+
     this.build(vars);
     Object.keys(vars).map(name => vars[name].dispose());
     this.initialized = true;
@@ -111,15 +122,15 @@ class GANSynth {
       // The first layer is basically a 'same' conv2dTranspose
       // but have to implement with padding because python did it this way
       // otherwise weight matrix is transposed wrong
-      this.nn.add(pixelNorm(1e-8, {inputShape: [1, 1, N_LATENTS + N_PITCHES]}));
-      this.nn.add(initialPad(2, 16));
+      const inputShape = {inputShape: [1, 1, N_LATENTS + N_PITCHES]};
+      // this.nn.add(pixelNorm(1e-8, inputShape));
+      this.nn.add(initialPad(2, 16, inputShape));
       this.nn.add(tf.layers.conv2d(convConfig));
       this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
       this.nn.add(pixelNorm());
 
-      // convConfig.inputShape = null;
-      convConfig.kernelSize = [3, 3];
       convConfig.padding = 'same';
+      convConfig.kernelSize = [3, 3];
       this.nn.add(tf.layers.conv2d(convConfig));
       this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
       this.nn.add(pixelNorm());
@@ -265,15 +276,17 @@ class GANSynth {
   }
 
   random_sample(pitch: number) {
-    const z = tf.randomNormal([1, N_LATENTS], 0, 1, 'float32');
-    // Get one hot for pitch encoding
-    const pitchIdx = tf.tensor1d([pitch - MIN_MIDI_PITCH], 'int32');
-    const pitchOneHot = tf.oneHot(pitchIdx, MIDI_PITCHES);
-    // Concat and add width and height dimensions.
-    const cond = tf.concat([z, pitchOneHot], 1).expandDims(1).expandDims(1) as
-        tf.Tensor4D;
-    // dump(cond);
-    return this.predict(cond, 1);
+    return tf.tidy(() => {
+      const z = tf.randomNormal([1, N_LATENTS], 0, 1, 'float32');
+      // Get one hot for pitch encoding
+      const pitchIdx = tf.tensor1d([pitch - MIN_MIDI_PITCH], 'int32');
+      const pitchOneHot = tf.oneHot(pitchIdx, MIDI_PITCHES);
+      // Concat and add width and height dimensions.
+      const cond = tf.concat([z, pitchOneHot], 1).expandDims(1).expandDims(1) as
+          tf.Tensor4D;
+      // dump(cond);
+      return this.predict(cond, 1);
+    });
   }
 }
 

@@ -31,17 +31,14 @@ mm.logging.verbosity = mm.logging.Level.DEBUG;
 // }
 
 async function runGANSynth() {
-  // Display the input.
-  // const qns = mm.sequences.quantizeNoteSequence(MELODY_NS, 4);
-  // writeNoteSeqs('melody-cont-inputs', [qns]);
   console.log('Yay!');
 
   const gansynth = new mm.GANSynth(GANSYNTH_CHECKPOINT);
   await gansynth.initialize();
   console.log('Done loading!');
   const start = performance.now();
-  const specgram = await gansynth.random_sample(60);
-  writeTimer('single-sample-gen-time', start);
+  const specgram = await gansynth.random_sample(24);
+  await writeTimer('single-sample-gen-time', start);
   console.log(specgram.shape);
 
   // PLOTTING
@@ -69,6 +66,10 @@ async function runGANSynth() {
   await tf.toPixels(ifreq, ifreqCanvas);
 
   // dump(mag);
+  mag.dispose();
+  magSlice.dispose();
+  ifreq.dispose();
+  ifreqSlice.dispose();
   specgram.dispose();
   gansynth.dispose();
   console.log('Done disposing!');
