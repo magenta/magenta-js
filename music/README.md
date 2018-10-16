@@ -63,7 +63,7 @@ Add the following code to an HTML file:
 <html>
   <head>
     <!-- Load @magenta/music -->
-    <script src="https://cdn.jsdelivr.net/npm/@magenta/music@1.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@magenta/music@^1.0.0"></script>
     <script>
       // Instantiate model by loading desired config.
       const model = new mm.MusicVAE(
