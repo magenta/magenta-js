@@ -24,6 +24,7 @@ import * as tf from '@tensorflow/tfjs';
 
 import * as logging from '../core/logging';
 
+// import {melToLinearMatrix} from './audio_utils';
 import {MIDI_PITCHES, MIN_MIDI_PITCH, N_LATENTS, N_PITCHES} from './constants';
 import {boxUpscale, initialPad, pixelNorm} from './custom_layers';
 
@@ -58,7 +59,6 @@ class GANSynth {
   async initialize() {
     this.dispose();
     const startTime = performance.now();
-
     const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
                      .then((response) => response.json())
                      .then(
@@ -209,7 +209,7 @@ class GANSynth {
 
       this.outputShape = this.nn.outputShape as number[];
       this.setWeights(vars);
-      console.log(this.outputShape);
+      console.log(`Output Shape:${this.outputShape}`);
     });
   }
 

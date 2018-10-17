@@ -17,15 +17,86 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import * as tf from '@tensorflow/tfjs';
+// import {test_util} from '@tensorflow/tfjs';
 //@ts-ignore
 import * as FFT from 'fft.js';
 import * as ndarray from 'ndarray';
+
 //@ts-ignore
 import * as resample from 'ndarray-resample';
 
 import * as logging from '../core/logging';
 
 import {MEL_SPEC_BINS, SAMPLE_RATE, SPEC_HOP_LENGTH} from './constants';
+import {MEL_SPARSE_COEFFS} from './mel_sparse_coeffs';
+
+//------------------------------------------------------------------------------
+// GANSynth Code
+//------------------------------------------------------------------------------
+// const MEL_BREAK_FREQUENCY_HERTZ = 700.0;
+// const MEL_HIGH_FREQUENCY_Q = 1127.0;
+const MAG_DESCALE_A = 0.0661371661726;
+const MAG_DESCALE_B = 0.113718730221;
+const PHASE_DESCALE_A = 0.8;
+const PHASE_DESCALE_B = 0.0;
+
+export function linearToMelMatrix() {
+  const l2m = tf.buffer([1024, 1024]);
+  for (let i = 0; i < MEL_SPARSE_COEFFS.length; i++) {
+    const x = MEL_SPARSE_COEFFS[i] as number[];
+    l2m.set(x[2], x[0], x[1]);
+  }
+  return l2m.toTensor();
+}
+
+export function melToLinearMatrix() {
+  const l2m = tf.buffer([1024, 1024]);
+  for (let i = 0; i < MEL_SPARSE_COEFFS.length; i++) {
+    const x = MEL_SPARSE_COEFFS[i] as number[];
+    l2m.set(x[2], x[0], x[1]);
+  }
+  return l2m.toTensor();
+}
+
+// export function melToLinearMatrix() {
+//   const m = linearToMelMatrix();
+//   const mTranspose = tf.transpose(m);
+//   const p = tf.matMul(m, mTranspose);
+//   const sumP = tf.sum(p, 0);
+//   sumP.print();
+//   const d = tf.div(1.0, tf.add(sumP, 1e-12));
+//   const nD = d.shape[0];
+//   const dDiag = tf.eye(nD, nD).mul(d);
+//   // d = [1.0 / x if np.abs(x) > 1.0e-8 else x for x in sumP]
+//   return tf.matMul(mTranspose, dDiag);
+// }
+
+function descale(data: tf.Tensor, a: number, b: number) {
+  return tf.div(tf.sub(data, b), a);
+}
+
+export function melToLinear(melLogMag: tf.Tensor) {
+  const m2l = melToLinearMatrix().expandDims(0);
+  const melLogMagDb = descale(melLogMag, MAG_DESCALE_A, MAG_DESCALE_B);
+  const melMag = tf.exp(melLogMagDb);
+  // Aparrently matMul does higer rank
+  // mag2 = tf.tensordot(self._safe_exp(logmelmag2), m2l, 1)
+  console.log(melLogMag.shape);
+  const mag2 = tf.matMul(melMag, m2l);
+  console.log(mag2.shape);
+  return mag2;
+}
+
+export function ifreqToPhase(ifreq: tf.Tensor) {
+  const ifreqDescale = descale(ifreq, PHASE_DESCALE_A, PHASE_DESCALE_B);
+  const phase = tf.cumsum(tf.mul(ifreq, Math.PI));
+  return phase;
+}
+
+//------------------------------------------------------------------------------
+// Onsets and Frames Code
+//------------------------------------------------------------------------------
 
 // Safari Webkit only supports 44.1kHz audio.
 const WEBKIT_SAMPLE_RATE = 44100;
@@ -219,41 +290,6 @@ function magSpectrogram(
   return [spec, nFft];
 }
 
-function stft(y: Float32Array, params: SpecParams): Float32Array[] {
-  const nFft = params.nFft || 2048;
-  const winLength = params.winLength || nFft;
-  const hopLength = params.hopLength || Math.floor(winLength / 4);
-
-  let fftWindow = hannWindow(winLength);
-
-  // Pad the window to be the size of nFft.
-  fftWindow = padCenterToLength(fftWindow, nFft);
-
-  // Pad the time series so that the frames are centered.
-  y = padReflect(y, Math.floor(nFft / 2));
-
-  // Window the time series.
-  const yFrames = frame(y, nFft, hopLength);
-  // Pre-allocate the STFT matrix.
-  const stftMatrix = [];
-
-  const width = yFrames.length;
-  const height = nFft + 2;
-  for (let i = 0; i < width; i++) {
-    // Each column is a Float32Array of size height.
-    const col = new Float32Array(height);
-    stftMatrix[i] = col;
-  }
-
-  for (let i = 0; i < width; i++) {
-    // Populate the STFT matrix.
-    const winBuffer = applyWindow(yFrames[i], fftWindow);
-    const col = fft(winBuffer);
-    stftMatrix[i].set(col.slice(0, height));
-  }
-
-  return stftMatrix;
-}
 
 function applyWholeFilterbank(
     spec: Float32Array[], filterbank: Float32Array[]): Float32Array[] {
@@ -393,14 +429,6 @@ function createMelFilterbank(params: MelParams): Float32Array[] {
   return weights;
 }
 
-function fft(y: Float32Array) {
-  const fft = new FFT(y.length);
-  const out = fft.createComplexArray();
-  const data = fft.toComplexArray(y);
-  fft.transform(out, data);
-  return out;
-}
-
 function hannWindow(length: number) {
   const win = new Float32Array(length);
   for (let i = 0; i < length; i++) {
@@ -482,4 +510,111 @@ function pow(arr: Float32Array, power: number) {
 
 function max(arr: Float32Array) {
   return arr.reduce((a, b) => Math.max(a, b));
+}
+
+function add(arr0: Float32Array, arr1: Float32Array) {
+  if (arr0.length !== arr1.length) {
+    console.error(
+        `Array lengths must be equal to add: ${arr0.length}, ${arr0.length}`);
+    return null;
+  }
+
+  const out = new Float32Array(arr0.length);
+  for (let i = 0; i < arr0.length; i++) {
+    out[i] = arr0[i] + arr1[i];
+  }
+  return out;
+}
+
+function fft(y: Float32Array) {
+  const fft = new FFT(y.length);
+  const out = fft.createComplexArray();
+  const data = fft.toComplexArray(y);
+  fft.transform(out, data);
+  return out;
+}
+
+export function stft(y: Float32Array, params: SpecParams): Float32Array[] {
+  const nFft = params.nFft || 2048;
+  const winLength = params.winLength || nFft;
+  const hopLength = params.hopLength || Math.floor(winLength / 4);
+
+  let fftWindow = hannWindow(winLength);
+
+  // Pad the window to be the size of nFft.
+  fftWindow = padCenterToLength(fftWindow, nFft);
+
+  // Pad the time series so that the frames are centered.
+  y = padReflect(y, Math.floor(nFft / 2));
+
+  // Window the time series.
+  const yFrames = frame(y, nFft, hopLength);
+  // Pre-allocate the STFT matrix.
+  const stftMatrix = [];
+
+  const width = yFrames.length;
+  const height = 2 * (nFft + 1);
+  for (let i = 0; i < width; i++) {
+    // Each column is a Float32Array of size height.
+    const col = new Float32Array(height);
+    stftMatrix[i] = col;
+  }
+
+  for (let i = 0; i < width; i++) {
+    // Populate the STFT matrix.
+    const winBuffer = applyWindow(yFrames[i], fftWindow);
+    const col = fft(winBuffer);
+    stftMatrix[i].set(col.slice(0, height));
+  }
+
+  return stftMatrix;
+}
+
+// Perform ifft on a single frame
+export function ifft(reIm: Float32Array): Float32Array {
+  // Interleave
+  const nFFT = reIm.length / 2;
+  const fft = new FFT(nFFT);
+  const recon = fft.createComplexArray();
+  fft.inverseTransform(recon, reIm);
+  // Just take the real part
+  const result = new Float32Array(nFFT);
+  for (let i = 0; i < nFFT; i++) {
+    result[i] = (recon[2 * i]);
+  }
+  return result;
+}
+
+export function istft(reIm: Float32Array[], params: SpecParams): Float32Array {
+  const nFrames = reIm.length;
+  const nReIm = reIm[0].length;
+  const nFft = (nReIm / 2) - 1;
+  const winLength = params.winLength || nFft;
+  const hopLength = params.hopLength || Math.floor(winLength / 4);
+
+  let ifftWindow = hannWindow(winLength);
+
+  // Pad the window to be the size of nFft.
+  ifftWindow = padCenterToLength(ifftWindow, nFft);
+
+  // Pre-allocate the audio output
+  const expectedSignalLen = nFft + hopLength * (nFrames - 1);
+  const y = new Float32Array(expectedSignalLen);
+
+  // Perform inverse ffts
+  for (let i = 0; i < nFrames; i++) {
+    const sample = i * hopLength;
+    // skip dc component to make a power of 2
+    let yTmp = ifft(reIm[i].slice(2, nReIm));
+    yTmp = applyWindow(yTmp, ifftWindow);
+    yTmp = add(yTmp, y.slice(sample, sample + nFft));
+    y.set(yTmp, sample);
+  }
+
+  // Normalize by the sum of squared window
+
+  // Center
+  const yTrimmed = y.slice(nFft / 2, y.length - (nFft / 2));
+
+  return yTrimmed;
 }
