@@ -76,7 +76,7 @@ function descale(data: tf.Tensor, a: number, b: number) {
   return tf.div(tf.sub(data, b), a);
 }
 
-export function melToLinear(melLogMag: tf.Tensor) {
+export function melToLinear(melLogMag: tf.Tensor3D) {
   const m2l = melToLinearMatrix().expandDims(0);
   const melLogMagDb = descale(melLogMag, MAG_DESCALE_A, MAG_DESCALE_B);
   const melMag = tf.exp(melLogMagDb);
@@ -88,9 +88,11 @@ export function melToLinear(melLogMag: tf.Tensor) {
   return mag2;
 }
 
-export function ifreqToPhase(ifreq: tf.Tensor) {
+export function ifreqToPhase(ifreq: tf.Tensor3D) {
+  const m2l = melToLinearMatrix().expandDims(0);
   const ifreqDescale = descale(ifreq, PHASE_DESCALE_A, PHASE_DESCALE_B);
-  const phase = tf.cumsum(tf.mul(ifreq, Math.PI));
+  const ifreqLin = tf.matMul(ifreqDescale, m2l);
+  const phase = tf.cumsum(tf.mul(ifreqLin, Math.PI), 1);
   return phase;
 }
 
@@ -289,7 +291,6 @@ function magSpectrogram(
   const nFft = stft[0].length - 1;
   return [spec, nFft];
 }
-
 
 function applyWholeFilterbank(
     spec: Float32Array[], filterbank: Float32Array[]): Float32Array[] {

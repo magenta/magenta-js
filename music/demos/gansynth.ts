@@ -37,33 +37,74 @@ mm.logging.verbosity = mm.logging.Level.DEBUG;
 async function runGANSynth() {
   console.log('Yay!!');
 
-  const SR = 16000;
-  const T = 1.0;
-  const audioArray =
-      tf.sin(tf.linspace(0, 400 * 2 * Math.PI, T * SR)).dataSync();
-  const audio = new Float32Array(audioArray);
+  // Testing inverse fourier transform
+  // const SR = 16000;
+  // const T = 1.0;
+  // const audioArray =
+  //     tf.sin(tf.linspace(0, 400 * 2 * Math.PI, T * SR)).dataSync();
+  // const audio = new Float32Array(audioArray);
 
-  const specParams =
-      {nFFt: 2048, winLength: 2048, hopLength: 512, sampleRate: SR};
-  const reIm = stft(audio, specParams);
-  console.log(reIm);
+  // const specParams =
+  //     {nFFt: 2048, winLength: 2048, hopLength: 512, sampleRate: SR};
+  // const reIm = stft(audio, specParams);
+  // console.log(reIm);
+  // const ispecParams =
+  //     {nFFt: 2048, winLength: 2048, hopLength: 512, sampleRate: SR};
+  // const recon = istft(reIm, ispecParams);
+  // console.log(recon);
+  // const audioBuffer = Tone.context.createBuffer(1, T * SR, SR);
+  // audioBuffer.copyToChannel(recon, 0, 0);
+  // const options = {'url': audioBuffer, 'loop': true};
+  // const player = new Tone.Player(options).toMaster();
+  // player.start();
+
+  const gansynth = new mm.GANSynth(GANSYNTH_CHECKPOINT);
+  await gansynth.initialize();
+  console.log('Done loading!');
+  const start = await performance.now();
+  const specgram = await gansynth.random_sample(60);
+  await writeTimer('single-sample-gen-time', start);
+  // console.log('Specgram:' + specgram.shape);
+
+  // Synthesize audio
+  const magSlice =
+      tf.slice(specgram, [0, 0, 0, 0], [1, -1, -1, 1]).reshape([1, 128, 1024]);
+  const magMel = magSlice as tf.Tensor3D;
+  const mag = melToLinear(magMel);
+
+  const ifreqSlice =
+      tf.slice(specgram, [0, 0, 0, 1], [1, -1, -1, 1]).reshape([1, 128, 1024]);
+  const ifreq = ifreqSlice as tf.Tensor3D;
+  const phase = ifreqToPhase(ifreq);
+
+  let real = mag.mul(tf.cos(phase));
+  real = tf.concat([real, tf.reverse(real, 2)], 2);
+  let imag = mag.mul(tf.sin(phase));
+  imag = tf.concat([imag, tf.reverse(tf.mul(imag, -1.0), 2)], 2);
+  const reImBatch = tf.concat([real, imag], 0).expandDims(3);
+  const crops = [[0, 0], [0, 0]];
+  const reImNoPad =
+      tf.batchToSpaceND(reImBatch, [1, 2], crops).reshape([128, 4096]);
+  // Add back in DC component
+  const reImTensor = tf.pad(reImNoPad, [[0, 0], [2, 0]]);
+  const reImArray = reImTensor.dataSync();
+  const reIm = [] as Float32Array[];
+  for (let i = 0; i < 128; i++) {
+    reIm[i] = reImArray.slice(i * 4098, (i + 1) * 4098) as Float32Array;
+  }
+
+  // ISTFT and play sound
+  const T = 4.0;
+  const SR = 16000;
   const ispecParams =
       {nFFt: 2048, winLength: 2048, hopLength: 512, sampleRate: SR};
   const recon = istft(reIm, ispecParams);
   console.log(recon);
-
   const audioBuffer = Tone.context.createBuffer(1, T * SR, SR);
   audioBuffer.copyToChannel(recon, 0, 0);
-  const player = new Tone.Player(audioBuffer).toMaster();
+  const options = {'url': audioBuffer, 'loop': true};
+  const player = new Tone.Player(options).toMaster();
   player.start();
-
-  // const gansynth = new mm.GANSynth(GANSYNTH_CHECKPOINT);
-  // await gansynth.initialize();
-  // console.log('Done loading!');
-  // const start = performance.now();
-  // const specgram = await gansynth.random_sample(60);
-  // await writeTimer('single-sample-gen-time', start);
-  // // console.log('Specgram:' + specgram.shape);
 
   // // // // PLOTTING
   // // // // Get magnitudes
@@ -103,7 +144,6 @@ async function runGANSynth() {
   // // Get IFreq
   // const ifreqSlice =
   //     tf.slice(specgram, [0, 0, 0, 1], [1, -1, -1, 1]).reshape([128, 1024]);
-  // tf.div(data, 0.8);
   // let ifreq = ifreqSlice as tf.Tensor3D;
   // // scale to [0, 1]
   // ifreq = tf.sub(ifreq, tf.min(ifreq));
@@ -112,14 +152,6 @@ async function runGANSynth() {
   // const ifreqCanvas =
   //     document.getElementById('ifreq-canvas') as HTMLCanvasElement;
   // await tf.toPixels(ifreq, ifreqCanvas);
-
-  // const phase = ifreqToPhase(ifreq));
-  // const complexMag = tf.complex(magLin, tf.zeros(magLin.shape));
-  // const complexPhase = tf.complex(tf.cos(phase), tf.sin(phase));
-  // const complexNoPad = complexMag.mul(complexPhase);
-  // // Add back in DC component
-  // const complexPad = tf.pad(complexNoPad, [[0, 0], [1, 0]]);
-  // complexPad.print();
 
   // // dump(mag);
   // mag.dispose();
