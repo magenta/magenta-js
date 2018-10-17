@@ -593,6 +593,10 @@ export function istft(reIm: Float32Array[], params: SpecParams): Float32Array {
   const hopLength = params.hopLength || Math.floor(winLength / 4);
 
   let ifftWindow = hannWindow(winLength);
+  // Adjust normalization for 75% cola (factor of two)
+  for (let i = 0; i < ifftWindow.length; i++) {
+    ifftWindow[i] = ifftWindow[i] / 2.0;
+  }
 
   // Pad the window to be the size of nFft.
   ifftWindow = padCenterToLength(ifftWindow, nFft);
@@ -610,8 +614,6 @@ export function istft(reIm: Float32Array[], params: SpecParams): Float32Array {
     yTmp = add(yTmp, y.slice(sample, sample + nFft));
     y.set(yTmp, sample);
   }
-
-  // Normalize by the sum of squared window
 
   // Center
   const yTrimmed = y.slice(nFft / 2, y.length - (nFft / 2));
