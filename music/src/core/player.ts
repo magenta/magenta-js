@@ -120,6 +120,17 @@ export abstract class BasePlayer {
   }
 
   /**
+   * Resumes the Audio context. Due to autoplay restrictions, you must call
+   * this function in a click handler (i.e. as a result of a user action) before
+   * you can start playing audio with a player. This is already done in start(),
+   * but you might have to call it yourself if you have any deferred/async
+   * calls.
+   */
+  resumeContext() {
+    Tone.context.resume();
+  }
+
+  /**
    * Starts playing a `NoteSequence` (either quantized or unquantized), and
    * returns a Promise that resolves when it is done playing.
    * @param seq The `NoteSequence` to play.
@@ -128,7 +139,9 @@ export abstract class BasePlayer {
    * default of 120. Only valid for quantized sequences.
    * @returns a Promise that resolves when playback is complete.
    */
+
   start(seq: INoteSequence, qpm?: number): Promise<void> {
+    this.resumeContext();
     const isQuantized = sequences.isQuantizedSequence(seq);
     if (this.playClick && isQuantized) {
       seq = this.makeClickSequence(seq);
@@ -371,7 +384,10 @@ export class Player extends BasePlayer {
  *
  * Example (explicitly loading samples):
  *
- *   `player.loadSamples(seq).then(() => player.start(seq))`
+ *
+ *   `player.loadSamples(seq).then(() => {
+ *      player.start(seq)
+ *    })`
  *
  * Explicitly loads samples, so that playing starts immediately when `start` is
  * called.
@@ -411,7 +427,19 @@ export class SoundFontPlayer extends BasePlayer {
                       })));
   }
 
+  /**
+   * Resumes the Audio context. Due to autoplay restrictions, you must call
+   * this function in a click handler (i.e. as a result of a user action) before
+   * you can start playing audio with a player. This is already done in start(),
+   * but you might have to call it yourself if you have any deferred/async
+   * calls.
+   */
+  resumeContext() {
+    Tone.context.resume();
+  }
+
   start(seq: INoteSequence, qpm?: number): Promise<void> {
+    this.resumeContext();
     return this.loadSamples(seq).then(() => super.start(seq, qpm));
   }
 
