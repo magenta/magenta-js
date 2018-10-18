@@ -194,6 +194,7 @@ function generateDrumsAndMelodies() {
           callback.stop();
         } else {
           isPlayingPiano = false;
+          player.resumeContext();
           player.start(DRUM_SEQS[j])
               .then(
                   () =>
@@ -215,6 +216,7 @@ function generateDrumsAndMelodies() {
         callback.stop();
       } else {
         isPlayingPiano = true;
+        player.resumeContext();
         player.start(MEL_TEAPOT)
             .then(
                 () =>
@@ -233,6 +235,7 @@ function generateDrumsAndMelodies() {
         callback.stop();
       } else {
         isPlayingPiano = true;
+        player.resumeContext();
         player.start(MEL_TWINKLE)
             .then(
                 () =>

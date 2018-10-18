@@ -399,6 +399,7 @@ function createPlayerButton(
       player.stop();
       button.textContent = playText;
     } else {
+      player.resumeContext();
       player.start(visualizer.noteSequence)
           .then(() => (button.textContent = playText));
       button.textContent = 'Stop';

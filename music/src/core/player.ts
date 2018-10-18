@@ -120,14 +120,29 @@ export abstract class BasePlayer {
   }
 
   /**
+   * Resumes the Audio Context. Due to autoplay restrictions, you must call
+   * this function in a click handler (i.e. as a result of a user action) before
+   * you can start playing audio with a player.
+   */
+  resumeContext() {
+    Tone.context.resume();
+  }
+
+  /**
    * Starts playing a `NoteSequence` (either quantized or unquantized), and
    * returns a Promise that resolves when it is done playing.
+   * Note that due to autoplaying audio restrictions on some browsers (Safari
+   * in particular), you must call `resumeContext()` in a click
+   * handler (i.e. as a result of a user action) before
+   * calling `start()` -- otherwise, the audio is considered auto playing and
+   * will be blocked.
    * @param seq The `NoteSequence` to play.
    * @param qpm (Optional) If specified, will play back at this qpm. If not
    * specified, will use either the qpm specified in the sequence or the
    * default of 120. Only valid for quantized sequences.
    * @returns a Promise that resolves when playback is complete.
    */
+
   start(seq: INoteSequence, qpm?: number): Promise<void> {
     const isQuantized = sequences.isQuantizedSequence(seq);
     if (this.playClick && isQuantized) {
@@ -371,7 +386,11 @@ export class Player extends BasePlayer {
  *
  * Example (explicitly loading samples):
  *
- *   `player.loadSamples(seq).then(() => player.start(seq))`
+ *
+ *   `player.loadSamples(seq).then(() => {
+ *      player.resumeContext();  // enable audio.
+ *      player.start(seq)
+ *    })`
  *
  * Explicitly loads samples, so that playing starts immediately when `start` is
  * called.
@@ -411,6 +430,22 @@ export class SoundFontPlayer extends BasePlayer {
                       })));
   }
 
+  /**
+   * Resumes the Audio Context. Due to autoplay restrictions, you must call
+   * this function in a click handler (i.e. as a result of a user action) before
+   * you can start playing audio with a player.
+   */
+  resumeContext() {
+    Tone.context.resume();
+  }
+
+  /**
+   * Note that due to autoplaying audio restrictions on some browsers (Safari
+   * in particular), you must call `resumeContext()` in a click
+   * handler (i.e. as a result of a user action) before
+   * calling `start()` -- otherwise, the audio is considered auto playing and
+   * will be blocked.
+   */
   start(seq: INoteSequence, qpm?: number): Promise<void> {
     return this.loadSamples(seq).then(() => super.start(seq, qpm));
   }

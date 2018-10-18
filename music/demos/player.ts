@@ -51,6 +51,7 @@ function generateTempoPlayer() {
       player.stop();
       playBtn.textContent = 'Play';
     } else {
+      player.resumeContext();
       player.start(visualizer.noteSequence);
       playBtn.textContent = 'Stop';
     }
