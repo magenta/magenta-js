@@ -19,7 +19,7 @@ import * as tf from '@tensorflow/tfjs-core';
 import * as stftModule from 'stft';
 import * as Tone from 'tone';
 
-import {ifft, ifreqToPhase, istft, linearToMelMatrix, melToLinear, melToLinearMatrix, stft} from '../src/gansynth/audio_utils';
+import {ifft, ifreqToPhase, istft, melToLinear, melToLinearMatrix, stft} from '../src/gansynth/audio_utils';
 import * as mm from '../src/index';
 
 // import {CHECKPOINTS_DIR} from './common';
@@ -106,29 +106,46 @@ async function runGANSynth() {
   const player = new Tone.Player(options).toMaster();
   player.start();
 
-  // // // // PLOTTING
-  // // // // Get magnitudes
-  // const magSlice =
-  //     tf.slice(specgram, [0, 0, 0, 0], [1, -1, -1, 1]).reshape([128, 1024]);
-  // let mag = magSlice as tf.Tensor2D;
-  // // Scale from [-1, 1] to [0, 1]
-  // mag = tf.add(mag, 1.0);
-  // mag = tf.div(mag, 2.0);
-  // // Plot on canvas
-  // const magCanvas = document.getElementById('mag-canvas') as
-  // HTMLCanvasElement; await tf.toPixels(mag, magCanvas);
+  // GUI
+  const startButton = document.createElement('BUTTON');
+  const startText = document.createTextNode('Start');
+  startButton.appendChild(startText);
+  document.body.appendChild(startButton);
+  startButton.addEventListener('click', () => {
+    player.start();
+  });
 
-  // // Plot Mel 2 Linear Matrix
-  // // let m2l = linearToMelMatrix() as tf.Tensor2D;
-  // let m2l = melToLinearMatrix() as tf.Tensor2D;
-  // tf.min(m2l).print();
-  // tf.max(m2l).print();
-  // // scale to [0, 1]
-  // m2l = tf.sub(m2l, tf.min(m2l));
-  // m2l = tf.div(m2l, tf.max(m2l));
-  // // Plot on canvas
-  // const m2lCanvas = document.getElementById('m2l-canvas') as
-  // HTMLCanvasElement; await tf.toPixels(m2l, m2lCanvas);
+  const stopButton = document.createElement('BUTTON');
+  const stopText = document.createTextNode('Stop');
+  stopButton.appendChild(stopText);
+  document.body.appendChild(stopButton);
+  stopButton.addEventListener('click', () => {
+    player.stop();
+  });
+
+
+  // // // PLOTTING
+  // // // Get magnitudes
+  const magSlicePlot =
+      tf.slice(specgram, [0, 0, 0, 0], [1, -1, -1, 1]).reshape([128, 1024]);
+  let magPlot = magSlicePlot as tf.Tensor2D;
+  // Scale from [-1, 1] to [0, 1]
+  magPlot = tf.add(magPlot, 1.0);
+  magPlot = tf.div(magPlot, 2.0);
+  // Plot on canvas
+  const magCanvas = document.getElementById('mag-canvas') as HTMLCanvasElement;
+  await tf.toPixels(magPlot, magCanvas);
+
+  // Plot Mel 2 Linear Matrix
+  let m2l = melToLinearMatrix() as tf.Tensor2D;
+  tf.min(m2l).print();
+  tf.max(m2l).print();
+  // scale to [0, 1]
+  m2l = tf.sub(m2l, tf.min(m2l));
+  m2l = tf.div(m2l, tf.max(m2l));
+  // Plot on canvas
+  const m2lCanvas = document.getElementById('m2l-canvas') as HTMLCanvasElement;
+  await tf.toPixels(m2l, m2lCanvas);
 
   // // // Convert to linear
   // mag = mag.expandDims(0);

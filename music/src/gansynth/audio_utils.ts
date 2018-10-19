@@ -41,36 +41,16 @@ const MAG_DESCALE_B = 0.113718730221;
 const PHASE_DESCALE_A = 0.8;
 const PHASE_DESCALE_B = 0.0;
 
-export function linearToMelMatrix() {
-  const l2m = tf.buffer([1024, 1024]);
-  for (let i = 0; i < MEL_SPARSE_COEFFS.length; i++) {
-    const x = MEL_SPARSE_COEFFS[i] as number[];
-    l2m.set(x[2], x[0], x[1]);
-  }
-  return l2m.toTensor();
-}
-
 export function melToLinearMatrix() {
-  const l2m = tf.buffer([1024, 1024]);
+  const m2l = tf.buffer([1024, 1024]);
   for (let i = 0; i < MEL_SPARSE_COEFFS.length; i++) {
+    // Testing to fix scaling
+    // for (let i = 0; i < 300; i++) {
     const x = MEL_SPARSE_COEFFS[i] as number[];
-    l2m.set(x[2], x[0], x[1]);
+    m2l.set(x[2], x[0], x[1]);
   }
-  return l2m.toTensor();
+  return m2l.toTensor();
 }
-
-// export function melToLinearMatrix() {
-//   const m = linearToMelMatrix();
-//   const mTranspose = tf.transpose(m);
-//   const p = tf.matMul(m, mTranspose);
-//   const sumP = tf.sum(p, 0);
-//   sumP.print();
-//   const d = tf.div(1.0, tf.add(sumP, 1e-12));
-//   const nD = d.shape[0];
-//   const dDiag = tf.eye(nD, nD).mul(d);
-//   // d = [1.0 / x if np.abs(x) > 1.0e-8 else x for x in sumP]
-//   return tf.matMul(mTranspose, dDiag);
-// }
 
 function descale(data: tf.Tensor, a: number, b: number) {
   return tf.div(tf.sub(data, b), a);
@@ -82,18 +62,16 @@ export function melToLinear(melLogMag: tf.Tensor3D) {
   const melMag = tf.exp(melLogMagDb);
   // Aparrently matMul does higer rank
   // mag2 = tf.tensordot(self._safe_exp(logmelmag2), m2l, 1)
-  console.log(melLogMag.shape);
-  const mag2 = tf.matMul(melMag, m2l);
-  console.log(mag2.shape);
-  return mag2;
+  const magLin = tf.mul(0.5, tf.matMul(melMag, m2l));
+  return magLin;
 }
 
 export function ifreqToPhase(ifreq: tf.Tensor3D) {
   const m2l = melToLinearMatrix().expandDims(0);
   const ifreqDescale = descale(ifreq, PHASE_DESCALE_A, PHASE_DESCALE_B);
-  const ifreqLin = tf.matMul(ifreqDescale, m2l);
-  const phase = tf.cumsum(tf.mul(ifreqLin, Math.PI), 1);
-  return phase;
+  const phase = tf.cumsum(tf.mul(ifreqDescale, Math.PI), 1);
+  const phaseLin = tf.matMul(phase, m2l);
+  return phaseLin;
 }
 
 //------------------------------------------------------------------------------
