@@ -73159,6 +73159,8 @@ var data = require("./data");
 exports.data = data;
 var logging = require("./logging");
 exports.logging = logging;
+var performance = require("./performance");
+exports.performance = performance;
 var sequences = require("./sequences");
 exports.sequences = sequences;
 __export(require("./midi_io"));
@@ -73166,7 +73168,7 @@ __export(require("./player"));
 __export(require("./recorder"));
 __export(require("./visualizer"));
 
-},{"./aux_inputs":302,"./chords":303,"./constants":304,"./data":305,"./logging":307,"./midi_io":308,"./player":310,"./recorder":311,"./sequences":312,"./visualizer":314}],307:[function(require,module,exports){
+},{"./aux_inputs":302,"./chords":303,"./constants":304,"./data":305,"./logging":307,"./midi_io":308,"./performance":309,"./player":310,"./recorder":311,"./sequences":312,"./visualizer":314}],307:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Level;
@@ -73647,8 +73649,12 @@ var BasePlayer = (function () {
         clickSeq.notes.sort(compareQuantizedNotes);
         return clickSeq;
     };
+    BasePlayer.prototype.resumeContext = function () {
+        Tone.context.resume();
+    };
     BasePlayer.prototype.start = function (seq, qpm) {
         var _this = this;
+        this.resumeContext();
         var isQuantized = _1.sequences.isQuantizedSequence(seq);
         if (this.playClick && isQuantized) {
             seq = this.makeClickSequence(seq);
@@ -73920,8 +73926,12 @@ var SoundFontPlayer = (function (_super) {
             });
         });
     };
+    SoundFontPlayer.prototype.resumeContext = function () {
+        Tone.context.resume();
+    };
     SoundFontPlayer.prototype.start = function (seq, qpm) {
         var _this = this;
+        this.resumeContext();
         return this.loadSamples(seq).then(function () { return _super.prototype.start.call(_this, seq, qpm); });
     };
     SoundFontPlayer.prototype.playNote = function (time, note) {
@@ -73989,6 +73999,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var protobuf_1 = require("../protobuf");
+var Tone = require("tone");
+var constants_1 = require("./constants");
 var BaseRecorderCallback = (function () {
     function BaseRecorderCallback() {
     }
@@ -73996,11 +74008,30 @@ var BaseRecorderCallback = (function () {
 }());
 exports.BaseRecorderCallback = BaseRecorderCallback;
 var Recorder = (function () {
-    function Recorder(callbackObject) {
+    function Recorder(config, callbackObject) {
+        if (config === void 0) { config = {}; }
         this.notes = [];
         this.midiInputs = [];
+        this.loClick = new Tone
+            .MembraneSynth({
+            pitchDecay: 0.008,
+            envelope: { attack: 0.001, decay: 0.3, sustain: 0 }
+        })
+            .toMaster();
+        this.hiClick = new Tone
+            .MembraneSynth({
+            pitchDecay: 0.008,
+            envelope: { attack: 0.001, decay: 0.3, sustain: 0 }
+        })
+            .toMaster();
+        this.config = {
+            playClick: config.playClick,
+            qpm: config.qpm || constants_1.DEFAULT_QUARTERS_PER_MINUTE,
+            playCountIn: config.playCountIn
+        };
         this.callbackObject = callbackObject;
         this.recording = false;
+        this.onNotes = new Map();
     }
     Recorder.prototype.initialize = function () {
         return __awaiter(this, void 0, void 0, function () {
@@ -74027,6 +74058,35 @@ var Recorder = (function () {
     Recorder.prototype.isRecording = function () {
         return this.recording;
     };
+    Recorder.prototype.setTempo = function (qpm) {
+        this.config.qpm = qpm;
+        if (Tone.Transport.state === 'started') {
+            Tone.Transport.bpm.value = qpm;
+        }
+    };
+    Recorder.prototype.enablePlayClick = function (playClick) {
+        this.config.playClick = playClick;
+    };
+    Recorder.prototype.enablePlayCountIn = function (countIn) {
+        this.config.playCountIn = countIn;
+    };
+    Recorder.prototype.initClickLoop = function () {
+        var _this = this;
+        var clickStep = 0;
+        this.clickLoop = new Tone.Loop(function (_) {
+            if (clickStep % 4 === 0) {
+                _this.loClick.triggerAttack('G5');
+            }
+            else {
+                _this.hiClick.triggerAttack('C6');
+            }
+            clickStep++;
+            if (_this.config.playCountIn && clickStep === 4) {
+                Tone.Transport.stop();
+                _this.clickLoop.stop();
+            }
+        }, '4n');
+    };
     Recorder.prototype.getMIDIInputs = function () {
         return this.midiInputs;
     };
@@ -74038,6 +74098,15 @@ var Recorder = (function () {
             input.onmidimessage = function (event) {
                 _this.midiMessageReceived(event);
             };
+        }
+        if (this.config.playClick || this.config.playCountIn) {
+            this.initClickLoop();
+            Tone.Transport.bpm.value = this.config.qpm;
+            Tone.Transport.start();
+            this.clickLoop.start();
+        }
+        else {
+            this.clickLoop = null;
         }
         this.recording = true;
         this.firstNoteTimestamp = undefined;
@@ -74054,6 +74123,10 @@ var Recorder = (function () {
         for (var _i = 0, _a = this.midiInputs; _i < _a.length; _i++) {
             var input = _a[_i];
             input.onmidimessage = null;
+        }
+        if (this.clickLoop) {
+            Tone.Transport.stop();
+            this.clickLoop.stop();
         }
         if (this.notes.length === 0) {
             return null;
@@ -74113,7 +74186,7 @@ var Recorder = (function () {
 }());
 exports.Recorder = Recorder;
 
-},{"../protobuf":321}],312:[function(require,module,exports){
+},{"../protobuf":321,"./constants":304,"tone":299}],312:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -74599,6 +74672,8 @@ var SoundFont = (function () {
                     case 2:
                         instrumentSamples = new Map();
                         samples.forEach(function (info) {
+                            info.isDrum = info.isDrum || false;
+                            info.program = info.program || 0;
                             var instrument = info.isDrum ? 'drums' : info.program;
                             var sampleInfo = { pitch: info.pitch, velocity: info.velocity };
                             if (!instrumentSamples.has(instrument)) {
@@ -74623,6 +74698,8 @@ var SoundFont = (function () {
         });
     };
     SoundFont.prototype.playNote = function (pitch, velocity, startTime, duration, program, isDrum, output) {
+        if (program === void 0) { program = 0; }
+        if (isDrum === void 0) { isDrum = false; }
         var instrument = isDrum ? 'drums' : program;
         if (!this.initialized) {
             throw new Error('SoundFont is not initialized.');
