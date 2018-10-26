@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Lstm | @magenta/music</title>
+	<title>RecorderConfig | @magenta/music</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,13 +54,13 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="../modules/_transcription_model_.html">&quot;transcription/model&quot;</a>
+					<a href="../modules/_core_recorder_.html">&quot;core/recorder&quot;</a>
 				</li>
 				<li>
-					<a href="_transcription_model_.lstm.html">Lstm</a>
+					<a href="_core_recorder_.recorderconfig.html">RecorderConfig</a>
 				</li>
 			</ul>
-			<h1>Class Lstm</h1>
+			<h1>Interface RecorderConfig</h1>
 		</div>
 	</div>
 </header>
@@ -70,17 +70,27 @@
 			<section class="tsd-panel tsd-comment">
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>Helper for a Bidirectional LSTM layer.</p>
+						<p>An interface for providing configurable properties to a Recorder.</p>
 					</div>
-					<p>Implements processing the input in chunks, which is significantly more
-					efficient in tfjs due to memory management and shader caching.</p>
+					<dl class="tsd-comment-tags">
+						<dt>param</dt>
+						<dd><p>The tempo at which to play the click track.</p>
+						</dd>
+						<dt>param</dt>
+						<dd><p>Whether to play a click track while recording.</p>
+						</dd>
+						<dt>param</dt>
+						<dd><p>Whether to play a count-in click at the beginning of
+							the recording.</p>
+						</dd>
+					</dl>
 				</div>
 			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">Lstm</span>
+						<span class="target">RecorderConfig</span>
 					</li>
 				</ul>
 			</section>
@@ -89,124 +99,47 @@
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section tsd-is-not-exported">
-							<h3>Constructors</h3>
+							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-not-exported"><a href="_transcription_model_.lstm.html#constructor" class="tsd-kind-icon">constructor</a></li>
-							</ul>
-						</section>
-						<section class="tsd-index-section tsd-is-not-exported">
-							<h3>Methods</h3>
-							<ul class="tsd-index-list">
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-not-exported"><a href="_transcription_model_.lstm.html#dispose" class="tsd-kind-icon">dispose</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-not-exported"><a href="_transcription_model_.lstm.html#predict" class="tsd-kind-icon">predict</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-not-exported"><a href="_transcription_model_.lstm.html#setweights" class="tsd-kind-icon">set<wbr>Weights</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_core_recorder_.recorderconfig.html#playclick" class="tsd-kind-icon">play<wbr>Click</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_core_recorder_.recorderconfig.html#playcountin" class="tsd-kind-icon">play<wbr>Count<wbr>In</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_core_recorder_.recorderconfig.html#qpm" class="tsd-kind-icon">qpm</a></li>
 							</ul>
 						</section>
 					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group tsd-is-not-exported">
-				<h2>Constructors</h2>
-				<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class tsd-is-not-exported">
-					<a name="constructor" class="tsd-anchor"></a>
-					<h3>constructor</h3>
-					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-not-exported">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Lstm<span class="tsd-signature-symbol">(</span>inputShape<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span>, units<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_transcription_model_.lstm.html" class="tsd-signature-type">Lstm</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/transcription/model.ts#L357">transcription/model.ts:357</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>inputShape: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span></h5>
-								</li>
-								<li>
-									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> units: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;384</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="_transcription_model_.lstm.html" class="tsd-signature-type">Lstm</a></h4>
-						</li>
-					</ul>
+				<h2>Properties</h2>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
+					<a name="playclick" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> play<wbr>Click</h3>
+					<div class="tsd-signature tsd-kind-icon">play<wbr>Click<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/recorder.ts#L33">core/recorder.ts:33</a></li>
+						</ul>
+					</aside>
 				</section>
-			</section>
-			<section class="tsd-panel-group tsd-member-group tsd-is-not-exported">
-				<h2>Methods</h2>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-not-exported">
-					<a name="dispose" class="tsd-anchor"></a>
-					<h3>dispose</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-not-exported">
-						<li class="tsd-signature tsd-kind-icon">dispose<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/transcription/model.ts#L391">transcription/model.ts:391</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
-						</li>
-					</ul>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
+					<a name="playcountin" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> play<wbr>Count<wbr>In</h3>
+					<div class="tsd-signature tsd-kind-icon">play<wbr>Count<wbr>In<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/recorder.ts#L34">core/recorder.ts:34</a></li>
+						</ul>
+					</aside>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-not-exported">
-					<a name="predict" class="tsd-anchor"></a>
-					<h3>predict</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-not-exported">
-						<li class="tsd-signature tsd-kind-icon">predict<span class="tsd-signature-symbol">(</span>inputs<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">tf.Tensor3D</span>, chunkSize<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Tensor</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R3</span><span class="tsd-signature-symbol">&gt;</span></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/transcription/model.ts#L432">transcription/model.ts:432</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>inputs: <span class="tsd-signature-type">tf.Tensor3D</span></h5>
-								</li>
-								<li>
-									<h5>chunkSize: <span class="tsd-signature-type">number</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Tensor</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R3</span><span class="tsd-signature-symbol">&gt;</span></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-not-exported">
-					<a name="setweights" class="tsd-anchor"></a>
-					<h3>set<wbr>Weights</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-not-exported">
-						<li class="tsd-signature tsd-kind-icon">set<wbr>Weights<span class="tsd-signature-symbol">(</span>vars<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">tf.NamedTensorMap</span>, scope<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, denseName<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/transcription/model.ts#L396">transcription/model.ts:396</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>vars: <span class="tsd-signature-type">tf.NamedTensorMap</span></h5>
-								</li>
-								<li>
-									<h5>scope: <span class="tsd-signature-type">string</span></h5>
-								</li>
-								<li>
-									<h5>denseName: <span class="tsd-signature-type">string</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
-						</li>
-					</ul>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
+					<a name="qpm" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> qpm</h3>
+					<div class="tsd-signature tsd-kind-icon">qpm<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/recorder.ts#L32">core/recorder.ts:32</a></li>
+						</ul>
+					</aside>
 				</section>
 			</section>
 		</div>
@@ -240,7 +173,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_core_player_.html">"core/player"</a>
 					</li>
-					<li class=" tsd-kind-external-module">
+					<li class="current tsd-kind-external-module">
 						<a href="../modules/_core_recorder_.html">"core/recorder"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -267,7 +200,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_transcription_constants_.html">"transcription/constants"</a>
 					</li>
-					<li class="current tsd-kind-external-module">
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_transcription_model_.html">"transcription/model"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -277,33 +210,30 @@
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
-					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_transcription_model_.acousticcnn.html" class="tsd-kind-icon">Acoustic<wbr>Cnn</a>
+					<li class=" tsd-kind-class tsd-parent-kind-external-module">
+						<a href="../classes/_core_recorder_.baserecordercallback.html" class="tsd-kind-icon">Base<wbr>Recorder<wbr>Callback</a>
+					</li>
+					<li class=" tsd-kind-class tsd-parent-kind-external-module">
+						<a href="../classes/_core_recorder_.recorder.html" class="tsd-kind-icon">Recorder</a>
 					</li>
 				</ul>
 				<ul class="current">
-					<li class="current tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_transcription_model_.lstm.html" class="tsd-kind-icon">Lstm</a>
+					<li class="current tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="_core_recorder_.recorderconfig.html" class="tsd-kind-icon">Recorder<wbr>Config</a>
 						<ul>
-							<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-not-exported">
-								<a href="_transcription_model_.lstm.html#constructor" class="tsd-kind-icon">constructor</a>
+							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
+								<a href="_core_recorder_.recorderconfig.html#playclick" class="tsd-kind-icon">play<wbr>Click</a>
 							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-not-exported">
-								<a href="_transcription_model_.lstm.html#dispose" class="tsd-kind-icon">dispose</a>
+							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
+								<a href="_core_recorder_.recorderconfig.html#playcountin" class="tsd-kind-icon">play<wbr>Count<wbr>In</a>
 							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-not-exported">
-								<a href="_transcription_model_.lstm.html#predict" class="tsd-kind-icon">predict</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-not-exported">
-								<a href="_transcription_model_.lstm.html#setweights" class="tsd-kind-icon">set<wbr>Weights</a>
+							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
+								<a href="_core_recorder_.recorderconfig.html#qpm" class="tsd-kind-icon">qpm</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_transcription_model_.onsetsandframes.html" class="tsd-kind-icon">Onsets<wbr>And<wbr>Frames</a>
-					</li>
 				</ul>
 			</nav>
 		</div>
