@@ -28,6 +28,7 @@ import {loadAudioFromFile, loadAudioFromUrl, preprocessAudio} from './audio_util
 import {MEL_SPEC_BINS, MIDI_PITCHES} from './constants';
 // tslint:disable-next-line:max-line-length
 import {batchInput, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
+import { INoteSequence } from '../protobuf';
 
 /**
  * Main "Onsets And Frames" piano transcription model class.
@@ -108,7 +109,8 @@ class OnsetsAndFrames {
    * @returns A `NoteSequence` containing the transcribed piano performance.
    */
   // tslint:enable:max-line-length
-  async transcribeFromMelSpec(melSpec: number[][], parallelBatches = 4) {
+  async transcribeFromMelSpec(melSpec: number[][], parallelBatches = 4)
+      : Promise<INoteSequence> {
     if (!this.isInitialized()) {
       this.initialize();
     }
