@@ -57,22 +57,135 @@ function descale(data: tf.Tensor, a: number, b: number) {
 }
 
 export function melToLinear(melLogMag: tf.Tensor3D) {
-  const m2l = melToLinearMatrix().expandDims(0);
+  // const m2l = melToLinearMatrix().expandDims(0);
   const melLogMagDb = descale(melLogMag, MAG_DESCALE_A, MAG_DESCALE_B);
   const melMag = tf.exp(melLogMagDb);
   // Aparrently matMul does higer rank
   // mag2 = tf.tensordot(self._safe_exp(logmelmag2), m2l, 1)
-  const magLin = tf.mul(0.5, tf.matMul(melMag, m2l));
+  // const magLin = tf.mul(0.5, tf.matMul(melMag, m2l));
+  const magLin = tf.mul(0.5, melMag);
   return magLin;
 }
 
 export function ifreqToPhase(ifreq: tf.Tensor3D) {
-  const m2l = melToLinearMatrix().expandDims(0);
+  // const m2l = melToLinearMatrix().expandDims(0);
   const ifreqDescale = descale(ifreq, PHASE_DESCALE_A, PHASE_DESCALE_B);
-  const phase = tf.cumsum(tf.mul(ifreqDescale, Math.PI), 1);
-  const phaseLin = tf.matMul(phase, m2l);
+  // Need to multiply phase by -1.0 to account for conjugacy difference
+  // between tensorflow and librosa/javascript istft
+  const phase = tf.cumsum(tf.mul(ifreqDescale, -1.0 * Math.PI), 1);
+  // const phaseLin = tf.matMul(phase, m2l);
+  const phaseLin = phase;
   return phaseLin;
 }
+
+//------------------------------------------------------------------------------
+// FFT Code
+//------------------------------------------------------------------------------
+export function fft(y: Float32Array) {
+  const fft = new FFT(y.length);
+  const out = fft.createComplexArray();
+  const data = fft.toComplexArray(y);
+  fft.transform(out, data);
+  return out;
+}
+
+export function stft(y: Float32Array, params: SpecParams): Float32Array[] {
+  const nFft = params.nFft || 2048;
+  const winLength = params.winLength || nFft;
+  const hopLength = params.hopLength || Math.floor(winLength / 4);
+
+  let fftWindow = hannWindow(winLength);
+
+  // Pad the window to be the size of nFft.
+  // fftWindow = padCenterToLength(fftWindow, nFft);
+
+  // Pad the time series so that the frames are centered.
+  // y = padReflect(y, Math.floor(nFft / 2));
+
+  // Window the time series.
+  const yFrames = frame(y, nFft, hopLength);
+  // Pre-allocate the STFT matrix.
+  const stftMatrix = [];
+
+  const width = yFrames.length;
+  const height = 2 * (nFft);
+  for (let i = 0; i < width; i++) {
+    // Each column is a Float32Array of size height.
+    const col = new Float32Array(height);
+    stftMatrix[i] = col;
+  }
+
+  for (let i = 0; i < width; i++) {
+    // Populate the STFT matrix.
+    const winBuffer = applyWindow(yFrames[i], fftWindow);
+    const col = fft(winBuffer);
+    stftMatrix[i].set(col.slice(0, height));
+  }
+
+  return stftMatrix;
+}
+
+// Perform ifft on a single frame
+export function ifft(reIm: Float32Array): Float32Array {
+  // Interleave
+  const nFFT = reIm.length / 2;
+  const fft = new FFT(nFFT);
+  const recon = fft.createComplexArray();
+  fft.inverseTransform(recon, reIm);
+  // Just take the real part
+  const result = fft.fromComplexArray(recon);
+  return result;
+}
+
+export function istft(reIm: Float32Array[], params: SpecParams): Float32Array {
+  const nFrames = reIm.length;
+  const nReIm = reIm[0].length;
+  const nFft = (nReIm / 2);
+  const winLength = params.winLength || nFft;
+  const hopLength = params.hopLength || Math.floor(winLength / 4);
+
+  let ifftWindow = hannWindow(winLength);
+  // Adjust normalization for 75% Hann cola (factor of 1.5 with this stft/istft)
+  for (let i = 0; i < ifftWindow.length; i++) {
+    ifftWindow[i] = ifftWindow[i] / 1.5;
+  }
+
+  // Pad the window to be the size of nFft. Only if nFft != winLength
+  ifftWindow = padCenterToLength(ifftWindow, nFft);
+
+  // Pre-allocate the audio output
+  const expectedSignalLen = nFft + hopLength * (nFrames - 1);
+  const y = new Float32Array(expectedSignalLen);
+
+  // Perform inverse ffts
+  for (let i = 0; i < nFrames; i++) {
+    const sample = i * hopLength;
+    // skip dc component to make a power of 2, dc component is in the ceter
+    // const reImSlice =
+    //     Float32Concat(reIm[i].slice(0, nFft), reIm[i].slice(nFft + 2,
+    //     nReIm));
+    // let yTmp = ifft(reImSlice);
+    let yTmp = ifft(reIm[i]);
+    yTmp = applyWindow(yTmp, ifftWindow);
+    yTmp = add(yTmp, y.slice(sample, sample + nFft));
+    y.set(yTmp, sample);
+  }
+
+  // Center
+  // const yTrimmed = y.slice(nFft / 2, y.length - (nFft / 2));
+  // const yTrimmed = y.slice(0, y.length - nFft);
+
+  return y;
+}
+
+// function Float32Concat(first: Float32Array, second: Float32Array) {
+//   const firstLength = first.length;
+//   const result = new Float32Array(firstLength + second.length);
+//   result.set(first);
+//   result.set(second, firstLength);
+//   return result;
+// }
+
 
 //------------------------------------------------------------------------------
 // Onsets and Frames Code
@@ -503,99 +616,4 @@ function add(arr0: Float32Array, arr1: Float32Array) {
     out[i] = arr0[i] + arr1[i];
   }
   return out;
-}
-
-function fft(y: Float32Array) {
-  const fft = new FFT(y.length);
-  const out = fft.createComplexArray();
-  const data = fft.toComplexArray(y);
-  fft.transform(out, data);
-  return out;
-}
-
-export function stft(y: Float32Array, params: SpecParams): Float32Array[] {
-  const nFft = params.nFft || 2048;
-  const winLength = params.winLength || nFft;
-  const hopLength = params.hopLength || Math.floor(winLength / 4);
-
-  let fftWindow = hannWindow(winLength);
-
-  // Pad the window to be the size of nFft.
-  fftWindow = padCenterToLength(fftWindow, nFft);
-
-  // Pad the time series so that the frames are centered.
-  y = padReflect(y, Math.floor(nFft / 2));
-
-  // Window the time series.
-  const yFrames = frame(y, nFft, hopLength);
-  // Pre-allocate the STFT matrix.
-  const stftMatrix = [];
-
-  const width = yFrames.length;
-  const height = 2 * (nFft + 1);
-  for (let i = 0; i < width; i++) {
-    // Each column is a Float32Array of size height.
-    const col = new Float32Array(height);
-    stftMatrix[i] = col;
-  }
-
-  for (let i = 0; i < width; i++) {
-    // Populate the STFT matrix.
-    const winBuffer = applyWindow(yFrames[i], fftWindow);
-    const col = fft(winBuffer);
-    stftMatrix[i].set(col.slice(0, height));
-  }
-
-  return stftMatrix;
-}
-
-// Perform ifft on a single frame
-export function ifft(reIm: Float32Array): Float32Array {
-  // Interleave
-  const nFFT = reIm.length / 2;
-  const fft = new FFT(nFFT);
-  const recon = fft.createComplexArray();
-  fft.inverseTransform(recon, reIm);
-  // Just take the real part
-  const result = new Float32Array(nFFT);
-  for (let i = 0; i < nFFT; i++) {
-    result[i] = (recon[2 * i]);
-  }
-  return result;
-}
-
-export function istft(reIm: Float32Array[], params: SpecParams): Float32Array {
-  const nFrames = reIm.length;
-  const nReIm = reIm[0].length;
-  const nFft = (nReIm / 2) - 1;
-  const winLength = params.winLength || nFft;
-  const hopLength = params.hopLength || Math.floor(winLength / 4);
-
-  let ifftWindow = hannWindow(winLength);
-  // Adjust normalization for 75% cola (factor of two)
-  for (let i = 0; i < ifftWindow.length; i++) {
-    ifftWindow[i] = ifftWindow[i] / 2.0;
-  }
-
-  // Pad the window to be the size of nFft.
-  ifftWindow = padCenterToLength(ifftWindow, nFft);
-
-  // Pre-allocate the audio output
-  const expectedSignalLen = nFft + hopLength * (nFrames - 1);
-  const y = new Float32Array(expectedSignalLen);
-
-  // Perform inverse ffts
-  for (let i = 0; i < nFrames; i++) {
-    const sample = i * hopLength;
-    // skip dc component to make a power of 2
-    let yTmp = ifft(reIm[i].slice(2, nReIm));
-    yTmp = applyWindow(yTmp, ifftWindow);
-    yTmp = add(yTmp, y.slice(sample, sample + nFft));
-    y.set(yTmp, sample);
-  }
-
-  // Center
-  const yTrimmed = y.slice(nFft / 2, y.length - (nFft / 2));
-
-  return yTrimmed;
 }

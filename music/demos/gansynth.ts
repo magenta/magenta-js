@@ -30,33 +30,16 @@ const GANSYNTH_CHECKPOINT = `./gansynth_ckpt_js`;
 
 mm.logging.verbosity = mm.logging.Level.DEBUG;
 
-// async function dump(tensor: tf.Tensor) {
-//   console.log(JSON.stringify(tensor.dataSync()));
+async function dump(tensor: tf.Tensor) {
+  console.log(JSON.stringify(tensor.dataSync()));
+}
+
+// async function array_dump(array: Float32Array|Float32Array[]) {
+//   console.log(JSON.stringify(array));
 // }
 
 async function runGANSynth() {
-  console.log('Yay!!');
-
-  // Testing inverse fourier transform
-  // const SR = 16000;
-  // const T = 1.0;
-  // const audioArray =
-  //     tf.sin(tf.linspace(0, 400 * 2 * Math.PI, T * SR)).dataSync();
-  // const audio = new Float32Array(audioArray);
-
-  // const specParams =
-  //     {nFFt: 2048, winLength: 2048, hopLength: 512, sampleRate: SR};
-  // const reIm = stft(audio, specParams);
-  // console.log(reIm);
-  // const ispecParams =
-  //     {nFFt: 2048, winLength: 2048, hopLength: 512, sampleRate: SR};
-  // const recon = istft(reIm, ispecParams);
-  // console.log(recon);
-  // const audioBuffer = Tone.context.createBuffer(1, T * SR, SR);
-  // audioBuffer.copyToChannel(recon, 0, 0);
-  // const options = {'url': audioBuffer, 'loop': true};
-  // const player = new Tone.Player(options).toMaster();
-  // player.start();
+  console.log('Yay!');
 
   const gansynth = new mm.GANSynth(GANSYNTH_CHECKPOINT);
   await gansynth.initialize();
@@ -70,27 +53,38 @@ async function runGANSynth() {
   const magSlice =
       tf.slice(specgram, [0, 0, 0, 0], [1, -1, -1, 1]).reshape([1, 128, 1024]);
   const magMel = magSlice as tf.Tensor3D;
+  dump(magMel.reshape([128, 1024]));
   const mag = melToLinear(magMel);
 
   const ifreqSlice =
       tf.slice(specgram, [0, 0, 0, 1], [1, -1, -1, 1]).reshape([1, 128, 1024]);
   const ifreq = ifreqSlice as tf.Tensor3D;
+  dump(ifreq.reshape([128, 1024]));
   const phase = ifreqToPhase(ifreq);
 
+  // Reflect all frequencies except for the Nyquist, which is shared between
+  // positive and negative frequencies for even nFft.
   let real = mag.mul(tf.cos(phase));
-  real = tf.concat([real, tf.reverse(real, 2)], 2);
+  const mirrorReal = tf.reverse(real.slice([0, 0, 0], [1, 128, 1023]), 2);
+  real = tf.concat([real, mirrorReal], 2);
+  // Reflect all frequencies except for the Nyquist, take complex conjugate of
+  // the negative frequencies.
   let imag = mag.mul(tf.sin(phase));
-  imag = tf.concat([imag, tf.reverse(tf.mul(imag, -1.0), 2)], 2);
-  const reImBatch = tf.concat([real, imag], 0).expandDims(3);
+  const mirrorImag = tf.reverse(imag.slice([0, 0, 0], [1, 128, 1023]), 2);
+  imag = tf.concat([imag, tf.mul(mirrorImag, -1.0)], 2);
+  // Combine and add back in the zero DC component
+  let reImBatch = tf.concat([real, imag], 0).expandDims(3);
+  reImBatch = tf.pad(reImBatch, [[0, 0], [0, 0], [1, 0], [0, 0]]);
+  // Interleave real and imaginary for javascript ISTFT
+  // Hack to interleave [re0, im0, re1, im1, ...] with batchToSpace
   const crops = [[0, 0], [0, 0]];
-  const reImNoPad =
+  const reImInterleave =
       tf.batchToSpaceND(reImBatch, [1, 2], crops).reshape([128, 4096]);
-  // Add back in DC component
-  const reImTensor = tf.pad(reImNoPad, [[0, 0], [2, 0]]);
-  const reImArray = reImTensor.dataSync();
+  // Convert Tensor to a Float32Array[]
+  const reImArray = reImInterleave.dataSync();
   const reIm = [] as Float32Array[];
   for (let i = 0; i < 128; i++) {
-    reIm[i] = reImArray.slice(i * 4098, (i + 1) * 4098) as Float32Array;
+    reIm[i] = reImArray.slice(i * 4096, (i + 1) * 4096) as Float32Array;
   }
 
   // ISTFT and play sound
@@ -99,12 +93,11 @@ async function runGANSynth() {
   const ispecParams =
       {nFFt: 2048, winLength: 2048, hopLength: 512, sampleRate: SR};
   const recon = istft(reIm, ispecParams);
-  console.log(recon);
+  // console.log(recon);
   const audioBuffer = Tone.context.createBuffer(1, T * SR, SR);
   audioBuffer.copyToChannel(recon, 0, 0);
   const options = {'url': audioBuffer, 'loop': true};
   const player = new Tone.Player(options).toMaster();
-  player.start();
 
   // GUI
   const startButton = document.createElement('BUTTON');
@@ -136,27 +129,26 @@ async function runGANSynth() {
   const magCanvas = document.getElementById('mag-canvas') as HTMLCanvasElement;
   await tf.toPixels(magPlot, magCanvas);
 
-  // Plot Mel 2 Linear Matrix
-  let m2l = melToLinearMatrix() as tf.Tensor2D;
-  tf.min(m2l).print();
-  tf.max(m2l).print();
-  // scale to [0, 1]
-  m2l = tf.sub(m2l, tf.min(m2l));
-  m2l = tf.div(m2l, tf.max(m2l));
-  // Plot on canvas
-  const m2lCanvas = document.getElementById('m2l-canvas') as HTMLCanvasElement;
-  await tf.toPixels(m2l, m2lCanvas);
-
-  // // // Convert to linear
-  // mag = mag.expandDims(0);
-  // let magLin = melToLinear(mag).reshape([128, 1024]) as tf.Tensor2D;
-  // // Scale from [-1, 1] to [0, 1]
-  // magLin = tf.sub(magLin, tf.min(magLin));
-  // magLin = tf.div(magLin, tf.max(magLin));
+  // // Plot Mel 2 Linear Matrix
+  // let m2l = melToLinearMatrix() as tf.Tensor2D;
+  // tf.min(m2l).print();
+  // tf.max(m2l).print();
+  // // scale to [0, 1]
+  // m2l = tf.sub(m2l, tf.min(m2l));
+  // m2l = tf.div(m2l, tf.max(m2l));
   // // Plot on canvas
-  // const magLinCanvas =
-  //     document.getElementById('magLin-canvas') as HTMLCanvasElement;
-  // await tf.toPixels(magLin, magLinCanvas);
+  // const m2lCanvas = document.getElementById('m2l-canvas') as
+  // HTMLCanvasElement; await tf.toPixels(m2l, m2lCanvas);
+
+  // // Convert to linear
+  let magLin = tf.log(tf.add(mag.reshape([128, 1024]), 1e-6)) as tf.Tensor2D;
+  // Scale to [0, 1]
+  magLin = tf.sub(magLin, tf.min(magLin));
+  magLin = tf.div(magLin, tf.max(magLin));
+  // Plot on canvas
+  const magLinCanvas =
+      document.getElementById('magLin-canvas') as HTMLCanvasElement;
+  await tf.toPixels(magLin, magLinCanvas);
 
   // // Get IFreq
   // const ifreqSlice =
