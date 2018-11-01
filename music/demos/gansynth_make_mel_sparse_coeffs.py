@@ -17,15 +17,15 @@ def hertz_to_mel(frequencies_hertz):
       1.0 + (frequencies_hertz / _MEL_BREAK_FREQUENCY_HERTZ))
 
 
-num_mel_bins=1024
-num_spectrogram_bins=1024
-sample_rate=16000
-lower_edge_hertz=0.0
-upper_edge_hertz=16000.0
+num_mel_bins = 1024
+num_spectrogram_bins = 1024
+sample_rate = 16000
+nyquist_hertz = sample_rate / 2.0
+lower_edge_hertz = 0.0
+upper_edge_hertz = nyquist_hertz
 
 # HTK excludes the spectrogram DC bin.
 bands_to_zero = 1
-nyquist_hertz = sample_rate / 2.0
 linear_frequencies = np.linspace(
     0.0, nyquist_hertz, num_spectrogram_bins)[bands_to_zero:, np.newaxis]
 # spectrogram_bins_mel = hertz_to_mel(linear_frequencies)
@@ -95,7 +95,8 @@ w = w_mel2linear
 
 row, col = np.where(w != 0.0)
 w_sparse = [[row[i], col[i], w[row[i], col[i]]] for i in range(len(row))]
-# np.set_printoptions(threshold=np.inf)
+np.set_printoptions(threshold=np.inf)
+# np.set_printoptions(threshold=1000)
 
 for l in w_sparse:
   print l, ','

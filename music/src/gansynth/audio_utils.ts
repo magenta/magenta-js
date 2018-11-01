@@ -31,6 +31,10 @@ import * as logging from '../core/logging';
 import {MEL_SPEC_BINS, SAMPLE_RATE, SPEC_HOP_LENGTH} from './constants';
 import {MEL_SPARSE_COEFFS} from './mel_sparse_coeffs';
 
+async function dump(tensor: tf.Tensor) {
+  console.log(JSON.stringify(tensor.dataSync()));
+}
+
 //------------------------------------------------------------------------------
 // GANSynth Code
 //------------------------------------------------------------------------------
@@ -56,25 +60,39 @@ function descale(data: tf.Tensor, a: number, b: number) {
   return tf.div(tf.sub(data, b), a);
 }
 
-export function melToLinear(melLogMag: tf.Tensor3D) {
-  // const m2l = melToLinearMatrix().expandDims(0);
-  const melLogMagDb = descale(melLogMag, MAG_DESCALE_A, MAG_DESCALE_B);
-  const melMag = tf.exp(melLogMagDb);
-  // Aparrently matMul does higer rank
-  // mag2 = tf.tensordot(self._safe_exp(logmelmag2), m2l, 1)
-  // const magLin = tf.mul(0.5, tf.matMul(melMag, m2l));
-  const magLin = tf.mul(0.5, melMag);
+export function melToLinear(melLogPower: tf.Tensor3D) {
+  const m2l = melToLinearMatrix().expandDims(0);
+  // console.log('melToLinear');
+  // dump(m2l);
+  const melLogPowerDb = descale(melLogPower, MAG_DESCALE_A, MAG_DESCALE_B);
+  // console.log('logmag_descaled');
+  // dump(melLogPowerDb.reshape([128, 1024]));
+  // Linear scale the magnitude
+  const melPower = tf.exp(melLogPowerDb);
+  // Mel to linear frequency scale
+  const powerLin = tf.matMul(melPower, m2l);
+  // Power to magnitude
+  const magLin = tf.sqrt(powerLin);
+  // console.log('mag_linear');
+  // dump(magLin.reshape([128, 1024]));
+  // const magLin = tf.mul(0.5, melMag);
   return magLin;
 }
 
 export function ifreqToPhase(ifreq: tf.Tensor3D) {
-  // const m2l = melToLinearMatrix().expandDims(0);
+  const m2l = melToLinearMatrix().expandDims(0);
   const ifreqDescale = descale(ifreq, PHASE_DESCALE_A, PHASE_DESCALE_B);
+  // console.log('ifreq_descaled');
+  // dump(ifreqDescale.reshape([128, 1024]));
   // Need to multiply phase by -1.0 to account for conjugacy difference
   // between tensorflow and librosa/javascript istft
-  const phase = tf.cumsum(tf.mul(ifreqDescale, -1.0 * Math.PI), 1);
-  // const phaseLin = tf.matMul(phase, m2l);
-  const phaseLin = phase;
+  const phase = tf.cumsum(tf.mul(ifreqDescale, Math.PI), 1);
+  // console.log('phase_log');
+  // dump(phase.reshape([128, 1024]));
+  const phaseLin = tf.matMul(phase, m2l);
+  // console.log('phase_linear');
+  // dump(phaseLin.reshape([128, 1024]));
+  // const phaseLin = phase;
   return phaseLin;
 }
 
@@ -94,7 +112,7 @@ export function stft(y: Float32Array, params: SpecParams): Float32Array[] {
   const winLength = params.winLength || nFft;
   const hopLength = params.hopLength || Math.floor(winLength / 4);
 
-  let fftWindow = hannWindow(winLength);
+  const fftWindow = hannWindow(winLength);
 
   // Pad the window to be the size of nFft.
   // fftWindow = padCenterToLength(fftWindow, nFft);
@@ -185,8 +203,6 @@ export function istft(reIm: Float32Array[], params: SpecParams): Float32Array {
 //   result.set(second, firstLength);
 //   return result;
 // }
-
-
 //------------------------------------------------------------------------------
 // Onsets and Frames Code
 //------------------------------------------------------------------------------

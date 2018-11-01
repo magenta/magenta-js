@@ -39,7 +39,7 @@ async function dump(tensor: tf.Tensor) {
 // }
 
 async function runGANSynth() {
-  console.log('Yay!');
+  console.log('Yay!!');
 
   const gansynth = new mm.GANSynth(GANSYNTH_CHECKPOINT);
   await gansynth.initialize();
@@ -53,12 +53,14 @@ async function runGANSynth() {
   const magSlice =
       tf.slice(specgram, [0, 0, 0, 0], [1, -1, -1, 1]).reshape([1, 128, 1024]);
   const magMel = magSlice as tf.Tensor3D;
+  console.log('logmag');
   dump(magMel.reshape([128, 1024]));
   const mag = melToLinear(magMel);
 
   const ifreqSlice =
       tf.slice(specgram, [0, 0, 0, 1], [1, -1, -1, 1]).reshape([1, 128, 1024]);
   const ifreq = ifreqSlice as tf.Tensor3D;
+  console.log('ifreq');
   dump(ifreq.reshape([128, 1024]));
   const phase = ifreqToPhase(ifreq);
 
@@ -67,11 +69,17 @@ async function runGANSynth() {
   let real = mag.mul(tf.cos(phase));
   const mirrorReal = tf.reverse(real.slice([0, 0, 0], [1, 128, 1023]), 2);
   real = tf.concat([real, mirrorReal], 2);
+  console.log('real');
+  dump(real.reshape([128, 2047]));
+
   // Reflect all frequencies except for the Nyquist, take complex conjugate of
   // the negative frequencies.
   let imag = mag.mul(tf.sin(phase));
   const mirrorImag = tf.reverse(imag.slice([0, 0, 0], [1, 128, 1023]), 2);
   imag = tf.concat([imag, tf.mul(mirrorImag, -1.0)], 2);
+  console.log('imag');
+  dump(imag.reshape([128, 2047]));
+
   // Combine and add back in the zero DC component
   let reImBatch = tf.concat([real, imag], 0).expandDims(3);
   reImBatch = tf.pad(reImBatch, [[0, 0], [0, 0], [1, 0], [0, 0]]);
@@ -87,16 +95,22 @@ async function runGANSynth() {
     reIm[i] = reImArray.slice(i * 4096, (i + 1) * 4096) as Float32Array;
   }
 
+  // const realArr = real.dataSync();
+  // const imagArr = imag.dataSync();
+  // console.log(realArr);
+
+
   // ISTFT and play sound
   const T = 4.0;
   const SR = 16000;
   const ispecParams =
       {nFFt: 2048, winLength: 2048, hopLength: 512, sampleRate: SR};
   const recon = istft(reIm, ispecParams);
+
   // console.log(recon);
   const audioBuffer = Tone.context.createBuffer(1, T * SR, SR);
   audioBuffer.copyToChannel(recon, 0, 0);
-  const options = {'url': audioBuffer, 'loop': true};
+  const options = {'url': audioBuffer, 'loop': true, 'volume': -24};
   const player = new Tone.Player(options).toMaster();
 
   // GUI
@@ -118,25 +132,25 @@ async function runGANSynth() {
 
 
   // // // PLOTTING
-  // // // Get magnitudes
-  const magSlicePlot =
-      tf.slice(specgram, [0, 0, 0, 0], [1, -1, -1, 1]).reshape([128, 1024]);
-  let magPlot = magSlicePlot as tf.Tensor2D;
-  // Scale from [-1, 1] to [0, 1]
-  magPlot = tf.add(magPlot, 1.0);
-  magPlot = tf.div(magPlot, 2.0);
-  // Plot on canvas
-  const magCanvas = document.getElementById('mag-canvas') as HTMLCanvasElement;
-  await tf.toPixels(magPlot, magCanvas);
+  // // // // Get magnitudes
+  // const magSlicePlot =
+  //     tf.slice(specgram, [0, 0, 0, 0], [1, -1, -1, 1]).reshape([128, 1024]);
+  // let magPlot = magSlicePlot as tf.Tensor2D;
+  // // Scale from [-1, 1] to [0, 1]
+  // magPlot = tf.add(magPlot, 1.0);
+  // magPlot = tf.div(magPlot, 2.0);
+  // // Plot on canvas
+  // const magCanvas = document.getElementById('mag-canvas') as
+  // HTMLCanvasElement; await tf.toPixels(magPlot, magCanvas);
 
-  // // Plot Mel 2 Linear Matrix
+  // // // Plot Mel 2 Linear Matrix
   // let m2l = melToLinearMatrix() as tf.Tensor2D;
-  // tf.min(m2l).print();
-  // tf.max(m2l).print();
-  // // scale to [0, 1]
+  // // tf.min(m2l).print();
+  // // tf.max(m2l).print();
+  // // // scale to [0, 1]
   // m2l = tf.sub(m2l, tf.min(m2l));
   // m2l = tf.div(m2l, tf.max(m2l));
-  // // Plot on canvas
+  // // // Plot on canvas
   // const m2lCanvas = document.getElementById('m2l-canvas') as
   // HTMLCanvasElement; await tf.toPixels(m2l, m2lCanvas);
 
