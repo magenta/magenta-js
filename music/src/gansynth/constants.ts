@@ -15,13 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export const SAMPLE_RATE = 16000;
-export const SPEC_HOP_LENGTH = 512;
-export const FRAME_LENGTH_SECONDS = SPEC_HOP_LENGTH / SAMPLE_RATE;
-export const MEL_SPEC_BINS = 229;
+export const MAG_DESCALE_A = 0.0661371661726;
+export const MAG_DESCALE_B = 0.113718730221;
+export const PHASE_DESCALE_A = 0.8;
+export const PHASE_DESCALE_B = 0.0;
 
 export const N_LATENTS = 256;
 export const N_PITCHES = 61;
+
+export const SAMPLE_RATE = 16000;
+export const N_HOP = 512;
+export const N_FFT = 2048;
 
 export const MIN_MIDI_PITCH = 24;
 export const MAX_MIDI_PITCH = 84;

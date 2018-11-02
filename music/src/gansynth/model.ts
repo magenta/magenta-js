@@ -24,7 +24,6 @@ import * as tf from '@tensorflow/tfjs';
 
 import * as logging from '../core/logging';
 
-// import {melToLinearMatrix} from './audio_utils';
 import {MIDI_PITCHES, MIN_MIDI_PITCH, N_LATENTS, N_PITCHES} from './constants';
 import {boxUpscale, initialPad, pixelNorm} from './custom_layers';
 
@@ -123,9 +122,9 @@ class GANSynth {
       // but have to implement with padding because python did it this way
       // otherwise weight matrix is transposed wrong
       const inputShape = {inputShape: [1, 1, N_LATENTS + N_PITCHES]};
-      this.nn.add(pixelNorm(1e-8, inputShape));
-      this.nn.add(initialPad(2, 16));
-      // this.nn.add(initialPad(2, 16, inputShape));
+      // this.nn.add(pixelNorm(1e-8, inputShape));
+      // this.nn.add(initialPad(2, 16));
+      this.nn.add(initialPad(2, 16, inputShape));
       this.nn.add(tf.layers.conv2d(convConfig));
       this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
       this.nn.add(pixelNorm());
@@ -279,6 +278,7 @@ class GANSynth {
   random_sample(pitch: number) {
     return tf.tidy(() => {
       const z = tf.randomNormal([1, N_LATENTS], 0, 1, 'float32');
+      // const z = tf.zeros([1, N_LATENTS], 'float32');
       // Get one hot for pitch encoding
       const pitchIdx = tf.tensor1d([pitch - MIN_MIDI_PITCH], 'int32');
       const pitchOneHot = tf.oneHot(pitchIdx, MIDI_PITCHES);
@@ -286,7 +286,8 @@ class GANSynth {
       const cond = tf.concat([z, pitchOneHot], 1).expandDims(1).expandDims(1) as
           tf.Tensor4D;
       // dump(cond);
-      return this.predict(cond, 1);
+      const specgrams = this.predict(cond, 1);
+      return specgrams;
     });
   }
 }

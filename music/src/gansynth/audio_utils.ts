@@ -21,30 +21,19 @@ import * as tf from '@tensorflow/tfjs';
 // import {test_util} from '@tensorflow/tfjs';
 //@ts-ignore
 import * as FFT from 'fft.js';
-import * as ndarray from 'ndarray';
 
 //@ts-ignore
-import * as resample from 'ndarray-resample';
-
-import * as logging from '../core/logging';
-
-import {MEL_SPEC_BINS, SAMPLE_RATE, SPEC_HOP_LENGTH} from './constants';
+import {MAG_DESCALE_A, MAG_DESCALE_B, N_FFT, N_HOP} from './constants';
+import {PHASE_DESCALE_A, PHASE_DESCALE_B, SAMPLE_RATE} from './constants';
 import {MEL_SPARSE_COEFFS} from './mel_sparse_coeffs';
 
-async function dump(tensor: tf.Tensor) {
-  console.log(JSON.stringify(tensor.dataSync()));
-}
+// async function dump(tensor: tf.Tensor) {
+//   console.log(JSON.stringify(tensor.dataSync()));
+// }
 
 //------------------------------------------------------------------------------
 // GANSynth Code
 //------------------------------------------------------------------------------
-// const MEL_BREAK_FREQUENCY_HERTZ = 700.0;
-// const MEL_HIGH_FREQUENCY_Q = 1127.0;
-const MAG_DESCALE_A = 0.0661371661726;
-const MAG_DESCALE_B = 0.113718730221;
-const PHASE_DESCALE_A = 0.8;
-const PHASE_DESCALE_B = 0.0;
-
 export function melToLinearMatrix() {
   const m2l = tf.buffer([1024, 1024]);
   for (let i = 0; i < MEL_SPARSE_COEFFS.length; i++) {
@@ -62,38 +51,90 @@ function descale(data: tf.Tensor, a: number, b: number) {
 
 export function melToLinear(melLogPower: tf.Tensor3D) {
   const m2l = melToLinearMatrix().expandDims(0);
-  // console.log('melToLinear');
-  // dump(m2l);
   const melLogPowerDb = descale(melLogPower, MAG_DESCALE_A, MAG_DESCALE_B);
-  // console.log('logmag_descaled');
-  // dump(melLogPowerDb.reshape([128, 1024]));
   // Linear scale the magnitude
   const melPower = tf.exp(melLogPowerDb);
   // Mel to linear frequency scale
   const powerLin = tf.matMul(melPower, m2l);
   // Power to magnitude
   const magLin = tf.sqrt(powerLin);
-  // console.log('mag_linear');
-  // dump(magLin.reshape([128, 1024]));
-  // const magLin = tf.mul(0.5, melMag);
   return magLin;
 }
 
-export function ifreqToPhase(ifreq: tf.Tensor3D) {
+export function ifreqToPhase(ifreq: tf.Tensor) {
   const m2l = melToLinearMatrix().expandDims(0);
   const ifreqDescale = descale(ifreq, PHASE_DESCALE_A, PHASE_DESCALE_B);
-  // console.log('ifreq_descaled');
-  // dump(ifreqDescale.reshape([128, 1024]));
   // Need to multiply phase by -1.0 to account for conjugacy difference
   // between tensorflow and librosa/javascript istft
   const phase = tf.cumsum(tf.mul(ifreqDescale, Math.PI), 1);
-  // console.log('phase_log');
-  // dump(phase.reshape([128, 1024]));
   const phaseLin = tf.matMul(phase, m2l);
-  // console.log('phase_linear');
-  // dump(phaseLin.reshape([128, 1024]));
-  // const phaseLin = phase;
   return phaseLin;
+}
+
+async function interleaveReIm(real: tf.Tensor, imag: tf.Tensor) {
+  // Combine and add back in the zero DC component
+  let reImBatch = tf.concat([real, imag], 0).expandDims(3);
+  reImBatch = tf.pad(reImBatch, [[0, 0], [0, 0], [1, 0], [0, 0]]);
+
+  // Interleave real and imaginary for javascript ISTFT
+  // Hack to interleave [re0, im0, re1, im1, ...] with batchToSpace
+  const crops = [[0, 0], [0, 0]];
+  const reImInterleave =
+      tf.batchToSpaceND(reImBatch, [1, 2], crops).reshape([128, 4096]);
+  // Convert Tensor to a Float32Array[]
+  const reImArray = reImInterleave.dataSync();
+  const reIm = [] as Float32Array[];
+  for (let i = 0; i < 128; i++) {
+    reIm[i] = reImArray.slice(i * 4096, (i + 1) * 4096) as Float32Array;
+  }
+  return reIm;
+}
+
+async function reImToAudio(reIm: Float32Array[]) {
+  const ispecParams = {
+    nFFt: N_FFT,
+    winLength: N_FFT,
+    hopLength: N_HOP,
+    sampleRate: SAMPLE_RATE
+  };
+  return istft(reIm, ispecParams);
+}
+
+export async function specgramsToAudio(specgram: tf.Tensor4D) {
+  // Synthesize audio
+  const magSlice =
+      tf.slice(specgram, [0, 0, 0, 0], [1, -1, -1, 1]).reshape([1, 128, 1024]);
+  const magMel = magSlice as tf.Tensor3D;
+  // console.log('logmag');
+  // dump(magMel.reshape([128, 1024]));
+  const mag = melToLinear(magMel);
+
+  const ifreqSlice =
+      tf.slice(specgram, [0, 0, 0, 1], [1, -1, -1, 1]).reshape([1, 128, 1024]);
+  const ifreq = ifreqSlice as tf.Tensor3D;
+  // console.log('ifreq');
+  // dump(ifreq.reshape([128, 1024]));
+  const phase = ifreqToPhase(ifreq);
+
+  // Reflect all frequencies except for the Nyquist, which is shared between
+  // positive and negative frequencies for even nFft.
+  let real = mag.mul(tf.cos(phase));
+  const mirrorReal = tf.reverse(real.slice([0, 0, 0], [1, 128, 1023]), 2);
+  real = tf.concat([real, mirrorReal], 2);
+  // console.log('real');
+  // dump(real.reshape([128, 2047]));
+
+  // Reflect all frequencies except for the Nyquist, take complex conjugate of
+  // the negative frequencies.
+  let imag = mag.mul(tf.sin(phase));
+  const mirrorImag = tf.reverse(imag.slice([0, 0, 0], [1, 128, 1023]), 2);
+  imag = tf.concat([imag, tf.mul(mirrorImag, -1.0)], 2);
+  // console.log('imag');
+  // dump(imag.reshape([128, 2047]));
+
+  const reIm = await interleaveReIm(real, imag);
+  const audio = await reImToAudio(reIm);
+  return audio;
 }
 
 //------------------------------------------------------------------------------
@@ -227,204 +268,6 @@ export interface SpecParams {
   fMax?: number;
 }
 
-/**
- * Loads audio into AudioBuffer from a URL to transcribe.
- *
- * By default, audio is loaded at 16kHz monophonic for compatibility with
- * model. In Safari, audio must be loaded at 44.1kHz instead.
- *
- * @param url A path to a audio file to load.
- * @returns The loaded audio in an AudioBuffer.
- */
-export async function loadAudioFromUrl(url: string): Promise<AudioBuffer> {
-  return fetch(url)
-      .then(body => body.arrayBuffer())
-      .then(buffer => offlineCtx.decodeAudioData(buffer));
-}
-
-/**
- * Loads audio into AudioBuffer from a Blob to transcribe.
- *
- * By default, audio is loaded at 16kHz monophonic for compatibility with
- * model. In Safari, audio must be loaded at 44.1kHz instead.
- *
- * @param url A path to a audio file to load.
- * @returns The loaded audio in an AudioBuffer.
- */
-export async function loadAudioFromFile(blob: Blob): Promise<AudioBuffer> {
-  const fileReader = new FileReader();
-  const loadFile: Promise<ArrayBuffer> = new Promise((resolve, reject) => {
-    fileReader.onerror = () => {
-      fileReader.abort();
-      reject(new DOMException('Something went wrong reading that file.'));
-    };
-    fileReader.onload = () => {
-      resolve(fileReader.result as ArrayBuffer);
-    };
-    fileReader.readAsArrayBuffer(blob);
-  });
-  return loadFile.then(arrayBuffer => offlineCtx.decodeAudioData(arrayBuffer));
-}
-
-/**
- * Resamples and computes a log mel spectrogram from the given AudioBuffer.
- *
- * @param audioBuffer An audio buffer to transcribe.
- * @returns The log mel spectrogram based on the AudioBuffer.
- */
-export async function preprocessAudio(audioBuffer: AudioBuffer) {
-  const resampledMonoAudio = await resampleAndMakeMono(audioBuffer);
-  return powerToDb(melSpectrogram(resampledMonoAudio, {
-    sampleRate: SAMPLE_RATE,
-    hopLength: SPEC_HOP_LENGTH,
-    nMels: MEL_SPEC_BINS,
-    nFft: 2048,
-    fMin: 30,
-  }));
-}
-
-function melSpectrogram(y: Float32Array, params: SpecParams): Float32Array[] {
-  if (!params.power) {
-    params.power = 2.0;
-  }
-  const stftMatrix = stft(y, params);
-  const [spec, nFft] = magSpectrogram(stftMatrix, params.power);
-
-  params.nFft = nFft;
-  const melBasis = createMelFilterbank(params);
-  return applyWholeFilterbank(spec, melBasis);
-}
-
-/**
- * Convert a power spectrogram (amplitude squared) to decibel (dB) units
- *
- * Intended to match {@link
- * https://librosa.github.io/librosa/generated/librosa.core.power_to_db.html
- * librosa.core.power_to_db}
- * @param spec Input power.
- * @param amin Minimum threshold for `abs(S)`.
- * @param topDb Threshold the output at `topDb` below the peak.
- */
-function powerToDb(spec: Float32Array[], amin = 1e-10, topDb = 80.0) {
-  const width = spec.length;
-  const height = spec[0].length;
-  const logSpec = [];
-  for (let i = 0; i < width; i++) {
-    logSpec[i] = new Float32Array(height);
-  }
-  for (let i = 0; i < width; i++) {
-    for (let j = 0; j < height; j++) {
-      const val = spec[i][j];
-      logSpec[i][j] = 10.0 * Math.log10(Math.max(amin, val));
-    }
-  }
-  if (topDb) {
-    if (topDb < 0) {
-      throw new Error(`topDb must be non-negative.`);
-    }
-    for (let i = 0; i < width; i++) {
-      const maxVal = max(logSpec[i]);
-      for (let j = 0; j < height; j++) {
-        logSpec[i][j] = Math.max(logSpec[i][j], maxVal - topDb);
-      }
-    }
-  }
-  return logSpec;
-}
-
-function getMonoAudio(audioBuffer: AudioBuffer) {
-  if (audioBuffer.numberOfChannels === 1) {
-    return audioBuffer.getChannelData(0);
-  }
-  if (audioBuffer.numberOfChannels !== 2) {
-    throw Error(
-        `${audioBuffer.numberOfChannels} channel audio is not supported.`);
-  }
-  const ch0 = audioBuffer.getChannelData(0);
-  const ch1 = audioBuffer.getChannelData(1);
-
-  const mono = new Float32Array(audioBuffer.length);
-  for (let i = 0; i < audioBuffer.length; ++i) {
-    mono[i] = (ch0[i] + ch1[i]) / 2;
-  }
-  return mono;
-}
-
-async function resampleAndMakeMono(
-    audioBuffer: AudioBuffer, targetSr = SAMPLE_RATE) {
-  if (audioBuffer.sampleRate === targetSr) {
-    return getMonoAudio(audioBuffer);
-  }
-  const sourceSr = audioBuffer.sampleRate;
-  const lengthRes = audioBuffer.length * targetSr / sourceSr;
-  if (!isSafari) {
-    const bufferSource = offlineCtx.createBufferSource();
-    bufferSource.buffer = audioBuffer;
-    bufferSource.connect(offlineCtx.destination);
-    bufferSource.start();
-    return offlineCtx.startRendering().then(
-        (buffer: AudioBuffer) => buffer.getChannelData(0));
-  } else {
-    // Safari does not support resampling with WebAudio.
-    logging.log(
-        'Safari does not support WebAudio resampling, so this may be slow.',
-        'O&F', logging.Level.WARN);
-
-    const originalAudio = getMonoAudio(audioBuffer);
-    const resampledAudio = new Float32Array(lengthRes);
-    resample(
-        ndarray(resampledAudio, [lengthRes]),
-        ndarray(originalAudio, [originalAudio.length]));
-    return resampledAudio;
-  }
-}
-
-interface MelParams {
-  sampleRate: number;
-  nFft?: number;
-  nMels?: number;
-  fMin?: number;
-  fMax?: number;
-}
-
-function magSpectrogram(
-    stft: Float32Array[], power: number): [Float32Array[], number] {
-  const spec = stft.map(fft => pow(mag(fft), power));
-  const nFft = stft[0].length - 1;
-  return [spec, nFft];
-}
-
-function applyWholeFilterbank(
-    spec: Float32Array[], filterbank: Float32Array[]): Float32Array[] {
-  // Apply a point-wise dot product between the array of arrays.
-  const out: Float32Array[] = [];
-  for (let i = 0; i < spec.length; i++) {
-    out[i] = applyFilterbank(spec[i], filterbank);
-  }
-  return out;
-}
-
-function applyFilterbank(
-    mags: Float32Array, filterbank: Float32Array[]): Float32Array {
-  if (mags.length !== filterbank[0].length) {
-    throw new Error(
-        `Each entry in filterbank should have dimensions ` +
-        `matching FFT. |mags| = ${mags.length}, ` +
-        `|filterbank[0]| = ${filterbank[0].length}.`);
-  }
-
-  // Apply each filter to the whole FFT signal to get one value.
-  const out = new Float32Array(filterbank.length);
-  for (let i = 0; i < filterbank.length; i++) {
-    // To calculate filterbank energies we multiply each filterbank with the
-    // power spectrum.
-    const win = applyWindow(mags, filterbank[i]);
-    // Then add up the coefficents.
-    out[i] = win.reduce((a, b) => a + b);
-  }
-  return out;
-}
-
 function applyWindow(buffer: Float32Array, win: Float32Array) {
   if (buffer.length !== win.length) {
     console.error(
@@ -495,124 +338,12 @@ function frame(data: Float32Array, frameLength: number, hopLength: number):
   return buffers;
 }
 
-function createMelFilterbank(params: MelParams): Float32Array[] {
-  const fMin = params.fMin || 0;
-  const fMax = params.fMax || params.sampleRate / 2;
-  const nMels = params.nMels || 128;
-  const nFft = params.nFft || 2048;
-
-  // Center freqs of each FFT band.
-  const fftFreqs = calculateFftFreqs(params.sampleRate, nFft);
-  // (Pseudo) center freqs of each Mel band.
-  const melFreqs = calculateMelFreqs(nMels + 2, fMin, fMax);
-
-  const melDiff = internalDiff(melFreqs);
-  const ramps = outerSubtract(melFreqs, fftFreqs);
-  const filterSize = ramps[0].length;
-
-  const weights = [];
-  for (let i = 0; i < nMels; i++) {
-    weights[i] = new Float32Array(filterSize);
-    for (let j = 0; j < ramps[i].length; j++) {
-      const lower = -ramps[i][j] / melDiff[i];
-      const upper = ramps[i + 2][j] / melDiff[i + 1];
-      const weight = Math.max(0, Math.min(lower, upper));
-      weights[i][j] = weight;
-    }
-  }
-
-  // Slaney-style mel is scaled to be approx constant energy per channel.
-  for (let i = 0; i < weights.length; i++) {
-    // How much energy per channel.
-    const enorm = 2.0 / (melFreqs[2 + i] - melFreqs[i]);
-    // Normalize by that amount.
-    weights[i] = weights[i].map(val => val * enorm);
-  }
-
-  return weights;
-}
-
 function hannWindow(length: number) {
   const win = new Float32Array(length);
   for (let i = 0; i < length; i++) {
     win[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (length - 1)));
   }
   return win;
-}
-
-function linearSpace(start: number, end: number, count: number) {
-  // Include start and endpoints.
-  const delta = (end - start) / (count - 1);
-  const out = new Float32Array(count);
-  for (let i = 0; i < count; i++) {
-    out[i] = start + delta * i;
-  }
-  return out;
-}
-
-/**
- * Given an interlaced complex array (y_i is real, y_(i+1) is imaginary),
- * calculates the energies. Output is half the size.
- */
-function mag(y: Float32Array) {
-  const out = new Float32Array(y.length / 2);
-  for (let i = 0; i < y.length / 2; i++) {
-    out[i] = Math.sqrt(y[i * 2] * y[i * 2] + y[i * 2 + 1] * y[i * 2 + 1]);
-  }
-  return out;
-}
-
-function hzToMel(hz: number): number {
-  return 1125.0 * Math.log(1 + hz / 700.0);
-}
-
-function melToHz(mel: number): number {
-  return 700.0 * (Math.exp(mel / 1125.0) - 1);
-}
-
-function calculateFftFreqs(sampleRate: number, nFft: number) {
-  return linearSpace(0, sampleRate / 2, Math.floor(1 + nFft / 2));
-}
-
-function calculateMelFreqs(
-    nMels: number, fMin: number, fMax: number): Float32Array {
-  const melMin = hzToMel(fMin);
-  const melMax = hzToMel(fMax);
-
-  // Construct linearly spaced array of nMel intervals, between melMin and
-  // melMax.
-  const mels = linearSpace(melMin, melMax, nMels);
-  const hzs = mels.map(mel => melToHz(mel));
-  return hzs;
-}
-
-function internalDiff(arr: Float32Array): Float32Array {
-  const out = new Float32Array(arr.length - 1);
-  for (let i = 0; i < arr.length; i++) {
-    out[i] = arr[i + 1] - arr[i];
-  }
-  return out;
-}
-
-function outerSubtract(arr: Float32Array, arr2: Float32Array): Float32Array[] {
-  const out = [];
-  for (let i = 0; i < arr.length; i++) {
-    out[i] = new Float32Array(arr2.length);
-  }
-  for (let i = 0; i < arr.length; i++) {
-    for (let j = 0; j < arr2.length; j++) {
-      out[i][j] = arr[i] - arr2[j];
-    }
-  }
-  return out;
-}
-
-function pow(arr: Float32Array, power: number) {
-  return arr.map(v => Math.pow(v, power));
-}
-
-function max(arr: Float32Array) {
-  return arr.reduce((a, b) => Math.max(a, b));
 }
 
 function add(arr0: Float32Array, arr1: Float32Array) {
