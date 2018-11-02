@@ -192,21 +192,16 @@ export function istft(reIm: Float32Array[], params: SpecParams): Float32Array {
   // Center
   // const yTrimmed = y.slice(nFft / 2, y.length - (nFft / 2));
   // const yTrimmed = y.slice(0, y.length - nFft);
-
-  return y;
+  // For Gansynth, we did all the padding at the front instead of centering,
+  // so remove the padding at the front
+  const nTrim = expectedSignalLen - 64000;  // 3072
+  const yTrimmed = y.slice(nTrim, y.length - nTrim);
+  return yTrimmed;
 }
 
-// function Float32Concat(first: Float32Array, second: Float32Array) {
-//   const firstLength = first.length;
-//   const result = new Float32Array(firstLength + second.length);
-//   result.set(first);
-//   result.set(second, firstLength);
-//   return result;
-// }
 //------------------------------------------------------------------------------
 // Onsets and Frames Code
 //------------------------------------------------------------------------------
-
 // Safari Webkit only supports 44.1kHz audio.
 const WEBKIT_SAMPLE_RATE = 44100;
 // tslint:disable-next-line:no-any

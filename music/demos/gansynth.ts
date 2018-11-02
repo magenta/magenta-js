@@ -44,8 +44,9 @@ async function runGANSynth() {
   const gansynth = new mm.GANSynth(GANSYNTH_CHECKPOINT);
   await gansynth.initialize();
   console.log('Done loading!');
+
   const start = await performance.now();
-  const specgram = await gansynth.random_sample(60);
+  const specgram = await gansynth.random_sample(36);
   await writeTimer('single-sample-gen-time', start);
   // console.log('Specgram:' + specgram.shape);
 
@@ -130,6 +131,14 @@ async function runGANSynth() {
     player.stop();
   });
 
+  // GUI
+  const newButton = document.createElement('BUTTON');
+  const newText = document.createTextNode('NewSample');
+  newButton.appendChild(newText);
+  document.body.appendChild(newButton);
+  newButton.addEventListener('click', () => {
+    console.log(player);
+  });
 
   // // // PLOTTING
   // // // // Get magnitudes

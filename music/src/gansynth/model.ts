@@ -123,8 +123,9 @@ class GANSynth {
       // but have to implement with padding because python did it this way
       // otherwise weight matrix is transposed wrong
       const inputShape = {inputShape: [1, 1, N_LATENTS + N_PITCHES]};
-      // this.nn.add(pixelNorm(1e-8, inputShape));
-      this.nn.add(initialPad(2, 16, inputShape));
+      this.nn.add(pixelNorm(1e-8, inputShape));
+      this.nn.add(initialPad(2, 16));
+      // this.nn.add(initialPad(2, 16, inputShape));
       this.nn.add(tf.layers.conv2d(convConfig));
       this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
       this.nn.add(pixelNorm());
