@@ -37,6 +37,7 @@ test('Test Chord Pitches', (t: test.Test) => {
   t.deepEqual(ChordSymbols.pitches('G+').sort((x, y) => x - y), [3, 7, 11]);
   t.throws(() => ChordSymbols.pitches('blah'), ChordSymbolException);
   t.throws(() => ChordSymbols.pitches('9'), ChordSymbolException);
+  t.throws(() => ChordSymbols.pitches('M'), ChordSymbolException);
   t.end();
 });
 
@@ -51,6 +52,7 @@ test('Test Chord Root', (t: test.Test) => {
   t.equal(ChordSymbols.root('F(b7)(#9)(b13)'), 5);
   t.throws(() => ChordSymbols.root(''), ChordSymbolException);
   t.throws(() => ChordSymbols.root('o'), ChordSymbolException);
+  t.throws(() => ChordSymbols.root('7#9'), ChordSymbolException);
   t.end();
 });
 
