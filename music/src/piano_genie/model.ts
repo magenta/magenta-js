@@ -161,7 +161,7 @@ class PianoGenie {
     if (button < 0 || button >= NBUTTONS) {
       throw new Error('Invalid button specified.');
     }
-    if (lastOutput < -1 || button >= NPIANOKEYS) {
+    if (lastOutput < -1 || lastOutput >= NPIANOKEYS) {
       throw new Error('Invalid previous output specified.');
     }
     if (deltaTime < 0) {

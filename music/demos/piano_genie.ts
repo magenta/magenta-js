@@ -25,6 +25,7 @@ mm.logging.verbosity = mm.logging.Level.DEBUG;
 
 // tslint:disable-next-line:max-line-length
 const GENIE_CHECKPOINT = `${CHECKPOINTS_DIR}/piano_genie/model/epiano/stp_iq_auto_contour_dt_166006`;
+const LOWEST_PIANO_KEY_MIDI_NOTE = 21;
 
 const genie = new mm.PianoGenie(GENIE_CHECKPOINT);
 
@@ -55,7 +56,7 @@ function initControlsAndAudio () {
       const sample = mm.sampleLogits(logits, 0.25);
 
       const output = sample.dataSync()[0];
-      const note = output + 21;
+      const note = output + LOWEST_PIANO_KEY_MIDI_NOTE;
 
       console.log(
         `button: ${button} last: ${lastOutput} dt: ${deltaTime} => ${output}`);
