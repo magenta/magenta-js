@@ -16,7 +16,6 @@
  */
 
 import * as Tone from 'tone';
-//import * as tf from '@tensorflow/tfjs-core';
 
 import * as mm from '../src/index';
 
@@ -90,3 +89,4 @@ function initControlsAndAudio () {
 }
 
 genie.initialize().then(initControlsAndAudio);
+
