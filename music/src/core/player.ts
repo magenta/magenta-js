@@ -218,8 +218,22 @@ export abstract class BasePlayer {
     Tone.Transport.start();
   }
 
+  /**
+   * Returns true iff the player is completely stopped. This will only be
+   * false after calling stop(), and will be true after calling
+   * start(), pause() or unpause().
+   */
   isPlaying() {
     return !!this.currentPart;
+  }
+
+  /**
+   * Returns true if the player is in a paused playing state. This will be true
+   * only after calling pause(), but not after calling start(), stop() or
+   * unpause().
+   */
+  isPaused() {
+    return Tone.Transport.state === 'paused';
   }
 }
 
