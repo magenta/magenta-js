@@ -195,6 +195,7 @@ export abstract class BasePlayer {
   stop() {
     if (this.currentPart) {
       this.currentPart.stop();
+      Tone.Transport.stop();
       this.currentPart = null;
     }
     Tone.Transport.clear(this.scheduledStop);
@@ -202,8 +203,37 @@ export abstract class BasePlayer {
     this.desiredQPM = undefined;
   }
 
+  /**
+   * Pause playing the currently playing sequence right away. Call unpause()
+   * to resume.
+   */
+  pause() {
+    Tone.Transport.pause();
+  }
+
+  /**
+   * Pause playing the currently playing sequence right away. Call resume()
+   * to resume playing the sequence.
+   */
+  resume() {
+    Tone.Transport.start();
+  }
+
+  /**
+   * Returns true iff the player is completely stopped. This will only be
+   * false after calling stop(), and will be true after calling
+   * start(), pause() or unpause().
+   */
   isPlaying() {
     return !!this.currentPart;
+  }
+
+  /**
+   * Returns the playback state of the player, either "started",
+   * "stopped", or "paused".
+   */
+  getPlayState() {
+    return Tone.Transport.state;
   }
 }
 

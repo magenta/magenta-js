@@ -19,6 +19,50 @@ import * as mm from '../src/index';
 // tslint:disable-next-line:max-line-length
 import {DRUM_SEQ_WITH_VELOCITIES, DRUM_SEQS, FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED, MEL_TWINKLE_WITH_VELOCITIES, writeNoteSeqs} from './common';
 
+function setupControls() {
+  const playBtn = document.getElementById('play') as HTMLButtonElement;
+  const stopBtn = document.getElementById('stop') as HTMLButtonElement;
+  const pauseBtn = document.getElementById('pause') as HTMLButtonElement;
+  const resumeBtn = document.getElementById('resume') as HTMLButtonElement;
+  const playState = document.getElementById('playState') as HTMLSpanElement;
+
+  const player = new mm.Player();
+  playState.textContent = player.getPlayState();
+
+  playBtn.addEventListener('click', () => {
+    player.start(FULL_TWINKLE);
+    playState.textContent = player.getPlayState();
+    playBtn.disabled = true;
+    stopBtn.disabled = false;
+    pauseBtn.disabled = false;
+    resumeBtn.disabled = true;
+  });
+  stopBtn.addEventListener('click', () => {
+    player.stop();
+    playState.textContent = player.getPlayState();
+    playBtn.disabled = false;
+    stopBtn.disabled = true;
+    pauseBtn.disabled = true;
+    resumeBtn.disabled = true;
+  });
+  pauseBtn.addEventListener('click', () => {
+    player.pause();
+    playState.textContent = player.getPlayState();
+    playBtn.disabled = true;
+    stopBtn.disabled = false;
+    pauseBtn.disabled = true;
+    resumeBtn.disabled = false;
+  });
+  resumeBtn.addEventListener('click', () => {
+    player.resume();
+    playState.textContent = player.getPlayState();
+    playBtn.disabled = true;
+    stopBtn.disabled = false;
+    pauseBtn.disabled = false;
+    resumeBtn.disabled = true;
+  });
+}
+
 function generatePlayers() {
   writeNoteSeqs('unq-player', [FULL_TWINKLE_UNQUANTIZED], false);
   writeNoteSeqs('unq-soundfont', [FULL_TWINKLE_UNQUANTIZED], true);
@@ -64,6 +108,7 @@ function generateVelocityPlayers() {
 }
 
 try {
+  setupControls();
   Promise.all(
       [generatePlayers(), generateTempoPlayer(), generateVelocityPlayers()]);
 } catch (err) {
