@@ -13,6 +13,15 @@
   <p>An <code>mm.Player</code> is a class that playes <code>NoteSequences</code>.
     Below you can play the same melody using each of the available players</p>
 
+  <h2>Controls</h2>
+  <section>
+    <p>You can start, stop, pause and unpause a Player: </p>
+    <button id="play">Play</button>
+    <button id="stop" disabled>Stop</button>
+    <button id="pause" disabled>Pause</button>
+    <button id="resume" disabled>Resume</button>
+  </section>
+
   <h2>Unquantized NoteSequences</h2>
   <section>
     <b>Base player</b>
@@ -47,8 +56,7 @@
     <div>
       <button id="playBtn">Play</button>
       <b>Tempo:</b>
-      <input type="range" id="tempo" min="20" max="240" value="120" step="1"
-      oninput="tempoValue.value = tempo.value">
+      <input type="range" id="tempo" min="20" max="240" value="120" step="1" oninput="tempoValue.value = tempo.value">
       <output id="tempoValue">120</output>
     </div>
     <div class="visualizer-container" id="container">

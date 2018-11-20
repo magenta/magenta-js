@@ -202,6 +202,22 @@ export abstract class BasePlayer {
     this.desiredQPM = undefined;
   }
 
+  /**
+   * Pause playing the currently playing sequence right away. Call unpause()
+   * to resume
+   */
+  pause() {
+    Tone.Transport.pause();
+  }
+
+  /**
+   * Pause playing the currently playing sequence right away. Call resume()
+   * to resume playing the sequence.
+   */
+  resume() {
+    Tone.Transport.start();
+  }
+
   isPlaying() {
     return !!this.currentPart;
   }
