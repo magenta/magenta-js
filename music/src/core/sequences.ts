@@ -461,27 +461,67 @@ export function concatenate(args: NoteSequence[]): NoteSequence {
 /**
  * Trim notes from a NoteSequence to lie within a specified time range.
  * Notes starting before `startTime` are not included. Notes ending after
- * `endTime` are truncated.
+ * `endTime` are not included, unless `truncateEndNotes` is true.
  * @param ns The NoteSequence for which to trim notes.
  * @param start The time after which all notes should begin. This should be
  * either seconds (if ns is unquantized), or a quantized step (if ns is
- * quantized)
+ * quantized).
  * @param end The time before which all notes should end. This should be
  * either seconds (if ns is unquantized), or a quantized step (if ns is
- * quantized)
+ * quantized).
+ * @param truncateEndNotes Optional. If true, then notes starting before
+ * the end time but ending after it will be included and truncated.
  * @returns A new NoteSequence with all notes trimmed to lie between `start`
- * and `end`.
+ * and `end`, and time-shifted to begin at 0.
  */
-export function trim(ns: NoteSequence, start: number, end: number) {
+export function trim(
+    ns: NoteSequence, start: number, end: number, truncateEndNotes?: boolean) {
   const result = clone(ns);
-  if (isQuantizedSequence(ns)) {
-    result.totalQuantizedSteps = end;
-    result.notes = result.notes.filter(
-        n => n.quantizedStartStep >= start && n.quantizedEndStep <= end);
-  } else {
-    result.totalTime = end;
-    result.notes =
-        result.notes.filter(n => n.startTime >= start && n.endTime <= end);
+
+  return isQuantizedSequence(ns) ?
+      trimQuantizedNoteSequence(ns, start, end, truncateEndNotes) :
+      trimUnquantizedNoteSequence(ns, start, end, truncateEndNotes);
+}
+
+function trimUnquantizedNoteSequence(
+    ns: NoteSequence, start: number, end: number, truncateEndNotes?: boolean) {
+  const result = clone(ns);
+  result.totalTime = end;
+  result.notes = result.notes.filter(
+      n => n.startTime >= start && n.startTime <= end &&
+          (truncateEndNotes || n.endTime <= end));
+
+  // Shift the sequence to start at 0.
+  for (let i = 0; i < result.notes.length; i++) {
+    result.notes[i].startTime -= start;
+    result.notes[i].endTime -= start;
+
+    if (truncateEndNotes) {
+      result.notes[i].endTime = Math.min(result.notes[i].endTime, end);
+    }
   }
+  result.totalTime = Math.min(ns.totalTime - start, end);
+  return result;
+}
+
+function trimQuantizedNoteSequence(
+    ns: NoteSequence, start: number, end: number, truncateEndNotes?: boolean) {
+  const result = clone(ns);
+  result.totalQuantizedSteps = end;
+  result.notes = result.notes.filter(
+      n => n.quantizedStartStep >= start && n.quantizedStartStep <= end &&
+          (truncateEndNotes || n.quantizedEndStep <= end));
+
+  // Shift the sequence to start at 0.
+  for (let i = 0; i < result.notes.length; i++) {
+    result.notes[i].quantizedStartStep -= start;
+    result.notes[i].quantizedEndStep -= start;
+
+    if (truncateEndNotes) {
+      result.notes[i].quantizedEndStep =
+          Math.min(result.notes[i].quantizedEndStep, end);
+    }
+  }
+  result.totalQuantizedSteps = Math.min(ns.totalQuantizedSteps - start, end);
   return result;
 }

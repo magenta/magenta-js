@@ -565,18 +565,36 @@ test('Trim an Unquantized NoteSequence', (t: test.Test) => {
 
   addTrackToSequence(ns1, 0, [
     [60, 100, 0.0, 1.0], [72, 100, 0.5, 1.5], [59, 100, 1.5, 2.5],
-    [71, 100, 2.0, 3.0], [58, 100, 4.0, 4.5], [70, 100, 5.0, 5.5]
+    [71, 100, 2.0, 3.0], [58, 100, 3.0, 4.5], [70, 100, 5.0, 5.5]
   ]);
-  addTrackToSequence(expected, 0, [[59, 100, 1.5, 2.5], [71, 100, 2.0, 3.0]]);
+  addTrackToSequence(expected, 0, [[59, 100, 0, 1], [71, 100, 0.5, 1.5]]);
   expected.totalTime = 4;
 
   t.deepEqual(
-      NoteSequence.toObject(sequences.trim(ns1, 1.3, 4.0)),
+      NoteSequence.toObject(sequences.trim(ns1, 1.5, 4.0)),
       NoteSequence.toObject(expected));
   t.end();
 });
 
-test('Trim an Quantized NoteSequence', (t: test.Test) => {
+test('Trim and truncate a Unquantized NoteSequence', (t: test.Test) => {
+  const ns1 = createTestNS();
+  const expected = createTestNS();
+
+  addTrackToSequence(ns1, 0, [
+    [60, 100, 0.0, 1.0], [72, 100, 0.5, 1.5], [59, 100, 1.5, 2.5],
+    [71, 100, 2.0, 3.0], [58, 100, 3.0, 4.5], [70, 100, 5.0, 5.5]
+  ]);
+  addTrackToSequence(
+      expected, 0, [[59, 100, 0, 1], [71, 100, 0.5, 1.5], [58, 100, 1.5, 3.0]]);
+  expected.totalTime = 4;
+
+  t.deepEqual(
+      NoteSequence.toObject(sequences.trim(ns1, 1.5, 4.0, true)),
+      NoteSequence.toObject(expected));
+  t.end();
+});
+
+test('Trim a Quantized NoteSequence', (t: test.Test) => {
   const ns1 = createTestNS();
   ns1.quantizationInfo = NoteSequence.QuantizationInfo.create(
       {stepsPerQuarter: STEPS_PER_QUARTER});
@@ -585,17 +603,44 @@ test('Trim an Quantized NoteSequence', (t: test.Test) => {
   ns1.notes.push({pitch: 60, quantizedStartStep: 2, quantizedEndStep: 3});
   ns1.notes.push({pitch: 60, quantizedStartStep: 3, quantizedEndStep: 4});
   ns1.notes.push({pitch: 60, quantizedStartStep: 3, quantizedEndStep: 6});
+  ns1.totalQuantizedSteps = 6;
 
   const expected = createTestNS();
   expected.quantizationInfo = NoteSequence.QuantizationInfo.create(
       {stepsPerQuarter: STEPS_PER_QUARTER});
   expected.quantizationInfo.stepsPerQuarter = STEPS_PER_QUARTER;
+  expected.notes.push({pitch: 60, quantizedStartStep: 1, quantizedEndStep: 2});
   expected.notes.push({pitch: 60, quantizedStartStep: 2, quantizedEndStep: 3});
-  expected.notes.push({pitch: 60, quantizedStartStep: 3, quantizedEndStep: 4});
   expected.totalQuantizedSteps = 5;
 
   t.deepEqual(
       NoteSequence.toObject(sequences.trim(ns1, 1, 5)),
+      NoteSequence.toObject(expected));
+  t.end();
+});
+
+test('Trim and truncate a Quantized NoteSequence', (t: test.Test) => {
+  const ns1 = createTestNS();
+  ns1.quantizationInfo = NoteSequence.QuantizationInfo.create(
+      {stepsPerQuarter: STEPS_PER_QUARTER});
+  ns1.quantizationInfo.stepsPerQuarter = STEPS_PER_QUARTER;
+  ns1.notes.push({pitch: 60, quantizedStartStep: 0, quantizedEndStep: 4});
+  ns1.notes.push({pitch: 60, quantizedStartStep: 2, quantizedEndStep: 3});
+  ns1.notes.push({pitch: 60, quantizedStartStep: 3, quantizedEndStep: 4});
+  ns1.notes.push({pitch: 60, quantizedStartStep: 3, quantizedEndStep: 6});
+  ns1.totalQuantizedSteps = 6;
+
+  const expected = createTestNS();
+  expected.quantizationInfo = NoteSequence.QuantizationInfo.create(
+      {stepsPerQuarter: STEPS_PER_QUARTER});
+  expected.quantizationInfo.stepsPerQuarter = STEPS_PER_QUARTER;
+  expected.notes.push({pitch: 60, quantizedStartStep: 1, quantizedEndStep: 2});
+  expected.notes.push({pitch: 60, quantizedStartStep: 2, quantizedEndStep: 3});
+  expected.notes.push({pitch: 60, quantizedStartStep: 2, quantizedEndStep: 5});
+  expected.totalQuantizedSteps = 5;
+
+  t.deepEqual(
+      NoteSequence.toObject(sequences.trim(ns1, 1, 5, true)),
       NoteSequence.toObject(expected));
   t.end();
 });
