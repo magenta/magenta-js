@@ -206,6 +206,13 @@ class PianoGenie {
     lastOutput?: number,
     deltaTime?: number,
     sampleFunc?: (logits: tf.Tensor1D) => tf.Scalar) {
+    // TODO(chrisdonahue): Make this function asynchronous.
+    // This function is (currently) synchronous, blocking other execution
+    // to provide mutual exclusion. This is a workaround for race conditions
+    // where the LSTM state is not updated from the current call before it is
+    // needed in subsequent calls. More research is required to figure out an
+    // adequate asynchronous solution.
+
     // Validate arguments.
     if (button < 0 || button >= NUM_BUTTONS) {
       throw new Error('Invalid button specified.');
