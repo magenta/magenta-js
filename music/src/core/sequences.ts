@@ -476,8 +476,6 @@ export function concatenate(args: NoteSequence[]): NoteSequence {
  */
 export function trim(
     ns: NoteSequence, start: number, end: number, truncateEndNotes?: boolean) {
-  const result = clone(ns);
-
   return isQuantizedSequence(ns) ?
       trimQuantizedNoteSequence(ns, start, end, truncateEndNotes) :
       trimUnquantizedNoteSequence(ns, start, end, truncateEndNotes);
