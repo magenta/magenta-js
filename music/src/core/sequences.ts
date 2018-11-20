@@ -426,11 +426,15 @@ export function mergeInstruments(ns: INoteSequence) {
 }
 
 /**
- * Concatenates a list of NoteSequences.
+ * Concatenate a series of NoteSequences together.
+ * Individual sequences will be shifted and then merged together. This means
+ * that any global values (e.g. stepsPerQuarter) will be overwritten by each
+ * sequence and only the final value will be used.
  * @param args An array of NoteSequences to be concatenated.
- * @returns The concatenated `NoteSequence`.
+ * @returns A new sequence that is the result of concatenating the input
+ * sequences.
  */
-export function concatenate(...args: NoteSequence[]): NoteSequence {
+export function concatenate(args: NoteSequence[]): NoteSequence {
   // Base case: if there are only two NoteSequences, glue them together.
   if (args.length === 2) {
     const [seqA, seqB] = args;
@@ -447,7 +451,7 @@ export function concatenate(...args: NoteSequence[]): NoteSequence {
     // If there are more than two NoteSequences, concat the last two,
     // and then recursively concatenate that sequences with the remaining ones.
     const first = args.shift();
-    return concatenate(first, concatenate(...args));
+    return concatenate([first, concatenate(args)]);
   } else {
     // If there's only one NoteSequence, there's nothing to concat.
     return args[0];

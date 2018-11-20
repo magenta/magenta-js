@@ -16,9 +16,7 @@
  */
 
 import * as test from 'tape';
-
 import {NoteSequence} from '../protobuf/index';
-
 import * as sequences from './sequences';
 
 const STEPS_PER_QUARTER = 4;
@@ -504,5 +502,25 @@ test('Merge Instruments', (t: test.Test) => {
       NoteSequence.toObject(sequences.mergeInstruments(ns)),
       NoteSequence.toObject(expected));
 
+  t.end();
+});
+
+test('Concatenate NoteSequences', (t: test.Test) => {
+  const ns1 = createTestNS();
+  const ns2 = createTestNS();
+  const expected = createTestNS();
+
+  // ns2 strictly after ns2
+  addTrackToSequence(ns1, 0, [[60, 100, 0.0, 1.0], [72, 100, 0.5, 1.5]]);
+  addTrackToSequence(ns2, 0, [[59, 100, 0.0, 1.0], [71, 100, 0.5, 1.5]]);
+
+  addTrackToSequence(expected, 0, [
+    [60, 100, 0.0, 1.0], [72, 100, 0.5, 1.5], [59, 100, 1.5, 2.5],
+    [71, 100, 2.0, 3.0]
+  ]);
+
+  t.deepEqual(
+      NoteSequence.toObject(sequences.concatenate([ns1, ns2])),
+      NoteSequence.toObject(expected));
   t.end();
 });
