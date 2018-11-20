@@ -424,3 +424,32 @@ export function mergeInstruments(ns: INoteSequence) {
 
   return result;
 }
+
+/**
+ * Concatenates a list of NoteSequences.
+ * @param args An array of NoteSequences to be concatenated.
+ * @returns The concatenated `NoteSequence`.
+ */
+export function concatenate(...args: NoteSequence[]): NoteSequence {
+  // Base case: if there are only two NoteSequences, glue them together.
+  if (args.length === 2) {
+    const [seqA, seqB] = args;
+    const outputSequence = clone(seqA);
+    seqB.notes.forEach(note => {
+      const clonedNote = Object.assign({}, note);
+      clonedNote.startTime += seqA.totalTime;
+      clonedNote.endTime += seqA.totalTime;
+      outputSequence.notes.push(clonedNote);
+    });
+    outputSequence.totalTime = seqA.totalTime + seqB.totalTime;
+    return outputSequence;
+  } else if (args.length > 2) {
+    // If there are more than two NoteSequences, concat the last two,
+    // and then recursively concatenate that sequences with the remaining ones.
+    const first = args.shift();
+    return concatenate(first, concatenate(...args));
+  } else {
+    // If there's only one NoteSequence, there's nothing to concat.
+    return args[0];
+  }
+}
