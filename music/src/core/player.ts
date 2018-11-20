@@ -204,7 +204,7 @@ export abstract class BasePlayer {
 
   /**
    * Pause playing the currently playing sequence right away. Call unpause()
-   * to resume
+   * to resume.
    */
   pause() {
     Tone.Transport.pause();
