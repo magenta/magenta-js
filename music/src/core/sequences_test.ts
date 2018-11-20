@@ -505,12 +505,24 @@ test('Merge Instruments', (t: test.Test) => {
   t.end();
 });
 
-test('Concatenate NoteSequences', (t: test.Test) => {
+test('Concatenate 1 NoteSequence', (t: test.Test) => {
+  const ns1 = createTestNS();
+  const expected = createTestNS();
+
+  addTrackToSequence(ns1, 0, [[60, 100, 0.0, 1.0], [72, 100, 0.5, 1.5]]);
+  addTrackToSequence(expected, 0, [[60, 100, 0.0, 1.0], [72, 100, 0.5, 1.5]]);
+
+  t.deepEqual(
+      NoteSequence.toObject(sequences.concatenate([ns1])),
+      NoteSequence.toObject(expected));
+  t.end();
+});
+
+test('Concatenate 2 NoteSequences', (t: test.Test) => {
   const ns1 = createTestNS();
   const ns2 = createTestNS();
   const expected = createTestNS();
 
-  // ns2 strictly after ns2
   addTrackToSequence(ns1, 0, [[60, 100, 0.0, 1.0], [72, 100, 0.5, 1.5]]);
   addTrackToSequence(ns2, 0, [[59, 100, 0.0, 1.0], [71, 100, 0.5, 1.5]]);
 
@@ -521,6 +533,28 @@ test('Concatenate NoteSequences', (t: test.Test) => {
 
   t.deepEqual(
       NoteSequence.toObject(sequences.concatenate([ns1, ns2])),
+      NoteSequence.toObject(expected));
+  t.end();
+});
+
+test('Concatenate 3 NoteSequences', (t: test.Test) => {
+  const ns1 = createTestNS();
+  const ns2 = createTestNS();
+  const ns3 = createTestNS();
+
+  const expected = createTestNS();
+
+  addTrackToSequence(ns1, 0, [[60, 100, 0.0, 1.0], [72, 100, 0.5, 1.5]]);
+  addTrackToSequence(ns2, 0, [[59, 100, 0.0, 1.0], [71, 100, 0.5, 1.5]]);
+  addTrackToSequence(ns3, 0, [[58, 100, 1.0, 1.5], [70, 100, 2.0, 2.5]]);
+
+  addTrackToSequence(expected, 0, [
+    [60, 100, 0.0, 1.0], [72, 100, 0.5, 1.5], [59, 100, 1.5, 2.5],
+    [71, 100, 2.0, 3.0], [58, 100, 4.0, 4.5], [70, 100, 5.0, 5.5]
+  ]);
+
+  t.deepEqual(
+      NoteSequence.toObject(sequences.concatenate([ns1, ns2, ns3])),
       NoteSequence.toObject(expected));
   t.end();
 });
