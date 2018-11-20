@@ -24,11 +24,14 @@ function setupControls() {
   const stopBtn = document.getElementById('stop') as HTMLButtonElement;
   const pauseBtn = document.getElementById('pause') as HTMLButtonElement;
   const resumeBtn = document.getElementById('resume') as HTMLButtonElement;
+  const playState = document.getElementById('playState') as HTMLSpanElement;
+
   const player = new mm.Player();
+  playState.textContent = player.getPlayState();
 
   playBtn.addEventListener('click', () => {
     player.start(FULL_TWINKLE);
-    console.log(`playing: ${player.isPlaying()}, paused: ${player.isPaused()}`);
+    playState.textContent = player.getPlayState();
     playBtn.disabled = true;
     stopBtn.disabled = false;
     pauseBtn.disabled = false;
@@ -36,7 +39,7 @@ function setupControls() {
   });
   stopBtn.addEventListener('click', () => {
     player.stop();
-    console.log(`playing: ${player.isPlaying()}, paused: ${player.isPaused()}`);
+    playState.textContent = player.getPlayState();
     playBtn.disabled = false;
     stopBtn.disabled = true;
     pauseBtn.disabled = true;
@@ -44,7 +47,7 @@ function setupControls() {
   });
   pauseBtn.addEventListener('click', () => {
     player.pause();
-    console.log(`playing: ${player.isPlaying()}, paused: ${player.isPaused()}`);
+    playState.textContent = player.getPlayState();
     playBtn.disabled = true;
     stopBtn.disabled = false;
     pauseBtn.disabled = true;
@@ -52,7 +55,7 @@ function setupControls() {
   });
   resumeBtn.addEventListener('click', () => {
     player.resume();
-    console.log(`playing: ${player.isPlaying()}, paused: ${player.isPaused()}`);
+    playState.textContent = player.getPlayState();
     playBtn.disabled = true;
     stopBtn.disabled = false;
     pauseBtn.disabled = false;

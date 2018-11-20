@@ -195,6 +195,7 @@ export abstract class BasePlayer {
   stop() {
     if (this.currentPart) {
       this.currentPart.stop();
+      Tone.Transport.stop();
       this.currentPart = null;
     }
     Tone.Transport.clear(this.scheduledStop);
@@ -228,12 +229,11 @@ export abstract class BasePlayer {
   }
 
   /**
-   * Returns true if the player is in a paused playing state. This will be true
-   * only after calling pause(), but not after calling start(), stop() or
-   * unpause().
+   * Returns the playback state of the player, either "started",
+   * "stopped", or "paused".
    */
-  isPaused() {
-    return Tone.Transport.state === 'paused';
+  getPlayState() {
+    return Tone.Transport.state;
   }
 }
 
