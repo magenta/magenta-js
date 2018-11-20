@@ -15,4 +15,4 @@
  * =============================================================================
  */
 
-export {PianoGenie,sampleLogits} from './model';
+export {PianoGenie} from './model';

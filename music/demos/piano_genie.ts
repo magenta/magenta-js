@@ -16,12 +16,8 @@
  */
 
 import * as Tone from 'tone';
-
 import * as mm from '../src/index';
-
 import {CHECKPOINTS_DIR} from './common';
-
-mm.logging.verbosity = mm.logging.Level.DEBUG;
 
 // tslint:disable-next-line:max-line-length
 const GENIE_CHECKPOINT = `${CHECKPOINTS_DIR}/piano_genie/model/epiano/stp_iq_auto_contour_dt_166006`;
@@ -30,12 +26,7 @@ const LOWEST_PIANO_KEY_MIDI_NOTE = 21;
 const genie = new mm.PianoGenie(GENIE_CHECKPOINT);
 
 function initControlsAndAudio () {
-  let lastOutput = -1;
-  let lastTime = new Date();
-  lastTime.setSeconds(lastTime.getSeconds() - 100000);
-  
   const buttonToNote = new Map<number, number>();
-
   const synth = new Tone.PolySynth(8, Tone.FMSynth).toMaster();
 
   // Bind keyboard controls
@@ -50,25 +41,11 @@ function initControlsAndAudio () {
         return;
       }
 
-      const time = new Date();
-      const deltaTime = (time.getTime() - lastTime.getTime()) / 1000;
-      const logits = genie.evaluate(button, lastOutput, deltaTime);
-      const sample = mm.sampleLogits(logits, 0.25);
-
-      const output = sample.dataSync()[0];
+      const output = genie.next(button, 0.25);
       const note = output + LOWEST_PIANO_KEY_MIDI_NOTE;
-
-      console.log(
-        `button: ${button} last: ${lastOutput} dt: ${deltaTime} => ${output}`);
 
       synth.triggerAttack(Tone.Frequency(note, 'midi'));
       buttonToNote.set(button, note);
-
-      logits.dispose();
-      sample.dispose();
-
-      lastOutput = output;
-      lastTime = time;
     }
   };
 
@@ -90,4 +67,3 @@ function initControlsAndAudio () {
 }
 
 genie.initialize().then(initControlsAndAudio);
-

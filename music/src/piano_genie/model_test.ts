@@ -28,7 +28,7 @@ import * as fs from 'fs';
 import * as test from 'tape';
 import * as tf from '@tensorflow/tfjs-core';
 
-import {PianoGenie,sampleLogits} from './model';
+import {PianoGenie} from './model';
 
 function loadJSONModelWeights(fp: string) {
   const rawVars = JSON.parse(fs.readFileSync(fp, 'utf8'));
@@ -52,52 +52,85 @@ test('Piano Genie Model Correctness', async (t: test.Test) => {
 
   const vars = loadJSONModelWeights(modelWeightsFp);
 
-  const model = new PianoGenie(undefined);
-  await model.initialize(vars);
+  const genie = new PianoGenie(undefined);
+  await genie.initialize(vars);
 
-  let logits: tf.Tensor1D;
-  let scores: tf.Tensor1D;
+  /**
+   * Tests simple usage of PianoGenie.
+   */
 
-  [logits, scores] = tf.tidy(() => {
-    let logits = model.evaluate(0, -1, 0.);
-    logits = model.evaluate(1, 43, 0.125);
-    logits = model.evaluate(2, 45, 1.);
-    const scores = tf.softmax(logits, 0);
-    return [logits, scores];
+  tf.tidy(() => {
+    const keys: number[] = [];
+    // Ascending pattern with sampling.
+    for (let i = 0; i < 8; ++i) {
+      keys.push(genie.next(i, 1., 1337, undefined, 0.1));
+    }
+    // Descending pattern with argmax.
+    for (let i = 7; i >= 0; --i) {
+      keys.push(genie.next(i, 0., undefined, undefined, 0.1));
+    }
+    // Fast trill with temperature 0.5.
+    for (let i = 0; i < 8; ++i) {
+      keys.push(genie.next(3 + (i % 2), 0.5, 1337, undefined, 0.05)); 
+    }
+
+    const expectedKeys = [
+      21, 23, 24, 26, 28, 31, 35, 40,
+      43, 45, 45, 43, 42, 40, 36, 33,
+      35, 36, 36, 38, 36, 38, 36, 38
+    ];
+
+    t.deepEqual(keys, expectedKeys);
   });
 
-  t.ok(sampleLogits(logits, 0.).dataSync()[0] === 40);
-  t.ok(sampleLogits(logits, 0.5, 20).dataSync()[0] === 39);
-  t.ok(sampleLogits(logits, 1.0, 13).dataSync()[0] === 41);
-  let _scores = scores.dataSync();
-  t.ok(Math.abs(_scores[39] - 0.12285) < EPS);
-  t.ok(Math.abs(_scores[40] - 0.829168) < EPS);
-  t.ok(Math.abs(_scores[41] - 0.0366595) < EPS);
+  // Reset model.
+  genie.resetState();
 
-  logits.dispose();
-  scores.dispose();
+  /**
+   * Tests advanced usage of PianoGenie.
+   */
 
-  model.resetState();
+  // Creates a mock sample function which tests scores.
+  const testSampleFuncFactory = (pairs: Array<[number, number]>) => {
+    return (logits: tf.Tensor1D) => {
+      const scores = tf.softmax(logits);
+      const _scores = scores.dataSync();
+      pairs.forEach(([pianoKey, expectedScore]) => {
+        t.ok(Math.abs(_scores[pianoKey] - expectedScore) < EPS);
+      });
+      return tf.scalar(0, 'int32');
+    };
+  };
 
-  [logits, scores] = tf.tidy(() => {
-    let logits = model.evaluate(1, -1, 0.125);
-    logits = model.evaluate(2, 44, 0.25);
-    logits = model.evaluate(3, 46, 1.5);
-    const scores = tf.softmax(logits, 0);
-    return [logits, scores];
+  // Ensures that JavaScript model outputs match test outputs from Python.
+  tf.tidy(() => {
+    const sampleFunc = testSampleFuncFactory([
+      [39, 0.12285],
+      [40, 0.829168],
+      [41, 0.0366595],
+    ]);
+    genie.next(0, undefined, undefined, -1, 0.);
+    genie.next(1, undefined, undefined, 43, 0.125);
+    genie.next(2, undefined, undefined, 45, 1., sampleFunc);
   });
 
-  t.ok(sampleLogits(logits, 0.).dataSync()[0] === 44);
-  t.ok(sampleLogits(logits, 0.5, 14).dataSync()[0] === 43);
-  t.ok(sampleLogits(logits, 1.0, 541).dataSync()[0] === 42);
-  _scores = scores.dataSync();
-  t.ok(Math.abs(_scores[43] - 0.18577) < EPS);
-  t.ok(Math.abs(_scores[44] - 0.813153) < EPS);
-  t.ok(Math.abs(_scores[45] - 2.67857e-05) < EPS);
+  // Reset model.
+  genie.resetState();
 
-  logits.dispose();
-  scores.dispose();
-  model.dispose();
+  // Ensures that JavaScript model outputs match test outputs from Python.
+  tf.tidy(() => {
+    const sampleFunc = testSampleFuncFactory([
+      [43, 0.18577],
+      [44, 0.813153],
+      [45, 2.67857e-05],
+    ]);
+    genie.next(1, undefined, undefined, -1, 0.125);
+    genie.next(2, undefined, undefined, 44, 0.25);
+    genie.next(3, undefined, undefined, 46, 1.5, sampleFunc);
+  });
+
+  // Dispose model.
+  genie.dispose();
 
   t.end();
 });

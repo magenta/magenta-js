@@ -16,9 +16,6 @@
  * limitations under the License.
  */
 
-/**
- * Imports
- */
 import * as tf from '@tensorflow/tfjs-core';
 
 /**
@@ -34,8 +31,8 @@ const NPIANOKEYS = 88;
 /**
  * A type for keeping track of LSTM state activations.
  *
- * @param c The c parameters of the LSTM.
- * @param h The h parameters of the LSTM
+ * @param c The memory parameters of the LSTM.
+ * @param h The hidden state parameters of the LSTM.
  */
 type LSTMState = { c: tf.Tensor2D[], h: tf.Tensor2D[] };
 
@@ -57,10 +54,42 @@ function createZeroState() {
  * @param state: The LSTM state to free.
  */
 function disposeState(state: LSTMState) {
-  for (let i = 0; i < state.c.length; ++i) {
+  for (let i = 0; i < RNN_NLAYERS; ++i) {
     state.c[i].dispose();
     state.h[i].dispose();
   }
+}
+
+/**
+ * Samples logits with temperature.
+ *
+ * @param logits: The unnormalized logits to sample from.
+ * @param temperature: Temperature. From 0 to 1, goes from argmax to random.
+ * @param seed: Random seed.
+ */
+function sampleLogits(
+  logits: tf.Tensor1D,
+  temperature?: number,
+  seed?: number) {
+  temperature = temperature !== undefined ? temperature : 1.;
+  if (temperature < 0. || temperature > 1.) {
+    throw new Error('Invalid temperature specified');
+  }
+
+  let result: tf.Scalar;
+
+  if (temperature === 0) {
+    result = tf.argMax(logits, 0) as tf.Scalar;
+  } else {
+    if (temperature < 1) {
+      logits = tf.div(logits, tf.scalar(temperature, 'float32'));
+    }
+    const scores = tf.reshape(tf.softmax(logits, 0), [1, -1]) as tf.Tensor2D;
+    const sample = tf.multinomial(scores, 1, seed, true) as tf.Tensor1D;
+    result = tf.reshape(sample, []) as tf.Scalar;
+  }
+
+  return result;
 }
 
 /**
@@ -70,11 +99,15 @@ class PianoGenie {
   private checkpointURL: string;
   private initialized: boolean;
 
-  // Model state
+  // Model state.
   private modelVars: { [varName: string]: tf.Tensor };
   private decLSTMCells: tf.LSTMCellFunc[];
   private decForgetBias: tf.Scalar;
-  private state: LSTMState;
+
+  // Execution state.
+  private lastState: LSTMState;
+  private lastOutput: number;
+  private lastTime: Date;
 
   /**
    * Piano Genie constructor.
@@ -90,10 +123,13 @@ class PianoGenie {
    * Resets Piano Genie LSTM state.
    */
   resetState() {
-    if (this.state !== undefined) {
-      disposeState(this.state);
+    if (this.lastState !== undefined) {
+      disposeState(this.lastState);
     }
-    this.state = createZeroState();
+    this.lastState = createZeroState();
+    this.lastOutput = -1;
+    this.lastTime = new Date();
+    this.lastTime.setSeconds(this.lastTime.getSeconds() - 100000);
   }
 
   /**
@@ -150,31 +186,55 @@ class PianoGenie {
   }
 
   /**
-   * Evaluates Piano Genie to produce piano key logits and update state.
+   * Given a button number, evaluates Piano Genie producing a piano key number.
    *
-   * @param button Button number [0, 8)
-   * @param lastOutput Last sampled piano key [0, 88). Pass -1 on first call.
-   * @param deltaTime Amount of time elapsed in seconds since last button press.
+   * @param button Button number (one of {0, 1, 2, 3, 4, 5, 6, 7}).
+   * @param temperature Sampling temperature [0, 1].
+   * @param seed Random seed for sampling.
+   * @param lastOutput Override for last note output. If unspecified, uses 
+   * output from the last call to this method.
+   * @param deltaTime Override for elapsed time since last button press. If 
+   * unspecified, uses amount of time since last call to this method.
+   * @param sampleFunc Override for sampling function. Unweighted model logits 
+   * (tf.Tensor1D of size 88) are passed to this function, and the expected 
+   * result is an integer (tf.Scalar) representing one of them (e.g. 60).
    */
-  evaluate(button: number, lastOutput: number, deltaTime: number) {
-    // Validate arguments
+  next(
+    button: number,
+    temperature?: number,
+    seed?: number,
+    lastOutput?: number,
+    deltaTime?: number,
+    sampleFunc?: (logits: tf.Tensor1D) => tf.Scalar) {
+    // Validate arguments.
     if (button < 0 || button >= NBUTTONS) {
       throw new Error('Invalid button specified.');
-    }
-    if (lastOutput < -1 || lastOutput >= NPIANOKEYS) {
-      throw new Error('Invalid previous output specified.');
-    }
-    if (deltaTime < 0) {
-      throw new Error('Negative delta time specified.');
     }
 
     // Ensure that the model is initialized.
     if (!this.initialized) {
+      // This should be an error in real-time context because the model isn't 
+      // ready to be evaluated.
       throw new Error('Model is not initialized.');
     }
 
+    // Process prior state.
+    const lastState = this.lastState;
+    lastOutput = lastOutput !== undefined ? lastOutput : this.lastOutput;
+    const lastTime = this.lastTime;
+    const time = new Date();
+    deltaTime = deltaTime !== undefined ? deltaTime : 
+      (time.getTime() - lastTime.getTime()) / 1000;
+
+    // Create default sample function.
+    if (sampleFunc === undefined) {
+      sampleFunc = (logits: tf.Tensor1D) => {
+        return sampleLogits(logits, temperature, seed);
+      };
+    }
+
     // Compute logits.
-    const [finalState, decLogits]: [LSTMState, tf.Tensor1D] = tf.tidy(() => {
+    const [state, sample]: [LSTMState, tf.Scalar] = tf.tidy(() => {
       // Initialize decoder feats array.
       const decFeatsArr: tf.Tensor2D[] = [];
 
@@ -216,29 +276,39 @@ class PianoGenie {
 
       // Evaluate RNN.
       const [c, h] = tf.multiRNNCell(
-        this.decLSTMCells, rnnInput, this.state.c, this.state.h);
-      const finalState: LSTMState = { c, h };
+        this.decLSTMCells, rnnInput, lastState.c, lastState.h);
+      const state: LSTMState = { c, h };
 
       // Project to logits.
-      let decLogits: tf.Tensor2D = tf.matMul(
+      let logits: tf.Tensor2D = tf.matMul(
         h[RNN_NLAYERS - 1],
         this.modelVars[
           'phero_model/decoder/pitches/dense/kernel'] as tf.Tensor2D);
-      decLogits = tf.add(
-        decLogits,
+      logits = tf.add(
+        logits,
         this.modelVars[
           'phero_model/decoder/pitches/dense/bias'] as tf.Tensor1D);
 
       // Remove batch axis to produce piano key (n=88) logits.
-      const decLogits1D = tf.reshape(decLogits, [NPIANOKEYS]) as tf.Tensor1D;
+      const logits1D = tf.reshape(logits, [NPIANOKEYS]) as tf.Tensor1D;
 
-      return [finalState, decLogits1D] as [LSTMState, tf.Tensor1D];
+      // Sample from logits.
+      const sample = sampleFunc(logits1D);
+
+      return [state, sample] as [LSTMState, tf.Scalar];
     });
 
-    disposeState(this.state);
-    this.state = finalState;
+    // Retrieve sample.
+    const output = sample.dataSync()[0];
+    sample.dispose();
 
-    return decLogits;
+    // Update state.
+    disposeState(lastState);
+    this.lastState = state;
+    this.lastOutput = output;
+    this.lastTime = time;
+
+    return output;
   }
 
   /**
@@ -251,45 +321,9 @@ class PianoGenie {
     Object.keys(this.modelVars).forEach(
       name => this.modelVars[name].dispose());
     this.decForgetBias.dispose();
-    disposeState(this.state);
+    disposeState(this.lastState);
     this.initialized = false;
   }
 }
 
-/**
- * Samples logits with temperature.
- *
- * @param logits: The 1D tensor to sample from
- * @param temperature: Temperature. From 0 to 1, goes from argmax to random.
- * @param seed: Random seed.
- */
-function sampleLogits(logits: tf.Tensor1D, temp?: number, seed?: number) {
-  temp = temp === undefined ? 1. : temp;
-  if (temp < 0. || temp > 1.) {
-    throw new Error('Invalid temperature specified');
-  }
-
-  const result: tf.Scalar = tf.tidy(() => {
-    let result: tf.Scalar;
-
-    if (temp === 0) {
-      result = tf.argMax(logits, 0) as tf.Scalar;
-    } else {
-      if (temp < 1) {
-        logits = tf.div(logits, tf.scalar(temp, 'float32'));
-      }
-      const scores = tf.reshape(tf.softmax(logits, 0), [1, -1]) as tf.Tensor2D;
-      const sample = tf.multinomial(scores, 1, seed, true) as tf.Tensor1D;
-      result = tf.reshape(sample, []) as tf.Scalar;
-    }
-
-    return result;
-  });
-
-  return result;
-}
-
-export {
-  PianoGenie,
-  sampleLogits
-};
+export {PianoGenie};
