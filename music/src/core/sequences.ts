@@ -472,7 +472,7 @@ export function concatenate(args: NoteSequence[]): NoteSequence {
  * @returns A new NoteSequence with all notes trimmed to lie between `start`
  * and `end`.
  */
-export function trimNoteSequence(ns: NoteSequence, start: number, end: number) {
+export function trim(ns: NoteSequence, start: number, end: number) {
   const result = clone(ns);
   if (isQuantizedSequence(ns)) {
     result.totalQuantizedSteps = end;
