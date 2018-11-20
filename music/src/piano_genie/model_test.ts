@@ -41,7 +41,7 @@ function loadJSONModelWeights(fp: string) {
   return vars;
 }
 
-const EPS = 1e-6;
+const TOLERANCE = 1e-6;
 
 test('Piano Genie Model Correctness', async (t: test.Test) => {
   const modelWeightsFp = 'src/piano_genie/test_data/stp_iq_auto_dt.json';
@@ -96,7 +96,7 @@ test('Piano Genie Model Correctness', async (t: test.Test) => {
       const scores = tf.softmax(logits);
       const _scores = scores.dataSync();
       pairs.forEach(([pianoKey, expectedScore]) => {
-        t.ok(Math.abs(_scores[pianoKey] - expectedScore) < EPS);
+        t.ok(Math.abs(_scores[pianoKey] - expectedScore) < TOLERANCE);
       });
       return tf.scalar(0, 'int32');
     };

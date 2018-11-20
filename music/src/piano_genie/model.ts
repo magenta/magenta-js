@@ -25,8 +25,8 @@ const DATA_TIME_QUANTIZE_RATE = 31.25;
 const DATA_MAX_DISCRETE_TIMES = 32;
 const RNN_NLAYERS = 2;
 const RNN_NUNITS = 128;
-const NBUTTONS = 8;
-const NPIANOKEYS = 88;
+const NUM_BUTTONS = 8;
+const NUM_PIANOKEYS = 88;
 
 /**
  * A type for keeping track of LSTM state activations.
@@ -207,7 +207,7 @@ class PianoGenie {
     deltaTime?: number,
     sampleFunc?: (logits: tf.Tensor1D) => tf.Scalar) {
     // Validate arguments.
-    if (button < 0 || button >= NBUTTONS) {
+    if (button < 0 || button >= NUM_BUTTONS) {
       throw new Error('Invalid button specified.');
     }
 
@@ -241,7 +241,7 @@ class PianoGenie {
       // Add button input to decoder feats and translate to [-1, 1].
       const buttonTensor = tf.tensor2d([button], [1, 1], 'float32');
       const buttonScaled = 
-        tf.sub(tf.mul(2., tf.div(buttonTensor, NBUTTONS - 1)), 1);
+        tf.sub(tf.mul(2., tf.div(buttonTensor, NUM_BUTTONS - 1)), 1);
       decFeatsArr.push(buttonScaled as tf.Tensor2D);
 
       // Add autoregression (history) to decoder feats.
@@ -249,7 +249,7 @@ class PianoGenie {
       const lastOutputInc = 
         tf.add(lastOutputTensor, tf.scalar(1, 'int32')) as tf.Tensor1D;
       const lastOutputOh = 
-        tf.cast(tf.oneHot(lastOutputInc, NPIANOKEYS + 1), 'float32');
+        tf.cast(tf.oneHot(lastOutputInc, NUM_PIANOKEYS + 1), 'float32');
       decFeatsArr.push(lastOutputOh);
 
       // Add delta times to decoder feats.
@@ -290,7 +290,7 @@ class PianoGenie {
           'phero_model/decoder/pitches/dense/bias'] as tf.Tensor1D);
 
       // Remove batch axis to produce piano key (n=88) logits.
-      const logits1D = tf.reshape(logits, [NPIANOKEYS]) as tf.Tensor1D;
+      const logits1D = tf.reshape(logits, [NUM_PIANOKEYS]) as tf.Tensor1D;
 
       // Sample from logits.
       const sample = sampleFunc(logits1D);
