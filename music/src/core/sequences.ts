@@ -457,3 +457,31 @@ export function concatenate(args: NoteSequence[]): NoteSequence {
     return args[0];
   }
 }
+
+/**
+ * Trim notes from a NoteSequence to lie within a specified time range.
+ * Notes starting before `startTime` are not included. Notes ending after
+ * `endTime` are truncated.
+ * @param ns The NoteSequence for which to trim notes.
+ * @param start The time after which all notes should begin. This should be
+ * either seconds (if ns is unquantized), or a quantized step (if ns is
+ * quantized)
+ * @param end The time before which all notes should end. This should be
+ * either seconds (if ns is unquantized), or a quantized step (if ns is
+ * quantized)
+ * @returns A new NoteSequence with all notes trimmed to lie between `start`
+ * and `end`.
+ */
+export function trimNoteSequence(ns: NoteSequence, start: number, end: number) {
+  const result = clone(ns);
+  if (isQuantizedSequence(ns)) {
+    result.totalQuantizedSteps = end;
+    result.notes = result.notes.filter(
+        n => n.quantizedStartStep >= start && n.quantizedEndStep <= end);
+  } else {
+    result.totalTime = end;
+    result.notes =
+        result.notes.filter(n => n.startTime >= start && n.endTime <= end);
+  }
+  return result;
+}
