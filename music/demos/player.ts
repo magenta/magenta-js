@@ -73,25 +73,14 @@ function setupAttackReleaseDemo() {
 
   soundFontBtn.addEventListener('click', () => {
     if (soundFontIsPlaying) {
-      soundFontBtn.textContent = 'Play';
+      soundFontBtn.textContent = 'Down';
+      soundfontPlayer.playNoteUp(FULL_TWINKLE.notes[0]);
     } else {
-      playNoteAt(0);
-      soundFontBtn.textContent = 'Stop';
+      soundfontPlayer.playNoteDown(FULL_TWINKLE.notes[0]);
+      soundFontBtn.textContent = 'Up';
     }
     soundFontIsPlaying = !soundFontIsPlaying;
   });
-
-  function playNoteAt(index: number) {
-    soundfontPlayer.playNoteDown(FULL_TWINKLE.notes[index]);
-
-    setTimeout(() => {
-      soundfontPlayer.playNoteUp(FULL_TWINKLE.notes[index]);
-      index += 1;
-      if (index < FULL_TWINKLE.notes.length && soundFontIsPlaying) {
-        setTimeout(() => playNoteAt(index), 300);
-      }
-    }, 300);
-  }
 }
 
 function generatePlayers() {
