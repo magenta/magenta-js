@@ -191,6 +191,7 @@ class PianoGenie {
    * @param button Button number (one of {0, 1, 2, 3, 4, 5, 6, 7}).
    * @param temperature Sampling temperature [0, 1].
    * @param seed Random seed for sampling.
+   * @param keySubset Restrict output to a whitelist of keys {0, ..., 87}.
    * @param lastOutput Override for last note output. If unspecified, uses 
    * output from the last call to this method.
    * @param deltaTime Override for elapsed time since last button press. If 
@@ -203,6 +204,7 @@ class PianoGenie {
     button: number,
     temperature?: number,
     seed?: number,
+    keySubset?: number[],
     lastOutput?: number,
     deltaTime?: number,
     sampleFunc?: (logits: tf.Tensor1D) => tf.Scalar) {
@@ -236,7 +238,20 @@ class PianoGenie {
     // Create default sample function.
     if (sampleFunc === undefined) {
       sampleFunc = (logits: tf.Tensor1D) => {
-        return sampleLogits(logits, temperature, seed);
+        let keySubsetTensor: tf.Tensor1D;
+        if (keySubset !== undefined) {
+          keySubsetTensor = tf.tensor1d(keySubset, 'int32');
+          logits = tf.gather(logits, keySubsetTensor);
+        }
+
+        let result = sampleLogits(logits, temperature, seed);
+
+        if (keySubset !== undefined) {
+          const result1d = tf.gather(keySubsetTensor, tf.reshape(result, [1]));
+          result = tf.reshape(result1d, []) as tf.Scalar;
+        }
+
+        return result;
       };
     }
 
