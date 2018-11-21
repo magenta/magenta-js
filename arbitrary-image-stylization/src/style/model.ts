@@ -30,8 +30,8 @@ export class ArbitraryStyleTransferNetwork {
 
   private initialized: boolean;
 
-  private styleNet: any;
-  private transformNet: any;
+  private styleNet: tf.FrozenModel;
+  private transformNet: tf.FrozenModel;
 
   /**
    * `ArbitraryStyleTransferNetwork` constructor.
@@ -99,7 +99,7 @@ export class ArbitraryStyleTransferNetwork {
           .div(tf.scalar(255))
           .expandDims()
       );
-    });
+    }) as tf.Tensor4D;
   }
 
   /**
@@ -114,15 +114,17 @@ export class ArbitraryStyleTransferNetwork {
     HTMLCanvasElement | HTMLVideoElement,
     bottleneck: tf.Tensor4D): tf.Tensor3D {
     return tf.tidy(() => {
-      return this.transformNet.predict(
-        [
-          tf.fromPixels(content)
-            .toFloat()
-            .div(tf.scalar(255))
-            .expandDims(),
-          bottleneck
-        ]
-      ).squeeze();
+      const image: tf.Tensor4D =
+        this.transformNet.predict(
+          [
+            tf.fromPixels(content)
+              .toFloat()
+              .div(tf.scalar(255))
+              .expandDims(),
+            bottleneck
+          ]
+        ) as tf.Tensor4D;
+      return image.squeeze();
     });
   }
 }
