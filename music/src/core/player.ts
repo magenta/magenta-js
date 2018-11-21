@@ -474,6 +474,39 @@ export class SoundFontPlayer extends BasePlayer {
   }
 
   protected playNote(time: number, note: NoteSequence.INote) {
+    this.soundFont.playNote(
+        note.pitch, note.velocity, time, note.endTime - note.startTime,
+        note.program, note.isDrum, this.getAudioNodeOutput(note));
+  }
+
+  /*
+   * Plays the down stroke of a note (the attack and the sustain).
+   * Note that this does not call `loadSamples`, and assumes that the
+   * sample for this note is already loaded. If you call this
+   * twice without calling playNoteUp() in between, it will implicitely release
+   * the note before striking it the second time.
+   */
+  public playNoteDown(note: NoteSequence.INote) {
+    this.soundFont.playNoteDown(
+        note.pitch, note.velocity, note.program, note.isDrum,
+        this.getAudioNodeOutput(note));
+  }
+
+  /*
+   * Plays the up stroke of a note (the release).
+   * Note that this does not call `loadSamples`, and assumes that the
+   * sample for this note is already loaded. If you call this
+   * twice without calling playNoteDown() in between, it will *not* implicitely
+   * call playNoteDown() for you, and the second call will have no noticeable
+   * effect.
+   */
+  public playNoteUp(note: NoteSequence.INote) {
+    this.soundFont.playNoteUp(
+        note.pitch, note.velocity, note.program, note.isDrum,
+        this.getAudioNodeOutput(note));
+  }
+
+  getAudioNodeOutput(note: NoteSequence.INote) {
     // Determine which `AudioNode` to use for output. Non-drums are mapped to
     // outputs by program number, while drums are mapped to outputs by MIDI
     // pitch value. A single output (defaulting to `Tone.Master`) is used as a
@@ -488,10 +521,7 @@ export class SoundFontPlayer extends BasePlayer {
         output = this.drumOutputs.get(note.pitch);
       }
     }
-
-    this.soundFont.playNote(
-        note.pitch, note.velocity, time, note.endTime - note.startTime,
-        note.program, note.isDrum, output);
+    return output;
   }
 }
 

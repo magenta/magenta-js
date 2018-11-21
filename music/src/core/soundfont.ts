@@ -208,6 +208,74 @@ export class Instrument {
   playNote(
       pitch: number, velocity: number, startTime: number, duration: number,
       output: any) {  // tslint:disable-line:no-any
+    const buffer = this.getBuffer(pitch, velocity);
+
+    if (duration > this.durationSeconds) {
+      console.log(`Requested note duration longer than sample duration: ${
+          duration} > ${this.durationSeconds}`);
+    }
+
+    const source = new Tone.BufferSource(buffer).connect(output);
+    source.start(startTime, 0, undefined, 1, 0);
+    if (!this.percussive && duration < this.durationSeconds) {
+      // Fade to the note release.
+      const releaseSource = new Tone.BufferSource(buffer).connect(output);
+      source.stop(startTime + duration + this.FADE_SECONDS, this.FADE_SECONDS);
+      releaseSource.start(
+          startTime + duration, this.durationSeconds, undefined, 1,
+          this.FADE_SECONDS);
+    }
+  }
+
+  /**
+   * Strike a note down using one of the samples. If you call this twice
+   * without calling playNoteUp() in between, it will implicitely
+   * release the note before striking it the second time.
+   *
+   * @param pitch Pitch of the note.
+   * @param velocity Velocity of the note.
+   * @param output Output `AudioNode`.
+   */
+  playNoteDown(
+      pitch: number, velocity: number,
+      output: any) {  // tslint:disable-line:no-any
+    const buffer = this.getBuffer(pitch, velocity);
+    const source = new Tone.BufferSource(buffer).connect(output);
+    source.start(0, 0, undefined, 1, 0);
+  }
+
+  /**
+   * Release a note using one of the samples. If you call this twice
+   * without calling playNoteDown() in between, it will *not*
+   * implicitely call playNoteDown() for you, and the second call will have
+   * no noticeable effect.
+   *
+   * @param pitch Pitch of the note.
+   * @param velocity Velocity of the note.
+   * @param output Output `AudioNode`.
+   */
+  playNoteUp(
+      pitch: number, velocity: number,
+      output: any) {  // tslint:disable-line:no-any
+    const buffer = this.getBuffer(pitch, velocity);
+
+    // Fade to the note release.
+    const releaseSource = new Tone.BufferSource(buffer).connect(output);
+    const source = new Tone.BufferSource(buffer).connect(output);
+    source.stop(this.FADE_SECONDS, this.FADE_SECONDS);
+    releaseSource.start(
+        0, this.durationSeconds, undefined, 1, this.FADE_SECONDS);
+  }
+
+  /**
+   * Get the buffer for this pitch and velocity, if it exists.
+   *
+   * @param pitch Pitch of the note.
+   * @param velocity Velocity of the note.
+   * @throws Error if this instrument is not initialized, if the pitch is
+   * invalid, or if the buffer cannot be found or loaded.
+   */
+  getBuffer(pitch: number, velocity: number) {
     if (!this.initialized) {
       throw new Error('Instrument is not initialized.');
     }
@@ -227,22 +295,7 @@ export class Instrument {
     if (!buffer.loaded) {
       throw new Error(`Buffer not loaded for ${this.name}: ${name}`);
     }
-
-    if (duration > this.durationSeconds) {
-      console.log(`Requested note duration longer than sample duration: ${
-          duration} > ${this.durationSeconds}`);
-    }
-
-    const source = new Tone.BufferSource(buffer).connect(output);
-    source.start(startTime, 0, undefined, 1, 0);
-    if (!this.percussive && duration < this.durationSeconds) {
-      // Fade to the note release.
-      const releaseSource = new Tone.BufferSource(buffer).connect(output);
-      source.stop(startTime + duration + this.FADE_SECONDS, this.FADE_SECONDS);
-      releaseSource.start(
-          startTime + duration, this.durationSeconds, undefined, 1,
-          this.FADE_SECONDS);
-    }
+    return buffer;
   }
 }
 
@@ -383,5 +436,60 @@ export class SoundFont {
 
     this.instruments.get(instrument)
         .playNote(pitch, velocity, startTime, duration, output);
+  }
+
+  /**
+   * Strikes a note down using one of the sampled instruments. If you call this
+   * twice without calling playNoteUp() in between, it will implicitely release
+   * the note before striking it the second time.
+   *
+   * @param pitch Pitch of the note.
+   * @param velocity Velocity of the note.
+   * @param program Program number to use for instrument lookup.
+   * @param isDrum Drum status to use for instrument lookup.
+   * @param output Output `AudioNode`.
+   */
+  playNoteDown(
+      pitch: number, velocity: number, program = 0, isDrum = false,
+      output: any) {  // tslint:disable-line:no-any
+    const instrument = isDrum ? 'drums' : program;
+    if (!this.initialized) {
+      throw new Error('SoundFont is not initialized.');
+    }
+    if (!this.instruments.has(instrument)) {
+      console.log(`No instrument in ${this.name} for: program=${
+          program}, isDrum=${isDrum}`);
+      return;
+    }
+
+    this.instruments.get(instrument).playNoteDown(pitch, velocity, output);
+  }
+
+  /**
+   * Releases a note using one of the sampled instruments. If you call this
+   * twice without calling playNoteDown() in between, it will *not* implicitely
+   * call playNoteDown() for you, and the second call will have no noticeable
+   * effect.
+   *
+   * @param pitch Pitch of the note.
+   * @param velocity Velocity of the note.
+   * @param program Program number to use for instrument lookup.
+   * @param isDrum Drum status to use for instrument lookup.
+   * @param output Output `AudioNode`.
+   */
+  playNoteUp(
+      pitch: number, velocity: number, program = 0, isDrum = false,
+      output: any) {  // tslint:disable-line:no-any
+    const instrument = isDrum ? 'drums' : program;
+    if (!this.initialized) {
+      throw new Error('SoundFont is not initialized.');
+    }
+    if (!this.instruments.has(instrument)) {
+      console.log(`No instrument in ${this.name} for: program=${
+          program}, isDrum=${isDrum}`);
+      return;
+    }
+
+    this.instruments.get(instrument).playNoteUp(pitch, velocity, output);
   }
 }
