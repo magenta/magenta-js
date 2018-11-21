@@ -186,7 +186,7 @@ class PianoGenie {
   next(button: number, temperature?: number, seed?: number) {
     const sampleFunc = (logits: tf.Tensor1D) => {
       return sampleLogits(logits, temperature, seed);
-    }
+    };
     return this.nextWithCustomSamplingFunction(button, sampleFunc);
   }
 
@@ -218,7 +218,7 @@ class PianoGenie {
       const result1d = tf.gather(keySubsetTensor, tf.reshape(result, [1]));
       result = tf.reshape(result1d, []) as tf.Scalar;
       return result;
-    }
+    };
     return this.nextWithCustomSamplingFunction(button, sampleFunc);
   }
 

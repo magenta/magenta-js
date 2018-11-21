@@ -74,7 +74,7 @@ test('Piano Genie Model Correctness', async (t: test.Test) => {
     // Fast trill with temperature 0.5.
     for (let i = 0; i < 8; ++i) {
       genie.overrideDeltaTime(0.05);
-      keys.push(genie.next(3 + (i % 2), 0.5, 1337))
+      keys.push(genie.next(3 + (i % 2), 0.5, 1337));
     }
 
     const expectedKeys = [
