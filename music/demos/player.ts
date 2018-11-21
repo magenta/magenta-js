@@ -82,10 +82,12 @@ function setupAttackReleaseDemo() {
   });
 
   function playNoteAt(index: number) {
-    soundfontPlayer.playDownNote(FULL_TWINKLE.notes[index]);
+    soundfontPlayer.playNoteDown(FULL_TWINKLE.notes[index]);
 
     setTimeout(() => {
-      soundfontPlayer.playUpNote(FULL_TWINKLE.notes[index]);
+      soundfontPlayer.playNoteDown(FULL_TWINKLE.notes[index]);
+
+      // soundfontPlayer.playNoteUp(FULL_TWINKLE.notes[index]);
       index += 1;
       if (index < FULL_TWINKLE.notes.length && soundFontIsPlaying) {
         setTimeout(() => playNoteAt(index), 300);

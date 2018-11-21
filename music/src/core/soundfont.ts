@@ -227,7 +227,14 @@ export class Instrument {
     }
   }
 
-  playDownNote(
+  /**
+   * Strike a note down using one of the samples.
+   *
+   * @param pitch Pitch of the note.
+   * @param velocity Velocity of the note.
+   * @param output Output `AudioNode`.
+   */
+  playNoteDown(
       pitch: number, velocity: number,
       output: any) {  // tslint:disable-line:no-any
     const buffer = this.getBuffer(pitch, velocity);
@@ -235,8 +242,14 @@ export class Instrument {
     source.start(0, 0, undefined, 1, 0);
   }
 
-  // tslint:disable-line:no-any
-  playUpNote(
+  /**
+   * Release a note using one of the samples.
+   *
+   * @param pitch Pitch of the note.
+   * @param velocity Velocity of the note.
+   * @param output Output `AudioNode`.
+   */
+  playNoteUp(
       pitch: number, velocity: number,
       output: any) {  // tslint:disable-line:no-any
     const buffer = this.getBuffer(pitch, velocity);
@@ -249,6 +262,14 @@ export class Instrument {
         0, this.durationSeconds, undefined, 1, this.FADE_SECONDS);
   }
 
+  /**
+   * Get the buffer for this pitch and velocity, if it exists.
+   *
+   * @param pitch Pitch of the note.
+   * @param velocity Velocity of the note.
+   * @throws Error if this instrument is not initialized, if the pitch is
+   * invalid, or if the buffer cannot be found or loaded.
+   */
   getBuffer(pitch: number, velocity: number) {
     if (!this.initialized) {
       throw new Error('Instrument is not initialized.');
@@ -412,7 +433,16 @@ export class SoundFont {
         .playNote(pitch, velocity, startTime, duration, output);
   }
 
-  playDownNote(
+  /**
+   * Strikes a note down using one of the sampled instruments.
+   *
+   * @param pitch Pitch of the note.
+   * @param velocity Velocity of the note.
+   * @param program Program number to use for instrument lookup.
+   * @param isDrum Drum status to use for instrument lookup.
+   * @param output Output `AudioNode`.
+   */
+  playNoteDown(
       pitch: number, velocity: number, program = 0, isDrum = false,
       output: any) {  // tslint:disable-line:no-any
     const instrument = isDrum ? 'drums' : program;
@@ -425,9 +455,19 @@ export class SoundFont {
       return;
     }
 
-    this.instruments.get(instrument).playDownNote(pitch, velocity, output);
+    this.instruments.get(instrument).playNoteDown(pitch, velocity, output);
   }
-  playUpNote(
+
+  /**
+   * Releases a note using one of the sampled instruments.
+   *
+   * @param pitch Pitch of the note.
+   * @param velocity Velocity of the note.
+   * @param program Program number to use for instrument lookup.
+   * @param isDrum Drum status to use for instrument lookup.
+   * @param output Output `AudioNode`.
+   */
+  playNoteUp(
       pitch: number, velocity: number, program = 0, isDrum = false,
       output: any) {  // tslint:disable-line:no-any
     const instrument = isDrum ? 'drums' : program;
@@ -440,6 +480,6 @@ export class SoundFont {
       return;
     }
 
-    this.instruments.get(instrument).playUpNote(pitch, velocity, output);
+    this.instruments.get(instrument).playNoteUp(pitch, velocity, output);
   }
 }

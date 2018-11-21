@@ -479,14 +479,24 @@ export class SoundFontPlayer extends BasePlayer {
         note.program, note.isDrum, this.getAudioNodeOutput(note));
   }
 
-  public playDownNote(note: NoteSequence.INote) {
-    this.soundFont.playDownNote(
+  /*
+   * Plays the down stroke of a note (the attack and the sustain).
+   * Note that this does not call `loadSamples`, and assumes that the
+   * sample for this note is already loaded.
+   */
+  public playNoteDown(note: NoteSequence.INote) {
+    this.soundFont.playNoteDown(
         note.pitch, note.velocity, note.program, note.isDrum,
         this.getAudioNodeOutput(note));
   }
 
-  public playUpNote(note: NoteSequence.INote) {
-    this.soundFont.playUpNote(
+  /*
+   * Plays the up stroke of a note (the release).
+   * Note that this does not call `loadSamples`, and assumes that the
+   * sample for this note is already loaded.
+   */
+  public playNoteUp(note: NoteSequence.INote) {
+    this.soundFont.playNoteUp(
         note.pitch, note.velocity, note.program, note.isDrum,
         this.getAudioNodeOutput(note));
   }
