@@ -63,21 +63,64 @@ test('Piano Genie Model Correctness', async (t: test.Test) => {
     const keys: number[] = [];
     // Ascending pattern with sampling.
     for (let i = 0; i < 8; ++i) {
-      keys.push(genie.next(i, 1., 1337, undefined, 0.1));
+      genie.overrideDeltaTime(0.1);
+      keys.push(genie.next(i, 1., 1337));
     }
     // Descending pattern with argmax.
     for (let i = 7; i >= 0; --i) {
-      keys.push(genie.next(i, 0., undefined, undefined, 0.1));
+      genie.overrideDeltaTime(0.1);
+      keys.push(genie.next(i, 0.));
     }
     // Fast trill with temperature 0.5.
     for (let i = 0; i < 8; ++i) {
-      keys.push(genie.next(3 + (i % 2), 0.5, 1337, undefined, 0.05)); 
+      genie.overrideDeltaTime(0.05);
+      keys.push(genie.next(3 + (i % 2), 0.5, 1337))
     }
 
     const expectedKeys = [
       21, 23, 24, 26, 28, 31, 35, 40,
       43, 45, 45, 43, 42, 40, 36, 33,
       35, 36, 36, 38, 36, 38, 36, 38
+    ];
+
+    t.deepEqual(keys, expectedKeys);
+  });
+
+  // Reset model.
+  genie.resetState();
+
+  /**
+   * Tests PianoGenie note whitelist.
+   */
+
+  tf.tidy(() => {
+    const gMajTwoOctaves = [
+      22, 24, 26, 27, 29, 31, 33,
+      34, 36, 38, 39, 41, 43, 45
+    ];
+
+    const keys: number[] = [];
+    // Ascending pattern with sampling.
+    for (let i = 0; i < 8; ++i) {
+      genie.overrideDeltaTime(0.1);
+      keys.push(genie.nextFromKeyWhitelist(i, gMajTwoOctaves, 1., 1337));
+    }
+    // Descending pattern with argmax.
+    for (let i = 7; i >= 0; --i) {
+      genie.overrideDeltaTime(0.1);
+      keys.push(genie.nextFromKeyWhitelist(i, gMajTwoOctaves, 0.));
+    }
+    // Fast trill with temperature 0.5.
+    for (let i = 0; i < 8; ++i) {
+      genie.overrideDeltaTime(0.05);
+      keys.push(
+        genie.nextFromKeyWhitelist(3 + (i % 2), gMajTwoOctaves, 0.5, 1337));
+    }
+
+    const expectedKeys = [
+      26, 26, 26, 27, 29, 31, 34, 39,
+      43, 45, 45, 43, 41, 39, 36, 33,
+      34, 36, 36, 38, 38, 39, 38, 39
     ];
 
     t.deepEqual(keys, expectedKeys);
@@ -104,14 +147,21 @@ test('Piano Genie Model Correctness', async (t: test.Test) => {
 
   // Ensures that JavaScript model outputs match test outputs from Python.
   tf.tidy(() => {
+    genie.overrideDeltaTime(0.);
+    genie.next(0);
+
+    genie.overrideDeltaTime(0.125);
+    genie.overrideLastOutput(43);
+    genie.next(1);
+
     const sampleFunc = testSampleFuncFactory([
       [39, 0.12285],
       [40, 0.829168],
       [41, 0.0366595],
     ]);
-    genie.next(0, undefined, undefined, -1, 0.);
-    genie.next(1, undefined, undefined, 43, 0.125);
-    genie.next(2, undefined, undefined, 45, 1., sampleFunc);
+    genie.overrideDeltaTime(1.);
+    genie.overrideLastOutput(45);
+    genie.nextWithCustomSamplingFunction(2, sampleFunc);
   });
 
   // Reset model.
@@ -119,14 +169,21 @@ test('Piano Genie Model Correctness', async (t: test.Test) => {
 
   // Ensures that JavaScript model outputs match test outputs from Python.
   tf.tidy(() => {
+    genie.overrideDeltaTime(0.125);
+    genie.next(1);
+
+    genie.overrideDeltaTime(0.25);
+    genie.overrideLastOutput(44);
+    genie.next(2);
+
     const sampleFunc = testSampleFuncFactory([
       [43, 0.18577],
       [44, 0.813153],
       [45, 2.67857e-05],
     ]);
-    genie.next(1, undefined, undefined, -1, 0.125);
-    genie.next(2, undefined, undefined, 44, 0.25);
-    genie.next(3, undefined, undefined, 46, 1.5, sampleFunc);
+    genie.overrideDeltaTime(1.5);
+    genie.overrideLastOutput(46);
+    genie.nextWithCustomSamplingFunction(3, sampleFunc);
   });
 
   // Dispose model.
