@@ -63,9 +63,9 @@ function disposeState(state: LSTMState) {
 /**
  * Samples logits with temperature.
  *
- * @param logits: The unnormalized logits to sample from.
- * @param temperature: Temperature. From 0 to 1, goes from argmax to random.
- * @param seed: Random seed.
+ * @param logits The unnormalized logits to sample from.
+ * @param temperature Temperature. From 0 to 1, goes from argmax to random.
+ * @param seed Random seed.
  */
 function sampleLogits(
   logits: tf.Tensor1D,
@@ -108,6 +108,7 @@ class PianoGenie {
   private lastState: LSTMState;
   private lastOutput: number;
   private lastTime: Date;
+  private deltaTimeOverride: number;
 
   /**
    * Piano Genie constructor.
@@ -117,19 +118,6 @@ class PianoGenie {
   constructor(checkpointURL: string) {
     this.checkpointURL = checkpointURL;
     this.initialized = false;
-  }
-
-  /**
-   * Resets Piano Genie LSTM state.
-   */
-  resetState() {
-    if (this.lastState !== undefined) {
-      disposeState(this.lastState);
-    }
-    this.lastState = createZeroState();
-    this.lastOutput = -1;
-    this.lastTime = new Date();
-    this.lastTime.setSeconds(this.lastTime.getSeconds() - 100000);
   }
 
   /**
@@ -186,26 +174,158 @@ class PianoGenie {
   }
 
   /**
+   * Given a button number with optional sampling temperature and seed, 
+   * evaluates Piano Genie to produce a piano key note {0, 1, ... 87}. This is
+   * the simplest access point for Piano Genie, designed to be called by your
+   * application in real time (it keeps track of time internally).
+   * 
+   * @param button Button number (one of {0, 1, 2, 3, 4, 5, 6, 7}).
+   * @param temperature Temperature. From 0 to 1, goes from argmax to random.
+   * @param seed Random seed. Use a fixed number to get reproducible output.
+   */
+  next(button: number, temperature?: number, seed?: number) {
+    const sampleFunc = (logits: tf.Tensor1D) => {
+      return sampleLogits(logits, temperature, seed);
+    };
+    return this.nextWithCustomSamplingFunction(button, sampleFunc);
+  }
+
+  /**
+   * Given a button number and whitelist of piano keys, evaluates Piano Genie
+   * to produce a piano key note {0, 1, ..., 87}. Use this if you would like to
+   * restrict Piano Genie's outputs to a subset of the keys (e.g. a particular
+   * scale or range of the piano). For example, if you wanted to restrict Piano
+   * Genie's outputs to be C major from middle C to one octave above, you would
+   * pass [39, 41, 43, 44, 46, 48, 50, 51] as the whitelist.
+   * 
+   * @param button Button number (one of {0, 1, 2, 3, 4, 5, 6, 7}).
+   * @param keyWhitelist Subset of keys restricting possible note outputs.
+   * @param temperature Temperature. From 0 to 1, goes from argmax to random.
+   * @param seed Random seed. Use a fixed number to get reproducible output.
+   */
+  nextFromKeyWhitelist(
+    button: number,
+    keyWhitelist: number[],
+    temperature?: number,
+    seed?: number) {
+    const sampleFunc = (logits: tf.Tensor1D) => {
+      const keySubsetTensor = tf.tensor1d(keyWhitelist, 'int32');
+      // Discard logits outside of the whitelist.
+      logits = tf.gather(logits, keySubsetTensor);
+      // Sample from whitelisted logits.
+      let result = sampleLogits(logits, temperature, seed);
+      // Map the subsampled logit ID back to the appropriate piano key.
+      const result1d = tf.gather(keySubsetTensor, tf.reshape(result, [1]));
+      result = tf.reshape(result1d, []) as tf.Scalar;
+      return result;
+    };
+    return this.nextWithCustomSamplingFunction(button, sampleFunc);
+  }
+
+  /**
+   * Given a button number, evaluates Piano Genie to produce unnormalized logits
+   * then samples from these logits with a custom function. Use this if you
+   * want to define custom sampling behavior (e.g. a neural cache).
+   * 
+   * @param button Button number (one of {0, 1, 2, 3, 4, 5, 6, 7}).
+   * @param sampleFunc Sampling function mapping unweighted model logits 
+   * (tf.Tensor1D of size 88) to an integer (tf.Scalar) representing one of
+   * them (e.g. 60).
+   */
+  nextWithCustomSamplingFunction(
+    button: number,
+    sampleFunc: (logits: tf.Tensor1D) => tf.Scalar) {
+      const lastState = this.lastState;
+      const lastOutput = this.lastOutput;
+      const lastTime = this.lastTime;
+      const time = new Date();
+
+      let deltaTime: number;
+      if (this.deltaTimeOverride === undefined) {
+        deltaTime = (time.getTime() - lastTime.getTime()) / 1000;
+      } else {
+        deltaTime = this.deltaTimeOverride;
+        this.deltaTimeOverride = undefined;
+      }
+
+      const [state, output] = this.evaluateModelAndSample(
+        button, lastState, lastOutput, deltaTime, sampleFunc);
+
+      disposeState(this.lastState);
+      this.lastState = state;
+      this.lastOutput = output;
+      this.lastTime = time;
+
+      return output;
+  }
+
+  /**
+   * Resets Piano Genie LSTM state.
+   */
+  resetState() {
+    if (this.lastState !== undefined) {
+      disposeState(this.lastState);
+    }
+    this.lastState = createZeroState();
+    this.lastOutput = -1;
+    this.lastTime = new Date();
+    this.lastTime.setSeconds(this.lastTime.getSeconds() - 100000);
+  }
+
+  /**
+   * Disposes model from (GPU) memory.
+   */
+  dispose() {
+    if (!this.initialized) {
+      return;
+    }
+    Object.keys(this.modelVars).forEach(
+      name => this.modelVars[name].dispose());
+    this.decForgetBias.dispose();
+    disposeState(this.lastState);
+    this.initialized = false;
+  }
+
+  /**
+   * Overrides the model's state for its last output. Mainly used to test the
+   * model, but can also be used in combination with custom sampling behavior.
+   * 
+   * @param lastOutput Previous piano key sampled from the model logits.
+   */
+  overrideLastOutput(lastOutput: number) {
+    this.lastOutput = lastOutput;
+  }
+
+  /**
+   * Overrides the model's internal clock with a designated time. Mainly used
+   * to test the model, but can also be used to remove user control over note
+   * timing or to run preprogrammed sequences through the model.
+   * 
+   * @param deltaTime Amount of elapsed time in seconds since previous note.
+   */
+  overrideDeltaTime(deltaTime: number) {
+    this.deltaTimeOverride = deltaTime;
+  }
+
+  /**
    * Given a button number, evaluates Piano Genie producing a piano key number.
+   * As opposed to the next* methods, this method does *not* update internal
+   * state variables such as the clock and previous outputs.
    *
    * @param button Button number (one of {0, 1, 2, 3, 4, 5, 6, 7}).
-   * @param temperature Sampling temperature [0, 1].
-   * @param seed Random seed for sampling.
-   * @param lastOutput Override for last note output. If unspecified, uses 
-   * output from the last call to this method.
-   * @param deltaTime Override for elapsed time since last button press. If 
-   * unspecified, uses amount of time since last call to this method.
-   * @param sampleFunc Override for sampling function. Unweighted model logits 
-   * (tf.Tensor1D of size 88) are passed to this function, and the expected 
-   * result is an integer (tf.Scalar) representing one of them (e.g. 60).
+   * @param lastState The LSTM state at the previous timestep.
+   * @param lastOutput The note sampled at the previous timestep.
+   * @param deltaTime Elapsed time since last button press.
+   * @param sampleFunc Sampling function mapping unweighted model logits 
+   * (tf.Tensor1D of size 88) to an integer (tf.Scalar) representing one of
+   * them (e.g. 60).
    */
-  next(
+  private evaluateModelAndSample(
     button: number,
-    temperature?: number,
-    seed?: number,
-    lastOutput?: number,
-    deltaTime?: number,
-    sampleFunc?: (logits: tf.Tensor1D) => tf.Scalar) {
+    lastState: LSTMState,
+    lastOutput: number,
+    deltaTime: number,
+    sampleFunc: (logits: tf.Tensor1D) => tf.Scalar) {
     // TODO(chrisdonahue): Make this function asynchronous.
     // This function is (currently) synchronous, blocking other execution
     // to provide mutual exclusion. This is a workaround for race conditions
@@ -225,23 +345,8 @@ class PianoGenie {
       throw new Error('Model is not initialized.');
     }
 
-    // Process prior state.
-    const lastState = this.lastState;
-    lastOutput = lastOutput !== undefined ? lastOutput : this.lastOutput;
-    const lastTime = this.lastTime;
-    const time = new Date();
-    deltaTime = deltaTime !== undefined ? deltaTime : 
-      (time.getTime() - lastTime.getTime()) / 1000;
-
-    // Create default sample function.
-    if (sampleFunc === undefined) {
-      sampleFunc = (logits: tf.Tensor1D) => {
-        return sampleLogits(logits, temperature, seed);
-      };
-    }
-
-    // Compute logits.
-    const [state, sample]: [LSTMState, tf.Scalar] = tf.tidy(() => {
+    // Compute logits and sample.
+    const [state, output]: [LSTMState, number] = tf.tidy(() => {
       // Initialize decoder feats array.
       const decFeatsArr: tf.Tensor2D[] = [];
 
@@ -301,35 +406,12 @@ class PianoGenie {
 
       // Sample from logits.
       const sample = sampleFunc(logits1D);
+      const output = sample.dataSync()[0];
 
-      return [state, sample] as [LSTMState, tf.Scalar];
+      return [state, output] as [LSTMState, number];
     });
 
-    // Retrieve sample.
-    const output = sample.dataSync()[0];
-    sample.dispose();
-
-    // Update state.
-    disposeState(lastState);
-    this.lastState = state;
-    this.lastOutput = output;
-    this.lastTime = time;
-
-    return output;
-  }
-
-  /**
-   * Disposes model from GPU memory.
-   */
-  dispose() {
-    if (!this.initialized) {
-      return;
-    }
-    Object.keys(this.modelVars).forEach(
-      name => this.modelVars[name].dispose());
-    this.decForgetBias.dispose();
-    disposeState(this.lastState);
-    this.initialized = false;
+    return [state, output] as [LSTMState, number];
   }
 }
 
