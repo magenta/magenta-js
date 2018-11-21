@@ -37,7 +37,8 @@ export class ArbitraryStyleTransferNetwork {
    * `ArbitraryStyleTransferNetwork` constructor.
    *
    * @param styleCheckpointURL Path to style model checkpoint directory.
-   * @param transformCheckpointURL Path to transformation model checkpoint directory.
+   * @param transformCheckpointURL Path to transformation model checkpoint
+   * directory.
    */
   constructor(styleCheckpointURL: string, transformCheckpointURL: string) {
     this.styleCheckpointURL = styleCheckpointURL;
@@ -66,7 +67,7 @@ export class ArbitraryStyleTransferNetwork {
         this.transformCheckpointURL + '/tensorflowjs_model.pb',
         this.styleCheckpointURL + '/weights_manifest.json'
       ),
-    ])
+    ]);
 
     this.initialized = true;
     console.log('Initialized Arbitrary Style Transfer network');
@@ -98,7 +99,7 @@ export class ArbitraryStyleTransferNetwork {
           .div(tf.scalar(255))
           .expandDims()
       );
-    })
+    });
   }
 
   /**
@@ -110,7 +111,8 @@ export class ArbitraryStyleTransferNetwork {
    * @param bottleneck Bottleneck features for the style to use
    */
   stylize(content: ImageData | HTMLImageElement |
-    HTMLCanvasElement | HTMLVideoElement, bottleneck: tf.Tensor4D): tf.Tensor3D {
+    HTMLCanvasElement | HTMLVideoElement,
+    bottleneck: tf.Tensor4D): tf.Tensor3D {
     return tf.tidy(() => {
       return this.transformNet.predict(
         [
