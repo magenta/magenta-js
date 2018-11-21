@@ -488,7 +488,7 @@ export class SoundFontPlayer extends BasePlayer {
   public playUpNote(note: NoteSequence.INote) {
     this.soundFont.playUpNote(
         note.pitch, note.velocity, note.program, note.isDrum,
-        this.getAudioNodeOutput(note))
+        this.getAudioNodeOutput(note));
   }
 
   getAudioNodeOutput(note: NoteSequence.INote) {

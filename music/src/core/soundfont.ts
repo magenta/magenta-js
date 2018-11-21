@@ -226,15 +226,19 @@ export class Instrument {
           this.FADE_SECONDS);
     }
   }
-  // tslint:disable-line:no-any
-  playDownNote(pitch: number, velocity: number, output: any) {
+
+  playDownNote(
+      pitch: number, velocity: number,
+      output: any) {  // tslint:disable-line:no-any
     const buffer = this.getBuffer(pitch, velocity);
     const source = new Tone.BufferSource(buffer).connect(output);
     source.start(0, 0, undefined, 1, 0);
   }
 
   // tslint:disable-line:no-any
-  playUpNote(pitch: number, velocity: number, output: any) {
+  playUpNote(
+      pitch: number, velocity: number,
+      output: any) {  // tslint:disable-line:no-any
     const buffer = this.getBuffer(pitch, velocity);
 
     // Fade to the note release.
