@@ -228,7 +228,9 @@ export class Instrument {
   }
 
   /**
-   * Strike a note down using one of the samples.
+   * Strike a note down using one of the samples. If you call this twice
+   * without calling playNoteUp() in between, it will implicitely
+   * release the note before striking it the second time.
    *
    * @param pitch Pitch of the note.
    * @param velocity Velocity of the note.
