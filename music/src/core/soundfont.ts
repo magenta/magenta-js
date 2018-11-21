@@ -245,7 +245,10 @@ export class Instrument {
   }
 
   /**
-   * Release a note using one of the samples.
+   * Release a note using one of the samples. If you call this twice
+   * without calling playNoteDown() in between, it will *not*
+   * implicitely call playNoteDown() for you, and the second call will have
+   * no noticeable effect.
    *
    * @param pitch Pitch of the note.
    * @param velocity Velocity of the note.
@@ -436,7 +439,9 @@ export class SoundFont {
   }
 
   /**
-   * Strikes a note down using one of the sampled instruments.
+   * Strikes a note down using one of the sampled instruments. If you call this
+   * twice without calling playNoteUp() in between, it will implicitely release
+   * the note before striking it the second time.
    *
    * @param pitch Pitch of the note.
    * @param velocity Velocity of the note.
@@ -461,7 +466,10 @@ export class SoundFont {
   }
 
   /**
-   * Releases a note using one of the sampled instruments.
+   * Releases a note using one of the sampled instruments. If you call this
+   * twice without calling playNoteDown() in between, it will *not* implicitely
+   * call playNoteDown() for you, and the second call will have no noticeable
+   * effect.
    *
    * @param pitch Pitch of the note.
    * @param velocity Velocity of the note.

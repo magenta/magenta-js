@@ -86,7 +86,6 @@ function setupAttackReleaseDemo() {
 
     setTimeout(() => {
       soundfontPlayer.playNoteUp(FULL_TWINKLE.notes[index]);
-      soundfontPlayer.playNoteUp(FULL_TWINKLE.notes[index]);
       index += 1;
       if (index < FULL_TWINKLE.notes.length && soundFontIsPlaying) {
         setTimeout(() => playNoteAt(index), 300);
