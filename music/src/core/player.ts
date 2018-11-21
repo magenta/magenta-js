@@ -474,6 +474,24 @@ export class SoundFontPlayer extends BasePlayer {
   }
 
   protected playNote(time: number, note: NoteSequence.INote) {
+    this.soundFont.playNote(
+        note.pitch, note.velocity, time, note.endTime - note.startTime,
+        note.program, note.isDrum, this.getAudioNodeOutput(note));
+  }
+
+  public playDownNote(note: NoteSequence.INote) {
+    this.soundFont.playDownNote(
+        note.pitch, note.velocity, note.program, note.isDrum,
+        this.getAudioNodeOutput(note));
+  }
+
+  public playUpNote(note: NoteSequence.INote) {
+    this.soundFont.playUpNote(
+        note.pitch, note.velocity, note.program, note.isDrum,
+        this.getAudioNodeOutput(note))
+  }
+
+  getAudioNodeOutput(note: NoteSequence.INote) {
     // Determine which `AudioNode` to use for output. Non-drums are mapped to
     // outputs by program number, while drums are mapped to outputs by MIDI
     // pitch value. A single output (defaulting to `Tone.Master`) is used as a
@@ -488,10 +506,7 @@ export class SoundFontPlayer extends BasePlayer {
         output = this.drumOutputs.get(note.pitch);
       }
     }
-
-    this.soundFont.playNote(
-        note.pitch, note.velocity, time, note.endTime - note.startTime,
-        note.program, note.isDrum, output);
+    return output;
   }
 }
 

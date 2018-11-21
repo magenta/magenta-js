@@ -17,9 +17,9 @@
 import * as mm from '../src/index';
 
 // tslint:disable-next-line:max-line-length
-import {DRUM_SEQ_WITH_VELOCITIES, DRUM_SEQS, FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED, MEL_TWINKLE_WITH_VELOCITIES, writeNoteSeqs} from './common';
+import {DRUM_SEQ_WITH_VELOCITIES, DRUM_SEQS, FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED, MEL_TWINKLE_WITH_VELOCITIES, SOUNDFONT_URL, writeNoteSeqs} from './common';
 
-function setupControls() {
+function setupPlayerControlsDemo() {
   const playBtn = document.getElementById('play') as HTMLButtonElement;
   const stopBtn = document.getElementById('stop') as HTMLButtonElement;
   const pauseBtn = document.getElementById('pause') as HTMLButtonElement;
@@ -61,6 +61,37 @@ function setupControls() {
     pauseBtn.disabled = false;
     resumeBtn.disabled = true;
   });
+}
+
+function setupAttackReleaseDemo() {
+  const soundFontBtn =
+      document.getElementById('startSoundFont') as HTMLButtonElement;
+
+  const soundfontPlayer = new mm.SoundFontPlayer(SOUNDFONT_URL);
+  soundfontPlayer.loadSamples(FULL_TWINKLE);
+  let soundFontIsPlaying = false;
+
+  soundFontBtn.addEventListener('click', () => {
+    if (soundFontIsPlaying) {
+      soundFontBtn.textContent = 'Play';
+    } else {
+      playNoteAt(0);
+      soundFontBtn.textContent = 'Stop';
+    }
+    soundFontIsPlaying = !soundFontIsPlaying;
+  });
+
+  function playNoteAt(index: number) {
+    soundfontPlayer.playDownNote(FULL_TWINKLE.notes[index]);
+
+    setTimeout(() => {
+      soundfontPlayer.playUpNote(FULL_TWINKLE.notes[index]);
+      index += 1;
+      if (index < FULL_TWINKLE.notes.length && soundFontIsPlaying) {
+        setTimeout(() => playNoteAt(index), 300);
+      }
+    }, 300);
+  }
 }
 
 function generatePlayers() {
@@ -108,7 +139,8 @@ function generateVelocityPlayers() {
 }
 
 try {
-  setupControls();
+  setupPlayerControlsDemo();
+  setupAttackReleaseDemo();
   Promise.all(
       [generatePlayers(), generateTempoPlayer(), generateVelocityPlayers()]);
 } catch (err) {

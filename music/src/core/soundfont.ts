@@ -208,6 +208,44 @@ export class Instrument {
   playNote(
       pitch: number, velocity: number, startTime: number, duration: number,
       output: any) {  // tslint:disable-line:no-any
+    const buffer = this.getBuffer(pitch, velocity);
+
+    if (duration > this.durationSeconds) {
+      console.log(`Requested note duration longer than sample duration: ${
+          duration} > ${this.durationSeconds}`);
+    }
+
+    const source = new Tone.BufferSource(buffer).connect(output);
+    source.start(startTime, 0, undefined, 1, 0);
+    if (!this.percussive && duration < this.durationSeconds) {
+      // Fade to the note release.
+      const releaseSource = new Tone.BufferSource(buffer).connect(output);
+      source.stop(startTime + duration + this.FADE_SECONDS, this.FADE_SECONDS);
+      releaseSource.start(
+          startTime + duration, this.durationSeconds, undefined, 1,
+          this.FADE_SECONDS);
+    }
+  }
+  // tslint:disable-line:no-any
+  playDownNote(pitch: number, velocity: number, output: any) {
+    const buffer = this.getBuffer(pitch, velocity);
+    const source = new Tone.BufferSource(buffer).connect(output);
+    source.start(0, 0, undefined, 1, 0);
+  }
+
+  // tslint:disable-line:no-any
+  playUpNote(pitch: number, velocity: number, output: any) {
+    const buffer = this.getBuffer(pitch, velocity);
+
+    // Fade to the note release.
+    const releaseSource = new Tone.BufferSource(buffer).connect(output);
+    const source = new Tone.BufferSource(buffer).connect(output);
+    source.stop(this.FADE_SECONDS, this.FADE_SECONDS);
+    releaseSource.start(
+        0, this.durationSeconds, undefined, 1, this.FADE_SECONDS);
+  }
+
+  getBuffer(pitch: number, velocity: number) {
     if (!this.initialized) {
       throw new Error('Instrument is not initialized.');
     }
@@ -227,22 +265,7 @@ export class Instrument {
     if (!buffer.loaded) {
       throw new Error(`Buffer not loaded for ${this.name}: ${name}`);
     }
-
-    if (duration > this.durationSeconds) {
-      console.log(`Requested note duration longer than sample duration: ${
-          duration} > ${this.durationSeconds}`);
-    }
-
-    const source = new Tone.BufferSource(buffer).connect(output);
-    source.start(startTime, 0, undefined, 1, 0);
-    if (!this.percussive && duration < this.durationSeconds) {
-      // Fade to the note release.
-      const releaseSource = new Tone.BufferSource(buffer).connect(output);
-      source.stop(startTime + duration + this.FADE_SECONDS, this.FADE_SECONDS);
-      releaseSource.start(
-          startTime + duration, this.durationSeconds, undefined, 1,
-          this.FADE_SECONDS);
-    }
+    return buffer;
   }
 }
 
@@ -383,5 +406,36 @@ export class SoundFont {
 
     this.instruments.get(instrument)
         .playNote(pitch, velocity, startTime, duration, output);
+  }
+
+  playDownNote(
+      pitch: number, velocity: number, program = 0, isDrum = false,
+      output: any) {  // tslint:disable-line:no-any
+    const instrument = isDrum ? 'drums' : program;
+    if (!this.initialized) {
+      throw new Error('SoundFont is not initialized.');
+    }
+    if (!this.instruments.has(instrument)) {
+      console.log(`No instrument in ${this.name} for: program=${
+          program}, isDrum=${isDrum}`);
+      return;
+    }
+
+    this.instruments.get(instrument).playDownNote(pitch, velocity, output);
+  }
+  playUpNote(
+      pitch: number, velocity: number, program = 0, isDrum = false,
+      output: any) {  // tslint:disable-line:no-any
+    const instrument = isDrum ? 'drums' : program;
+    if (!this.initialized) {
+      throw new Error('SoundFont is not initialized.');
+    }
+    if (!this.instruments.has(instrument)) {
+      console.log(`No instrument in ${this.name} for: program=${
+          program}, isDrum=${isDrum}`);
+      return;
+    }
+
+    this.instruments.get(instrument).playUpNote(pitch, velocity, output);
   }
 }
