@@ -73,11 +73,11 @@ function setupAttackReleaseDemo() {
 
   soundFontBtn.addEventListener('click', () => {
     if (soundFontIsPlaying) {
-      soundFontBtn.textContent = 'Down';
+      soundFontBtn.textContent = 'Attack';
       soundfontPlayer.playNoteUp(FULL_TWINKLE.notes[0]);
     } else {
       soundfontPlayer.playNoteDown(FULL_TWINKLE.notes[0]);
-      soundFontBtn.textContent = 'Up';
+      soundFontBtn.textContent = 'Release';
     }
     soundFontIsPlaying = !soundFontIsPlaying;
   });
