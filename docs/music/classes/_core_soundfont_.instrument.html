@@ -108,9 +108,12 @@
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_soundfont_.instrument.html#getbuffer" class="tsd-kind-icon">get<wbr>Buffer</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_soundfont_.instrument.html#initialize" class="tsd-kind-icon">initialize</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_soundfont_.instrument.html#loadsamples" class="tsd-kind-icon">load<wbr>Samples</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_soundfont_.instrument.html#playnote" class="tsd-kind-icon">play<wbr>Note</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_soundfont_.instrument.html#playnotedown" class="tsd-kind-icon">play<wbr>Note<wbr>Down</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_soundfont_.instrument.html#playnoteup" class="tsd-kind-icon">play<wbr>Note<wbr>Up</a></li>
 							</ul>
 						</section>
 					</div>
@@ -228,6 +231,49 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Methods</h2>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="getbuffer" class="tsd-anchor"></a>
+					<h3>get<wbr>Buffer</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Buffer<span class="tsd-signature-symbol">(</span>pitch<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, velocity<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/soundfont.ts#L278">core/soundfont.ts:278</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Get the buffer for this pitch and velocity, if it exists.</p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>throws</dt>
+									<dd><p>Error if this instrument is not initialized, if the pitch is
+										invalid, or if the buffer cannot be found or loaded.</p>
+									</dd>
+								</dl>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>pitch: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Pitch of the note.</p>
+									</div>
+								</li>
+								<li>
+									<h5>velocity: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Velocity of the note.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 					<a name="initialize" class="tsd-anchor"></a>
 					<h3>initialize</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -337,6 +383,97 @@
 						</li>
 					</ul>
 				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="playnotedown" class="tsd-anchor"></a>
+					<h3>play<wbr>Note<wbr>Down</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">play<wbr>Note<wbr>Down<span class="tsd-signature-symbol">(</span>pitch<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, velocity<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, output<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/soundfont.ts#L239">core/soundfont.ts:239</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Strike a note down using one of the samples. If you call this twice
+										without calling playNoteUp() in between, it will implicitely
+									release the note before striking it the second time.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>pitch: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Pitch of the note.</p>
+									</div>
+								</li>
+								<li>
+									<h5>velocity: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Velocity of the note.</p>
+									</div>
+								</li>
+								<li>
+									<h5>output: <span class="tsd-signature-type">any</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Output <code>AudioNode</code>.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="playnoteup" class="tsd-anchor"></a>
+					<h3>play<wbr>Note<wbr>Up</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">play<wbr>Note<wbr>Up<span class="tsd-signature-symbol">(</span>pitch<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, velocity<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, output<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/soundfont.ts#L257">core/soundfont.ts:257</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Release a note using one of the samples. If you call this twice
+										without calling playNoteDown() in between, it will <em>not</em>
+										implicitely call playNoteDown() for you, and the second call will have
+									no noticeable effect.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>pitch: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Pitch of the note.</p>
+									</div>
+								</li>
+								<li>
+									<h5>velocity: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Velocity of the note.</p>
+									</div>
+								</li>
+								<li>
+									<h5>output: <span class="tsd-signature-type">any</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Output <code>AudioNode</code>.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
 			</section>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
@@ -391,6 +528,9 @@
 						<a href="../modules/_music_vae_model_.html">"music_<wbr>vae/model"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="../modules/_piano_genie_model_.html">"piano_<wbr>genie/model"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_transcription_audio_utils_.html">"transcription/audio_<wbr>utils"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -436,6 +576,9 @@
 								<a href="_core_soundfont_.instrument.html#velocities" class="tsd-kind-icon">velocities</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_core_soundfont_.instrument.html#getbuffer" class="tsd-kind-icon">get<wbr>Buffer</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_core_soundfont_.instrument.html#initialize" class="tsd-kind-icon">initialize</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
@@ -443,6 +586,12 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_core_soundfont_.instrument.html#playnote" class="tsd-kind-icon">play<wbr>Note</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_core_soundfont_.instrument.html#playnotedown" class="tsd-kind-icon">play<wbr>Note<wbr>Down</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_core_soundfont_.instrument.html#playnoteup" class="tsd-kind-icon">play<wbr>Note<wbr>Up</a>
 							</li>
 						</ul>
 					</li>
