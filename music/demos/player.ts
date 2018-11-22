@@ -64,34 +64,20 @@ function setupPlayerControlsDemo() {
 }
 
 function setupAttackReleaseDemo() {
-  const soundFontBtn =
-      document.getElementById('startSoundFont') as HTMLButtonElement;
+  const soundFontAttackBtn =
+      document.getElementById('attackSoundFont') as HTMLButtonElement;
+  const soundFontReleaseBtn =
+      document.getElementById('releaseSoundFont') as HTMLButtonElement;
 
   const soundfontPlayer = new mm.SoundFontPlayer(SOUNDFONT_URL);
   soundfontPlayer.loadSamples(FULL_TWINKLE);
-  let soundFontIsPlaying = false;
 
-  soundFontBtn.addEventListener('click', () => {
-    if (soundFontIsPlaying) {
-      soundFontBtn.textContent = 'Play';
-    } else {
-      playNoteAt(0);
-      soundFontBtn.textContent = 'Stop';
-    }
-    soundFontIsPlaying = !soundFontIsPlaying;
+  soundFontAttackBtn.addEventListener('click', () => {
+    soundfontPlayer.playNoteDown(FULL_TWINKLE.notes[0]);
   });
-
-  function playNoteAt(index: number) {
-    soundfontPlayer.playNoteDown(FULL_TWINKLE.notes[index]);
-
-    setTimeout(() => {
-      soundfontPlayer.playNoteUp(FULL_TWINKLE.notes[index]);
-      index += 1;
-      if (index < FULL_TWINKLE.notes.length && soundFontIsPlaying) {
-        setTimeout(() => playNoteAt(index), 300);
-      }
-    }, 300);
-  }
+  soundFontReleaseBtn.addEventListener('click', () => {
+    soundfontPlayer.playNoteUp(FULL_TWINKLE.notes[0]);
+  });
 }
 
 function generatePlayers() {
