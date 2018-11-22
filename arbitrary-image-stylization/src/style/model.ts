@@ -21,6 +21,11 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
+// tslint:disable-next-line:max-line-length
+const DEFAULT_STYLE_CHECKPOINT = 'https://storage.googleapis.com/magentadata/js/checkpoints/style/arbitrary/predictor';
+// tslint:disable-next-line:max-line-length
+const DEFAULT_TRANSFORM_CHECKPOINT = 'https://storage.googleapis.com/magentadata/js/checkpoints/style/arbitrary/transformer';
+
 /**
  * Main ArbitraryStyleTransferNetwork class
  */
@@ -28,7 +33,7 @@ export class ArbitraryStyleTransferNetwork {
   private styleCheckpointURL: string;
   private transformCheckpointURL: string;
 
-  private initialized: boolean;
+  private initialized = false;
 
   private styleNet: tf.FrozenModel;
   private transformNet: tf.FrozenModel;
@@ -40,7 +45,8 @@ export class ArbitraryStyleTransferNetwork {
    * @param transformCheckpointURL Path to transformation model checkpoint
    * directory.
    */
-  constructor(styleCheckpointURL: string, transformCheckpointURL: string) {
+  constructor(styleCheckpointURL = DEFAULT_STYLE_CHECKPOINT,
+    transformCheckpointURL = DEFAULT_TRANSFORM_CHECKPOINT) {
     this.styleCheckpointURL = styleCheckpointURL;
     this.transformCheckpointURL = transformCheckpointURL;
   }
@@ -65,7 +71,7 @@ export class ArbitraryStyleTransferNetwork {
       ),
       tf.loadFrozenModel(
         this.transformCheckpointURL + '/tensorflowjs_model.pb',
-        this.styleCheckpointURL + '/weights_manifest.json'
+        this.transformCheckpointURL + '/weights_manifest.json'
       ),
     ]);
 
