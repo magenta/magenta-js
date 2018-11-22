@@ -246,7 +246,7 @@ export class Instrument {
     source.start(0, 0, undefined, 1, 0);
     if (this.sourceMap.has(pitch)) {
       this.sourceMap.get(pitch).stop(
-          Tone.now() + this.FADE_SECONDS, this.FADE_SECONDS);
+          (Tone.now() as number) + this.FADE_SECONDS, this.FADE_SECONDS);
     }
     this.sourceMap.set(pitch, source);
   }
@@ -274,7 +274,7 @@ export class Instrument {
     releaseSource.start(
         0, this.durationSeconds, undefined, 1, this.FADE_SECONDS);
     this.sourceMap.get(pitch).stop(
-        Tone.now() + this.FADE_SECONDS, this.FADE_SECONDS);
+        (Tone.now() as number) + this.FADE_SECONDS, this.FADE_SECONDS);
     this.sourceMap.delete(pitch);
   }
 
