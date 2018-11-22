@@ -171,6 +171,12 @@ class PianoGenie {
     this.resetState();
 
     this.initialized = true;
+
+    // This runs the model once to force Tensorflow JS to allocate necessary
+    // memory. Otherwise the prediction will take a long time when the user
+    // presses a button for the first time.
+    this.next(0);
+    this.resetState();
   }
 
   /**
