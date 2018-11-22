@@ -244,6 +244,10 @@ export class Instrument {
     const buffer = this.getBuffer(pitch, velocity);
     const source = new Tone.BufferSource(buffer).connect(output);
     source.start(0, 0, undefined, 1, 0);
+    if (this.sourceMap.has(pitch)) {
+      this.sourceMap.get(pitch).stop(
+          Tone.now() + this.FADE_SECONDS, this.FADE_SECONDS);
+    }
     this.sourceMap.set(pitch, source);
   }
 
