@@ -28,7 +28,7 @@ mm.logging.verbosity = mm.logging.Level.DEBUG;
 
 const DRUMS_CKPT = `${CHECKPOINTS_DIR}/music_vae/drums_2bar_hikl_small`;
 const DRUMS_NADE_CKPT = `${CHECKPOINTS_DIR}/music_vae/drums_2bar_nade_9_q2`;
-const MEL_CKPT = `checkpoints/mel_4bar_med`;
+const MEL_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_2bar_small`;
 const MEL_CHORDS_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_chords`;
 const MEL_16_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_16bar_small_q2`;
 const TRIO_CKPT = `${CHECKPOINTS_DIR}/music_vae/trio_4bar`;
@@ -110,8 +110,7 @@ async function runDrumsNade() {
 }
 
 async function runMel() {
-  const inputs = [concatNoteSequences([MEL_TEAPOT, MEL_TEAPOT], 32),
-                  concatNoteSequences([MEL_TWINKLE, MEL_TWINKLE], 32)];
+  const inputs = [MEL_TEAPOT, MEL_TWINKLE];
   writeNoteSeqs('mel-inputs', inputs);
 
   const mvae = new mm.MusicVAE(MEL_CKPT);
