@@ -84,13 +84,6 @@
     "size_mb": 17.6
   },
   {
-    "id": "basic_rnn",
-    "model": "MusicRNN",
-    "description": "A 36-class onehot MelodyRNN model. Converted from http://download.magenta.tensorflow.org/models/basic_rnn.mag.",
-    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/basic_rnn",
-    "size_mb": 13.0
-  },
-  {
     "id": "multitrack",
     "model": "MusicVAE",
     "description": "A 1-bar multitrack model, trained with 64 free bits. Quantized to 1-byte weights.",
@@ -138,6 +131,13 @@
     "description": "A 4-bar GrooVAE model, trained to add feel to 9-class quantized drum beats.",
     "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/groovae_unquantize_4bar",
     "size_mb": 15.8
+  },
+  {
+    "id": "basic_rnn",
+    "model": "MusicRNN",
+    "description": "A 36-class onehot MelodyRNN model. Converted from http://download.magenta.tensorflow.org/models/basic_rnn.mag.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/basic_rnn",
+    "size_mb": 13.0
   },
   {
     "id": "melody_rnn",
