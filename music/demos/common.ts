@@ -25,7 +25,7 @@ export const CHECKPOINTS_DIR =
 
 // Samples from Shan's SGM SoundFont:
 // http://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01
-const SOUNDFONT_URL =
+export const SOUNDFONT_URL =
     // tslint:disable-next-line:max-line-length
     'https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus';
 

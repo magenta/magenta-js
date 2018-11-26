@@ -71,7 +71,7 @@ Add the following code to an HTML file:
       const player = new mm.Player();
 
       function play() {
-        mm.Player.tone.context.resume();  // enable audio
+        player.resumeContext(); // enable audio
         model.sample(1)
           .then((samples) => player.start(samples[0], 80));
       }
@@ -102,7 +102,10 @@ const player = new mm.Player();
 model
   .initialize()
   .then(() => model.sample(1))
-  .then(samples => player.start(samples[0]));
+  .then(samples => {
+    player.resumeContext();
+    player.start(samples[0])
+  });
 ```
 
 See our [demos](./demos) for example usage.

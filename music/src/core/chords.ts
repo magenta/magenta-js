@@ -68,7 +68,8 @@ export class ChordSymbols {
    * @throws {ChordSymbolException} If the chord cannot be recognized.
    */
   public static pitches(chord: string): number[] {
-    if (!Chord.exists(chord)) {
+    const root = Chord.tokenize(chord)[0];
+    if (!root || !Chord.exists(chord)) {
       throw new ChordSymbolException(`Unrecognized chord symbol: ${chord}`);
     }
 

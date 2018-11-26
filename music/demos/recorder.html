@@ -41,6 +41,12 @@ limitations under the License.
   <section>
     <button id="record" disabled>Record</button>
     <button id="stop" disabled>Stop</button>
+    <b>Play click</b> <input type="checkbox" id="playClick"></label>
+    <b>Only play count-in</b> <input type="checkbox" id="countInOnly"></label>
+    <b>Tempo:</b>
+    <input type="range" id="tempo" min="20" max="240" value="120" step="1"
+    oninput="tempoValue.value = tempo.value">
+    <output id="tempoValue">120</output>
     <div id="output"></div>
   </section>
 

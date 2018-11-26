@@ -74,21 +74,22 @@
 					<li><a href="#model-checkpoints">Model Checkpoints</a></li>
 				</ul>
 				<h2 id="example-applications">Example Applications</h2>
-				<p>Here are a few applications built with MagentaMusic.js:</p>
+				<p>Here are a few applications built with <code>@magenta/music</code>:</p>
 				<ul>
-					<li><a href="https://piano-transcription.glitch.me">Piano Transcription</a> by <a href="https://github.com/notwaldorf">Monica Dinculescu</a> and <a href="https://github.com/adarob">Adam Roberts</a></li>
+					<li><a href="https://piano-scribe.glitch.me">Piano Scribe</a> by <a href="https://github.com/notwaldorf">Monica Dinculescu</a> and <a href="https://github.com/adarob">Adam Roberts</a></li>
 					<li><a href="https://g.co/beatblender">Beat Blender</a> by <a href="https://github.com/googlecreativelab">Google Creative Lab</a></li>
 					<li><a href="https://g.co/melodymixer">Melody Mixer</a> by <a href="https://github.com/googlecreativelab">Google Creative Lab</a></li>
 					<li><a href="https://goo.gl/magenta/latent-loops">Latent Loops</a> by <a href="https://github.com/teampieshop">Google Pie Shop</a></li>
 					<li><a href="https://goo.gl/magenta/neuraldrum">Neural Drum Machine</a> by <a href="https://github.com/teropa">Tero Parviainen</a></li>
+					<li><a href="https://tenori-off.glitch.me">Tenori-Off</a> by <a href="https://github.com/notwaldorf">Monica Dinculescu</a></li>
 				</ul>
 				<p>You can also try our <a href="https://tensorflow.github.io/magenta-js/music/demos">hosted demos</a> for each model and have a look at the <a href="./demos">demo code</a>.</p>
 				<h2 id="supported-models">Supported Models</h2>
 				<p>We have made an effort to port our most useful models, but please file an issue if you think something is
 				missing, or feel free to submit a Pull Request!</p>
 				<h3 id="piano-transcription-w-onsets-and-frames">Piano Transcription w/ Onsets and Frames</h3>
-				<p><a href="https://tensorflow.github.io/magenta-js/music/classes/_transcription_model._onsetsandframes.html">OnsetsAndFrames</a> implements Magenta&#39;s <a href="g.co/magenta/onsets-frames">piano transcription model</a> for converting raw audio to MIDI in the browser. While it is somewhat flexible, it works best on solo piano recordings. The algorithm takes half the duration of audio to run on most browsers, but due to a <a href="https://github.com/WebKit/webkit/blob/4a4870b75b95a836b516163d45a5cbd6f5222562/Source/WebCore/Modules/webaudio/AudioContext.cpp#L109">Webkit bug</a>, audio resampling will make this it significantly slower on Safari.</p>
-				<p><strong>Demo Application:</strong> <a href="https://piano-transcription.glitch.me">Piano Transcription</a></p>
+				<p><a href="https://tensorflow.github.io/magenta-js/music/classes/_transcription_model_.onsetsandframes.html">OnsetsAndFrames</a> implements Magenta&#39;s <a href="g.co/magenta/onsets-frames">piano transcription model</a> for converting raw audio to MIDI in the browser. While it is somewhat flexible, it works best on solo piano recordings. The algorithm takes half the duration of audio to run on most browsers, but due to a <a href="https://github.com/WebKit/webkit/blob/4a4870b75b95a836b516163d45a5cbd6f5222562/Source/WebCore/Modules/webaudio/AudioContext.cpp#L109">Webkit bug</a>, audio resampling will make this it significantly slower on Safari.</p>
+				<p><strong>Demo Application:</strong> <a href="https://piano-scribe.glitch.me">Piano Scribe</a></p>
 				<h3 id="musicrnn">MusicRNN</h3>
 				<p><a href="https://tensorflow.github.io/magenta-js/music/classes/_music_rnn_model_.musicrnn.html">MusicRNN</a> implements Magenta&#39;s LSTM-based language models. These include <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/melody_rnn">MelodyRNN</a>, <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/drums_rnn">DrumsRNN</a>, <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/improv_rnn">ImprovRNN</a>, and <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/performance_rnn">PerformanceRNN</a>.</p>
 				<p><strong>Demo Application:</strong> <a href="https://goo.gl/magenta/neuraldrum">Neural Drum Machine</a></p>
@@ -104,7 +105,7 @@
 				<pre><code class="lang-html"><span class="hljs-tag">&lt;<span class="hljs-name">html</span>&gt;</span>
   <span class="hljs-tag">&lt;<span class="hljs-name">head</span>&gt;</span>
     <span class="hljs-comment">&lt;!-- Load @magenta/music --&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdn.jsdelivr.net/npm/@magenta/music@1.0.0"</span>&gt;</span><span class="undefined"></span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdn.jsdelivr.net/npm/@magenta/music@^1.0.0"</span>&gt;</span><span class="undefined"></span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
     <span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="javascript">
       <span class="hljs-comment">// Instantiate model by loading desired config.</span>
       <span class="hljs-keyword">const</span> model = <span class="hljs-keyword">new</span> mm.MusicVAE(
@@ -112,7 +113,7 @@
       <span class="hljs-keyword">const</span> player = <span class="hljs-keyword">new</span> mm.Player();
 
       <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">play</span>(<span class="hljs-params"></span>) </span>{
-        mm.Player.tone.context.resume();  <span class="hljs-comment">// enable audio</span>
+        player.resumeContext(); <span class="hljs-comment">// enable audio</span>
         model.sample(<span class="hljs-number">1</span>)
           .then(<span class="hljs-function">(<span class="hljs-params">samples</span>) =&gt;</span> player.start(samples[<span class="hljs-number">0</span>], <span class="hljs-number">80</span>));
       }
@@ -136,7 +137,10 @@
 model
   .initialize()
   .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> model.sample(<span class="hljs-number">1</span>))
-  .then(<span class="hljs-function"><span class="hljs-params">samples</span> =&gt;</span> player.start(samples[<span class="hljs-number">0</span>]));
+  .then(<span class="hljs-function"><span class="hljs-params">samples</span> =&gt;</span> {
+    player.resumeContext();
+    player.start(samples[<span class="hljs-number">0</span>])
+  });
 </code></pre>
 				<p>See our <a href="./demos">demos</a> for example usage.</p>
 				<h4 id="example-commands">Example Commands</h4>
@@ -224,6 +228,9 @@ model
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="modules/_music_vae_model_.html">"music_<wbr>vae/model"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_piano_genie_model_.html">"piano_<wbr>genie/model"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="modules/_transcription_audio_utils_.html">"transcription/audio_<wbr>utils"</a>

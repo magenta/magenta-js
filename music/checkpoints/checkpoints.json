@@ -91,27 +91,6 @@
     "size_mb": 13.0
   },
   {
-    "id": "melody_rnn",
-    "model": "MusicRNN",
-    "description": "A 128-class onehot MelodyRNN model.",
-    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/melody_rnn",
-    "size_mb": 13.4
-  },
-  {
-    "id": "drum_kit_rnn",
-    "model": "MusicRNN",
-    "description": "A 9-class onehot DrumsRNN model. Converted from http://download.magenta.tensorflow.org/models/drum_kit_rnn.mag.",
-    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/drum_kit_rnn",
-    "size_mb": 11.9
-  },
-  {
-    "id": "chord_pitches_improv",
-    "model": "MusicRNN",
-    "description": "A 36-class onehot melody ImprovRNN model conditioned on chords as described at https://github.com/tensorflow/magenta/tree/master/magenta/models/improv_rnn#chord-pitches-improv. Converted from http://download.magenta.tensorflow.org/models/chord_pitches_improv.mag.",
-    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/chord_pitches_improv",
-    "size_mb": 5.6
-  },
-  {
     "id": "multitrack",
     "model": "MusicVAE",
     "description": "A 1-bar multitrack model, trained with 64 free bits. Quantized to 1-byte weights.",
@@ -159,6 +138,27 @@
     "description": "A 4-bar GrooVAE model, trained to add feel to 9-class quantized drum beats.",
     "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/groovae_unquantize_4bar",
     "size_mb": 15.8
+  },
+  {
+    "id": "melody_rnn",
+    "model": "MusicRNN",
+    "description": "A 128-class onehot MelodyRNN model.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/melody_rnn",
+    "size_mb": 13.4
+  },
+  {
+    "id": "drum_kit_rnn",
+    "model": "MusicRNN",
+    "description": "A 9-class onehot DrumsRNN model. Converted from http://download.magenta.tensorflow.org/models/drum_kit_rnn.mag.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/drum_kit_rnn",
+    "size_mb": 11.9
+  },
+  {
+    "id": "chord_pitches_improv",
+    "model": "MusicRNN",
+    "description": "A 36-class onehot melody ImprovRNN model conditioned on chords as described at https://github.com/tensorflow/magenta/tree/master/magenta/models/improv_rnn#chord-pitches-improv. Converted from http://download.magenta.tensorflow.org/models/chord_pitches_improv.mag.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/chord_pitches_improv",
+    "size_mb": 5.6
   },
   {
     "id": "onsets_frames_uni",

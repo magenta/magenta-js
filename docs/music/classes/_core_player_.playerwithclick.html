@@ -112,8 +112,12 @@
 						<section class="tsd-index-section tsd-is-inherited">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_core_player_.playerwithclick.html#getplaystate" class="tsd-kind-icon">get<wbr>Play<wbr>State</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_core_player_.playerwithclick.html#isplaying" class="tsd-kind-icon">is<wbr>Playing</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_core_player_.playerwithclick.html#pause" class="tsd-kind-icon">pause</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-protected"><a href="_core_player_.playerwithclick.html#playnote" class="tsd-kind-icon">play<wbr>Note</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_core_player_.playerwithclick.html#resume" class="tsd-kind-icon">resume</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_core_player_.playerwithclick.html#resumecontext" class="tsd-kind-icon">resume<wbr>Context</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_core_player_.playerwithclick.html#settempo" class="tsd-kind-icon">set<wbr>Tempo</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_core_player_.playerwithclick.html#start" class="tsd-kind-icon">start</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_core_player_.playerwithclick.html#stop" class="tsd-kind-icon">stop</a></li>
@@ -135,7 +139,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L444">core/player.ts:444</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L532">core/player.ts:532</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -221,7 +225,7 @@
 					<aside class="tsd-sources">
 						<p>Inherited from <a href="_core_player_.player.html">Player</a>.<a href="_core_player_.player.html#tone">tone</a></p>
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L334">core/player.ts:334</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L377">core/player.ts:377</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -234,6 +238,30 @@
 			<section class="tsd-panel-group tsd-member-group tsd-is-inherited">
 				<h2>Methods</h2>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<a name="getplaystate" class="tsd-anchor"></a>
+					<h3>get<wbr>Play<wbr>State</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Play<wbr>State<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<p>Inherited from <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#getplaystate">getPlayState</a></p>
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L235">core/player.ts:235</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Returns the playback state of the player, either &quot;started&quot;,
+									&quot;stopped&quot;, or &quot;paused&quot;.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 					<a name="isplaying" class="tsd-anchor"></a>
 					<h3>is<wbr>Playing</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
@@ -244,10 +272,41 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#isplaying">isPlaying</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L192">core/player.ts:192</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L227">core/player.ts:227</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Returns true iff the player is completely stopped. This will only be
+										false after calling stop(), and will be true after calling
+									start(), pause() or unpause().</p>
+								</div>
+							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<a name="pause" class="tsd-anchor"></a>
+					<h3>pause</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<li class="tsd-signature tsd-kind-icon">pause<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<p>Inherited from <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#pause">pause</a></p>
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L210">core/player.ts:210</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Pause playing the currently playing sequence right away. Call unpause()
+									to resume.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -263,7 +322,7 @@
 								<p>Inherited from <a href="_core_player_.player.html">Player</a>.<a href="_core_player_.player.html#playnote">playNote</a></p>
 								<p>Overrides <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#playnote">playNote</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L336">core/player.ts:336</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L379">core/player.ts:379</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -275,6 +334,57 @@
 									<h5>note: <span class="tsd-signature-type">INote</span></h5>
 								</li>
 							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<a name="resume" class="tsd-anchor"></a>
+					<h3>resume</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<li class="tsd-signature tsd-kind-icon">resume<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<p>Inherited from <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#resume">resume</a></p>
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L218">core/player.ts:218</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Pause playing the currently playing sequence right away. Call resume()
+									to resume playing the sequence.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<a name="resumecontext" class="tsd-anchor"></a>
+					<h3>resume<wbr>Context</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<li class="tsd-signature tsd-kind-icon">resume<wbr>Context<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<p>Inherited from <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#resumecontext">resumeContext</a></p>
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L129">core/player.ts:129</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Resumes the Audio context. Due to autoplay restrictions, you must call
+										this function in a click handler (i.e. as a result of a user action) before
+										you can start playing audio with a player. This is already done in start(),
+										but you might have to call it yourself if you have any deferred/async
+									calls.</p>
+								</div>
+							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 						</li>
 					</ul>
@@ -322,7 +432,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#start">start</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L131">core/player.ts:131</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L143">core/player.ts:143</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -364,7 +474,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#stop">stop</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L182">core/player.ts:182</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L195">core/player.ts:195</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -430,6 +540,9 @@
 						<a href="../modules/_music_vae_model_.html">"music_<wbr>vae/model"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="../modules/_piano_genie_model_.html">"piano_<wbr>genie/model"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_transcription_audio_utils_.html">"transcription/audio_<wbr>utils"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -484,10 +597,22 @@
 								<a href="_core_player_.playerwithclick.html#tone" class="tsd-kind-icon">tone</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="_core_player_.playerwithclick.html#getplaystate" class="tsd-kind-icon">get<wbr>Play<wbr>State</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 								<a href="_core_player_.playerwithclick.html#isplaying" class="tsd-kind-icon">is<wbr>Playing</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="_core_player_.playerwithclick.html#pause" class="tsd-kind-icon">pause</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-protected">
 								<a href="_core_player_.playerwithclick.html#playnote" class="tsd-kind-icon">play<wbr>Note</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="_core_player_.playerwithclick.html#resume" class="tsd-kind-icon">resume</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="_core_player_.playerwithclick.html#resumecontext" class="tsd-kind-icon">resume<wbr>Context</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 								<a href="_core_player_.playerwithclick.html#settempo" class="tsd-kind-icon">set<wbr>Tempo</a>
