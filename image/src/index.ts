@@ -18,4 +18,4 @@
 import * as tf from '@tensorflow/tfjs';
 export { tf };
 
-export * from './style/index';
+export * from './style/arbitrary_stylization';
