@@ -1,11 +1,11 @@
 {
-    "name": "@magenta/style",
+    "name": "@magenta/image",
     "version": "0.1.0",
-    "description": "Arbitrary image stylization in the browser.",
+    "description": "Visual art with machine learning, in the browser.",
     "main": "es5/index.js",
     "types": "es5/index.d.ts",
-    "jsdelivr": "dist/magentastyle.js",
-    "unpkg": "dist/magentastyle.js",
+    "jsdelivr": "dist/magentaimage.js",
+    "unpkg": "dist/magentaimage.js",
     "dependencies": {
         "@tensorflow/tfjs": "^0.13.3"
     },
@@ -23,10 +23,10 @@
     "scripts": {
         "prepublish": "yarn lint && yarn build && yarn bundle",
         "build": "tsc",
-        "bundle": "browserify --standalone ms src/index.ts -p [tsify] > dist/magentastyle.js",
+        "bundle": "browserify --standalone ms src/index.ts -p [tsify] > dist/magentaimage.js",
         "lint": "tslint -c ../tslint.json -p . -t verbose",
         "run-demos": "yarn build && yarn bundle && cp dist/*.js demos && http-server demos/",
-        "doc": "typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/arbitrary-image-stylization/src/' --out ../docs/style src --mode modules --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals"
+        "doc": "typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/image/src/' --out ../docs/style src --mode modules --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals"
     },
     "author": "Magenta",
     "license": "Apache-2.0",
