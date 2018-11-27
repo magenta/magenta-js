@@ -10,14 +10,9 @@
         "@tensorflow/tfjs": "^0.13.3"
     },
     "devDependencies": {
-        "@types/clone": "^0.1.30",
-        "@types/tape": "^4.2.32",
         "browserify": "^14.4.0",
         "clang-format": "^1.2.3",
-        "clone": "^1.0.4",
-        "fs": "^0.0.1-security",
         "http-server": "^0.11.1",
-        "tape": "^4.9.0",
         "ts-node": "^5.0.1",
         "tsify": "^3.0.4",
         "tslint": "^5.9.1",
