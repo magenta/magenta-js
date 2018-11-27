@@ -26,7 +26,7 @@
         "bundle": "browserify --standalone ms src/index.ts -p [tsify] > dist/magentaimage.js",
         "lint": "tslint -c ../tslint.json -p . -t verbose",
         "run-demos": "yarn build && yarn bundle && cp dist/*.js demos && http-server demos/",
-        "doc": "typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/image/src/' --out ../docs/style src --mode modules --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals"
+        "doc": "typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/image/src/' --out ../docs/image src --mode modules --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals"
     },
     "author": "Magenta",
     "license": "Apache-2.0",
