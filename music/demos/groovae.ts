@@ -22,8 +22,7 @@ import * as mm from '../src/index';
 import {DRUM_SEQS, writeMemory} from './common';
 import {writeNoteSeqs, writeTimer} from './common';
 
-// const HUMANIZE_CKPT = `${CHECKPOINTS_DIR}/music_vae/groovae_humanize`;
-const HUMANIZE_CKPT = `checkpoints/groovae_humanize`;
+const HUMANIZE_CKPT = `${CHECKPOINTS_DIR}/music_vae/groovae_humanize`;
 
 async function runHumanize() {
   const inputs = DRUM_SEQS.map(ns => mm.sequences.clone(ns));
