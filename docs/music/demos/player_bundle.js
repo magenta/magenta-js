@@ -465,30 +465,16 @@ function setupPlayerControlsDemo() {
     });
 }
 function setupAttackReleaseDemo() {
-    var soundFontBtn = document.getElementById('startSoundFont');
+    var soundFontAttackBtn = document.getElementById('attackSoundFont');
+    var soundFontReleaseBtn = document.getElementById('releaseSoundFont');
     var soundfontPlayer = new mm.SoundFontPlayer(common_1.SOUNDFONT_URL);
     soundfontPlayer.loadSamples(common_1.FULL_TWINKLE);
-    var soundFontIsPlaying = false;
-    soundFontBtn.addEventListener('click', function () {
-        if (soundFontIsPlaying) {
-            soundFontBtn.textContent = 'Play';
-        }
-        else {
-            playNoteAt(0);
-            soundFontBtn.textContent = 'Stop';
-        }
-        soundFontIsPlaying = !soundFontIsPlaying;
+    soundFontAttackBtn.addEventListener('click', function () {
+        soundfontPlayer.playNoteDown(common_1.FULL_TWINKLE.notes[0]);
     });
-    function playNoteAt(index) {
-        soundfontPlayer.playNoteDown(common_1.FULL_TWINKLE.notes[index]);
-        setTimeout(function () {
-            soundfontPlayer.playNoteUp(common_1.FULL_TWINKLE.notes[index]);
-            index += 1;
-            if (index < common_1.FULL_TWINKLE.notes.length && soundFontIsPlaying) {
-                setTimeout(function () { return playNoteAt(index); }, 300);
-            }
-        }, 300);
-    }
+    soundFontReleaseBtn.addEventListener('click', function () {
+        soundfontPlayer.playNoteUp(common_1.FULL_TWINKLE.notes[0]);
+    });
 }
 function generatePlayers() {
     common_1.writeNoteSeqs('unq-player', [common_1.FULL_TWINKLE_UNQUANTIZED], false);
@@ -76668,6 +76654,7 @@ var Instrument = (function () {
         this.FADE_SECONDS = 0.1;
         this.baseURL = baseURL;
         this.buffers = new Tone.Buffers([]);
+        this.sourceMap = new Map();
         this.initialized = false;
     }
     Instrument.prototype.initialize = function () {
@@ -76782,13 +76769,20 @@ var Instrument = (function () {
         var buffer = this.getBuffer(pitch, velocity);
         var source = new Tone.BufferSource(buffer).connect(output);
         source.start(0, 0, undefined, 1, 0);
+        if (this.sourceMap.has(pitch)) {
+            this.sourceMap.get(pitch).stop(Tone.now() + this.FADE_SECONDS, this.FADE_SECONDS);
+        }
+        this.sourceMap.set(pitch, source);
     };
     Instrument.prototype.playNoteUp = function (pitch, velocity, output) {
+        if (!this.sourceMap.has(pitch)) {
+            return;
+        }
         var buffer = this.getBuffer(pitch, velocity);
         var releaseSource = new Tone.BufferSource(buffer).connect(output);
-        var source = new Tone.BufferSource(buffer).connect(output);
-        source.stop(this.FADE_SECONDS, this.FADE_SECONDS);
         releaseSource.start(0, this.durationSeconds, undefined, 1, this.FADE_SECONDS);
+        this.sourceMap.get(pitch).stop(Tone.now() + this.FADE_SECONDS, this.FADE_SECONDS);
+        this.sourceMap.delete(pitch);
     };
     Instrument.prototype.getBuffer = function (pitch, velocity) {
         if (!this.initialized) {
