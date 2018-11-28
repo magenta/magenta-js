@@ -25,9 +25,9 @@ export const CHECKPOINTS_DIR =
 
 // Samples from Shan's SGM SoundFont:
 // http://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01
-const SOUNDFONT_URL =
+export const SOUNDFONT_URL =
     // tslint:disable-next-line:max-line-length
-    'https://storage.googleapis.com/magentadata/js/soundfonts/sgm_v85';
+    'https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus';
 
 export const DRUM_SEQS: mm.INoteSequence[] = [
   {
@@ -160,6 +160,57 @@ export const MEL_TWINKLE: mm.INoteSequence = {
   quantizationInfo: {stepsPerQuarter: 4},
   totalQuantizedSteps: 32,
 };
+
+export const MEL_TWINKLE_WITH_VELOCITIES: mm.INoteSequence = {
+  notes: [
+    {pitch: 60, quantizedStartStep: 0, quantizedEndStep: 2, velocity: 10},
+    {pitch: 60, quantizedStartStep: 2, quantizedEndStep: 4, velocity: 10},
+    {pitch: 67, quantizedStartStep: 4, quantizedEndStep: 6, velocity: 30},
+    {pitch: 67, quantizedStartStep: 6, quantizedEndStep: 8, velocity: 30},
+    {pitch: 69, quantizedStartStep: 8, quantizedEndStep: 10, velocity: 50},
+    {pitch: 69, quantizedStartStep: 10, quantizedEndStep: 12, velocity: 50},
+    {pitch: 67, quantizedStartStep: 12, quantizedEndStep: 16, velocity: 80},
+    {pitch: 65, quantizedStartStep: 16, quantizedEndStep: 18, velocity: 50},
+    {pitch: 65, quantizedStartStep: 18, quantizedEndStep: 20, velocity: 50},
+    {pitch: 64, quantizedStartStep: 20, quantizedEndStep: 22, velocity: 30},
+    {pitch: 64, quantizedStartStep: 22, quantizedEndStep: 24, velocity: 30},
+    {pitch: 62, quantizedStartStep: 24, quantizedEndStep: 26, velocity: 10},
+    {pitch: 62, quantizedStartStep: 26, quantizedEndStep: 28, velocity: 10},
+    {pitch: 60, quantizedStartStep: 28, quantizedEndStep: 32, velocity: 50}
+  ],
+  quantizationInfo: {stepsPerQuarter: 4},
+  totalQuantizedSteps: 32,
+};
+
+export const DRUM_SEQ_WITH_VELOCITIES: mm.INoteSequence = {
+  notes: [
+    {pitch: 36, quantizedStartStep: 0, velocity: 10},
+    {pitch: 36, quantizedStartStep: 4, velocity: 80},
+    {pitch: 38, quantizedStartStep: 8, velocity: 10},
+    {pitch: 38, quantizedStartStep: 12, velocity: 80},
+    {pitch: 42, quantizedStartStep: 16, velocity: 10},
+    {pitch: 42, quantizedStartStep: 20, velocity: 80},
+    {pitch: 45, quantizedStartStep: 24, velocity: 10},
+    {pitch: 45, quantizedStartStep: 28, velocity: 80},
+    {pitch: 46, quantizedStartStep: 32, velocity: 10},
+    // This drum is really unhappy if played too quickly twice in a row.
+    {pitch: 46, quantizedStartStep: 38, velocity: 80},
+    {pitch: 48, quantizedStartStep: 40, velocity: 10},
+    {pitch: 48, quantizedStartStep: 44, velocity: 80},
+    {pitch: 49, quantizedStartStep: 48, velocity: 10},
+    {pitch: 49, quantizedStartStep: 52, velocity: 80},
+    {pitch: 50, quantizedStartStep: 56, velocity: 10},
+    {pitch: 50, quantizedStartStep: 60, velocity: 80},
+    {pitch: 51, quantizedStartStep: 64, velocity: 10},
+    {pitch: 51, quantizedStartStep: 68, velocity: 80},
+  ],
+  quantizationInfo: {stepsPerQuarter: 4},
+  totalQuantizedSteps: 72
+};
+DRUM_SEQ_WITH_VELOCITIES.notes.map(n => {
+  n.isDrum = true;
+  n.quantizedEndStep = n.quantizedStartStep + 1;
+});
 
 export const FULL_TWINKLE: mm.INoteSequence = {
   notes: [
@@ -301,8 +352,7 @@ export function writeNoteSeqs(
             .join(', ') +
         ']';
     details.appendChild(seqText);
-    details.appendChild(
-        useSoundFontPlayer ? createSoundFontPlayer(seq) : createPlayer(seq));
+    details.appendChild(createPlayer(seq, useSoundFontPlayer));
     element.appendChild(details);
   });
 }
@@ -312,10 +362,12 @@ export function writeMemory(bytes: number, name = 'leaked-memory') {
 }
 
 function createPlayerButton(
-    seq: mm.INoteSequence, withClick: boolean, canvas: HTMLElement) {
+    seq: mm.INoteSequence, withClick: boolean, useSoundFontPlayer: boolean,
+    canvas: HTMLElement) {
   const visualizer = new mm.Visualizer(seq, canvas as HTMLCanvasElement);
   const container = canvas.parentElement as HTMLDivElement;
-  const player = new mm.Player(withClick, {
+
+  const callbackObject = {
     run: (note: mm.NoteSequence.Note) => {
       const currentNotePosition = visualizer.redraw(note);
 
@@ -326,11 +378,22 @@ function createPlayerButton(
       }
     },
     stop: () => {}
-  });
+  };
 
   const button = document.createElement('button');
   const playText = withClick ? 'Play With Click' : 'Play';
   button.textContent = playText;
+
+  // tslint:disable-next-line:no-any
+  let player: any;
+  if (useSoundFontPlayer) {
+    player = new mm.SoundFontPlayer(
+        SOUNDFONT_URL, undefined, undefined, undefined, callbackObject);
+    player.loadSamples(seq).then(() => button.disabled = false);
+  } else {
+    player = new mm.Player(withClick, callbackObject);
+  }
+
   button.addEventListener('click', () => {
     if (player.isPlaying()) {
       player.stop();
@@ -353,7 +416,7 @@ function createDownloadButton(seq: mm.INoteSequence) {
   return button;
 }
 
-function createPlayer(seq: mm.INoteSequence) {
+function createPlayer(seq: mm.INoteSequence, useSoundFontPlayer = false) {
   // Visualizer
   const div = document.createElement('div');
   div.classList.add('player-container');
@@ -363,38 +426,19 @@ function createPlayer(seq: mm.INoteSequence) {
   containerDiv.appendChild(canvas);
 
   const buttonsDiv = document.createElement('div');
-  buttonsDiv.appendChild(createPlayerButton(seq, false, canvas));
-  // Players with clicks only work for quantized sequences.
-  if (sequences.isQuantizedSequence(seq)) {
-    buttonsDiv.appendChild(createPlayerButton(seq, true, canvas));
+  // Regular player.
+  buttonsDiv.appendChild(
+      createPlayerButton(seq, false, useSoundFontPlayer, canvas));
+
+  // Player with click. Only works for quantized sequences.
+  if (!useSoundFontPlayer && sequences.isQuantizedSequence(seq)) {
+    buttonsDiv.appendChild(createPlayerButton(seq, true, false, canvas));
   }
+
+  // Download midi.
   buttonsDiv.appendChild(createDownloadButton(seq));
   div.appendChild(buttonsDiv);
   div.appendChild(containerDiv);
-  return div;
-}
-
-function createSoundFontPlayer(seq: mm.INoteSequence) {
-  // Visualizer
-  const div = document.createElement('div');
-  div.classList.add('player-container');
-
-  const player = new mm.SoundFontPlayer(SOUNDFONT_URL);
-  const button = document.createElement('button');
-  button.textContent = 'Play';
-  button.disabled = true;
-  player.loadSamples(seq).then(() => button.disabled = false);
-  button.addEventListener('click', () => {
-    if (player.isPlaying()) {
-      player.stop();
-      button.textContent = 'Play';
-    } else {
-      player.start(seq).then(() => (button.textContent = 'Play'));
-      button.textContent = 'Stop';
-    }
-  });
-
-  div.appendChild(button);
   return div;
 }
 

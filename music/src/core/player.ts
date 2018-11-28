@@ -120,6 +120,17 @@ export abstract class BasePlayer {
   }
 
   /**
+   * Resumes the Audio context. Due to autoplay restrictions, you must call
+   * this function in a click handler (i.e. as a result of a user action) before
+   * you can start playing audio with a player. This is already done in start(),
+   * but you might have to call it yourself if you have any deferred/async
+   * calls.
+   */
+  resumeContext() {
+    Tone.context.resume();
+  }
+
+  /**
    * Starts playing a `NoteSequence` (either quantized or unquantized), and
    * returns a Promise that resolves when it is done playing.
    * @param seq The `NoteSequence` to play.
@@ -128,7 +139,9 @@ export abstract class BasePlayer {
    * default of 120. Only valid for quantized sequences.
    * @returns a Promise that resolves when playback is complete.
    */
+
   start(seq: INoteSequence, qpm?: number): Promise<void> {
+    this.resumeContext();
     const isQuantized = sequences.isQuantizedSequence(seq);
     if (this.playClick && isQuantized) {
       seq = this.makeClickSequence(seq);
@@ -182,6 +195,7 @@ export abstract class BasePlayer {
   stop() {
     if (this.currentPart) {
       this.currentPart.stop();
+      Tone.Transport.stop();
       this.currentPart = null;
     }
     Tone.Transport.clear(this.scheduledStop);
@@ -189,8 +203,37 @@ export abstract class BasePlayer {
     this.desiredQPM = undefined;
   }
 
+  /**
+   * Pause playing the currently playing sequence right away. Call unpause()
+   * to resume.
+   */
+  pause() {
+    Tone.Transport.pause();
+  }
+
+  /**
+   * Pause playing the currently playing sequence right away. Call resume()
+   * to resume playing the sequence.
+   */
+  resume() {
+    Tone.Transport.start();
+  }
+
+  /**
+   * Returns true iff the player is completely stopped. This will only be
+   * false after calling stop(), and will be true after calling
+   * start(), pause() or unpause().
+   */
   isPlaying() {
     return !!this.currentPart;
+  }
+
+  /**
+   * Returns the playback state of the player, either "started",
+   * "stopped", or "paused".
+   */
+  getPlayState() {
+    return Tone.Transport.state;
   }
 }
 
@@ -273,17 +316,28 @@ class DrumKit {
                         })
                         .toMaster();
   private pitchPlayers = [
-    (time: number) => this.kick.triggerAttackRelease('C2', '8n', time),
-    (time: number) => this.snare.triggerAttackRelease('16n', time),
-    (time: number) => this.closedHihat.triggerAttack(time, 0.3),
-    (time: number) => this.openHihat.triggerAttack(time, 0.3),
-    (time: number) => this.tomLow.triggerAttack('G3', time, 0.5),
-    (time: number) => this.tomMid.triggerAttack('C4', time, 0.5),
-    (time: number) => this.tomHigh.triggerAttack('F4', time, 0.5),
-    (time: number) => this.crash.triggerAttack(time, 1.0),
-    (time: number) => this.ride.triggerAttack(time, 0.5),
-    (time: number) => this.loClick.triggerAttack('G5', time, 0.5),
-    (time: number) => this.hiClick.triggerAttack('C6', time, 0.5)
+    (time: number, velocity = 1) =>
+        this.kick.triggerAttackRelease('C2', '8n', time, velocity),
+    (time: number, velocity = 1) =>
+        this.snare.triggerAttackRelease('16n', time, velocity),
+    (time: number, velocity = 1) =>
+        this.closedHihat.triggerAttack(time, 0.3, velocity),
+    (time: number, velocity = 1) =>
+        this.openHihat.triggerAttack(time, 0.3, velocity),
+    (time: number, velocity = 0.5) =>
+        this.tomLow.triggerAttack('G3', time, velocity),
+    (time: number, velocity = 0.5) =>
+        this.tomMid.triggerAttack('C4', time, velocity),
+    (time: number, velocity = 0.5) =>
+        this.tomHigh.triggerAttack('F4', time, velocity),
+    (time: number, velocity = 1) =>
+        this.crash.triggerAttack(time, 1.0, velocity),
+    (time: number, velocity = 1) =>
+        this.ride.triggerAttack(time, 0.5, velocity),
+    (time: number, velocity = 0.5) =>
+        this.loClick.triggerAttack('G5', time, velocity),
+    (time: number, velocity = 0.5) =>
+        this.hiClick.triggerAttack('C6', time, velocity)
   ];
 
   private constructor() {
@@ -305,8 +359,8 @@ class DrumKit {
     return DrumKit.instance;
   }
 
-  public playNote(pitch: number, time: number) {
-    this.pitchPlayers[this.DRUM_PITCH_TO_CLASS.get(pitch)](time);
+  public playNote(pitch: number, time: number, velocity: number) {
+    this.pitchPlayers[this.DRUM_PITCH_TO_CLASS.get(pitch)](time, velocity);
   }
 }
 
@@ -323,13 +377,18 @@ export class Player extends BasePlayer {
   static readonly tone = Tone;  // tslint:disable-line:no-any
 
   protected playNote(time: number, note: NoteSequence.INote) {
+    // If there's a velocity, use it.
+    const velocity = note.hasOwnProperty('velocity') ?
+        note.velocity / constants.MAX_MIDI_VELOCITY :
+        undefined;
+
     if (note.isDrum) {
-      this.drumKit.playNote(note.pitch, time);
+      this.drumKit.playNote(note.pitch, time, velocity);
     } else {
       const freq = new Tone.Frequency(note.pitch, 'midi');
       const dur = note.endTime - note.startTime;
       this.getSynth(note.instrument, note.program)
-          .triggerAttackRelease(freq, dur, time);
+          .triggerAttackRelease(freq, dur, time, velocity);
     }
   }
 
@@ -355,7 +414,10 @@ export class Player extends BasePlayer {
  *
  * Example (explicitly loading samples):
  *
- *   `player.loadSamples(seq).then(() => player.start(seq))`
+ *
+ *   `player.loadSamples(seq).then(() => {
+ *      player.start(seq)
+ *    })`
  *
  * Explicitly loads samples, so that playing starts immediately when `start` is
  * called.
@@ -375,9 +437,10 @@ export class SoundFontPlayer extends BasePlayer {
 
   constructor(
       soundFontURL: string, output = Tone.Master,
-      programOutputs?: Map<number, any>,  // tslint:disable-line:no-any
-      drumOutputs?: Map<number, any>) {   // tslint:disable-line:no-any
-    super();
+      programOutputs?: Map<number, any>,      // tslint:disable-line:no-any
+      drumOutputs?: Map<number, any>,         // tslint:disable-line:no-any
+      callbackObject?: BasePlayerCallback) {  // tslint:disable-line:no-any
+    super(false, callbackObject);
     this.soundFont = new soundfont.SoundFont(soundFontURL);
     this.output = output;
     this.programOutputs = programOutputs;
@@ -385,19 +448,65 @@ export class SoundFontPlayer extends BasePlayer {
   }
 
   async loadSamples(seq: INoteSequence): Promise<void> {
-    await this.soundFont.loadSamples(seq.notes.map((note) => ({
-                                                     pitch: note.pitch,
-                                                     velocity: note.velocity,
-                                                     program: note.program,
-                                                     isDrum: note.isDrum
-                                                   })));
+    await this.soundFont.loadSamples(
+        seq.notes.map((note) => ({
+                        pitch: note.pitch,
+                        velocity: note.velocity,
+                        program: note.program || 0,
+                        isDrum: note.isDrum || false
+                      })));
+  }
+
+  /**
+   * Resumes the Audio context. Due to autoplay restrictions, you must call
+   * this function in a click handler (i.e. as a result of a user action) before
+   * you can start playing audio with a player. This is already done in start(),
+   * but you might have to call it yourself if you have any deferred/async
+   * calls.
+   */
+  resumeContext() {
+    Tone.context.resume();
   }
 
   start(seq: INoteSequence, qpm?: number): Promise<void> {
+    this.resumeContext();
     return this.loadSamples(seq).then(() => super.start(seq, qpm));
   }
 
   protected playNote(time: number, note: NoteSequence.INote) {
+    this.soundFont.playNote(
+        note.pitch, note.velocity, time, note.endTime - note.startTime,
+        note.program, note.isDrum, this.getAudioNodeOutput(note));
+  }
+
+  /*
+   * Plays the down stroke of a note (the attack and the sustain).
+   * Note that this does not call `loadSamples`, and assumes that the
+   * sample for this note is already loaded. If you call this
+   * twice without calling playNoteUp() in between, it will implicitely release
+   * the note before striking it the second time.
+   */
+  public playNoteDown(note: NoteSequence.INote) {
+    this.soundFont.playNoteDown(
+        note.pitch, note.velocity, note.program, note.isDrum,
+        this.getAudioNodeOutput(note));
+  }
+
+  /*
+   * Plays the up stroke of a note (the release).
+   * Note that this does not call `loadSamples`, and assumes that the
+   * sample for this note is already loaded. If you call this
+   * twice without calling playNoteDown() in between, it will *not* implicitely
+   * call playNoteDown() for you, and the second call will have no noticeable
+   * effect.
+   */
+  public playNoteUp(note: NoteSequence.INote) {
+    this.soundFont.playNoteUp(
+        note.pitch, note.velocity, note.program, note.isDrum,
+        this.getAudioNodeOutput(note));
+  }
+
+  getAudioNodeOutput(note: NoteSequence.INote) {
     // Determine which `AudioNode` to use for output. Non-drums are mapped to
     // outputs by program number, while drums are mapped to outputs by MIDI
     // pitch value. A single output (defaulting to `Tone.Master`) is used as a
@@ -412,10 +521,7 @@ export class SoundFontPlayer extends BasePlayer {
         output = this.drumOutputs.get(note.pitch);
       }
     }
-
-    this.soundFont.playNote(
-        note.pitch, note.velocity, time, note.endTime - note.startTime,
-        note.program, note.isDrum, output);
+    return output;
   }
 }
 

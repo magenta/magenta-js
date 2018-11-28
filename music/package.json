@@ -1,13 +1,13 @@
 {
   "name": "@magenta/music",
-  "version": "1.1.11",
+  "version": "1.3.1",
   "description": "Make music with machine learning, in the browser.",
   "main": "es5/index.js",
   "types": "es5/index.d.ts",
   "jsdelivr": "dist/magentamusic.js",
   "unpkg": "dist/magentamusic.js",
   "dependencies": {
-    "@tensorflow/tfjs": "^0.12.7",
+    "@tensorflow/tfjs": "^0.13.3",
     "@types/ndarray": "^1.0.6",
     "fft.js": "^4.0.3",
     "midiconvert": "^0.4.7",
@@ -44,9 +44,10 @@
     "lint": "tslint -c ../tslint.json -p . -t verbose",
     "test": "ts-node node_modules/tape/bin/tape src/**/*_test.ts",
     "build-demos": "cd demos && ./build-demos.sh",
+    "publish-demos": "yarn build-demos && mkdir -p ../docs/music/demos && cp demos/*.{js,html,mid,css} ../docs/music/demos",
     "run-demos": "yarn build-demos && http-server demos/",
     "proto": "sh compile-proto.sh",
-    "doc": "sh generate-docs.sh"
+    "doc": "sh generate-docs.sh && yarn publish-demos"
   },
   "author": "Magenta",
   "license": "Apache-2.0",
