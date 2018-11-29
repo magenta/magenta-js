@@ -88,13 +88,13 @@ const styleImg = null; // TODO: figure this out.
 const stylizedCanvas = null; // TODO: figure this out.
 
 async function stylize() {
-  const bottleneck = await tf.tidy(() => {
+  const bottleneck = await ms.tf.tidy(() => {
     return model.predictStyleParameters(styleImg);
   });
-  const stylized = await tf.tidy(() => {
+  const stylized = await ms.tf.tidy(() => {
     return model.stylize(contentImg, bottleneck);
   });
-  await tf.toPixels(stylized, stylizedCanvas);
+  await ms.tf.toPixels(stylized, stylizedCanvas);
   bottleneck.dispose();
   stylized.dispose();
 }
