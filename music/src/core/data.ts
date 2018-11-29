@@ -145,6 +145,7 @@ export abstract class DataConverter {
   abstract readonly endTensor: tf.Tensor1D;  // Tensor marking segment end.
   readonly NUM_SPLITS: number = 0;  // Const number of conductor splits.
   readonly SEGMENTED_BY_TRACK: boolean = false;  // Segments are tracks.
+
   abstract toTensor(noteSequence: INoteSequence): tf.Tensor2D;
   abstract async toNoteSequence(tensor: tf.Tensor2D, stepsPerQuarter: number):
       Promise<INoteSequence>;
@@ -816,14 +817,20 @@ export class MultitrackConverter extends DataConverter {
  * tensors.
  *
  * @param stepsPerQuarter The number of quantization steps per quarter note.
- * @param humanize If True, flatten all input velocities and microtiming. The
- * model then learns to map from a flattened input to the original sequence.
- * @param fixedVelocities: If True, flatten all input velocities.
+ * @param humanize If True, flatten all input velocities and
+ * microtiming. The model then maps from a flattened input one with velocities
+ * and microtiming. Defaults to False.
+ * @param pitchClasses  An array of arrays, grouping together MIDI pitches to
+ * treat as the same drum. The first pitch in each class will be used in the
+ * `NoteSequence` returned by `toNoteSequence`. A default mapping to 9 classes
+ * is used if not provided.
+ * @param splitInstruments If True, the individual drum/pitch events for a given
+ * time are split across seprate, sequentail steps of the RNN. Otherwise, they
+ * are combined into a single step of the RNN. Defaults to False.
  */
 export interface GrooveConverterArgs extends BaseConverterArgs {
   stepsPerQuarter?: number;
   humanize?: boolean;
-  tapify?: boolean;
   pitchClasses?: number[][];
   splitInstruments?: boolean;
 }
@@ -849,10 +856,9 @@ export class GrooveConverter extends DataConverter {
       });
     }
     this.humanize = args.humanize;
-    this.splitInstruments = args.splitInstruments;
+    this.splitInstruments = args.splitInstruments || false;
 
-    // Each drum hit is represented by 3 numbers -
-    // on/off, velocity, and offset
+    // Each drum hit is represented by 3 numbers - on/off, velocity, and offset.
     this.depth = 3;
   }
 
@@ -866,11 +872,13 @@ export class GrooveConverter extends DataConverter {
                                     constants.DEFAULT_QUARTERS_PER_MINUTE;
     const stepLength = (60. / qpm) / this.stepsPerQuarter;
 
+    // For each quantized time step bin, collect a mapping from each pitch class
+    // to at most one drum hit. Break ties by selecting hit with highest
+    // velocity.
     const stepNotes: Array<Map<number, NoteSequence.INote>> = [];
     for (let i = 0; i < numSteps; ++i) {
       stepNotes.push(new Map<number, NoteSequence.INote>());
     }
-    console.log(stepNotes[0]);
     qns.notes.forEach(n => {
       if (this.pitchToClass.has(n.pitch)) {
         const s = n.quantizedStartStep;
@@ -881,6 +889,10 @@ export class GrooveConverter extends DataConverter {
       }
     });
 
+    // For each time step and drum (pitch class), store the value of the
+    // hit (bool for whether the drum what hit at that time), velocity
+    // ([0, 1] velocity of hit, or 0 if not hit), and offset ([-1, 1] distance
+    // from quantized start).
     const numDrums = this.pitchClasses.length;
     const hitVectors = tf.buffer([numSteps, numDrums]);
     const velocityVectors = tf.buffer([numSteps, numDrums]);
@@ -903,13 +915,13 @@ export class GrooveConverter extends DataConverter {
       }
     }
 
-    // Flatten so that there is one per drum at every step, then stack the
-    // 3 signals.
     return tf.tidy(() => {
       const hits = hitVectors.toTensor();
       const velocities = hitVectors.toTensor();
       const offsets = hitVectors.toTensor();
 
+      // Stack the three signals, first flattening if splitInstruemnts is
+      // enabled.
       return tf.concat(
                  [
                    this.splitInstruments ? hits.flatten() : hits,
@@ -924,7 +936,7 @@ export class GrooveConverter extends DataConverter {
       t: tf.Tensor2D, stepsPerQuarter?: number,
       qpm = constants.DEFAULT_QUARTERS_PER_MINUTE) {
     if (stepsPerQuarter && stepsPerQuarter !== this.stepsPerQuarter) {
-      throw Error('');
+      throw Error('`stepsPerQuarter` is set by the model.');
     }
     stepsPerQuarter = this.stepsPerQuarter;
     const numSteps = t.shape[0];  // this.pitchClasses.length;
@@ -938,10 +950,13 @@ export class GrooveConverter extends DataConverter {
     function clip(v: number, min: number, max: number) {
       return Math.min(Math.max(v, min), max);
     }
+
     const numDrums = this.pitchClasses.length;
+    // Loop through time steps.
     for (let s = 0; s < numSteps; ++s) {
       const stepResults = results.slice(
           s * numDrums * this.depth, (s + 1) * numDrums * this.depth);
+      // Loop through individual drums at each time step.
       for (let d = 0; d < numDrums; ++d) {
         const hitOutput =
             stepResults[this.splitInstruments ? d * this.depth : d];
@@ -951,8 +966,11 @@ export class GrooveConverter extends DataConverter {
         const offsetI =
             this.splitInstruments ? (d * this.depth + 2) : (2 * numDrums + d);
         const offsetOutput = stepResults[offsetI];
+        // If hit output is above threshold, add note.
         if (hitOutput > 0.5) {
+          // Convert output to velocity, clipping to be in the valid range.
           const velocity = clip(Math.round(velOutput * 127), 0, 127);
+          // Convert output to time offset, clipping to be in the valid range.
           const offset = clip(offsetOutput / 2, -0.5, 0.5);
           ns.notes.push(NoteSequence.Note.create({
             pitch: this.pitchClasses[d][0],
