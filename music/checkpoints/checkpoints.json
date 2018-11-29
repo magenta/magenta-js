@@ -52,7 +52,7 @@
     "id": "mel_4bar_med_lokl_q2",
     "model": "MusicVAE",
     "description": "A medium-sized 4-bar, 90-class onehot melody model.  Trained with a strong prior (low KL divergence), which is better for sampling. Quantized to 2-byte weights.",
-    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_4bar_med_q2",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_4bar_med_lokl_q2",
     "size_mb": 65.4
   },
   {
