@@ -38,7 +38,7 @@ from tensorflowjs.write_weights import write_weights
 
 
 def dump_checkpoint(
-    checkpoint_file, output_dir, remove_variables_regex=None,
+    checkpoint_file, output_dir, shard_mb=4, remove_variables_regex=None,
     quantization_dtype=None):
   reader = tf.train.NewCheckpointReader(checkpoint_file)
   var_to_shape_map = reader.get_variable_to_shape_map()
@@ -60,7 +60,12 @@ def dump_checkpoint(
     entries.append({'name': var_name, 'data': tensor})
     print('Dumping %s (%r)' %  (var_name, shape))
 
-  write_weights([entries], output_dir, quantization_dtype=quantization_dtype)
+  write_weights(
+    [entries],
+    output_dir,
+    write_manifest=True,
+    quantization_dtype=quantization_dtype,
+    shard_size_bytes=shard_mb * 1024 * 1024)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
@@ -85,6 +90,12 @@ if __name__ == '__main__':
       help='How many bytes to optionally quantize/compress the weights to. 1- '
       'and 2-byte quantizaton is supported. The default (unquantized) size is '
       '4 bytes.')
+  parser.add_argument(
+      '--shard_megabytes',
+      type=int,
+      default=4,
+      help='Number of megabytes per weight shard.')
+
   FLAGS, unparsed = parser.parse_known_args()
 
   if unparsed:
@@ -101,5 +112,8 @@ if __name__ == '__main__':
       QUANTIZATION_BYTES_TO_DTYPES[FLAGS.quantization_bytes]
       if FLAGS.quantization_bytes else None)
   dump_checkpoint(
-      checkpoint_file, output_dir, FLAGS.remove_variables_regex,
+      checkpoint_file,
+      output_dir,
+      FLAGS.shard_megabytes,
+      FLAGS.remove_variables_regex,
       quantization_dtype)
