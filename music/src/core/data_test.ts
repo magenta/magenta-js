@@ -298,7 +298,23 @@ test('Test GrooveConverter', (t: test.Test) => {
   const grooveConverter = new data.GrooveConverter({numSteps: 32});
 
   const grooveTensor = grooveConverter.toTensor(GROOVE_NS);
-  t.deepEqual(grooveTensor.shape, [32 * 9, grooveConverter.depth]);
+  t.deepEqual(grooveTensor.shape, [32, 9 * 3]);
+
+  grooveConverter.toNoteSequence(grooveTensor, undefined, 60).then(ns => {
+    roundNoteTimes(ns.notes);
+    t.deepEqual(ns, GROOVE_NS);
+  });
+
+  grooveTensor.dispose();
+  t.end();
+});
+
+test('Test GrooveConverter Split', (t: test.Test) => {
+  const grooveConverter =
+      new data.GrooveConverter({numSteps: 32, splitInstruments: true});
+
+  const grooveTensor = grooveConverter.toTensor(GROOVE_NS);
+  t.deepEqual(grooveTensor.shape, [32 * 9, 3]);
 
   grooveConverter.toNoteSequence(grooveTensor, undefined, 60).then(ns => {
     roundNoteTimes(ns.notes);
@@ -316,7 +332,7 @@ test('Test GrooveConverterHumanize', (t: test.Test) => {
   });
 
   const grooveTensor = grooveConverter.toTensor(GROOVE_NS);
-  t.deepEqual(grooveTensor.shape, [32 * 9, grooveConverter.depth]);
+  t.deepEqual(grooveTensor.shape, [32, 9 * 3]);
 
   const expectedNs = sequences.clone(GROOVE_NS);
   // Humanize removes velocities.

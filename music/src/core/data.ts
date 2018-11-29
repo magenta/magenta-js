@@ -855,7 +855,7 @@ export class GrooveConverter extends DataConverter {
         this.pitchToClass.set(p, c);
       });
     }
-    this.humanize = args.humanize;
+    this.humanize = args.humanize || false;
     this.splitInstruments = args.splitInstruments || false;
 
     // Each drum hit is represented by 3 numbers - on/off, velocity, and offset.
@@ -916,17 +916,17 @@ export class GrooveConverter extends DataConverter {
     }
 
     return tf.tidy(() => {
-      const hits = hitVectors.toTensor();
-      const velocities = hitVectors.toTensor();
-      const offsets = hitVectors.toTensor();
+      const hits = hitVectors.toTensor() as tf.Tensor2D;
+      const velocities = velocityVectors.toTensor() as tf.Tensor2D;
+      const offsets = offsetVectors.toTensor() as tf.Tensor2D;
 
       // Stack the three signals, first flattening if splitInstruemnts is
       // enabled.
+      const outLength = this.splitInstruments ? numSteps * numDrums : numSteps;
       return tf.concat(
                  [
-                   this.splitInstruments ? hits.flatten() : hits,
-                   this.splitInstruments ? velocities.flatten() : hits,
-                   this.splitInstruments ? offsets.flatten() : hits,
+                   hits.as2D(outLength, -1), velocities.as2D(outLength, -1),
+                   offsets.as2D(outLength, -1)
                  ],
                  1) as tf.Tensor2D;
     });
@@ -939,7 +939,9 @@ export class GrooveConverter extends DataConverter {
       throw Error('`stepsPerQuarter` is set by the model.');
     }
     stepsPerQuarter = this.stepsPerQuarter;
-    const numSteps = t.shape[0];  // this.pitchClasses.length;
+    const numSteps = this.splitInstruments ?
+        t.shape[0] / this.pitchClasses.length :
+        t.shape[0];
     const stepLength = (60. / qpm) / this.stepsPerQuarter;
 
     const ns = NoteSequence.create({totalTime: numSteps * stepLength});
