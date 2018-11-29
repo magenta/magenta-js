@@ -316,7 +316,7 @@ abstract class BaseDecoder extends Decoder {
    * @param controls (Optional) Control tensors to use for conditioning, sized
    * `[length, controlDepth]`.
    *
-   * @returns A boolean tensor containing the decoded sequences, shaped
+   * @returns A float32 tensor containing the decoded sequences, shaped
    * `[batchSize, length, depth]`.
    */
   decode(
@@ -406,7 +406,6 @@ class GrooveDecoder extends BaseDecoder {
 
     velocities = tf.sigmoid(velocities);
     offsets = tf.tanh(offsets);
-
     if (temperature) {
       hits = tf.sigmoid(hits.div(tf.scalar(temperature))) as tf.Tensor2D;
       const threshold = tf.randomUniform(hits.shape, 0, 1);
@@ -764,6 +763,10 @@ class MusicVAE {
                    new Nade(
                        vars[`${varPrefix}nade/w_enc`] as tf.Tensor3D,
                        vars[`${varPrefix}nade/w_dec_t`] as tf.Tensor3D)) as
+            Decoder;
+      } else if (this.spec.dataConverter.type === 'GrooveConverter') {
+        return new GrooveDecoder(
+                   decLstmLayers, decZtoInitState, decOutputProjection) as
             Decoder;
       } else {
         return new CategoricalDecoder(
