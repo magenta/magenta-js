@@ -49,6 +49,11 @@ missing, or feel free to submit a Pull Request!
 
 **Demo Application:** [Endless Trios](https://goo.gl/magenta/endless-trios)
 
+### Piano Genie
+[Piano Genie](https://g.co/magenta/pianogenie) is a VQ-VAE model that that maps 8-button input to a full 88-key piano in real time.
+
+**Demo Application:** [Piano Genie](https://goo.gl/magenta/piano-genie)
+
 ## Getting started
 
 There are two main ways to get MagentaMusic.js in your JavaScript project:
