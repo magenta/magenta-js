@@ -17,7 +17,7 @@ exports.DRUM_SEQS = [
             { pitch: 36, quantizedStartStep: 28 }, { pitch: 42, quantizedStartStep: 30 }
         ],
         quantizationInfo: { stepsPerQuarter: 4 },
-        totalQuantizedSteps: 30,
+        totalQuantizedSteps: 32,
     },
     {
         notes: [
@@ -48,7 +48,7 @@ exports.DRUM_SEQS = [
             { pitch: 42, quantizedStartStep: 30 }, { pitch: 48, quantizedStartStep: 30 }
         ],
         quantizationInfo: { stepsPerQuarter: 4 },
-        totalQuantizedSteps: 30
+        totalQuantizedSteps: 32,
     },
     {
         notes: [
@@ -72,13 +72,14 @@ exports.DRUM_SEQS = [
             { pitch: 45, quantizedStartStep: 30 }
         ],
         quantizationInfo: { stepsPerQuarter: 4 },
-        totalQuantizedSteps: 30,
+        totalQuantizedSteps: 32,
     },
     {
         notes: [
             { pitch: 50, quantizedStartStep: 4 }, { pitch: 50, quantizedStartStep: 20 }
         ],
-        quantizationInfo: { stepsPerQuarter: 4 }
+        quantizationInfo: { stepsPerQuarter: 4 },
+        totalQuantizedSteps: 32,
     }
 ];
 exports.DRUM_SEQS.map(function (s) { return s.notes.map(function (n) {
@@ -23771,17 +23772,17 @@ function slice1d_(x, begin, size) {
 }
 function slice2d_(x, begin, size) {
     var $x = tensor_util_env_1.convertToTensor(x, 'x', 'slice2d');
-    util.assert($x.rank === 2, "slice2d expects a rank-2 tensor, but got a rank-" + $x.rank + " tensor");
+    util.assert($x.rank === 2, "slice1d expects a rank-2 tensor, but got a rank-" + $x.rank + " tensor");
     return exports.slice($x, begin, size);
 }
 function slice3d_(x, begin, size) {
     var $x = tensor_util_env_1.convertToTensor(x, 'x', 'slice3d');
-    util.assert($x.rank === 3, "slice3d expects a rank-3 tensor, but got a rank-" + $x.rank + " tensor");
+    util.assert($x.rank === 3, "slice1d expects a rank-3 tensor, but got a rank-" + $x.rank + " tensor");
     return exports.slice($x, begin, size);
 }
 function slice4d_(x, begin, size) {
     var $x = tensor_util_env_1.convertToTensor(x, 'x', 'slice4d');
-    util.assert($x.rank === 4, "slice4d expects a rank-4 tensor, but got a rank-" + $x.rank + " tensor");
+    util.assert($x.rank === 4, "slice1d expects a rank-4 tensor, but got a rank-" + $x.rank + " tensor");
     return exports.slice($x, begin, size);
 }
 function slice_(x, begin, size) {
@@ -74755,6 +74756,8 @@ function converterFromSpec(spec) {
             return new DrumsOneHotConverter(spec.args);
         case 'MultitrackConverter':
             return new MultitrackConverter(spec.args);
+        case 'GrooveConverter':
+            return new GrooveConverter(spec.args);
         default:
             throw new Error("Unknown DataConverter type: " + spec);
     }
@@ -74762,6 +74765,8 @@ function converterFromSpec(spec) {
 exports.converterFromSpec = converterFromSpec;
 var DataConverter = (function () {
     function DataConverter(args) {
+        this.NUM_SPLITS = 0;
+        this.SEGMENTED_BY_TRACK = false;
         this.numSteps = args.numSteps;
         this.numSegments = args.numSegments;
     }
@@ -74775,8 +74780,6 @@ var DrumsConverter = (function (_super) {
     __extends(DrumsConverter, _super);
     function DrumsConverter(args) {
         var _this = _super.call(this, args) || this;
-        _this.NUM_SPLITS = 0;
-        _this.SEGMENTED_BY_TRACK = false;
         _this.pitchClasses = args.pitchClasses || exports.DEFAULT_DRUM_PITCH_CLASSES;
         _this.pitchToClass = new Map();
         var _loop_1 = function (c) {
@@ -74906,8 +74909,6 @@ var MelodyConverter = (function (_super) {
     __extends(MelodyConverter, _super);
     function MelodyConverter(args) {
         var _this = _super.call(this, args) || this;
-        _this.NUM_SPLITS = 0;
-        _this.SEGMENTED_BY_TRACK = false;
         _this.NOTE_OFF = 1;
         _this.FIRST_PITCH = 2;
         _this.minPitch = args.minPitch;
@@ -75005,7 +75006,6 @@ var TrioConverter = (function (_super) {
     function TrioConverter(args) {
         var _this = _super.call(this, args) || this;
         _this.NUM_SPLITS = 3;
-        _this.SEGMENTED_BY_TRACK = false;
         _this.MEL_PROG_RANGE = [0, 31];
         _this.BASS_PROG_RANGE = [32, 39];
         args.melArgs.numSteps = args.numSteps;
@@ -75087,7 +75087,6 @@ var MultitrackConverter = (function (_super) {
     __extends(MultitrackConverter, _super);
     function MultitrackConverter(args) {
         var _this = _super.call(this, args) || this;
-        _this.NUM_SPLITS = 0;
         _this.SEGMENTED_BY_TRACK = true;
         _this.stepsPerQuarter = args.stepsPerQuarter;
         _this.totalSteps = args.totalSteps;
@@ -75248,6 +75247,134 @@ var MultitrackConverter = (function (_super) {
     return MultitrackConverter;
 }(DataConverter));
 exports.MultitrackConverter = MultitrackConverter;
+var GrooveConverter = (function (_super) {
+    __extends(GrooveConverter, _super);
+    function GrooveConverter(args) {
+        var _this = _super.call(this, args) || this;
+        _this.stepsPerQuarter =
+            args.stepsPerQuarter || constants.DEFAULT_STEPS_PER_QUARTER;
+        _this.pitchClasses = args.pitchClasses || exports.DEFAULT_DRUM_PITCH_CLASSES;
+        _this.pitchToClass = new Map();
+        var _loop_2 = function (c) {
+            this_2.pitchClasses[c].forEach(function (p) {
+                _this.pitchToClass.set(p, c);
+            });
+        };
+        var this_2 = this;
+        for (var c = 0; c < _this.pitchClasses.length; ++c) {
+            _loop_2(c);
+        }
+        _this.humanize = args.humanize || false;
+        _this.splitInstruments = args.splitInstruments || false;
+        _this.depth = 3;
+        return _this;
+    }
+    GrooveConverter.prototype.toTensor = function (ns) {
+        var _this = this;
+        var qns = sequences.isRelativeQuantizedSequence(ns) ?
+            ns :
+            sequences.quantizeNoteSequence(ns, this.stepsPerQuarter);
+        var numSteps = this.numSteps || qns.totalQuantizedSteps;
+        var qpm = (qns.tempos && qns.tempos.length) ?
+            qns.tempos[0].qpm :
+            constants.DEFAULT_QUARTERS_PER_MINUTE;
+        var stepLength = (60. / qpm) / this.stepsPerQuarter;
+        var stepNotes = [];
+        for (var i = 0; i < numSteps; ++i) {
+            stepNotes.push(new Map());
+        }
+        qns.notes.forEach(function (n) {
+            if (_this.pitchToClass.has(n.pitch)) {
+                var s = n.quantizedStartStep;
+                var d = _this.pitchToClass.get(n.pitch);
+                if (!stepNotes[s].has(d) || stepNotes[s].get(d).velocity < n.velocity) {
+                    stepNotes[s].set(d, n);
+                }
+            }
+        });
+        var numDrums = this.pitchClasses.length;
+        var hitVectors = tf.buffer([numSteps, numDrums]);
+        var velocityVectors = tf.buffer([numSteps, numDrums]);
+        var offsetVectors = tf.buffer([numSteps, numDrums]);
+        function getOffset(n) {
+            var tOnset = n.startTime;
+            var qOnset = n.quantizedStartStep * stepLength;
+            return 2 * (qOnset - tOnset) / stepLength;
+        }
+        for (var s = 0; s < numSteps; ++s) {
+            for (var d = 0; d < numDrums; ++d) {
+                var note = stepNotes[s].get(d);
+                hitVectors.set(note ? 1 : 0, s, d);
+                if (!this.humanize) {
+                    velocityVectors.set(note ? note.velocity / 127 : 0, s, d);
+                    offsetVectors.set(note ? getOffset(note) : 0, s, d);
+                }
+            }
+        }
+        return tf.tidy(function () {
+            var hits = hitVectors.toTensor();
+            var velocities = velocityVectors.toTensor();
+            var offsets = offsetVectors.toTensor();
+            var outLength = _this.splitInstruments ? numSteps * numDrums : numSteps;
+            return tf.concat([
+                hits.as2D(outLength, -1), velocities.as2D(outLength, -1),
+                offsets.as2D(outLength, -1)
+            ], 1);
+        });
+    };
+    GrooveConverter.prototype.toNoteSequence = function (t, stepsPerQuarter, qpm) {
+        if (qpm === void 0) { qpm = constants.DEFAULT_QUARTERS_PER_MINUTE; }
+        return __awaiter(this, void 0, void 0, function () {
+            function clip(v, min, max) {
+                return Math.min(Math.max(v, min), max);
+            }
+            var numSteps, stepLength, ns, results, numDrums, s, stepResults, d, hitOutput, velI, velOutput, offsetI, offsetOutput, velocity, offset;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (stepsPerQuarter && stepsPerQuarter !== this.stepsPerQuarter) {
+                            throw Error('`stepsPerQuarter` is set by the model.');
+                        }
+                        stepsPerQuarter = this.stepsPerQuarter;
+                        numSteps = this.splitInstruments ?
+                            t.shape[0] / this.pitchClasses.length :
+                            t.shape[0];
+                        stepLength = (60. / qpm) / this.stepsPerQuarter;
+                        ns = index_1.NoteSequence.create({ totalTime: numSteps * stepLength });
+                        ns.tempos.push({ qpm: qpm });
+                        return [4, t.data()];
+                    case 1:
+                        results = _a.sent();
+                        numDrums = this.pitchClasses.length;
+                        for (s = 0; s < numSteps; ++s) {
+                            stepResults = results.slice(s * numDrums * this.depth, (s + 1) * numDrums * this.depth);
+                            for (d = 0; d < numDrums; ++d) {
+                                hitOutput = stepResults[this.splitInstruments ? d * this.depth : d];
+                                velI = this.splitInstruments ? (d * this.depth + 1) : (numDrums + d);
+                                velOutput = stepResults[velI];
+                                offsetI = this.splitInstruments ? (d * this.depth + 2) : (2 * numDrums + d);
+                                offsetOutput = stepResults[offsetI];
+                                if (hitOutput > 0.5) {
+                                    velocity = clip(Math.round(velOutput * 127), 0, 127);
+                                    offset = clip(offsetOutput / 2, -0.5, 0.5);
+                                    ns.notes.push(index_1.NoteSequence.Note.create({
+                                        pitch: this.pitchClasses[d][0],
+                                        startTime: (s - offset) * stepLength,
+                                        endTime: (s - offset + 1) * stepLength,
+                                        velocity: velocity,
+                                        isDrum: true
+                                    }));
+                                }
+                            }
+                        }
+                        return [2, ns];
+                }
+            });
+        });
+    };
+    return GrooveConverter;
+}(DataConverter));
+exports.GrooveConverter = GrooveConverter;
 
 },{"../protobuf/index":346,"./constants":327,"./performance":332,"./sequences":335,"@tensorflow/tfjs-core":68}],329:[function(require,module,exports){
 "use strict";
@@ -77828,6 +77955,9 @@ var MusicVAE = (function () {
                             if (varPrefix + "nade/w_enc" in vars) {
                                 return new NadeDecoder(decLstmLayers, decZtoInitState, decOutputProjection, new Nade(vars[varPrefix + "nade/w_enc"], vars[varPrefix + "nade/w_dec_t"]));
                             }
+                            else if (_this.spec.dataConverter.type === 'GrooveConverter') {
+                                return new GrooveDecoder(decLstmLayers, decZtoInitState, decOutputProjection);
+                            }
                             else {
                                 return new CategoricalDecoder(decLstmLayers, decZtoInitState, decOutputProjection);
                             }
@@ -78251,6 +78381,8 @@ var PianoGenie = (function () {
                         }
                         this.resetState();
                         this.initialized = true;
+                        this.next(0);
+                        this.resetState();
                         return [2];
                 }
             });
