@@ -47,8 +47,8 @@
     "build-demos": "cd demos && ./build-demos.sh",
     "publish-demos": "yarn build-demos && mkdir -p ../docs/music/demos && cp demos/*.{js,html,mid,css} ../docs/music/demos",
     "run-demos": "yarn build-demos && http-server demos/",
-    "proto": "sh compile-proto.sh",
-    "doc": "sh generate-docs.sh && yarn publish-demos"
+    "proto": "sh ./scripts/compile-proto.sh",
+    "doc": "sh ./scripts/generate-docs.sh && yarn publish-demos"
   },
   "author": "Magenta",
   "license": "Apache-2.0",
