@@ -113,14 +113,14 @@ export class Visualizer {
    * active
    * @param activeNote (Optional) If specified, this `Note` will be painted
    * in the active color.
-   * @param scrollParent (Optional) If specified and the note being painted is
+   * @param scrollIntoView (Optional) If specified and the note being painted is
    * offscreen, the parent container will be scrolled so that the note is
    * in view
    * @returns The x position of the painted active note. Useful for
    * automatically advancing the visualization if the note was painted outside
    * of the screen.
    */
-  redraw(activeNote?: NoteSequence.INote, scrollParent?: boolean): number {
+  redraw(activeNote?: NoteSequence.INote, scrollIntoView?: boolean): number {
     // TODO: this is not super optimal, and might start being too slow for
     // larger sequences. Instead, we should figure out a way to store the
     // "last painted active notes" and repaint those, as well as the new
@@ -158,7 +158,7 @@ export class Visualizer {
       }
     }
 
-    if (scrollParent) {
+    if (scrollIntoView) {
       // See if we need to scroll the container.
       const containerWidth = this.parentElement.getBoundingClientRect().width;
       if (activeNotePosition >
