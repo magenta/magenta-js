@@ -55,6 +55,7 @@ export class Visualizer {
   private height: number;
   public noteSequence: INoteSequence;
   private sequenceIsQuantized: boolean;
+  private parentElement: HTMLElement;
 
   /**
    *   `Visualizer` constructor.
@@ -81,6 +82,7 @@ export class Visualizer {
 
     // Initialize the canvas.
     this.ctx = canvas.getContext('2d');
+    this.parentElement = canvas.parentElement;
 
     // Resize the canvas to fit the range of pitches in the note sequence.
     // NOTE: In the future this could be changed to fit all pitches, whether
@@ -111,11 +113,14 @@ export class Visualizer {
    * active
    * @param activeNote (Optional) If specified, this `Note` will be painted
    * in the active color.
+   * @param scrollParent (Optional) If specified and the note being painted is
+   * offscreen, the parent container will be scrolled so that the note is
+   * in view
    * @returns The x position of the painted active note. Useful for
    * automatically advancing the visualization if the note was painted outside
    * of the screen.
    */
-  redraw(activeNote?: NoteSequence.INote): number {
+  redraw(activeNote?: NoteSequence.INote, scrollParent?: boolean): number {
     // TODO: this is not super optimal, and might start being too slow for
     // larger sequences. Instead, we should figure out a way to store the
     // "last painted active notes" and repaint those, as well as the new
@@ -152,6 +157,16 @@ export class Visualizer {
         activeNotePosition = x;
       }
     }
+
+    if (scrollParent) {
+      // See if we need to scroll the container.
+      const containerWidth = this.parentElement.getBoundingClientRect().width;
+      if (activeNotePosition >
+          (this.parentElement.scrollLeft + containerWidth)) {
+        this.parentElement.scrollLeft = activeNotePosition - 20;
+      }
+    }
+
     return activeNotePosition;
   }
 
