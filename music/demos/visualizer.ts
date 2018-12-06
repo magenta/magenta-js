@@ -25,13 +25,7 @@ const MIDI_URL = './melody.mid';
 let visualizer: mm.Visualizer;
 const player = new mm.Player(false, {
   run: (note: mm.NoteSequence.Note) => {
-    const currentNotePosition = visualizer.redraw(note);
-
-    // See if we need to scroll the container.
-    const containerWidth = container.getBoundingClientRect().width;
-    if (currentNotePosition > (container.scrollLeft + containerWidth)) {
-      container.scrollLeft = currentNotePosition - 20;
-    }
+    visualizer.redraw(note, true);
   },
   stop: () => {}
 });
@@ -43,7 +37,6 @@ const seqBtn = document.getElementById('seqBtn') as HTMLButtonElement;
 const tempoInput = document.getElementById('tempoInput') as HTMLInputElement;
 const tempoValue = document.getElementById('tempoValue') as HTMLDivElement;
 const fileInput = document.getElementById('fileInput') as HTMLInputElement;
-const container = document.getElementById('container') as HTMLDivElement;
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 
 // Set up some event listeners
