@@ -16,6 +16,7 @@
  */
 
 import * as mm from '../src/index';
+import {blobToNoteSequence, urlToNoteSequence} from '../src/index';
 
 import {FULL_TWINKLE_UNQUANTIZED} from './common';
 
@@ -58,22 +59,13 @@ tempoInput.addEventListener('input', () => {
 });
 
 function fetchMidi(url: string) {
-  fetch(url)
-      .then((response) => {
-        return response.blob();
-      })
-      .then(parseMidiBlob)
-      .catch((error) => {
-        console.log('Well, something went wrong somewhere.', error.message);
-      });
+  urlToNoteSequence(url).then((seq) => initPlayerAndVisualizer(seq));
 }
 
-function parseMidiBlob(blob: Blob) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    initPlayerAndVisualizer(mm.midiToSequenceProto(e.target.result));
-  };
-  reader.readAsBinaryString(blob);
+// tslint:disable-next-line:no-any
+function loadFile(e: any) {
+  blobToNoteSequence(e.target.files[0])
+      .then((seq) => initPlayerAndVisualizer(seq));
 }
 
 function initPlayerAndVisualizer(seq: mm.INoteSequence) {
@@ -90,13 +82,6 @@ function initPlayerAndVisualizer(seq: mm.INoteSequence) {
   // Enable the UI
   playBtn.disabled = false;
   playBtn.textContent = 'Play';
-}
-
-// tslint:disable-next-line:no-any
-function loadFile(e: any) {
-  const file = e.target.files[0];
-  parseMidiBlob(file);
-  return false;
 }
 
 function startOrStop() {
