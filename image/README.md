@@ -22,7 +22,7 @@ You can also try our [hosted demos](https://tensorflow.github.io/magenta-js/imag
 
 ### Fast Arbitrary Image Stylization
 
-Implements Ghiasi et al.'s fast arbitrary style transfer model ([paper](https://arxiv.org/abs/1705.06830), [code](https://github.com/tensorflow/magenta/tree/master/magenta/models/arbitrary_image_stylization)).
+Implements Ghiasi et al.'s fast arbitrary style transfer model ([paper](https://arxiv.org/abs/1705.06830), [code](https://github.com/tensorflow/magenta/tree/master/magenta/models/arbitrary_image_stylization)). Wraps around Reiichiro Nakano's [TensorFlow.js port](https://github.com/reiinakano/arbitrary-image-stylization-tfjs) of the model checkpoint.
 
 **Demo Application:** Coming soon!
 
@@ -47,19 +47,19 @@ Add the following code to an HTML file, and place a content (`content.jpg`) and 
     <img id="style" src="style.jpg"/>
     <canvas id="stylized"></canvas>
       <script>
-        const model = new ms.ArbitraryStyleTransferNetwork();
+        const model = new mi.ArbitraryStyleTransferNetwork();
         const contentImg = document.getElementById('content');
         const styleImg = document.getElementById('style');
         const stylizedCanvas = document.getElementById('stylized');
 
         async function stylize() {
-          const bottleneck = await ms.tf.tidy(() => {
+          const bottleneck = await mi.tf.tidy(() => {
             return model.predictStyleParameters(styleImg);
           });
-          const stylized = await ms.tf.tidy(() => {
+          const stylized = await mi.tf.tidy(() => {
             return model.stylize(contentImg, bottleneck);
           });
-          await ms.tf.toPixels(stylized, stylizedCanvas);
+          await mi.tf.toPixels(stylized, stylizedCanvas);
           bottleneck.dispose();
           stylized.dispose();
         }
@@ -74,27 +74,27 @@ Launch a simple HTTP server (e.g. `python3 -m http.server`) and point your brows
 
 ### via NPM
 
-Add [MagentaImage.js][mm-npm] to your project using [yarn](https://yarnpkg.com/en/) **or** [npm](https://docs.npmjs.com/cli/npm).
+Add [MagentaImage.js][mi-npm] to your project using [yarn](https://yarnpkg.com/en/) **or** [npm](https://docs.npmjs.com/cli/npm).
 For example, with yarn you can simply call `yarn add @magenta/image`.
 
 Then, you can use the library in your own code as in the following example:
 
 ```js
-import * as ms from '@magenta/image';
+import * as mi from '@magenta/image';
 
-const model = new ms.ArbitraryStyleTransferNetwork();
-const contentImg = null; // TODO: figure this out.
-const styleImg = null; // TODO: figure this out.
-const stylizedCanvas = null; // TODO: figure this out.
+const model = new mi.ArbitraryStyleTransferNetwork();
+const contentImg = document.getElementById('content') as HTMLImageElement;
+const styleImg = document.getElementById('style') as HTMLImageElement;
+const stylizedCanvas = document.getElementById('stylized') as HTMLCanvasElement;
 
 async function stylize() {
-  const bottleneck = await ms.tf.tidy(() => {
+  const bottleneck = await mi.tf.tidy(() => {
     return model.predictStyleParameters(styleImg);
   });
-  const stylized = await ms.tf.tidy(() => {
+  const stylized = await mi.tf.tidy(() => {
     return model.stylize(contentImg, bottleneck);
   });
-  await ms.tf.toPixels(stylized, stylizedCanvas);
+  await mi.tf.toPixels(stylized, stylizedCanvas);
   bottleneck.dispose();
   stylized.dispose();
 }
@@ -113,3 +113,7 @@ See our [demos](./demos) for example usage.
 `yarn bundle` to produce a bundled version in `dist/`.
 
 `yarn run-demos` to build and run the demo.
+
+<!-- links -->
+
+[mi-npm]: https://www.npmjs.com/package/@magenta/image
