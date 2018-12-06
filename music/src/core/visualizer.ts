@@ -115,7 +115,7 @@ export class Visualizer {
    * in the active color.
    * @param scrollIntoView (Optional) If specified and the note being painted is
    * offscreen, the parent container will be scrolled so that the note is
-   * in view
+   * in view.
    * @returns The x position of the painted active note. Useful for
    * automatically advancing the visualization if the note was painted outside
    * of the screen.
