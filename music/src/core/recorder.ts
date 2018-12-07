@@ -27,11 +27,14 @@ import {DEFAULT_QUARTERS_PER_MINUTE} from './constants';
  * @param playClick Whether to play a click track while recording.
  * @param playCountIn Whether to play a count-in click at the beginning of
  * the recording.
+ * @param recordStartTimeOffset Whether to start the note time offset at
+ * the start of the recording.  Defaults to when the first note is received.
  */
 interface RecorderConfig {
   qpm?: number;
   playClick?: boolean;
   playCountIn?: boolean;
+  recordStartTimeOffset?: boolean;
 }
 
 /**
@@ -59,6 +62,7 @@ export class Recorder {
   private notes: NoteSequence.Note[] = [];
   private onNotes: Map<number, NoteSequence.Note>;
   private midiInputs: WebMidi.MIDIInput[] = [];
+  private recordStartTimeOffset: boolean;
 
   private loClick = new Tone
       .MembraneSynth({
@@ -87,7 +91,8 @@ export class Recorder {
     this.config = {
       playClick: config.playClick,
       qpm: config.qpm || DEFAULT_QUARTERS_PER_MINUTE,
-      playCountIn: config.playCountIn
+      playCountIn: config.playCountIn,
+      recordStartTimeOffset: config.recordStartTimeOffset || false
     };
 
     this.callbackObject = callbackObject;
@@ -211,6 +216,11 @@ export class Recorder {
     this.firstNoteTimestamp = undefined;
     this.notes = [];
     this.onNotes = new Map<number, NoteSequence.Note>();
+    
+   if (this.recordStartTimeOffset === true) {
+    const timeStamp: number = Date.now();
+    this.firstNoteTimestamp = timeStamp;
+   }
   }
 
   /**
