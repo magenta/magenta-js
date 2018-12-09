@@ -36,14 +36,14 @@ async function stylize() {
   await mi.tf.nextFrame();
   clearCanvas();
   await mi.tf.nextFrame();
-  const bottleneck = await mi.tf.tidy(() => {
+  const styleRepresentation = await mi.tf.tidy(() => {
     return model.predictStyleParameters(styleImg);
   });
   const stylized = await mi.tf.tidy(() => {
-    return model.stylize(contentImg, bottleneck);
+    return model.stylize(contentImg, styleRepresentation);
   });
   await mi.tf.toPixels(stylized, canvas);
-  bottleneck.dispose();
+  styleRepresentation.dispose();
   stylized.dispose();
 }
 

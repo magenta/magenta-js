@@ -12,19 +12,13 @@ Complete documentation is available at https://tensorflow.github.io/magenta-js/i
 
 ## Example Applications
 
-Here are a few applications built with `@magenta/image`:
-
-- Coming soon!
-
-You can also try our [hosted demos](https://tensorflow.github.io/magenta-js/image/demos) for each model and have a look at the [demo code](./demos).
+You can try our [hosted demos](https://tensorflow.github.io/magenta-js/image/demos) for each model and have a look at the [demo code](./demos).
 
 ## Supported Models
 
 ### Fast Arbitrary Image Stylization
 
 Implements Ghiasi et al.'s fast arbitrary style transfer model ([paper](https://arxiv.org/abs/1705.06830), [code](https://github.com/tensorflow/magenta/tree/master/magenta/models/arbitrary_image_stylization)). Wraps around Reiichiro Nakano's [TensorFlow.js port](https://github.com/reiinakano/arbitrary-image-stylization-tfjs) of the model checkpoint.
-
-**Demo Application:** Coming soon!
 
 ## Getting started
 

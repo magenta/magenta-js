@@ -57,15 +57,3 @@ button[disabled] {
   margin-right: 10px;
   outline: 3px solid #222;
 }
-
-.player-container {
-  margin-top: 14px;
-  margin-bottom: 24px;
-}
-.visualizer-container {
-  background: white;
-  padding: 14px;
-  overflow-x: auto;
-  border: 3px solid black;
-  margin-top: -3px;  /* so that the border doesn't overlap with the play buttons */
-}
