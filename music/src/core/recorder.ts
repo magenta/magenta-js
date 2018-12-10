@@ -217,7 +217,7 @@ export class Recorder {
     this.notes = [];
     this.onNotes = new Map<number, NoteSequence.Note>();
     
-   if (this.recordStartTimeOffset === true) {
+   if (this.recordStartTimeOffset) {
     const timeStamp: number = Date.now();
     this.firstNoteTimestamp = timeStamp;
    }
