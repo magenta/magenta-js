@@ -34,7 +34,7 @@ Add the following code to an HTML file, and place a content (`content.jpg`) and 
 <html>
   <head>
     <!-- Load @magenta/image -->
-    <script src="https://cdn.jsdelivr.net/npm/@magenta/image@^1.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@magenta/image@^0.1.2"></script>
   </head>
   <body>
     <img id="content" src="content.jpg"/>
