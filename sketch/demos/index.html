@@ -1,47 +1,20 @@
 <html>
 <head>
-  <title>SketchRNN Demos</title>
-  <link href='https://fonts.googleapis.com/css?family=Roboto:100' rel='stylesheet' type='text/css'>
-	<style>
-    h1
-    {
-      text-align: center;
-    }
-    head {
-      margin: 0.5em;
-      padding: 0.5em;
-    }
-    body {
-      font-family: "Roboto", "sans serif";
-      margin: 0.5em;
-      padding: 0.5em;
-    }
-  </style>
+  <link rel="stylesheet" href="./style.css">
+  <title>MagentaSketch.js demos</title>
 </head>
 <body>
-<h1>Sketch-RNN Demos</h1>
-<h3>There are 3 demos available in this <i>demos</i> directory.</h3>
+    <h1>MagentaSketch.js demos</h1>
 
-<h2>1) Simple Generation (simple.html / simple.js)</h2>
-
-<h4>This demo simply generates a bird using the model, using the example code in the earlier section.</h4>
-
-<h4>Run the <a href="simple.html">simple</a> demo.</h4>
-
-<h2>2) Simple Prediction (predict.html / predict.js)</h2>
-
-<h4>This demo attempts to finish the drawing given starting set of strokes. If the user doesn't draw anything, the computer will keep on drawing stuff from scratch.</h4>
-
-<h4>In this demo, you can also select other classes, like "cat", "ant", "bus", etc. The demo will dynamically load the json files in the models directory but cache previously loaded json models. Hitting restart will clear the current drawing and start from scratch.</h4>
-
-<h4>Run the <a href="predict.html">predict</a> demo.</h4>
-
-<h2>3) Interactive Prediction (interactive_predict.html / interactive_predict.js)</h2>
-
-<h4>Same as the previous demo, but made to be interactive so the user can draw the beginning of a sketch on the canvas. Hitting restart will clear the current human-entered drawing and start from scratch.</h4>
-
-<h4>Run the <a href="interactive_predict.html">interactive predict</a> demo.</h4>
-
+    <section>
+      <h3>
+        <ul>
+          <li><a href="simple.html">Generation</a> - generates a bird using the model.</li>
+          <li><a href="predict.html">Prediction</a> - finish a drawing given a starting set of strokes. If you don't draw anything, the computer will keep on drawing stuff from scratch.</li>
+          <li><a href="interactive_predict.html">Interactive Prediction</a> - Same as the previous demo, but made to be interactive so the user can draw the beginning of a sketch on the canvas.</li>
+        </ul>
+      </h3>
+    </section>
 </body>
 </html>
 
