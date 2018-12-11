@@ -1,6 +1,6 @@
 {
     "name": "@magenta/image",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Visual art with machine learning, in the browser.",
     "main": "es5/index.js",
     "types": "es5/index.d.ts",
