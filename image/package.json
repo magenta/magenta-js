@@ -27,7 +27,8 @@
         "lint": "tslint -c ../tslint.json -p . -t verbose",
         "build-demos": "cd demos && ./build-demos.sh",
         "run-demos": "yarn build-demos && http-server demos/",
-        "doc": "typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/image/src/' --out ../docs/image src --mode modules --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals"
+        "publish-demos": "yarn build-demos && mkdir -p ../docs/image/demos && cp demos/*.{js,html,css} ../docs/image/demos",
+        "doc": "typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/image/src/' --out ../docs/image src --mode modules --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals && yarn publish-demos"
     },
     "author": "Magenta",
     "license": "Apache-2.0",
