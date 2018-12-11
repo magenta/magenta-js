@@ -1,6 +1,6 @@
 {
     "name": "@magenta/image",
-    "version": "0.1.0",
+    "version": "0.1.2",
     "description": "Visual art with machine learning, in the browser.",
     "main": "es5/index.js",
     "types": "es5/index.d.ts",
@@ -23,9 +23,10 @@
     "scripts": {
         "prepublish": "yarn lint && yarn build && yarn bundle",
         "build": "tsc",
-        "bundle": "browserify --standalone ms src/index.ts -p [tsify] > dist/magentaimage.js",
+        "bundle": "browserify --standalone mi src/index.ts -p [tsify] > dist/magentaimage.js",
         "lint": "tslint -c ../tslint.json -p . -t verbose",
-        "run-demos": "yarn build && yarn bundle && cp dist/*.js demos && http-server demos/",
+        "build-demos": "cd demos && ./build-demos.sh",
+        "run-demos": "yarn build-demos && http-server demos/",
         "doc": "typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/image/src/' --out ../docs/image src --mode modules --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals"
     },
     "author": "Magenta",
