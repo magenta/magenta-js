@@ -51,6 +51,7 @@ async function runTap2Drum() {
   const mvae = new mm.MusicVAE(TAP2DRUM_CKPT);
   await mvae.initialize();
 
+  // "Tapify" the inputs, collapsing them to hi-hat.
   const inputs = await Promise.all(DRUM_SEQS.map(
       ns =>
           mvae.dataConverter.toNoteSequence(mvae.dataConverter.toTensor(ns))));
