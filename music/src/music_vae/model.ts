@@ -598,7 +598,7 @@ class MusicVAE {
   private checkpointURL: string;
   private spec: MusicVAESpec;
 
-  private dataConverter: data.DataConverter;
+  public dataConverter: data.DataConverter;
   private chordEncoder?: chords.ChordEncoder;
 
   private encoder: Encoder;

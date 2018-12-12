@@ -23,10 +23,10 @@ import {CHECKPOINTS_DIR, DRUM_SEQS, writeMemory} from './common';
 import {writeNoteSeqs, writeTimer} from './common';
 
 const HUMANIZE_CKPT = `${CHECKPOINTS_DIR}/music_vae/groovae_unquantize_4bar`;
+const TAP2DRUM_CKPT = `${CHECKPOINTS_DIR}/music_vae/groovae_tap2drum_2bar`;
 
-async function runHumanize() {
+export async function runHumanize() {
   const inputs = DRUM_SEQS.map(ns => mm.sequences.clone(ns));
-  console.log(inputs);
   writeNoteSeqs('humanize-inputs', inputs, true);
 
   const mvae = new mm.MusicVAE(HUMANIZE_CKPT);
@@ -47,8 +47,32 @@ async function runHumanize() {
   mvae.dispose();
 }
 
+async function runTap2Drum() {
+  const mvae = new mm.MusicVAE(TAP2DRUM_CKPT);
+  await mvae.initialize();
+
+  const inputs = await Promise.all(DRUM_SEQS.map(
+      ns =>
+          mvae.dataConverter.toNoteSequence(mvae.dataConverter.toTensor(ns))));
+  writeNoteSeqs('tap2drum-inputs', inputs, true);
+
+  let start = performance.now();
+  const z = await mvae.encode(inputs);
+  const recon = await mvae.decode(z);
+  z.dispose();
+  writeTimer('tap2drum-recon-time', start);
+  writeNoteSeqs('tap2drum-recon', recon, true, true);
+
+  start = performance.now();
+  const sample = await mvae.sample(4);
+  writeTimer('tap2drum-sample-time', start);
+  writeNoteSeqs('tap2drum-samples', sample, true, true);
+
+  mvae.dispose();
+}
+
 try {
-  Promise.all([runHumanize()]).then(() => writeMemory(tf.memory().numBytes));
+  Promise.all([runTap2Drum()]).then(() => writeMemory(tf.memory().numBytes));
 } catch (err) {
   console.error(err);
 }

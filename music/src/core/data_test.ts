@@ -347,3 +347,42 @@ test('Test GrooveConverterHumanize', (t: test.Test) => {
   grooveTensor.dispose();
   t.end();
 });
+
+test('Test GrooveConverterTapify', (t: test.Test) => {
+  const grooveConverter = new data.GrooveConverter({
+    numSteps: 16,
+    stepsPerQuarter: 2,
+    tapify: true,
+  });
+
+  const grooveTensor = grooveConverter.toTensor(GROOVE_NS);
+  t.deepEqual(grooveTensor.shape, [16, 9 * 3]);
+
+  // Tapify removes velocities and only keeps the highest velocity hit at each
+  // step, moving it to the high-hat (46).
+  const expectedNs = NoteSequence.create({
+    tempos: [{qpm: 60}],
+    notes: [
+      {pitch: 46, startTime: 0}, {pitch: 46, startTime: 1.3},
+      {pitch: 46, startTime: 2}, {pitch: 46, startTime: 2.45},
+      {pitch: 46, startTime: 3.1}, {pitch: 46, startTime: 3.6},
+      {pitch: 46, startTime: 4.1}, {pitch: 46, startTime: 5.99},
+      {pitch: 46, startTime: 7}, {pitch: 46, startTime: 7.5}
+    ],
+    totalTime: 8.0
+  });
+  expectedNs.notes.forEach(n => {
+    n.endTime = n.startTime + 0.5;
+    n.velocity = 0;
+
+    n.isDrum = true;
+  });
+
+  grooveConverter.toNoteSequence(grooveTensor, undefined, 60).then(ns => {
+    roundNoteTimes(ns.notes);
+    t.deepEqual(ns, expectedNs);
+  });
+
+  grooveTensor.dispose();
+  t.end();
+});
