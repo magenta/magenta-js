@@ -16,7 +16,7 @@
         "ts-node": "^5.0.1",
         "tsify": "^3.0.4",
         "tslint": "^5.9.1",
-        "typedoc": "^0.11.1",
+        "typedoc": "^0.13.0",
         "typedoc-plugin-sourcefile-url": "^1.0.3",
         "typescript": "^2.7.2"
     },
@@ -28,7 +28,7 @@
         "build-demos": "cd demos && ./build-demos.sh",
         "run-demos": "yarn build-demos && http-server demos/",
         "publish-demos": "yarn build-demos && mkdir -p ../docs/image/demos && cp demos/*.{js,html,css} ../docs/image/demos",
-        "doc": "typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/image/src/' --out ../docs/image src --mode modules --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals && yarn publish-demos"
+        "doc": "typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/image/src/arbitrary_stylization/' --out ../docs/image src --mode file --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals && yarn publish-demos"
     },
     "author": "Magenta",
     "license": "Apache-2.0",
