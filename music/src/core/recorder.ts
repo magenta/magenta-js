@@ -28,7 +28,7 @@ import {DEFAULT_QUARTERS_PER_MINUTE} from './constants';
  * @param playCountIn Whether to play a count-in click at the beginning of
  * the recording.
  * @param startRecordAtFirstNote Whether to start the note time offset at
- * the start of the recording or at the first note received.  Defaults to 
+ * the first note received instead of the start of the recording.  Defaults to 
  * false.
  */
 interface RecorderConfig {
