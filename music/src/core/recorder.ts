@@ -269,6 +269,22 @@ export class Recorder {
     });
   }
 
+  /**
+   * Clears the NoteSequence and stops the recording.
+   * @returns a non-quantized `NoteSequence` containing all the currently
+   * recorded notes.
+   */
+  clearNoteSequence(): NoteSequence {
+    const noteSequence = this.stop();
+
+    // Reset all the things needed for the recording.
+    this.firstNoteTimestamp = undefined;
+    this.notes = [];
+    this.onNotes = new Map<number, NoteSequence.Note>();
+
+    return noteSequence;
+  }
+
   midiMessageReceived(event: WebMidi.MIDIMessageEvent) {
     // Don't care about any messages we're receiving while we're not recording.
     if (!this.recording) {
