@@ -82,7 +82,7 @@
 				and using a build tool like <a href="https://yarnpkg.com/en/">yarn</a>.</p>
 				<h3 id="via-script-tag">via Script Tag</h3>
 				<p>Add the following code to an HTML file, and place a content (<code>content.jpg</code>) and style (<code>style.jpg</code>) image in the same directory:</p>
-				<pre><code class="lang-html"><span class="hljs-tag">&lt;<span class="hljs-name">html</span>&gt;</span>
+				<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">html</span>&gt;</span>
   <span class="hljs-tag">&lt;<span class="hljs-name">head</span>&gt;</span>
     <span class="hljs-comment">&lt;!-- Load @magenta/image --&gt;</span>
     <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdn.jsdelivr.net/npm/@magenta/image@^0.1.2"</span>&gt;</span><span class="undefined"></span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
@@ -112,14 +112,13 @@
         model.initialize().then(stylize);
       </span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
   <span class="hljs-tag">&lt;/<span class="hljs-name">body</span>&gt;</span>
-<span class="hljs-tag">&lt;/<span class="hljs-name">html</span>&gt;</span>
-</code></pre>
+<span class="hljs-tag">&lt;/<span class="hljs-name">html</span>&gt;</span></code></pre>
 				<p>Launch a simple HTTP server (e.g. <code>python3 -m http.server</code>) and point your browser to <a href="http://0.0.0.0:8000/">http://0.0.0.0:8000/</a>. You should see your content and style images displayed and, after a few seconds, the stylized output.</p>
 				<h3 id="via-npm">via NPM</h3>
 				<p>Add <a href="https://www.npmjs.com/package/@magenta/image">MagentaImage.js</a> to your project using <a href="https://yarnpkg.com/en/">yarn</a> <strong>or</strong> <a href="https://docs.npmjs.com/cli/npm">npm</a>.
 				For example, with yarn you can simply call <code>yarn add @magenta/image</code>.</p>
 				<p>Then, you can use the library in your own code as in the following example:</p>
-				<pre><code class="lang-js"><span class="hljs-keyword">import</span> * <span class="hljs-keyword">as</span> mi <span class="hljs-keyword">from</span> <span class="hljs-string">'@magenta/image'</span>;
+				<pre><code class="language-js"><span class="hljs-keyword">import</span> * <span class="hljs-keyword">as</span> mi <span class="hljs-keyword">from</span> <span class="hljs-string">'@magenta/image'</span>;
 
 <span class="hljs-keyword">const</span> model = <span class="hljs-keyword">new</span> mi.ArbitraryStyleTransferNetwork();
 <span class="hljs-keyword">const</span> contentImg = <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'content'</span>) <span class="hljs-keyword">as</span> HTMLImageElement;
@@ -138,8 +137,7 @@
   stylized.dispose();
 }
 
-model.initialize().then(stylize);
-</code></pre>
+model.initialize().then(stylize);</code></pre>
 				<p>See our <a href="./demos">demos</a> for example usage.</p>
 				<h4 id="example-commands">Example Commands</h4>
 				<p><code>yarn install</code> to install dependencies.</p>
@@ -155,13 +153,19 @@ model.initialize().then(stylize);
 					<li class="globals  ">
 						<a href="globals.html"><em>Globals</em></a>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="modules/_model_.html">"model"</a>
-					</li>
 				</ul>
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
+					<li class=" tsd-kind-class">
+						<a href="classes/arbitrarystyletransfernetwork.html" class="tsd-kind-icon">Arbitrary<wbr>Style<wbr>Transfer<wbr>Network</a>
+					</li>
+					<li class=" tsd-kind-variable tsd-is-not-exported">
+						<a href="globals.html#default_style_checkpoint" class="tsd-kind-icon">DEFAULT_<wbr>STYLE_<wbr>CHECKPOINT</a>
+					</li>
+					<li class=" tsd-kind-variable tsd-is-not-exported">
+						<a href="globals.html#default_transform_checkpoint" class="tsd-kind-icon">DEFAULT_<wbr>TRANSFORM_<wbr>CHECKPOINT</a>
+					</li>
 				</ul>
 			</nav>
 		</div>
