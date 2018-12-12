@@ -270,11 +270,10 @@ export class Recorder {
   }
 
   /**
-   * Clears the NoteSequence and stops the recording.
-   * @returns a non-quantized `NoteSequence` containing all the currently
-   * recorded notes.
+   * Resets the `notes` array to an empty array and stops the recording.
+   * @returns a non-quantized `NoteSequence` containing all the recorded notes.
    */
-  clearNoteSequence(): NoteSequence {
+  reset(): NoteSequence {
     const noteSequence = this.stop();
 
     // Reset all the things needed for the recording.
