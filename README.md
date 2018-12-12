@@ -13,4 +13,4 @@ Learn more about the Magenta project at our [blog](https://magenta.tensorflow.or
 
 * [music](music): Contains [TensorFlow.js](https://js.tensorflow.org) implementations and support libraries for Magenta's musical note-based models including MusicVAE, MelodyRNN, DrumsRNN, PerformanceRNN, and ImprovRNN.
 * [sketch](sketch): Contains [TensorFlow.js](https://js.tensorflow.org) implementations and support libraries for Magenta's sketch models including [SketchRNN](https://goo.gl/magenta/sketchrnn).
-* [image](sketch): Contains [TensorFlow.js](https://js.tensorflow.org) implementations and support libraries for Magenta's image models including [Arbitrary Style Transfer](https://github.com/tensorflow/magenta/tree/master/magenta/models/arbitrary_image_stylization).
+* [image](image): Contains [TensorFlow.js](https://js.tensorflow.org) implementations and support libraries for Magenta's image models including [Arbitrary Style Transfer](https://github.com/tensorflow/magenta/tree/master/magenta/models/arbitrary_image_stylization).
