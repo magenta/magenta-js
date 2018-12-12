@@ -25,7 +25,7 @@ import {writeNoteSeqs, writeTimer} from './common';
 const HUMANIZE_CKPT = `${CHECKPOINTS_DIR}/music_vae/groovae_unquantize_4bar`;
 const TAP2DRUM_CKPT = `${CHECKPOINTS_DIR}/music_vae/groovae_tap2drum_2bar`;
 
-export async function runHumanize() {
+async function runHumanize() {
   const inputs = DRUM_SEQS.map(ns => mm.sequences.clone(ns));
   writeNoteSeqs('humanize-inputs', inputs, true);
 
