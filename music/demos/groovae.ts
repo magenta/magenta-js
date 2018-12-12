@@ -72,7 +72,8 @@ async function runTap2Drum() {
 }
 
 try {
-  Promise.all([runTap2Drum()]).then(() => writeMemory(tf.memory().numBytes));
+  Promise.all([runHumanize(), runTap2Drum()])
+      .then(() => writeMemory(tf.memory().numBytes));
 } catch (err) {
   console.error(err);
 }
