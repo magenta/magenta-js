@@ -147,7 +147,7 @@ export abstract class DataConverter {
   readonly SEGMENTED_BY_TRACK: boolean = false;  // Segments are tracks.
 
   abstract toTensor(noteSequence: INoteSequence): tf.Tensor2D;
-  abstract async toNoteSequence(tensor: tf.Tensor2D, stepsPerQuarter: number):
+  abstract async toNoteSequence(tensor: tf.Tensor2D, stepsPerQuarter?: number):
       Promise<INoteSequence>;
 
   constructor(args: BaseConverterArgs) {
@@ -820,6 +820,8 @@ export class MultitrackConverter extends DataConverter {
  * @param humanize If True, flatten all input velocities and
  * microtiming. The model then maps from a flattened input one with velocities
  * and microtiming. Defaults to False.
+ * @param tapify  If True, squash all input drums at each timestep to the hi-hat
+ * channel (3) and set velocities to 0. Defaults to False.
  * @param pitchClasses  An array of arrays, grouping together MIDI pitches to
  * treat as the same drum. The first pitch in each class will be used in the
  * `NoteSequence` returned by `toNoteSequence`. A default mapping to 9 classes
@@ -831,17 +833,20 @@ export class MultitrackConverter extends DataConverter {
 export interface GrooveConverterArgs extends BaseConverterArgs {
   stepsPerQuarter?: number;
   humanize?: boolean;
+  tapify?: boolean;
   pitchClasses?: number[][];
   splitInstruments?: boolean;
 }
 export class GrooveConverter extends DataConverter {
   readonly stepsPerQuarter: number;
   readonly humanize: boolean;
+  readonly tapify: boolean;
   readonly pitchClasses: number[][];
   readonly pitchToClass: Map<number, number>;
   readonly depth: number;
   readonly endTensor: tf.Tensor1D;
   readonly splitInstruments: boolean;
+  readonly TAPIFY_CHANNEL = 3;
 
   constructor(args: GrooveConverterArgs) {
     super(args);
@@ -856,6 +861,7 @@ export class GrooveConverter extends DataConverter {
       });
     }
     this.humanize = args.humanize || false;
+    this.tapify = args.tapify || false;
     this.splitInstruments = args.splitInstruments || false;
 
     // Each drum hit is represented by 3 numbers - on/off, velocity, and offset.
@@ -900,18 +906,36 @@ export class GrooveConverter extends DataConverter {
     const offsetVectors = tf.buffer([numSteps, numDrums]);
 
     function getOffset(n: NoteSequence.INote) {
+      if (n.startTime === undefined) {
+        return 0;
+      }
       const tOnset = n.startTime;
       const qOnset = n.quantizedStartStep * stepLength;
       return 2 * (qOnset - tOnset) / stepLength;
     }
+    // Loop through each step.
     for (let s = 0; s < numSteps; ++s) {
-      // Loop through each drum instrument.
-      for (let d = 0; d < numDrums; ++d) {
-        const note = stepNotes[s].get(d);
-        hitVectors.set(note ? 1 : 0, s, d);
-        if (!this.humanize) {
-          velocityVectors.set(note ? note.velocity / 127 : 0, s, d);
-          offsetVectors.set(note ? getOffset(note) : 0, s, d);
+      if (this.tapify) {
+        // Loop through each drum instrument to find the max velocity hit.
+        let maxVelNote: NoteSequence.INote = null;
+        stepNotes[s].forEach(
+            n => maxVelNote = (maxVelNote && maxVelNote.velocity > n.velocity) ?
+                maxVelNote :
+                n);
+        if (maxVelNote) {
+          hitVectors.set(1, s, this.TAPIFY_CHANNEL);
+          offsetVectors.set(getOffset(maxVelNote), s, this.TAPIFY_CHANNEL);
+        }
+      } else {
+        // Loop through each drum instrument and set the hit, velocity, and
+        // offset.
+        for (let d = 0; d < numDrums; ++d) {
+          const note = stepNotes[s].get(d);
+          hitVectors.set(note ? 1 : 0, s, d);
+          if (!this.humanize) {
+            velocityVectors.set(note ? note.velocity / 127 : 0, s, d);
+            offsetVectors.set(note ? getOffset(note) : 0, s, d);
+          }
         }
       }
     }
@@ -944,7 +968,6 @@ export class GrooveConverter extends DataConverter {
         t.shape[0] / this.pitchClasses.length :
         t.shape[0];
     const stepLength = (60. / qpm) / this.stepsPerQuarter;
-
     const ns = NoteSequence.create({totalTime: numSteps * stepLength});
     ns.tempos.push({qpm});
 
