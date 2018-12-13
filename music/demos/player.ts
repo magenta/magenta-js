@@ -80,6 +80,31 @@ function setupAttackReleaseDemo() {
   });
 }
 
+function setupMIDIPlayerDemo() {
+  const playBtn = document.getElementById('midi-play') as HTMLButtonElement;
+  const midiOutputs =
+      document.getElementById('midi-outputs') as HTMLSelectElement;
+  const player = new mm.MIDIPlayer();
+
+  player.requestMIDIAccess().then((outputs: WebMidi.MIDIOutput[]) => {
+    midiOutputs.innerHTML =
+        outputs.map(device => `<option>${device.name}</option>`).join('');
+    playBtn.disabled = outputs.length === 0;
+  });
+
+  playBtn.addEventListener('click', () => {
+    if (player.isPlaying()) {
+      player.stop();
+      playBtn.textContent = 'Play';
+    } else {
+      // Use the selected output, if any.
+      player.output = [player.midiOutputs[midiOutputs.selectedIndex]];
+      player.start(FULL_TWINKLE).then(() => playBtn.textContent = 'Play');
+      playBtn.textContent = 'Stop';
+    }
+  });
+}
+
 function generatePlayers() {
   writeNoteSeqs('unq-player', [FULL_TWINKLE_UNQUANTIZED], false);
   writeNoteSeqs('unq-soundfont', [FULL_TWINKLE_UNQUANTIZED], true);
@@ -127,6 +152,7 @@ function generateVelocityPlayers() {
 try {
   setupPlayerControlsDemo();
   setupAttackReleaseDemo();
+  setupMIDIPlayerDemo();
   Promise.all(
       [generatePlayers(), generateTempoPlayer(), generateVelocityPlayers()]);
 } catch (err) {
