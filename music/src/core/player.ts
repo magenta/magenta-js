@@ -569,7 +569,7 @@ export class PlayerWithClick extends Player {
  *
  *   `
  *    navigator.requestMIDIAccess().then((midi) => {
- *       // get whichever MIDI outputs you want
+ *       // Get whichever MIDI outputs you want.
  *       const outputs = initOutputs(midi);
  *       player = new mm.MIDIPlayer();
  *       player.output = [outputs[0], output[1]];
