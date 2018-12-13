@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/tensorflow/magenta-js.svg?branch=master)](https://travis-ci.org/tensorflow/magenta-js)
+
 <img src="https://github.com/tensorflow/magenta/raw/master/magenta-logo-bg.png" height="75">
 
 **Magenta.js** is a collection of TypeScript libraries for doing inference with pre-trained Magenta models.
