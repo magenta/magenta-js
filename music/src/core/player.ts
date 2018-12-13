@@ -583,7 +583,7 @@ export class MIDIPlayer extends BasePlayer {
   private NOTE_OFF = 0x80;
 
   /**
-   *   `MIDIPlayer` constructor. If you want
+   *   `MIDIPlayer` constructor.
    *
    *   @param callbackObject An optional BasePlayerCallback, specifies an
    *     object that contains run() and stop() methods to invode during
