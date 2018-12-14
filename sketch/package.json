@@ -30,8 +30,11 @@
     "build": "tsc",
     "bundle": "browserify --standalone ms src/index.ts -p [tsify] > dist/magentasketch.js",
     "lint": "tslint -c ../tslint.json -p . -t verbose",
-    "run-demos": "yarn build && yarn bundle && cp dist/*.js demos && http-server demos/",
-    "doc": "typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/sketch/src/' --out ../docs/sketch src --mode modules --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals"
+    "build-demos": "yarn build && yarn bundle && cp dist/*.js demos",
+    "run-demos": " yarn build-demos && http-server demos/",
+    "publish-demos": "yarn build-demos && mkdir -p ../docs/sketch/demos && cp demos/*.{js,html,css} ../docs/sketch/demos",
+    "generate-docs": "typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/sketch/src/' --out ../docs/sketch src --mode modules --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals",
+    "doc": "yarn generate-docs && yarn publish-demos"
   },
   "author": "Magenta",
   "license": "Apache-2.0",
