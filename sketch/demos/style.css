@@ -52,3 +52,6 @@ button:hover {
 button[disabled] {
   opacity: 0.5;
 }
+#sketch canvas {
+  bordeR: 2px solid black;
+}

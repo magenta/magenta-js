@@ -41,9 +41,10 @@ const sketch = function( p ) {
    * Main p5 code
    */
   p.setup = function() {
-    // Initialize the canvas.
-    const screen_width = p.windowWidth;
-    const screen_height = p.windowHeight;
+    const containerSize = document.getElementById('sketch').getBoundingClientRect();
+    // Initialize the canvas. Fill the whole screen.
+    const screen_width = Math.floor(containerSize.width);
+    const screen_height = p.windowHeight / 2;
     p.createCanvas(screen_width, screen_height);
     p.frameRate(60);
 
@@ -90,8 +91,8 @@ const sketch = function( p ) {
   }
 
   function setupNewDrawing() {
-    x = screen_width / 2.0;
-    y = screen_height / 3.0;
+    x = p.width / 2.0;
+    y = p.height / 3.0;
     const lineColor = p.color(p.random(64, 224), p.random(64, 224), p.random(64, 224));
 
     p.strokeWeight(3.0);
@@ -107,6 +108,7 @@ const sketch = function( p ) {
 
     // Clear the screen.
     p.background(255, 255, 255, 255);
+    setupNewDrawing();
   }
 };
 
