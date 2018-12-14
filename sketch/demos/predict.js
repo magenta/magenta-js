@@ -45,9 +45,9 @@ const sketch = function(p) {
   p.setup = function() {
     const containerSize = document.getElementById('sketch').getBoundingClientRect();
     // Initialize the canvas.
-    const screen_width = Math.floor(containerSize.width);
-    const screen_height = p.windowHeight / 2;
-    p.createCanvas(screen_width, screen_height);
+    const screenWidth = Math.floor(containerSize.width);
+    const screenHeight = p.windowHeight / 2;
+    p.createCanvas(screenWidth, screenHeight);
     p.frameRate(60);
 
     setupNewDrawing();
@@ -173,4 +173,4 @@ const sketch = function(p) {
   }
 };
 
-const custom_p5 = new p5(sketch, 'sketch');
+new p5(sketch, 'sketch');
