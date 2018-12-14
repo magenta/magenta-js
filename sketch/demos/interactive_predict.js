@@ -36,7 +36,7 @@ const sketch = function(p) {
 
   let dx, dy; // Offsets of the pen strokes, in pixels.
   let x, y; // Absolute coordinates on the screen of where the pen is.
-  let start_x, start_y;
+  let startX, startY;
   let userPen = 0; // above or below the paper
   let previousUserPen = 0;
   let pen = [0,0,0]; // Current pen state, [pen_down, pen_up, pen_end].
@@ -44,10 +44,9 @@ const sketch = function(p) {
   const PEN = {DOWN: 0, UP: 1, END: 2};
   const epsilon = 2.0; // to ignore data from user's pen staying in one spot.
 
-  let just_finished_line;
-  let has_started = false;
-  let raw_lines;
-  let current_raw_line = [];
+  let userHasEverDrawn = false;
+  let allRawLines;
+  let currentRawLine = [];
   let strokes;
   /*
    * Main p5 code
@@ -60,7 +59,7 @@ const sketch = function(p) {
     p.createCanvas(screen_width, screen_height);
     p.frameRate(60);
 
-    setupNewDrawing();
+    restart();
     initModel(0);
     initDOMElements();
   };
@@ -71,17 +70,16 @@ const sketch = function(p) {
   p.mousePressed = function () {
     if (p.isInBounds()) {
       // First time anything is written.
-      if (!has_started) {
-        has_started = true;
-        x = start_x = p.mouseX;
-        y = start_y = p.mouseY;
+      if (!userHasEverDrawn) {
+        userHasEverDrawn = true;
+        x = startX = p.mouseX;
+        y = startY = p.mouseY;
         userPen = 1; // down!
       }
 
       modelIsActive = false;
       previousUserPen = userPen;
       p.stroke(p.color(255,0,0));  // User always draws in red.
-      p.mouseDragged();
     }
   }
 
@@ -89,33 +87,34 @@ const sketch = function(p) {
     if (p.isInBounds()) {
       userPen = 0;  // Up!
 
-      if (just_finished_line) {
-        const current_raw_line_simple = model.simplifyLine(current_raw_line);
-        let last_x, last_y;
+      const currentRawLineSimplified = model.simplifyLine(currentRawLine);
+      let lastX, lastY;
 
-        if (current_raw_line_simple.length > 1) {
-          if (raw_lines.length === 0) {
-            last_x = start_x;
-            last_y = start_y;
-          } else {
-            const idx = raw_lines.length-1;
-            const last_point = raw_lines[idx][raw_lines[idx].length-1];
-            last_x = last_point[0];
-            last_y = last_point[1];
-          }
-          const stroke = model.lineToStroke(current_raw_line_simple, [last_x, last_y]);
-          raw_lines.push(current_raw_line_simple);
-          strokes = strokes.concat(stroke);
-
-          initRNNStateFromStrokes(strokes);
+      // If it's an accident...ignore it.
+      if (currentRawLineSimplified.length > 1) {
+        // Need to keep track of the first point of the last line.
+        if (allRawLines.length === 0) {
+          lastX = startX;
+          lastY = startY;
+        } else {
+          // The last line.
+          const idx = allRawLines.length - 1;
+          const lastPoint = allRawLines[idx][allRawLines[idx].length-1];
+          lastX = lastPoint[0];
+          lastY = lastPoint[1];
         }
-        current_raw_line = [];
-        just_finished_line = false;
-      }
-      modelIsActive = true;
-      previousUserPen = userPen;
 
+        // Encode this line as a stroke, and feed it to the model.
+        const stroke = model.lineToStroke(currentRawLineSimplified, [lastX, lastY]);
+        allRawLines.push(currentRawLineSimplified);
+        strokes = strokes.concat(stroke);
+
+        initRNNStateFromStrokes(strokes);
+      }
+      currentRawLine = [];
     }
+    modelIsActive = true;
+    previousUserPen = userPen;
   }
 
   p.mouseDragged = function () {
@@ -131,12 +130,9 @@ const sketch = function(p) {
         }
         x += dx;
         y += dy;
-        // update raw_lines
-        current_raw_line.push([x, y]);
-        just_finished_line = true;
+        currentRawLine.push([x, y]);
       }
       previousUserPen = userPen;
-
     }
   }
 
@@ -175,37 +171,32 @@ const sketch = function(p) {
    * Helpers.
    */
   function restart() {
-    setupNewDrawing();
-    start_x = x;
-    start_y = y;
+    p.background(255, 255, 255, 255);
+    p.strokeWeight(3.0);
+
+    // Start drawing in the middle-ish of the screen
+    startX = x = p.width / 2.0;
+    startY = y = p.height / 3.0;
 
     // Reset the user drawing state.
     userPen = 1;
     previousUserPen = 0;
-    just_finished_line = false;
-    modelIsActive = false;
-    raw_lines = [];
-    current_raw_line = [];
+    userHasEverDrawn = false;
+    allRawLines = [];
+    currentRawLine = [];
     strokes = [];
+
+    // Reset the model drawing state.
+    modelIsActive = false;
     previousPen = [0, 1, 0];
-    has_started = false;
   };
 
   function initRNNStateFromStrokes(strokes) {
     // Initialize the RNN with these strokes.
     encodeStrokes(strokes);
-
-    // Redraw simplified strokes
+    // Draw them.
     p.background(255, 255, 255, 255);
-    drawStrokes(strokes, start_x, start_y);
-  }
-
-  function setupNewDrawing() {
-    p.background(255, 255, 255, 255);
-    p.strokeWeight(3.0);
-    // Start drawing in the middle-ish of the screen
-    x = p.width / 2.0;
-    y = p.height / 3.0;
+    drawStrokes(strokes, startX, startY);
   }
 
   function initModel(index) {
@@ -221,7 +212,6 @@ const sketch = function(p) {
 
       // Initialize the scale factor for the model. Bigger -> large outputs
       model.setPixelFactor(5.0);
-      restart();
 
       if (strokes.length > 0) {
         initRNNStateFromStrokes(strokes);
@@ -243,10 +233,10 @@ const sketch = function(p) {
     modelState = model.copyState(newState);
 
     // Reset the state.
-    const idx = raw_lines.length - 1;
-    const last_point = raw_lines[idx][raw_lines[idx].length-1];
-    x = last_point[0];
-    y = last_point[1];
+    const idx = allRawLines.length - 1;
+    const lastPoint = allRawLines[idx][allRawLines[idx].length-1];
+    x = lastPoint[0];
+    y = lastPoint[1];
 
     const s = sequence[sequence.length-1];
     dx = s[0];
