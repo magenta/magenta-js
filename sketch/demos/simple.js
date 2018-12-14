@@ -14,99 +14,100 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var sketch = function( p ) {
-  "use strict";
+const sketch = function( p ) {
+  // Load the model.
+  const model = new ms.SketchRNN("https://storage.googleapis.com/quickdraw-models/sketchRNN/large_models/bird.gen.json");
 
-  console.log("SketchRNN JS demo.");
-  var model;
-  var dx, dy; // offsets of the pen strokes, in pixels
-  var pen_down, pen_up, pen_end; // keep track of whether pen is touching paper
-  var x, y; // absolute coordinates on the screen of where the pen is
-  var prev_pen = [1, 0, 0]; // group all p0, p1, p2 together
-  var rnn_state; // store the hidden states of rnn's neurons
-  var pdf; // store all the parameters of a mixture-density distribution
-  var temperature = 0.45; // controls the amount of uncertainty of the model
-  var line_color;
-  var model_loaded = false;
-  var screen_width, screen_height;
+  let rnn_state; // Store the hidden states of rnn's neurons.
+  const temperature = 0.45; // Controls the amount of uncertainty of the model.
+  let model_loaded = false;
 
-  model = new ms.SketchRNN("https://storage.googleapis.com/quickdraw-models/sketchRNN/large_models/bird.gen.json");
+  let dx, dy; // Offsets of the pen strokes, in pixels.
+  let x, y; // Absolute coordinates on the screen of where the pen is.
+  let pen = [0,0,0]; // Current pen state, [pen_down, pen_up, pen_end].
+  let prev_pen = [1, 0, 0]; // Previous pen state.
+  const PEN = {DOWN: 0, UP: 1, END: 2};
 
-
-  var clear_screen = function() {
-    p.background(255, 255, 255, 255);
-    p.fill(255, 255, 255, 255);
-  };
-
-  var restart = function() {
-    // initialize pen's states to zero.
-    [dx, dy, pen_down, pen_up, pen_end] = model.zeroInput(); // the pen's states
-
-    // zero out the rnn's initial states
-    rnn_state = model.zeroState();
-
-    clear_screen();
-
-  }
 
   Promise.all([model.initialize()]).then(function() {
-    // initialize the scale factor for the model. Bigger -> large outputs
+    // Initialize the scale factor for the model. Bigger -> large outputs
     model.setPixelFactor(3.0);
     restart();
     model_loaded = true;
-    console.log("model loaded.");
+    console.log("SketchRNN model loaded.");
   });
 
+  /*
+   * Main p5 code
+   */
   p.setup = function() {
-    screen_width = p.windowWidth; //window.innerWidth
-    screen_height = p.windowHeight; //window.innerHeight
-    x = screen_width/2.0;
-    y = screen_height/3.0;
+    // Initialize the canvas.
+    const screen_width = p.windowWidth;
+    const screen_height = p.windowHeight;
     p.createCanvas(screen_width, screen_height);
     p.frameRate(60);
 
-    // define color of line
-    line_color = p.color(p.random(64, 224), p.random(64, 224), p.random(64, 224));
+    setupNewDrawing();
   };
 
+  // Drawing loop.
   p.draw = function() {
     if (!model_loaded) {
       return;
     }
-    // see if we finished drawing
-    if (prev_pen[2] == 1) {
-      //p.noLoop(); // stop drawing
-      //return
+
+    // If we finished the previous drawing, start a new one.
+    if (prev_pen[PEN.END] === 1) {
       restart();
-      x = screen_width/2.0;
-      y = screen_height/3.0;
-      line_color = p.color(p.random(64, 224), p.random(64, 224), p.random(64, 224));
     }
 
-    // using the previous pen states, and hidden state, get next hidden state
-    // the below line takes the most CPU power, especially for large models.
-    rnn_state = model.update([dx, dy, pen_down, pen_up, pen_end], rnn_state);
+    // New state.
+    [dx, dy, ...pen] = sampleNewState();
 
-    // get the parameters of the probability distribution (pdf) from hidden state
-    pdf = model.getPDF(rnn_state, temperature);
-
-    // sample the next pen's states from our probability distribution
-    [dx, dy, pen_down, pen_up, pen_end] = model.sample(pdf);
-
-    // only draw on the paper if the pen is touching the paper
-    if (prev_pen[0] == 1) {
-      p.stroke(line_color);
-      p.strokeWeight(3.0);
-      p.line(x, y, x+dx, y+dy); // draw line connecting prev point to current point.
+    // Only draw on the paper if the pen is still touching the paper.
+    if (prev_pen[PEN.DOWN] == 1) {
+      p.line(x, y, x+dx, y+dy); // Draw line connecting prev point to current point.
     }
 
-    // update the absolute coordinates from the offsets
+    // Update the absolute coordinates from the offsets
     x += dx;
     y += dy;
 
-    // update the previous pen's state to the current one we just sampled
-    prev_pen = [pen_down, pen_up, pen_end];
+    // Update the previous pen's state to the current one we just sampled.
+    prev_pen = pen;
   };
 
+  function sampleNewState() {
+    // Using the previous pen states, and hidden state, get next hidden state
+    // the below line takes the most CPU power, especially for large models.
+    rnn_state = model.update([dx, dy, ...pen], rnn_state);
+
+    // Get the parameters of the probability distribution (pdf) from hidden state.
+    const pdf = model.getPDF(rnn_state, temperature);
+
+    // Sample the next pen's states from our probability distribution.
+    return model.sample(pdf);
+  }
+
+  function setupNewDrawing() {
+    x = screen_width / 2.0;
+    y = screen_height / 3.0;
+    const lineColor = p.color(p.random(64, 224), p.random(64, 224), p.random(64, 224));
+
+    p.strokeWeight(3.0);
+    p.stroke(lineColor);
+  }
+
+  function restart() {
+    // Initialize pen's states to zero.
+    [dx, dy, ...pen] = model.zeroInput();
+
+    // Sero out the rnn's initial states.
+    rnn_state = model.zeroState();
+
+    // Clear the screen.
+    p.background(255, 255, 255, 255);
+  }
 };
-var custom_p5 = new p5(sketch, 'sketch');
+
+const custom_p5 = new p5(sketch, 'sketch');
