@@ -33,7 +33,7 @@ a:hover {
 
 button, .button, select {
   font-family: "Roboto", Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
-
+  text-transform: uppercase;
   font-weight: 700;
   font-size: 16px;
   padding: 4px 14px;
@@ -47,6 +47,7 @@ button, .button, select {
 }
 select {
   text-transform: none;
+  height: 32px;
 }
 button:hover {
   background: #6FC9C6;
@@ -54,6 +55,9 @@ button:hover {
 }
 button[disabled] {
   opacity: 0.5;
+}
+#sketch {
+  margin-top: -3px;
 }
 #sketch canvas {
   bordeR: 3px solid black;

@@ -48,26 +48,24 @@ Three demos are available in `demos` directory built to use the Sketch RNN model
 
 ### 1) simple.html / simple.js
 
-This demo simply generates a bird using the model, using the example code in the earlier section.
+This demo generates a bird using the model using the example code in the earlier section.
 
-Run the [simple](https://storage.googleapis.com/quickdraw-models/sketchRNN/demo_tfjs/simple.html) demo.
+See the [simple](https://storage.googleapis.com/quickdraw-models/sketchRNN/demo_tfjs/simple.html) demo.
 
 ### 2) predict.html / predict.js
 
-This demo attempts to finish the drawing given starting set of strokes. If the user doesn't draw anything, the computer will keep on drawing stuff from scratch.
+This demo attempts to finish the drawing given starting set of strokes (a circle, drawn in red).
+In this demo, you can also select other classes, like "cat", "ant", "bus", etc.  The demo will dynamically load the json files in the models directory but cache previously loaded json models.
 
-In this demo, you can also select other classes, like "cat", "ant", "bus", etc.  The demo will dynamically load the json files in the models directory but cache previously loaded json models. Hitting restart will clear the current drawing and start from scratch.
-
-Run the [predict](https://storage.googleapis.com/quickdraw-models/sketchRNN/demo_tfjs/predict.html) demo.
+See the [predict](https://storage.googleapis.com/quickdraw-models/sketchRNN/demo_tfjs/predict.html) demo.
 
 ### 3) interactive\_predict.html / interactive\_predict.js
 
 Same as the previous demo, but made to be interactive so the user can draw the beginning of a sketch on the canvas. Similar to the first [AI experiment](https://magenta.tensorflow.org/sketch-rnn-demo). Hitting restart will clear the current human-entered drawing and start from scratch.
 
-Run the [interactive predict](https://storage.googleapis.com/quickdraw-models/sketchRNN/demo_tfjs/interactive_predict.html) demo.
+See the [interactive predict](https://storage.googleapis.com/quickdraw-models/sketchRNN/demo_tfjs/interactive_predict.html) demo.
 
 ## Pre-trained models
-
 We have provided around 100 pre-trained sketch-rnn models. We have trained the models with a .gen.json extension.
 
 The models are located in:
