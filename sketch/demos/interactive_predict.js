@@ -147,7 +147,6 @@ const sketch = function(p) {
     if (!modelLoaded || !modelIsActive) {
       return;
     }
-
     // New state.
     pen = previousPen;
     modelState = model.update([dx, dy, ...pen], modelState);
@@ -165,8 +164,8 @@ const sketch = function(p) {
       // Update.
       x += dx;
       y += dy;
+      previousPen = pen;
     }
-    previousPen = pen;
   };
 
   p.isInBounds = function () {
@@ -230,25 +229,18 @@ const sketch = function(p) {
     });
   };
 
-  let newState;
   function encodeStrokes(sequence) {
     if (sequence.length <= 5) {
       return;
     }
 
     // Encode the strokes in the model.
-    newState = model.zeroState();
+    let newState = model.zeroState();
     newState = model.update(model.zeroInput(), newState);
     newState = model.updateStrokes(sequence, newState, sequence.length-1);
 
-
-    restartModel(sequence);
-  }
-
-  function restartModel(sequence) {
-     // Reset the actual model we're using to this one that has the encoded strokes.
-     modelState = model.copyState(newState);
-
+    // Reset the actual model we're using to this one that has the encoded strokes.
+    modelState = model.copyState(newState);
 
     // Reset the state.
     const idx = raw_lines.length - 1;
@@ -260,6 +252,8 @@ const sketch = function(p) {
     dx = s[0];
     dy = s[1];
     previousPen = [s[2], s[3], s[4]];
+
+    modelIsActive = true;
   }
 
   // This is very similar to the p.draw() loop, but instead of
