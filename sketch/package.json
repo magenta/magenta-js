@@ -7,7 +7,7 @@
   "jsdelivr": "dist/magentasketch.js",
   "unpkg": "dist/magentasketch.js",
   "dependencies": {
-    "@tensorflow/tfjs": "^0.12.4"
+    "@tensorflow/tfjs": "^0.13.3"
   },
   "devDependencies": {
     "@types/clone": "^0.1.30",
