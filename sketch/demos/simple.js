@@ -27,13 +27,7 @@ const sketch = function(p) {
 
   // Load the model.
   const model = new ms.SketchRNN('https://storage.googleapis.com/quickdraw-models/sketchRNN/large_models/bird.gen.json');
-  Promise.all([model.initialize()]).then(function() {
-    // Initialize the scale factor for the model. Bigger -> large outputs
-    model.setPixelFactor(3.0);
-    restart();
-    modelLoaded = true;
-    console.log('SketchRNN model loaded.');
-  });
+
 
   /*
    * Main p5 code
@@ -46,7 +40,13 @@ const sketch = function(p) {
     p.createCanvas(screenWidth, screenHeight);
     p.frameRate(60);
 
-    setupNewDrawing();
+    model.initialize().then(function() {
+      // Initialize the scale factor for the model. Bigger -> large outputs
+      model.setPixelFactor(3.0);
+      modelLoaded = true;
+      restart();
+      console.log('SketchRNN model loaded.');
+    });
   };
 
   // Drawing loop.
