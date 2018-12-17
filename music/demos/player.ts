@@ -98,7 +98,7 @@ function setupMIDIPlayerDemo() {
       playBtn.textContent = 'Play';
     } else {
       // Use the selected output, if any.
-      player.output = [player.midiOutputs[midiOutputs.selectedIndex]];
+      player.outputs = [player.availableOutputs[midiOutputs.selectedIndex]];
       player.start(FULL_TWINKLE).then(() => playBtn.textContent = 'Play');
       playBtn.textContent = 'Stop';
     }

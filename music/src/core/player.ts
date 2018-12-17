@@ -549,8 +549,8 @@ export class PlayerWithClick extends Player {
  * requires a plugin to be installed on the user's computer, so it might not
  * work in all cases.
  *
- * If you want to use a particular MIDI output, you must update the `output`
- * property before calling `start`, otherwise a message will be sent to
+ * If you want to use a particular MIDI output port, you must update the
+ * `output` property before calling `start`, otherwise a message will be sent to
  * all connected MIDI outputs:
  *
  * Example (easy mode):
@@ -558,8 +558,10 @@ export class PlayerWithClick extends Player {
  *   `
  *    const player = new mm.MIDIPlayer();
  *    player.requestMIDIAccess().then(() => {
- *      player.output = [player.midiOutputs[0]];
- *      player.start();
+ *      // For example, use only the first port. If you omit this,
+ *      // a message will be sent to all ports.
+ *      player.outputs = [player.availableOutputs[0]];
+ *      player.start(seq);
  *    })`
  *
  * You can also explicitly request MIDI access outside of the player, in
@@ -569,16 +571,26 @@ export class PlayerWithClick extends Player {
  *
  *   `
  *    navigator.requestMIDIAccess().then((midi) => {
- *       // Get whichever MIDI outputs you want.
- *       const outputs = initOutputs(midi);
+ *       // Get all the MIDI outputs to show them in a <select> (for example)
+ *       const availableOutputs = [];
+ *       const it = midi.outputs.values();
+ *       for (let o = it.next(); o && !o.done; o = it.next()) {
+ *          availableOutputs.push(o.value);
+ *       }
+ *       // Populate the <select>
+ *       const el = document.querySelector('select');
+ *       el.innerHTML = availableOutputs.map(i =>
+ *           `<option>${i.name}</option>`).join('');
+ *
+ *       // Use the selected output port.
  *       player = new mm.MIDIPlayer();
- *       player.output = [outputs[0], output[1]];
+ *       player.outputs = [availableOutputs[el.selectedIndex]];
  *       player.start(seq)
  *     });`
  */
 export class MIDIPlayer extends BasePlayer {
-  public output: WebMidi.MIDIOutput[] = [];
-  public readonly midiOutputs: WebMidi.MIDIOutput[] = [];
+  public outputs: WebMidi.MIDIOutput[] = [];
+  public readonly availableOutputs: WebMidi.MIDIOutput[] = [];
   private NOTE_ON = 0x90;
   private NOTE_OFF = 0x80;
 
@@ -616,9 +628,9 @@ export class MIDIPlayer extends BasePlayer {
     const outputs = midi.outputs.values();
     for (let output = outputs.next(); output && !output.done;
          output = outputs.next()) {
-      this.midiOutputs.push(output.value);
+      this.availableOutputs.push(output.value);
     }
-    return this.midiOutputs;
+    return this.availableOutputs;
   }
 
   protected playNote(time: number, note: NoteSequence.INote) {
@@ -629,7 +641,7 @@ export class MIDIPlayer extends BasePlayer {
     const msgOn = [this.NOTE_ON, note.pitch, velocity];
     const msgOff = [this.NOTE_OFF, note.pitch, velocity];
 
-    const outputs = this.output ? this.output : this.midiOutputs;
+    const outputs = this.outputs ? this.outputs : this.availableOutputs;
     for (let i = 0; i < outputs.length; i++) {
       this.sendMessageToOutput(outputs[i], msgOn);
       this.sendMessageToOutput(
@@ -651,7 +663,7 @@ export class MIDIPlayer extends BasePlayer {
    */
   public playNoteDown(note: NoteSequence.INote) {
     const msgOn = [this.NOTE_ON, note.pitch, note.velocity];
-    const outputs = this.output ? this.output : this.midiOutputs;
+    const outputs = this.outputs ? this.outputs : this.availableOutputs;
     for (let i = 0; i < outputs.length; i++) {
       this.sendMessageToOutput(outputs[i], msgOn);
     }
@@ -665,7 +677,7 @@ export class MIDIPlayer extends BasePlayer {
    */
   public playNoteUp(note: NoteSequence.INote) {
     const msgOff = [this.NOTE_OFF, note.pitch, note.velocity];
-    const outputs = this.output ? this.output : this.midiOutputs;
+    const outputs = this.outputs ? this.outputs : this.availableOutputs;
     for (let i = 0; i < outputs.length; i++) {
       this.sendMessageToOutput(
           outputs[i], msgOff, note.endTime - note.startTime);
