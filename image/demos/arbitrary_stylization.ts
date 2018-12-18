@@ -32,19 +32,11 @@ function clearCanvas() {
   ctx.fillText("...", canvas.width / 2, canvas.height / 2);
 }
 
-async function stylize() {
-  await mi.tf.nextFrame();
+function stylize() {
   clearCanvas();
-  await mi.tf.nextFrame();
-  const styleRepresentation = await mi.tf.tidy(() => {
-    return model.predictStyleParameters(styleImg);
+  model.stylize(contentImg, styleImg).then((imageData) => {
+    ctx.putImageData(imageData, 0, 0);
   });
-  const stylized = await mi.tf.tidy(() => {
-    return model.stylize(contentImg, styleRepresentation);
-  });
-  await mi.tf.toPixels(stylized, canvas);
-  styleRepresentation.dispose();
-  stylized.dispose();
 }
 
 function setupDemo() {
