@@ -15,7 +15,6 @@
  * limitations under the License.
  */
  /**
- * Author: David Ha <hadavid@google.com>
  *
  * @fileoverview Basic p5.js sketch to show how to use sketch-rnn
  * to finish a fixed incomplete drawings, and loop through multiple
@@ -44,10 +43,7 @@ const sketch = function(p) {
   const PEN = {DOWN: 0, UP: 1, END: 2};
   const epsilon = 2.0; // to ignore data from user's pen staying in one spot.
 
-  let userHasEverDrawn = false;
-  let allRawLines;
   let currentRawLine = [];
-  let strokes;
   /*
    * Main p5 code
    */
@@ -69,17 +65,14 @@ const sketch = function(p) {
   */
   p.mousePressed = function () {
     if (p.isInBounds()) {
-      // First time anything is written.
-      if (!userHasEverDrawn) {
-        userHasEverDrawn = true;
-        x = startX = p.mouseX;
-        y = startY = p.mouseY;
-        userPen = 1; // down!
-      }
+      x = startX = p.mouseX;
+      y = startY = p.mouseY;
+      userPen = 1; // down!
 
       modelIsActive = false;
+      currentRawLine = [];
       previousUserPen = userPen;
-      p.stroke(p.color(255,0,0));  // User always draws in red.
+      p.stroke(p.color(0,0,0));  // User always draws in black.
     }
   }
 
@@ -88,28 +81,13 @@ const sketch = function(p) {
       userPen = 0;  // Up!
 
       const currentRawLineSimplified = model.simplifyLine(currentRawLine);
-      let lastX, lastY;
 
       // If it's an accident...ignore it.
       if (currentRawLineSimplified.length > 1) {
-        // Need to keep track of the first point of the last line.
-        if (allRawLines.length === 0) {
-          lastX = startX;
-          lastY = startY;
-        } else {
-          // The last line.
-          const idx = allRawLines.length - 1;
-          const lastPoint = allRawLines[idx][allRawLines[idx].length-1];
-          lastX = lastPoint[0];
-          lastY = lastPoint[1];
-        }
-
         // Encode this line as a stroke, and feed it to the model.
-        const stroke = model.lineToStroke(currentRawLineSimplified, [lastX, lastY]);
-        allRawLines.push(currentRawLineSimplified);
-        strokes = strokes.concat(stroke);
+        const stroke = model.lineToStroke(currentRawLineSimplified, [startX, startY]);
 
-        initRNNStateFromStrokes(strokes);
+        initRNNStateFromStrokes(stroke);
       }
       currentRawLine = [];
     }
@@ -151,7 +129,8 @@ const sketch = function(p) {
 
     // If we finished the previous drawing, start a new one.
     if (pen[PEN.END] === 1) {
-      initRNNStateFromStrokes(strokes);
+      console.log('finished this one');
+      modelIsActive = false;
     } else {
       // Only draw on the paper if the pen is still touching the paper.
       if (previousPen[PEN.DOWN] === 1) {
@@ -181,8 +160,6 @@ const sketch = function(p) {
     // Reset the user drawing state.
     userPen = 1;
     previousUserPen = 0;
-    userHasEverDrawn = false;
-    allRawLines = [];
     currentRawLine = [];
     strokes = [];
 
@@ -191,12 +168,10 @@ const sketch = function(p) {
     previousPen = [0, 1, 0];
   };
 
-  function initRNNStateFromStrokes(strokes) {
+  function initRNNStateFromStrokes(sequence) {
     // Initialize the RNN with these strokes.
-    encodeStrokes(strokes);
-    // Draw them.
-    p.background(255, 255, 255, 255);
-    drawStrokes(strokes, startX, startY);
+    encodeStrokes(sequence);
+    drawStrokes(sequence, startX, startY);
   }
 
   function initModel(index) {
@@ -231,12 +206,8 @@ const sketch = function(p) {
 
     // Reset the actual model we're using to this one that has the encoded strokes.
     modelState = model.copyState(newState);
-
-    // Reset the state.
-    const idx = allRawLines.length - 1;
-    const lastPoint = allRawLines[idx][allRawLines[idx].length-1];
-    x = lastPoint[0];
-    y = lastPoint[1];
+    x = startX;
+    y = startY;
 
     const s = sequence[sequence.length-1];
     dx = s[0];
@@ -249,7 +220,7 @@ const sketch = function(p) {
   // This is very similar to the p.draw() loop, but instead of
   // sampling from the model, it uses the given set of strokes.
   function drawStrokes(strokes, startX, startY) {
-    p.stroke(p.color(255,0,0));
+    p.stroke(p.color(0,0,0));
 
     let x = startX;
     let y = startY;

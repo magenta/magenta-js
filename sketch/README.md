@@ -10,19 +10,18 @@ This JavaScript implementation of Magenta's sketch-rnn model uses [TensorFlow.js
 
 ## SketchRNN
 
-This document is an introduction on how to use the Sketch RNN model in Javascript to generate images.  The Sketch RNN model is trained on stroke-based vector drawings. The model implementation here is able to handle unconditional (decoder-only) generation of vector images.
+This document is an introduction on how to use the Sketch RNN model in JavaScript to generate images.  The SketchRNN model is trained on stroke-based vector drawings. The model implementation here is able to handle unconditional (decoder-only) generation of vector images.
 
-For more information, please read original [model](https://magenta.tensorflow.org/sketch_rnn) description and for the Python TensorFlow implementation.
+For more information, please read original the [model](https://magenta.tensorflow.org/sketch_rnn) description and for the Python TensorFlow implementation.
 
 ## Getting started
 
-In the .html files, we need to include `magentasketch.js`. Our example sketch are built with p5.js and stored in a file such as `sketch.js`, so we have also included p5 libraries here too. Please see this minimal example:
+In the .html files, we need to include `magentasketch.js`. Our example sketch are built with [p5.js](https://p5js.org/) and stored in a file such as `sketch.js`, so we have also included p5 libraries here too. Please see this minimal example:
 
 ```html
 <html>
 <head>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.1/p5.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.1/addons/p5.dom.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.2/p5.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@magenta/sketch"></script>
   <script src="sketch.js"></script>
 </head>
@@ -32,42 +31,103 @@ In the .html files, we need to include `magentasketch.js`. Our example sketch ar
 </html>
 ```
 
-## Building the Model
 
-The implementation was written in TypeScript and built with the yarn tool:
+### Generating a sketch
 
-`yarn install` to install dependencies.
+Below is the essence of how a sketch is generated. In addition to the original [paper](https://arxiv.org/abs/1704.03477), a simple tutorial for understanding how RNNs can generate a set of strokes is [here](http://blog.otoro.net/2017/01/01/recurrent-neural-network-artist/).
 
-`yarn build` to compile ts into js
+```js
+let model;
+let dx, dy; // offsets of the pen strokes, in pixels
+let pen_down, pen_up, pen_end; // keep track of whether pen is touching paper
+let x, y; // absolute coordinates on the screen of where the pen is
+let prev_pen = [1, 0, 0]; // group all p0, p1, p2 together
+let rnn_state; // store the hidden states of rnn's neurons
+let pdf; // store all the parameters of a mixture-density distribution
+let temperature = 0.45; // controls the amount of uncertainty of the model
+let line_color;
+let model_loaded = false;
 
-`yarn bundle` to produce a bundled version in `dist/`.
+// loads the TensorFlow.js version of sketch-rnn model, with the "cat" model's weights.
+model = new ms.SketchRNN("https://storage.googleapis.com/quickdraw-models/sketchRNN/models/cat.gen.json");
+// code that ensures the above line is run before the below lines are run.
+
+function setup() {
+  x = windowWidth / 2.0;
+  y = windowHeight / 3.0;
+  createCanvas(windowWidth, windowHeight);
+  frameRate(60);
+
+  // Initialize the scale factor for the model. Bigger -> large outputs.
+  model.setPixelFactor(3.0);
+
+  // Initialize pen's states to zero.
+  [dx, dy, pen_down, pen_up, pen_end] = model.zeroInput(); // The pen's states.
+
+  // Zero out the rnn's initial states.
+  rnn_state = model.zeroState();
+
+  // Define color of line.
+  line_color = color(random(64, 224), random(64, 224), random(64, 224));
+};
+
+function draw() {
+  // See if we finished drawing.
+  if (prev_pen[2] == 1) {
+    noLoop(); // Stop drawing.
+    return;
+  }
+
+  // Using the previous pen states, and hidden state, get next hidden state
+  // the below line takes the most CPU power, especially for large models.
+  rnn_state = model.update([dx, dy, pen_down, pen_up, pen_end], rnn_state);
+
+  // Get the parameters of the probability distribution (pdf) from hidden state.
+  pdf = model.getPDF(rnn_state, temperature);
+
+  // Sample the next pen's states from our probability distribution.
+  [dx, dy, pen_down, pen_up, pen_end] = model.sample(pdf);
+
+  // Only draw on the paper if the pen is touching the paper.
+  if (prev_pen[0] == 1) {
+    stroke(line_color);
+    strokeWeight(3.0);
+    line(x, y, x+dx, y+dy); // Draw line connecting prev point to current point.
+  }
+
+  // Update the absolute coordinates from the offsets
+  x += dx;
+  y += dy;
+
+  // Update the previous pen's state to the current one we just sampled
+  prev_pen = [pen_down, pen_up, pen_end];
+};
+```
 
 ## Demos
 
-Three demos are available in `demos` directory built to use the Sketch RNN model.  You can look at the corresponding code to study in detail how the model works.  To run these examples, launch the `yarn run-demos`. This command will first build the library `magentasketch.js` from the TypeScript source files, and then launch the server, where you can put in `http://127.0.0.1:8080` into your web browser to select the demos. For debugging, it is recommended you open a console tab on the side of the screen to look at the log messages.
+There are several demos available in `demos` directory that show how to use the SketchRNN model. You can also view the [hosted demos](https://tensorflow.github.io/magenta-js/sketch/demos), or run the
+examples locally by running `yarn run-demos`. This command will first build the library `magentasketch.js` from the TypeScript source files, and then launch the server, where you can put in `http://127.0.0.1:8080` into your web browser to select the demos.
 
 ### 1) simple.html / simple.js
+This demo generates a bird using the model using the example code in the earlier section.
 
-This demo simply generates a bird using the model, using the example code in the earlier section.
-
-Run the [simple](https://storage.googleapis.com/quickdraw-models/sketchRNN/demo_tfjs/simple.html) demo.
+See the [simple](https://tensorflow.github.io/magenta-js/sketch/demos/simple.html) demo.
 
 ### 2) predict.html / predict.js
 
-This demo attempts to finish the drawing given starting set of strokes. If the user doesn't draw anything, the computer will keep on drawing stuff from scratch.
+This demo attempts to finish the drawing given starting set of strokes (a circle, drawn in red).
+In this demo, you can also select other classes, like "cat", "ant", "bus", etc.  The demo will dynamically load the json files in the models directory but cache previously loaded json models.
 
-In this demo, you can also select other classes, like "cat", "ant", "bus", etc.  The demo will dynamically load the json files in the models directory but cache previously loaded json models. Hitting restart will clear the current drawing and start from scratch.
-
-Run the [predict](https://storage.googleapis.com/quickdraw-models/sketchRNN/demo_tfjs/predict.html) demo.
+See the [predict](https://tensorflow.github.io/magenta-js/sketch/demos/predict.html) demo.
 
 ### 3) interactive\_predict.html / interactive\_predict.js
 
 Same as the previous demo, but made to be interactive so the user can draw the beginning of a sketch on the canvas. Similar to the first [AI experiment](https://magenta.tensorflow.org/sketch-rnn-demo). Hitting restart will clear the current human-entered drawing and start from scratch.
 
-Run the [interactive predict](https://storage.googleapis.com/quickdraw-models/sketchRNN/demo_tfjs/interactive_predict.html) demo.
+See the [interactive predict](https://tensorflow.github.io/magenta-js/sketch/demos/interactive_predict.html) demo.
 
 ## Pre-trained models
-
 We have provided around 100 pre-trained sketch-rnn models. We have trained the models with a .gen.json extension.
 
 The models are located in:
@@ -116,78 +176,16 @@ Here is a list of all the models provided:
 |toothpaste|tractor|trombone|truck|whale|
 |windmill|yoga|yogabicycle|everything||
 
-## Generating a sketch
 
-Below is the essence of how a sketch is generated. In addition to the original [paper](https://arxiv.org/abs/1704.03477), a simple tutorial for understanding how RNNs can generate a set of strokes is [here](http://blog.otoro.net/2017/01/01/recurrent-neural-network-artist/).
+## Building the model
 
-```js
-var model;
-var dx, dy; // offsets of the pen strokes, in pixels
-var pen_down, pen_up, pen_end; // keep track of whether pen is touching paper
-var x, y; // absolute coordinates on the screen of where the pen is
-var prev_pen = [1, 0, 0]; // group all p0, p1, p2 together
-var rnn_state; // store the hidden states of rnn's neurons
-var pdf; // store all the parameters of a mixture-density distribution
-var temperature = 0.45; // controls the amount of uncertainty of the model
-var line_color;
-var model_loaded = false;
+The implementation was written in TypeScript and built with the yarn tool:
 
-// loads the TensorFlow.js version of sketch-rnn model, with the "cat" model's weights.
-model = new ms.SketchRNN("https://storage.googleapis.com/quickdraw-models/sketchRNN/models/cat.gen.json");
-// code that ensures the above line is run before the below lines are run.
+`yarn install` to install dependencies.
 
-function setup() {
-  x = windowWidth/2.0;
-  y = windowHeight/3.0;
-  createCanvas(windowWidth, windowHeight);
-  frameRate(60);
+`yarn build` to compile ts into js
 
-  // initialize the scale factor for the model. Bigger -> large outputs
-  model.setPixelFactor(3.0);
-
-  // initialize pen's states to zero.
-  [dx, dy, pen_down, pen_up, pen_end] = model.zeroInput(); // the pen's states
-
-  // zero out the rnn's initial states
-  rnn_state = model.zeroState();
-
-  // define color of line
-  line_color = color(random(64, 224), random(64, 224), random(64, 224));
-};
-
-function draw() {
-
-  // see if we finished drawing
-  if (prev_pen[2] == 1) {
-    noLoop(); // stop drawing
-    return;
-  }
-
-  // using the previous pen states, and hidden state, get next hidden state
-  // the below line takes the most CPU power, especially for large models.
-  rnn_state = model.update([dx, dy, pen_down, pen_up, pen_end], rnn_state);
-
-  // get the parameters of the probability distribution (pdf) from hidden state
-  pdf = model.getPDF(rnn_state, temperature);
-
-  // sample the next pen's states from our probability distribution
-  [dx, dy, pen_down, pen_up, pen_end] = model.sample(pdf);
-
-  // only draw on the paper if the pen is touching the paper
-  if (prev_pen[0] == 1) {
-    stroke(line_color);
-    strokeWeight(3.0);
-    line(x, y, x+dx, y+dy); // draw line connecting prev point to current point.
-  }
-
-  // update the absolute coordinates from the offsets
-  x += dx;
-  y += dy;
-
-  // update the previous pen's state to the current one we just sampled
-  prev_pen = [pen_down, pen_up, pen_end];
-};
-```
+`yarn bundle` to produce a bundled version in `dist/`.
 
 ## Train own model
 
