@@ -555,21 +555,21 @@ export class PlayerWithClick extends Player {
  *
  * Example (easy mode):
  *
- *   `
+ *   ```
  *    const player = new mm.MIDIPlayer();
  *    player.requestMIDIAccess().then(() => {
  *      // For example, use only the first port. If you omit this,
  *      // a message will be sent to all ports.
  *      player.outputs = [player.availableOutputs[0]];
  *      player.start(seq);
- *    })`
+ *    })```
  *
  * You can also explicitly request MIDI access outside of the player, in
  * your application, and just update the `output` property before playing:
  *
  * Example (advanced mode):
  *
- *   `
+ *   ```
  *    navigator.requestMIDIAccess().then((midi) => {
  *       // Get all the MIDI outputs to show them in a <select> (for example)
  *       const availableOutputs = [];
@@ -586,7 +586,7 @@ export class PlayerWithClick extends Player {
  *       player = new mm.MIDIPlayer();
  *       player.outputs = [availableOutputs[el.selectedIndex]];
  *       player.start(seq)
- *     });`
+ *     });```
  */
 export class MIDIPlayer extends BasePlayer {
   public outputs: WebMidi.MIDIOutput[] = [];
