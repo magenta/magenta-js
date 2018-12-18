@@ -541,3 +541,146 @@ export class PlayerWithClick extends Player {
     super(true, callbackObject);
   }
 }
+
+/**
+ * A `NoteSequence` player that uses a MIDI output for playing. Note that
+ * WebMIDI is not supported in all browsers. A
+ * [polyfill](https://cwilso.github.io/WebMIDIAPIShim/) exists, but it too
+ * requires a plugin to be installed on the user's computer, so it might not
+ * work in all cases.
+ *
+ * If you want to use a particular MIDI output port, you must update the
+ * `output` property before calling `start`, otherwise a message will be sent to
+ * all connected MIDI outputs:
+ *
+ * Example (easy mode):
+ *
+ *   ```
+ *    const player = new mm.MIDIPlayer();
+ *    player.requestMIDIAccess().then(() => {
+ *      // For example, use only the first port. If you omit this,
+ *      // a message will be sent to all ports.
+ *      player.outputs = [player.availableOutputs[0]];
+ *      player.start(seq);
+ *    })```
+ *
+ * You can also explicitly request MIDI access outside of the player, in
+ * your application, and just update the `output` property before playing:
+ *
+ * Example (advanced mode):
+ *
+ *   ```
+ *    navigator.requestMIDIAccess().then((midi) => {
+ *       // Get all the MIDI outputs to show them in a <select> (for example)
+ *       const availableOutputs = [];
+ *       const it = midi.outputs.values();
+ *       for (let o = it.next(); o && !o.done; o = it.next()) {
+ *          availableOutputs.push(o.value);
+ *       }
+ *       // Populate the <select>
+ *       const el = document.querySelector('select');
+ *       el.innerHTML = availableOutputs.map(i =>
+ *           `<option>${i.name}</option>`).join('');
+ *
+ *       // Use the selected output port.
+ *       player = new mm.MIDIPlayer();
+ *       player.outputs = [availableOutputs[el.selectedIndex]];
+ *       player.start(seq)
+ *     });```
+ */
+export class MIDIPlayer extends BasePlayer {
+  public outputs: WebMidi.MIDIOutput[] = [];
+  public readonly availableOutputs: WebMidi.MIDIOutput[] = [];
+  private NOTE_ON = 0x90;
+  private NOTE_OFF = 0x80;
+
+  /**
+   *   `MIDIPlayer` constructor.
+   *
+   *   @param callbackObject An optional BasePlayerCallback, specifies an
+   *     object that contains run() and stop() methods to invode during
+   *     playback.
+   */
+  constructor(callbackObject?: BasePlayerCallback) {
+    super(false, callbackObject);
+  }
+
+  /**
+   * Requests MIDI access from the user, and stores all available MIDI outputs.
+   */
+  async requestMIDIAccess() {
+    if (navigator.requestMIDIAccess) {
+      return new Promise((resolve, reject) => {
+        navigator.requestMIDIAccess().then((midi) => {
+          // Also react to device changes.
+          midi.addEventListener(
+              'statechange',
+              (event: WebMidi.MIDIMessageEvent) => this.initOutputs(midi));
+          resolve(this.initOutputs(midi));
+        }, (err) => console.log('Something went wrong', reject(err)));
+      });
+    } else {
+      return null;
+    }
+  }
+
+  private initOutputs(midi: WebMidi.MIDIAccess) {
+    const outputs = midi.outputs.values();
+    for (let output = outputs.next(); output && !output.done;
+         output = outputs.next()) {
+      this.availableOutputs.push(output.value);
+    }
+    return this.availableOutputs;
+  }
+
+  protected playNote(time: number, note: NoteSequence.INote) {
+    // Some good defaults.
+    const velocity = note.velocity || 100;
+    const length = (note.endTime - note.startTime) * 1000;  // in ms.
+
+    const msgOn = [this.NOTE_ON, note.pitch, velocity];
+    const msgOff = [this.NOTE_OFF, note.pitch, velocity];
+
+    const outputs = this.outputs ? this.outputs : this.availableOutputs;
+    for (let i = 0; i < outputs.length; i++) {
+      this.sendMessageToOutput(outputs[i], msgOn);
+      this.sendMessageToOutput(
+          outputs[i], msgOff, window.performance.now() + length);
+    }
+  }
+
+  private sendMessageToOutput(
+      output: WebMidi.MIDIOutput, message: number[], time?: number) {
+    if (output) {
+      output.send(message, time);
+    }
+  }
+
+  /*
+   * Plays the down stroke of a note (the attack and the sustain). If you call
+   * this twice without calling playNoteUp() in between, it will implicitely
+   * release the note before striking it the second time.
+   */
+  public playNoteDown(note: NoteSequence.INote) {
+    const msgOn = [this.NOTE_ON, note.pitch, note.velocity];
+    const outputs = this.outputs ? this.outputs : this.availableOutputs;
+    for (let i = 0; i < outputs.length; i++) {
+      this.sendMessageToOutput(outputs[i], msgOn);
+    }
+  }
+
+  /*
+   * Plays the up stroke of a note (the release). If you call this
+   * twice without calling playNoteDown() in between, it will *not*
+   * implicitely call playNoteDown() for you, and the second call will have no
+   * noticeable effect.
+   */
+  public playNoteUp(note: NoteSequence.INote) {
+    const msgOff = [this.NOTE_OFF, note.pitch, note.velocity];
+    const outputs = this.outputs ? this.outputs : this.availableOutputs;
+    for (let i = 0; i < outputs.length; i++) {
+      this.sendMessageToOutput(
+          outputs[i], msgOff, note.endTime - note.startTime);
+    }
+  }
+}
