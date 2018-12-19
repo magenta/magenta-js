@@ -96,7 +96,7 @@ export class ArbitraryStyleTransferNetwork {
    *
    * @param style Style image to get 100D bottleneck features for
    */
-  predictStyleParameters(style: ImageData | HTMLImageElement |
+  private predictStyleParameters(style: ImageData | HTMLImageElement |
     HTMLCanvasElement | HTMLVideoElement): tf.Tensor4D {
     return tf.tidy(() => {
       return this.styleNet.predict(
@@ -111,12 +111,11 @@ export class ArbitraryStyleTransferNetwork {
   /**
    * This function stylizes the content image given the bottleneck
    * features. It returns a tf.Tensor3D containing the stylized image.
-   * This can be used directly with tf.toPixels.
    *
    * @param content Content image to stylize
    * @param bottleneck Bottleneck features for the style to use
    */
-  stylize(content: ImageData | HTMLImageElement |
+  private produceStylized(content: ImageData | HTMLImageElement |
     HTMLCanvasElement | HTMLVideoElement,
     bottleneck: tf.Tensor4D): tf.Tensor3D {
     return tf.tidy(() => {
@@ -131,6 +130,39 @@ export class ArbitraryStyleTransferNetwork {
           ]
         ) as tf.Tensor4D;
       return image.squeeze();
+    });
+  }
+
+  /**
+   * This function stylizes the content image given the style image.
+   * It returns an ImageData instance containing the stylized image.
+   *
+   * @param content Content image to stylize
+   * @param style Style image to use
+   * @param strength If provided, controls the stylization strength.
+   * Should be between 0.0 and 1.0.
+   */
+  stylize(content: ImageData | HTMLImageElement |
+    HTMLCanvasElement | HTMLVideoElement,
+    style: ImageData | HTMLImageElement |
+    HTMLCanvasElement | HTMLVideoElement,
+    strength?: number): Promise<ImageData> {
+    return new Promise((resolve, reject) => {
+      let styleRepresentation = this.predictStyleParameters(style);
+      if (strength !== undefined) {
+        styleRepresentation = styleRepresentation.mul(tf.scalar(strength)).add(
+          this.predictStyleParameters(content).mul(tf.scalar(1.0 - strength))
+        );
+      }
+      const stylized = this.produceStylized(content, styleRepresentation);
+      return tf.toPixels(stylized).then((bytes) => {
+        const imageData = new ImageData(
+          bytes, stylized.shape[1], stylized.shape[0]
+        );
+        styleRepresentation.dispose();
+        stylized.dispose();
+        resolve(imageData);
+      });
     });
   }
 }

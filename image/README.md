@@ -37,25 +37,19 @@ Add the following code to an HTML file, and place a content (`content.jpg`) and 
     <script src="https://cdn.jsdelivr.net/npm/@magenta/image@^0.1.2"></script>
   </head>
   <body>
-    <img id="content" src="content.jpg"/>
-    <img id="style" src="style.jpg"/>
-    <canvas id="stylized"></canvas>
+    <img id="content" height="256" src="content.jpg"/>
+    <img id="style" height="256" src="style.jpg"/>
+    <canvas id="stylized" height="256"></canvas>
       <script>
         const model = new mi.ArbitraryStyleTransferNetwork();
         const contentImg = document.getElementById('content');
         const styleImg = document.getElementById('style');
         const stylizedCanvas = document.getElementById('stylized');
 
-        async function stylize() {
-          const bottleneck = await mi.tf.tidy(() => {
-            return model.predictStyleParameters(styleImg);
+        function stylize() {
+          model.stylize(contentImg, styleImg).then((imageData) => {
+            stylizedCanvas.getContext('2d').putImageData(imageData, 0, 0);
           });
-          const stylized = await mi.tf.tidy(() => {
-            return model.stylize(contentImg, bottleneck);
-          });
-          await mi.tf.toPixels(stylized, stylizedCanvas);
-          bottleneck.dispose();
-          stylized.dispose();
         }
 
         model.initialize().then(stylize);
@@ -81,16 +75,10 @@ const contentImg = document.getElementById('content') as HTMLImageElement;
 const styleImg = document.getElementById('style') as HTMLImageElement;
 const stylizedCanvas = document.getElementById('stylized') as HTMLCanvasElement;
 
-async function stylize() {
-  const bottleneck = await mi.tf.tidy(() => {
-    return model.predictStyleParameters(styleImg);
+function stylize() {
+  model.stylize(contentImg, styleImg).then((imageData) => {
+    stylizedCanvas.getContext('2d').putImageData(imageData, 0, 0);
   });
-  const stylized = await mi.tf.tidy(() => {
-    return model.stylize(contentImg, bottleneck);
-  });
-  await mi.tf.toPixels(stylized, stylizedCanvas);
-  bottleneck.dispose();
-  stylized.dispose();
 }
 
 model.initialize().then(stylize);
