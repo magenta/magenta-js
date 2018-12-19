@@ -22,9 +22,11 @@
 import * as tf from '@tensorflow/tfjs';
 
 // tslint:disable-next-line:max-line-length
-const DEFAULT_STYLE_CHECKPOINT = 'https://storage.googleapis.com/magentadata/js/checkpoints/style/arbitrary/predictor';
+const DEFAULT_STYLE_CHECKPOINT =
+    'https://storage.googleapis.com/magentadata/js/checkpoints/style/arbitrary/predictor';
 // tslint:disable-next-line:max-line-length
-const DEFAULT_TRANSFORM_CHECKPOINT = 'https://storage.googleapis.com/magentadata/js/checkpoints/style/arbitrary/transformer';
+const DEFAULT_TRANSFORM_CHECKPOINT =
+    'https://storage.googleapis.com/magentadata/js/checkpoints/style/arbitrary/transformer';
 
 /**
  * Main ArbitraryStyleTransferNetwork class
@@ -45,8 +47,9 @@ export class ArbitraryStyleTransferNetwork {
    * @param transformCheckpointURL Path to transformation model checkpoint
    * directory.
    */
-  constructor(styleCheckpointURL = DEFAULT_STYLE_CHECKPOINT,
-    transformCheckpointURL = DEFAULT_TRANSFORM_CHECKPOINT) {
+  constructor(
+      styleCheckpointURL = DEFAULT_STYLE_CHECKPOINT,
+      transformCheckpointURL = DEFAULT_TRANSFORM_CHECKPOINT) {
     this.styleCheckpointURL = styleCheckpointURL;
     this.transformCheckpointURL = transformCheckpointURL;
   }
@@ -66,13 +69,11 @@ export class ArbitraryStyleTransferNetwork {
 
     [this.styleNet, this.transformNet] = await Promise.all([
       tf.loadFrozenModel(
-        this.styleCheckpointURL + '/tensorflowjs_model.pb',
-        this.styleCheckpointURL + '/weights_manifest.json'
-      ),
+          this.styleCheckpointURL + '/tensorflowjs_model.pb',
+          this.styleCheckpointURL + '/weights_manifest.json'),
       tf.loadFrozenModel(
-        this.transformCheckpointURL + '/tensorflowjs_model.pb',
-        this.transformCheckpointURL + '/weights_manifest.json'
-      ),
+          this.transformCheckpointURL + '/tensorflowjs_model.pb',
+          this.transformCheckpointURL + '/weights_manifest.json'),
     ]);
 
     this.initialized = true;
@@ -96,15 +97,12 @@ export class ArbitraryStyleTransferNetwork {
    *
    * @param style Style image to get 100D bottleneck features for
    */
-  private predictStyleParameters(style: ImageData | HTMLImageElement |
-    HTMLCanvasElement | HTMLVideoElement): tf.Tensor4D {
+  private predictStyleParameters(style: ImageData|HTMLImageElement|
+                                 HTMLCanvasElement|
+                                 HTMLVideoElement): tf.Tensor4D {
     return tf.tidy(() => {
       return this.styleNet.predict(
-        tf.fromPixels(style)
-          .toFloat()
-          .div(tf.scalar(255))
-          .expandDims()
-      );
+          tf.fromPixels(style).toFloat().div(tf.scalar(255)).expandDims());
     }) as tf.Tensor4D;
   }
 
@@ -115,20 +113,14 @@ export class ArbitraryStyleTransferNetwork {
    * @param content Content image to stylize
    * @param bottleneck Bottleneck features for the style to use
    */
-  private produceStylized(content: ImageData | HTMLImageElement |
-    HTMLCanvasElement | HTMLVideoElement,
-    bottleneck: tf.Tensor4D): tf.Tensor3D {
+  private produceStylized(
+      content: ImageData|HTMLImageElement|HTMLCanvasElement|HTMLVideoElement,
+      bottleneck: tf.Tensor4D): tf.Tensor3D {
     return tf.tidy(() => {
-      const image: tf.Tensor4D =
-        this.transformNet.predict(
-          [
-            tf.fromPixels(content)
-              .toFloat()
-              .div(tf.scalar(255))
-              .expandDims(),
-            bottleneck
-          ]
-        ) as tf.Tensor4D;
+      const image: tf.Tensor4D = this.transformNet.predict([
+        tf.fromPixels(content).toFloat().div(tf.scalar(255)).expandDims(),
+        bottleneck
+      ]) as tf.Tensor4D;
       return image.squeeze();
     });
   }
@@ -137,28 +129,29 @@ export class ArbitraryStyleTransferNetwork {
    * This function stylizes the content image given the style image.
    * It returns an ImageData instance containing the stylized image.
    *
+   * TODO(vdumoulin): Add option to resize style and content images.
+   * TODO(adarob): Add option to use model with depthwise separable convs.
+   *
    * @param content Content image to stylize
    * @param style Style image to use
    * @param strength If provided, controls the stylization strength.
    * Should be between 0.0 and 1.0.
    */
-  stylize(content: ImageData | HTMLImageElement |
-    HTMLCanvasElement | HTMLVideoElement,
-    style: ImageData | HTMLImageElement |
-    HTMLCanvasElement | HTMLVideoElement,
-    strength?: number): Promise<ImageData> {
+  stylize(
+      content: ImageData|HTMLImageElement|HTMLCanvasElement|HTMLVideoElement,
+      style: ImageData|HTMLImageElement|HTMLCanvasElement|HTMLVideoElement,
+      strength?: number): Promise<ImageData> {
     return new Promise((resolve, reject) => {
       let styleRepresentation = this.predictStyleParameters(style);
       if (strength !== undefined) {
-        styleRepresentation = styleRepresentation.mul(tf.scalar(strength)).add(
-          this.predictStyleParameters(content).mul(tf.scalar(1.0 - strength))
-        );
+        styleRepresentation = styleRepresentation.mul(tf.scalar(strength))
+                                  .add(this.predictStyleParameters(content).mul(
+                                      tf.scalar(1.0 - strength)));
       }
       const stylized = this.produceStylized(content, styleRepresentation);
       return tf.toPixels(stylized).then((bytes) => {
-        const imageData = new ImageData(
-          bytes, stylized.shape[1], stylized.shape[0]
-        );
+        const imageData =
+            new ImageData(bytes, stylized.shape[1], stylized.shape[0]);
         styleRepresentation.dispose();
         stylized.dispose();
         resolve(imageData);
