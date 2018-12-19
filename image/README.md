@@ -84,7 +84,7 @@ function stylize() {
 model.initialize().then(stylize);
 ```
 
-See our [demos](./demos) for example usage.
+See [style-transfer.glitch.me](https://style-transfer.glitch.me) and our [demos](./demos) for example usage.
 
 #### Example Commands
 
