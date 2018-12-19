@@ -27,11 +27,15 @@ import {DEFAULT_QUARTERS_PER_MINUTE} from './constants';
  * @param playClick Whether to play a click track while recording.
  * @param playCountIn Whether to play a count-in click at the beginning of
  * the recording.
+ * @param startRecordingAtFirstNote Whether to start the note time offset at
+ * the first note received instead of the start of the recording.  Defaults to 
+ * false.
  */
 interface RecorderConfig {
   qpm?: number;
   playClick?: boolean;
   playCountIn?: boolean;
+  startRecordingAtFirstNote?: boolean;
 }
 
 /**
@@ -59,6 +63,7 @@ export class Recorder {
   private notes: NoteSequence.Note[] = [];
   private onNotes: Map<number, NoteSequence.Note>;
   private midiInputs: WebMidi.MIDIInput[] = [];
+  private startRecordingAtFirstNote: boolean;
 
   private loClick = new Tone
       .MembraneSynth({
@@ -87,7 +92,8 @@ export class Recorder {
     this.config = {
       playClick: config.playClick,
       qpm: config.qpm || DEFAULT_QUARTERS_PER_MINUTE,
-      playCountIn: config.playCountIn
+      playCountIn: config.playCountIn,
+      startRecordingAtFirstNote: config.startRecordingAtFirstNote || false
     };
 
     this.callbackObject = callbackObject;
@@ -211,6 +217,11 @@ export class Recorder {
     this.firstNoteTimestamp = undefined;
     this.notes = [];
     this.onNotes = new Map<number, NoteSequence.Note>();
+    
+   if (!this.startRecordingAtFirstNote) {
+    const timeStamp: number = Date.now();
+    this.firstNoteTimestamp = timeStamp;
+   }
   }
 
   /**
@@ -256,6 +267,21 @@ export class Recorder {
       notes: this.notes,
       totalTime: this.notes[this.notes.length - 1].endTime,
     });
+  }
+
+  /**
+   * Resets the `notes` array to an empty array and stops the recording.
+   * @returns a non-quantized `NoteSequence` containing all the recorded notes.
+   */
+  reset(): NoteSequence {
+    const noteSequence = this.stop();
+
+    // Reset all the things needed for the recording.
+    this.firstNoteTimestamp = undefined;
+    this.notes = [];
+    this.onNotes = new Map<number, NoteSequence.Note>();
+
+    return noteSequence;
   }
 
   midiMessageReceived(event: WebMidi.MIDIMessageEvent) {
