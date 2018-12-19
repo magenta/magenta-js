@@ -1,13 +1,13 @@
 {
     "name": "@magenta/image",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "description": "Visual art with machine learning, in the browser.",
     "main": "es5/index.js",
     "types": "es5/index.d.ts",
     "jsdelivr": "dist/magentaimage.js",
     "unpkg": "dist/magentaimage.js",
     "dependencies": {
-        "@tensorflow/tfjs": "^0.13.3"
+        "@tensorflow/tfjs": "^0.14.1"
     },
     "devDependencies": {
         "browserify": "^14.4.0",
