@@ -30,7 +30,7 @@ function setupDemo() {
 }
 setupDemo();
 
-},{"../src/index":289}],2:[function(require,module,exports){
+},{"../src/index":320}],2:[function(require,module,exports){
 "use strict";
 module.exports = asPromise;
 
@@ -2541,7 +2541,7 @@ $root.tensorflow = (function() {
 
 module.exports = $root;
 
-},{"protobufjs/minimal":267}],10:[function(require,module,exports){
+},{"protobufjs/minimal":297}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ExecutionContext = (function () {
@@ -2688,11 +2688,15 @@ var tfc = require("@tensorflow/tfjs-core");
 var compiled_api_1 = require("../data/compiled_api");
 var operation_mapper_1 = require("../operations/operation_mapper");
 var graph_executor_1 = require("./graph_executor");
+exports.TFHUB_SEARCH_PARAM = '?tfjs-format=file';
+exports.DEFAULT_MODEL_NAME = 'tensorflowjs_model.pb';
+exports.DEFAULT_MANIFEST_NAME = 'weights_manifest.json';
 var FrozenModel = (function () {
-    function FrozenModel(modelUrl, weightManifestUrl, requestOption) {
+    function FrozenModel(modelUrl, weightManifestUrl, requestOption, weightPrefix) {
         this.modelUrl = modelUrl;
         this.weightManifestUrl = weightManifestUrl;
         this.requestOption = requestOption;
+        this.weightPrefix = weightPrefix;
         this.version = 'n/a';
     }
     Object.defineProperty(FrozenModel.prototype, "modelVersion", {
@@ -2740,7 +2744,7 @@ var FrozenModel = (function () {
     FrozenModel.prototype.findIOHandler = function () {
         var path = [this.modelUrl, this.weightManifestUrl];
         if (this.requestOption) {
-            this.handler = tfc.io.browserHTTPRequest(path, this.requestOption);
+            this.handler = tfc.io.browserHTTPRequest(path, this.requestOption, this.weightPrefix);
         }
         else {
             var handlers = tfc.io.getLoadHandlers(path);
@@ -2867,8 +2871,19 @@ function loadFrozenModel(modelUrl, weightsManifestUrl, requestOption) {
     });
 }
 exports.loadFrozenModel = loadFrozenModel;
+function loadTfHubModule(tfhubModuleUrl, requestOption) {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            if (!tfhubModuleUrl.endsWith('/')) {
+                tfhubModuleUrl = tfhubModuleUrl + '/';
+            }
+            return [2, loadFrozenModel("" + tfhubModuleUrl + exports.DEFAULT_MODEL_NAME + exports.TFHUB_SEARCH_PARAM, "" + tfhubModuleUrl + exports.DEFAULT_MANIFEST_NAME + exports.TFHUB_SEARCH_PARAM, requestOption)];
+        });
+    });
+}
+exports.loadTfHubModule = loadTfHubModule;
 
-},{"../data/compiled_api":9,"../operations/operation_mapper":47,"./graph_executor":12,"@tensorflow/tfjs-core":57}],12:[function(require,module,exports){
+},{"../data/compiled_api":9,"../operations/operation_mapper":49,"./graph_executor":12,"@tensorflow/tfjs-core":59}],12:[function(require,module,exports){
 "use strict";
 var __assign = (this && this.__assign) || Object.assign || function(t) {
     for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -3047,7 +3062,7 @@ var GraphExecutor = (function () {
                 if (!tensorMap[node.name]) {
                     tensorMap[node.name] =
                         operation_executor_1.executeOp(node, tensorMap, context);
-                    _this.checkTensorForDisposal(node.name, node, tensorMap, context, tensorsToKeep, intermediateTensorConsumerCount);
+                    _this.checkTensorForDisposal(node.name, node, tensorMap, context, tensorsToKeep, outputNames, intermediateTensorConsumerCount);
                 }
                 if (outputNames.every(function (name) { return !!tensorMap[name]; })) {
                     break;
@@ -3063,8 +3078,8 @@ var GraphExecutor = (function () {
             .map(function (tensors) { return tensors.map(function (tensor) { return tensor.id; }); }));
         return new Set(ids);
     };
-    GraphExecutor.prototype.checkTensorForDisposal = function (nodeName, node, tensorMap, context, tensorsToKeep, intermediateTensorConsumerCount) {
-        if (node.category === 'control') {
+    GraphExecutor.prototype.checkTensorForDisposal = function (nodeName, node, tensorMap, context, tensorsToKeep, outputNames, intermediateTensorConsumerCount) {
+        if (node.category === 'control' || outputNames.indexOf(nodeName) !== -1) {
             return;
         }
         tensorMap[nodeName].forEach(function (tensor) {
@@ -3097,7 +3112,7 @@ var GraphExecutor = (function () {
     GraphExecutor.prototype.executeAsync = function (inputs, outputs) {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
-            var tensorArrayMap, context, tensors, results, outputIds, inputIdArray, inputIds;
+            var tensorArrayMap, context, outputNames, tensors, results, outputIds, inputIdArray, inputIds;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -3105,7 +3120,8 @@ var GraphExecutor = (function () {
                         this.checkInputShapeAndType(inputs, false);
                         tensorArrayMap = {};
                         context = new execution_context_1.ExecutionContext(this._weightMap, tensorArrayMap);
-                        return [4, this.executeWithControlFlow(inputs, context)];
+                        outputNames = this.calculateOutputs(outputs);
+                        return [4, this.executeWithControlFlow(inputs, context, outputNames)];
                     case 1:
                         tensors = _a.sent();
                         results = this.findOutputs(tensors, context, outputs);
@@ -3127,7 +3143,7 @@ var GraphExecutor = (function () {
             });
         });
     };
-    GraphExecutor.prototype.executeWithControlFlow = function (inputs, context) {
+    GraphExecutor.prototype.executeWithControlFlow = function (inputs, context, outputNames) {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
             var names, inputNodes, stack, tensorMap, intermediateTensorConsumerCount, tensorsToKeep, added, promises;
@@ -3146,7 +3162,7 @@ var GraphExecutor = (function () {
                         _a.label = 1;
                     case 1:
                         if (!(stack.length > 0)) return [3, 3];
-                        promises = this.processStack(inputNodes, stack, context, tensorMap, added, tensorsToKeep, intermediateTensorConsumerCount);
+                        promises = this.processStack(inputNodes, stack, context, tensorMap, added, tensorsToKeep, outputNames, intermediateTensorConsumerCount);
                         return [4, Promise.all(promises)];
                     case 2:
                         _a.sent();
@@ -3156,7 +3172,7 @@ var GraphExecutor = (function () {
             });
         });
     };
-    GraphExecutor.prototype.processStack = function (inputNodes, stack, context, tensorMap, added, tensorsToKeep, intermediateTensorConsumerCount) {
+    GraphExecutor.prototype.processStack = function (inputNodes, stack, context, tensorMap, added, tensorsToKeep, outputNames, intermediateTensorConsumerCount) {
         var _this = this;
         var promises = [];
         var _loop_1 = function () {
@@ -3177,14 +3193,14 @@ var GraphExecutor = (function () {
                     promises.push(tensors.then(function (t) {
                         tensorMap[nodeName] = t;
                         context.currentContext = currentContext_1;
-                        _this.checkTensorForDisposal(nodeName, item.node, tensorMap, context, tensorsToKeep, intermediateTensorConsumerCount);
+                        _this.checkTensorForDisposal(nodeName, item.node, tensorMap, context, tensorsToKeep, outputNames, intermediateTensorConsumerCount);
                         _this.processChildNodes(item.node, stack, context, tensorMap, added);
                         return t;
                     }));
                 }
                 else {
                     tensorMap[nodeName] = tensors;
-                    this_1.checkTensorForDisposal(nodeName, item.node, tensorMap, context, tensorsToKeep, intermediateTensorConsumerCount);
+                    this_1.checkTensorForDisposal(nodeName, item.node, tensorMap, context, tensorsToKeep, outputNames, intermediateTensorConsumerCount);
                     this_1.processChildNodes(item.node, stack, context, tensorMap, added);
                 }
             }
@@ -3293,7 +3309,7 @@ var GraphExecutor = (function () {
                 extra.push(name);
         });
         if (extra.length > 0) {
-            throw new Error("The following outputs are not be generated by the execution: " +
+            throw new Error("The following outputs are not generated by the execution: " +
                 ("[" + extra + "]."));
         }
     };
@@ -3301,7 +3317,7 @@ var GraphExecutor = (function () {
 }());
 exports.GraphExecutor = GraphExecutor;
 
-},{"../operations/executors/utils":30,"../operations/operation_executor":46,"./execution_context":10,"@tensorflow/tfjs-core":57}],13:[function(require,module,exports){
+},{"../operations/executors/utils":31,"../operations/operation_executor":48,"./execution_context":10,"@tensorflow/tfjs-core":59}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfjs_core_1 = require("@tensorflow/tfjs-core");
@@ -3488,16 +3504,17 @@ var TensorArray = (function () {
 }());
 exports.TensorArray = TensorArray;
 
-},{"@tensorflow/tfjs-core":57}],14:[function(require,module,exports){
+},{"@tensorflow/tfjs-core":59}],14:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var frozen_model_1 = require("./executor/frozen_model");
 exports.FrozenModel = frozen_model_1.FrozenModel;
 exports.loadFrozenModel = frozen_model_1.loadFrozenModel;
+exports.loadTfHubModule = frozen_model_1.loadTfHubModule;
 var version_1 = require("./version");
 exports.version_converter = version_1.version;
 
-},{"./executor/frozen_model":11,"./version":48}],15:[function(require,module,exports){
+},{"./executor/frozen_model":11,"./version":50}],15:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
@@ -3541,7 +3558,7 @@ exports.executeOp = function (node, tensorMap, context) {
 };
 exports.CATEGORY = 'arithmetic';
 
-},{"./utils":30,"@tensorflow/tfjs-core":57}],16:[function(require,module,exports){
+},{"./utils":31,"@tensorflow/tfjs-core":59}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
@@ -3636,7 +3653,7 @@ exports.executeOp = function (node, tensorMap, context) {
 };
 exports.CATEGORY = 'basic_math';
 
-},{"./utils":30,"@tensorflow/tfjs-core":57}],17:[function(require,module,exports){
+},{"./utils":31,"@tensorflow/tfjs-core":59}],17:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -3793,7 +3810,7 @@ function executeOp(node, tensorMap, context) {
 exports.executeOp = executeOp;
 exports.CATEGORY = 'control';
 
-},{"../../executor/tensor_array":13,"./utils":30,"@tensorflow/tfjs-core":57}],18:[function(require,module,exports){
+},{"../../executor/tensor_array":13,"./utils":31,"@tensorflow/tfjs-core":59}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
@@ -3848,7 +3865,7 @@ exports.executeOp = function (node, tensorMap, context) {
 };
 exports.CATEGORY = 'convolution';
 
-},{"./utils":30,"@tensorflow/tfjs-core":57}],19:[function(require,module,exports){
+},{"./utils":31,"@tensorflow/tfjs-core":59}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
@@ -3908,7 +3925,7 @@ exports.executeOp = function (node, tensorMap, context) {
 };
 exports.CATEGORY = 'creation';
 
-},{"./utils":30,"@tensorflow/tfjs-core":57}],20:[function(require,module,exports){
+},{"./utils":31,"@tensorflow/tfjs-core":59}],20:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -3981,7 +3998,7 @@ function executeOp(node, tensorMap, context) {
 exports.executeOp = executeOp;
 exports.CATEGORY = 'dynamic';
 
-},{"./utils":30,"@tensorflow/tfjs-core":57}],21:[function(require,module,exports){
+},{"./utils":31,"@tensorflow/tfjs-core":59}],21:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
@@ -4001,7 +4018,7 @@ exports.executeOp = function (node, tensorMap, context) {
 };
 exports.CATEGORY = 'evaluation';
 
-},{"./utils":30,"@tensorflow/tfjs-core":57}],22:[function(require,module,exports){
+},{"./utils":31,"@tensorflow/tfjs-core":59}],22:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
@@ -4052,7 +4069,7 @@ exports.executeOp = function (node, tensorMap, context) {
 };
 exports.CATEGORY = 'graph';
 
-},{"./utils":30,"@tensorflow/tfjs-core":57}],23:[function(require,module,exports){
+},{"./utils":31,"@tensorflow/tfjs-core":59}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
@@ -4086,7 +4103,7 @@ exports.executeOp = function (node, tensorMap, context) {
 };
 exports.CATEGORY = 'image';
 
-},{"./utils":30,"@tensorflow/tfjs-core":57}],24:[function(require,module,exports){
+},{"./utils":31,"@tensorflow/tfjs-core":59}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
@@ -4129,7 +4146,7 @@ exports.executeOp = function (node, tensorMap, context) {
 };
 exports.CATEGORY = 'logical';
 
-},{"./utils":30,"@tensorflow/tfjs-core":57}],25:[function(require,module,exports){
+},{"./utils":31,"@tensorflow/tfjs-core":59}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
@@ -4146,7 +4163,7 @@ exports.executeOp = function (node, tensorMap, context) {
 };
 exports.CATEGORY = 'matrices';
 
-},{"./utils":30,"@tensorflow/tfjs-core":57}],26:[function(require,module,exports){
+},{"./utils":31,"@tensorflow/tfjs-core":59}],26:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
@@ -4174,7 +4191,7 @@ exports.executeOp = function (node, tensorMap, context) {
 };
 exports.CATEGORY = 'normalization';
 
-},{"./utils":30,"@tensorflow/tfjs-core":57}],27:[function(require,module,exports){
+},{"./utils":31,"@tensorflow/tfjs-core":59}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
@@ -4230,7 +4247,7 @@ exports.executeOp = function (node, tensorMap, context) {
 };
 exports.CATEGORY = 'reduction';
 
-},{"./utils":30,"@tensorflow/tfjs-core":57}],28:[function(require,module,exports){
+},{"./utils":31,"@tensorflow/tfjs-core":59}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
@@ -4334,7 +4351,32 @@ exports.executeOp = function (node, tensorMap, context) {
 };
 exports.CATEGORY = 'slice_join';
 
-},{"./utils":30,"@tensorflow/tfjs-core":57}],29:[function(require,module,exports){
+},{"./utils":31,"@tensorflow/tfjs-core":59}],29:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var tfc = require("@tensorflow/tfjs-core");
+var utils_1 = require("./utils");
+exports.executeOp = function (node, tensorMap, context) {
+    switch (node.op) {
+        case 'fft': {
+            return [tfc.fft(utils_1.getParamValue('x', node, tensorMap, context))];
+        }
+        case 'ifft': {
+            return [tfc.ifft(utils_1.getParamValue('x', node, tensorMap, context))];
+        }
+        case 'rfft': {
+            return [tfc.rfft(utils_1.getParamValue('x', node, tensorMap, context))];
+        }
+        case 'irfft': {
+            return [tfc.irfft(utils_1.getParamValue('x', node, tensorMap, context))];
+        }
+        default:
+            throw TypeError("Node type " + node.op + " is not implemented");
+    }
+};
+exports.CATEGORY = 'spectral';
+
+},{"./utils":31,"@tensorflow/tfjs-core":59}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
@@ -4379,7 +4421,7 @@ exports.executeOp = function (node, tensorMap, context) {
 };
 exports.CATEGORY = 'transformation';
 
-},{"./utils":30,"@tensorflow/tfjs-core":57}],30:[function(require,module,exports){
+},{"./utils":31,"@tensorflow/tfjs-core":59}],31:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function getParamValue(paramName, node, tensorMap, context) {
@@ -4445,7 +4487,7 @@ function split(arr, size) {
 }
 exports.split = split;
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.json = [
@@ -4634,7 +4676,7 @@ exports.json = [
     }
 ];
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.json = [
@@ -5154,7 +5196,7 @@ exports.json = [
     }
 ];
 
-},{}],33:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.json = [
@@ -5370,7 +5412,7 @@ exports.json = [
     }
 ];
 
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.json = [
@@ -5538,7 +5580,7 @@ exports.json = [
     }
 ];
 
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.json = [
@@ -5722,7 +5764,7 @@ exports.json = [
     }
 ];
 
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.json = [
@@ -5778,7 +5820,7 @@ exports.json = [
     }
 ];
 
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.json = [{
@@ -5792,7 +5834,7 @@ exports.json = [{
         ]
     }];
 
-},{}],38:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.json = [
@@ -5899,7 +5941,7 @@ exports.json = [
     }
 ];
 
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.json = [
@@ -5959,7 +6001,7 @@ exports.json = [
     }
 ];
 
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.json = [
@@ -6105,7 +6147,7 @@ exports.json = [
     }
 ];
 
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.json = [
@@ -6177,7 +6219,7 @@ exports.json = [
     }
 ];
 
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.json = [
@@ -6289,7 +6331,7 @@ exports.json = [
     }
 ];
 
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.json = [
@@ -6386,7 +6428,7 @@ exports.json = [
     }
 ];
 
-},{}],44:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.json = [
@@ -6650,7 +6692,51 @@ exports.json = [
     }
 ];
 
-},{}],45:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.json = [
+    {
+        'tfOpName': 'FFT',
+        'dlOpName': 'fft',
+        'category': 'spectral',
+        'params': [{ 'tfInputIndex': 0, 'dlParamName': 'x', 'type': 'tensor' }]
+    },
+    {
+        'tfOpName': 'IFFT',
+        'dlOpName': 'ifft',
+        'category': 'spectral',
+        'params': [{ 'tfInputIndex': 0, 'dlParamName': 'x', 'type': 'tensor' }]
+    },
+    {
+        'tfOpName': 'RFFT',
+        'dlOpName': 'rfft',
+        'category': 'spectral',
+        'params': [
+            { 'tfInputIndex': 0, 'dlParamName': 'x', 'type': 'tensor' }, {
+                'tfInputIndex': 1,
+                'dlParamName': 'fft_length',
+                'type': 'number',
+                'unsupported': true
+            }
+        ]
+    },
+    {
+        'tfOpName': 'IRFFT',
+        'dlOpName': 'irfft',
+        'category': 'spectral',
+        'params': [
+            { 'tfInputIndex': 0, 'dlParamName': 'x', 'type': 'tensor' }, {
+                'tfInputIndex': 1,
+                'dlParamName': 'fft_length',
+                'type': 'number',
+                'unsupported': true
+            }
+        ]
+    }
+];
+
+},{}],47:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.json = [
@@ -6770,7 +6856,7 @@ exports.json = [
     }
 ];
 
-},{}],46:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var arithmetic = require("./executors/arithmetic_executor");
@@ -6787,6 +6873,7 @@ var matrices = require("./executors/matrices_executor");
 var normalization = require("./executors/normalization_executor");
 var reduction = require("./executors/reduction_executor");
 var sliceJoin = require("./executors/slice_join_executor");
+var spectral = require("./executors/spectral_executor");
 var transformation = require("./executors/transformation_executor");
 function executeOp(node, tensorMap, context) {
     switch (node.category) {
@@ -6818,6 +6905,8 @@ function executeOp(node, tensorMap, context) {
             return reduction.executeOp(node, tensorMap, context);
         case 'slice_join':
             return sliceJoin.executeOp(node, tensorMap, context);
+        case 'spectral':
+            return spectral.executeOp(node, tensorMap, context);
         case 'transformation':
             return transformation.executeOp(node, tensorMap, context);
         default:
@@ -6826,7 +6915,7 @@ function executeOp(node, tensorMap, context) {
 }
 exports.executeOp = executeOp;
 
-},{"./executors/arithmetic_executor":15,"./executors/basic_math_executor":16,"./executors/control_executor":17,"./executors/convolution_executor":18,"./executors/creation_executor":19,"./executors/dynamic_executor":20,"./executors/evaluation_executor":21,"./executors/graph_executor":22,"./executors/image_executor":23,"./executors/logical_executor":24,"./executors/matrices_executor":25,"./executors/normalization_executor":26,"./executors/reduction_executor":27,"./executors/slice_join_executor":28,"./executors/transformation_executor":29}],47:[function(require,module,exports){
+},{"./executors/arithmetic_executor":15,"./executors/basic_math_executor":16,"./executors/control_executor":17,"./executors/convolution_executor":18,"./executors/creation_executor":19,"./executors/dynamic_executor":20,"./executors/evaluation_executor":21,"./executors/graph_executor":22,"./executors/image_executor":23,"./executors/logical_executor":24,"./executors/matrices_executor":25,"./executors/normalization_executor":26,"./executors/reduction_executor":27,"./executors/slice_join_executor":28,"./executors/spectral_executor":29,"./executors/transformation_executor":30}],49:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var compiled_api_1 = require("../data/compiled_api");
@@ -6845,6 +6934,7 @@ var matrices = require("./op_list/matrices");
 var normalization = require("./op_list/normalization");
 var reduction = require("./op_list/reduction");
 var sliceJoin = require("./op_list/slice_join");
+var spectral = require("./op_list/spectral");
 var transformation = require("./op_list/transformation");
 var CONTROL_FLOW_OPS = ['Switch', 'Merge', 'Enter', 'Exit', 'NextIteration'];
 var DYNAMIC_SHAPE_OPS = ['NonMaxSuppressionV2', 'NonMaxSuppressionV3', 'Where'];
@@ -6853,7 +6943,7 @@ var OperationMapper = (function () {
         var ops = [
             arithmetic, basicMath, control, convolution, creation, dynamic,
             evaluation, logical, image, graph, matrices, normalization, reduction,
-            sliceJoin, transformation
+            sliceJoin, spectral, transformation
         ];
         var mappersJson = [].concat.apply([], ops.map(function (op) { return op.json; }));
         this.opMappers = mappersJson.reduce(function (map, mapper) {
@@ -6951,7 +7041,7 @@ var OperationMapper = (function () {
                             }
                             break;
                         case 'number':
-                            value = _this.getNumberParam(node.attr, param.tfParamName, param.defaultValue);
+                            value = _this.getNumberParam(node.attr, param.tfParamName, (param.defaultValue || 0));
                             if (value === undefined && !!param.tfParamNameDeprecated) {
                                 value = _this.getNumberParam(node.attr, param.tfParamNameDeprecated, param.defaultValue);
                             }
@@ -7049,13 +7139,13 @@ var OperationMapper = (function () {
 }());
 exports.OperationMapper = OperationMapper;
 
-},{"../data/compiled_api":9,"./executors/utils":30,"./op_list/arithmetic":31,"./op_list/basic_math":32,"./op_list/control":33,"./op_list/convolution":34,"./op_list/creation":35,"./op_list/dynamic":36,"./op_list/evaluation":37,"./op_list/graph":38,"./op_list/image":39,"./op_list/logical":40,"./op_list/matrices":41,"./op_list/normalization":42,"./op_list/reduction":43,"./op_list/slice_join":44,"./op_list/transformation":45}],48:[function(require,module,exports){
+},{"../data/compiled_api":9,"./executors/utils":31,"./op_list/arithmetic":32,"./op_list/basic_math":33,"./op_list/control":34,"./op_list/convolution":35,"./op_list/creation":36,"./op_list/dynamic":37,"./op_list/evaluation":38,"./op_list/graph":39,"./op_list/image":40,"./op_list/logical":41,"./op_list/matrices":42,"./op_list/normalization":43,"./op_list/reduction":44,"./op_list/slice_join":45,"./op_list/spectral":46,"./op_list/transformation":47}],50:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var version = '0.6.7';
 exports.version = version;
 
-},{}],49:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 (function (setImmediate){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -7068,7 +7158,7 @@ function nextFrame() {
 exports.nextFrame = nextFrame;
 
 }).call(this,require("timers").setImmediate)
-},{"timers":286}],50:[function(require,module,exports){
+},{"timers":316}],52:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var contexts = {};
@@ -7119,7 +7209,7 @@ function getWebGLRenderingContext(webGLVersion) {
     return canvas.getContext('webgl2', WEBGL_ATTRIBUTES);
 }
 
-},{}],51:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function isMobile() {
@@ -7131,7 +7221,7 @@ function isMobile() {
 }
 exports.isMobile = isMobile;
 
-},{}],52:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -7184,14 +7274,14 @@ var Engine = (function () {
         this.nextTapeNodeId = 0;
         this.numBytes = 0;
         this.numTensors = 0;
+        this.numStringTensors = 0;
         this.numDataBuffers = 0;
         this.profiling = false;
         this.gradientScopeCount = 0;
         this.customGradientDepth = 0;
+        this.scopeStack = [];
         this.keepTensors = new Set();
         this.tensorInfo = new WeakMap();
-        this.activeScope = { track: [], name: 'default scope' };
-        this.scopeStack = [this.activeScope];
         this.profiler = new profiler_1.Profiler(backend);
         this.activeProfile =
             { newBytes: 0, newTensors: 0, peakBytes: 0, kernels: [], result: null };
@@ -7299,13 +7389,23 @@ var Engine = (function () {
             this.tensorInfo.get(a.dataId).refCount :
             0;
         this.numTensors++;
+        if (a.dtype === 'string') {
+            this.numStringTensors++;
+        }
         if (refCount === 0) {
             this.numDataBuffers++;
-            if (a.dtype !== 'complex64') {
-                this.numBytes +=
-                    util.sizeFromShape(a.shape) * util.bytesPerElement(a.dtype);
+            var bytes = 0;
+            if (a.dtype !== 'complex64' && a.dtype !== 'string') {
+                bytes = util.sizeFromShape(a.shape) * util.bytesPerElement(a.dtype);
             }
-            this.tensorInfo.set(a.dataId, { backend: this.backend, dtype: a.dtype, shape: a.shape, refCount: 0 });
+            this.tensorInfo.set(a.dataId, {
+                backend: this.backend,
+                dtype: a.dtype,
+                shape: a.shape,
+                bytes: bytes,
+                refCount: 0
+            });
+            this.numBytes += bytes;
             this.backend.register(a.dataId, a.shape, a.dtype);
         }
         this.tensorInfo.get(a.dataId).refCount++;
@@ -7327,15 +7427,17 @@ var Engine = (function () {
             this.keepTensors.delete(a.id);
         }
         this.numTensors--;
-        var refCount = this.tensorInfo.get(a.dataId).refCount;
+        if (a.dtype === 'string') {
+            this.numStringTensors--;
+        }
+        var info = this.tensorInfo.get(a.dataId);
+        var refCount = info.refCount;
         if (refCount <= 1) {
-            var info = this.tensorInfo.get(a.dataId);
-            info.backend.disposeData(a.dataId);
-            this.numDataBuffers--;
             if (a.dtype !== 'complex64') {
-                this.numBytes -=
-                    util.sizeFromShape(a.shape) * util.bytesPerElement(a.dtype);
+                this.numBytes -= info.bytes;
             }
+            this.numDataBuffers--;
+            info.backend.disposeData(a.dataId);
             this.tensorInfo.delete(a.dataId);
         }
         else {
@@ -7354,6 +7456,14 @@ var Engine = (function () {
         info.numTensors = this.numTensors;
         info.numDataBuffers = this.numDataBuffers;
         info.numBytes = this.numBytes;
+        if (this.numStringTensors > 0) {
+            info.unreliable = true;
+            if (info.reasons == null) {
+                info.reasons = [];
+            }
+            info.reasons.push('Memory usage by string tensors is approximate ' +
+                '(2 bytes per character)');
+        }
         return info;
     };
     Engine.prototype.profile = function (query) {
@@ -7447,7 +7557,7 @@ var Engine = (function () {
         }
         var oldScope = this.scopeStack.pop();
         this.activeScope = this.scopeStack.length === 0 ?
-            { track: [], name: 'default scope' } :
+            null :
             this.scopeStack[this.scopeStack.length - 1];
         tensorsToTrackInParent.forEach(function (tensor) {
             if (!_this.keepTensors.has(tensor.id) &&
@@ -7460,6 +7570,9 @@ var Engine = (function () {
         var _this = this;
         if (allowNoGradients === void 0) { allowNoGradients = false; }
         util.assert(xs.length > 0, 'gradients() received an empty list of xs.');
+        if (dy != null && dy.dtype !== 'float32') {
+            throw new Error("dy must have 'float32' dtype, but has '" + dy.dtype + "'");
+        }
         return this.tidy('gradients', function () {
             var y = f();
             util.assert(y instanceof tensor_1.Tensor, 'The result y returned by f() must be a tensor.');
@@ -7518,6 +7631,11 @@ var Engine = (function () {
     };
     Engine.prototype.write = function (dataId, values) {
         var info = this.tensorInfo.get(dataId);
+        if (info.dtype === 'string') {
+            var newBytes = util_1.bytesFromStringArray(values);
+            this.numBytes += newBytes - info.bytes;
+            info.bytes = newBytes;
+        }
         if (this.backend !== info.backend) {
             info.backend.disposeData(dataId);
             info.backend = this.backend;
@@ -7557,7 +7675,9 @@ var Engine = (function () {
             throw new Error('Safe mode is ON. Enclose all tensor operations inside tf.tidy(): ' +
                 'tf.tidy(() => {op();...}); to avoid memory leaks.');
         }
-        this.activeScope.track.push(result);
+        if (this.activeScope != null) {
+            this.activeScope.track.push(result);
+        }
         return result;
     };
     Engine.nextTensorId = 0;
@@ -7570,7 +7690,7 @@ function ones(shape) {
     return tensor_1.Tensor.make(shape, { values: values });
 }
 
-},{"./profiler":195,"./tape":197,"./tensor":198,"./tensor_util":200,"./util":205}],53:[function(require,module,exports){
+},{"./profiler":199,"./tape":201,"./tensor":202,"./tensor_util":204,"./util":209}],55:[function(require,module,exports){
 (function (process){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -7579,9 +7699,9 @@ var engine_1 = require("./engine");
 var environment_util_1 = require("./environment_util");
 var tensor_1 = require("./tensor");
 var tensor_util_1 = require("./tensor_util");
-var EPSILON_FLOAT16 = 1e-3;
+exports.EPSILON_FLOAT16 = 1e-4;
 var TEST_EPSILON_FLOAT16 = 1e-1;
-var EPSILON_FLOAT32 = 1e-7;
+exports.EPSILON_FLOAT32 = 1e-7;
 var TEST_EPSILON_FLOAT32 = 1e-3;
 var Environment = (function () {
     function Environment(features) {
@@ -7617,9 +7737,8 @@ var Environment = (function () {
     Environment.profile = function (f) {
         return exports.ENV.engine.profile(f);
     };
-    Environment.tidy = function (nameOrFn, fn, gradMode) {
-        if (gradMode === void 0) { gradMode = false; }
-        return exports.ENV.engine.tidy(nameOrFn, fn, gradMode);
+    Environment.tidy = function (nameOrFn, fn) {
+        return exports.ENV.engine.tidy(nameOrFn, fn);
     };
     Environment.dispose = function (container) {
         var tensors = tensor_util_1.getTensorsInContainer(container);
@@ -7667,6 +7786,7 @@ var Environment = (function () {
         }
         else if (feature === 'IS_NODE') {
             return (typeof process !== 'undefined') &&
+                (typeof process.versions !== 'undefined') &&
                 (typeof process.versions.node !== 'undefined');
         }
         else if (feature === 'IS_CHROME') {
@@ -7675,14 +7795,23 @@ var Environment = (function () {
         else if (feature === 'WEBGL_CPU_FORWARD') {
             return true;
         }
-        else if (feature === 'WEBGL_PACK_BATCHNORMALIZATION') {
+        else if (feature === 'WEBGL_PACK') {
             return false;
+        }
+        else if (feature === 'WEBGL_PACK_BATCHNORMALIZATION') {
+            return this.get('WEBGL_PACK');
+        }
+        else if (feature === 'WEBGL_PACK_CLIP') {
+            return this.get('WEBGL_PACK');
+        }
+        else if (feature === 'WEBGL_PACK_DEPTHWISECONV') {
+            return this.get('WEBGL_PACK');
         }
         else if (feature === 'WEBGL_LAZILY_UNPACK') {
-            return false;
+            return this.get('WEBGL_PACK');
         }
         else if (feature === 'WEBGL_CONV_IM2COL') {
-            return false;
+            return this.get('WEBGL_PACK');
         }
         else if (feature === 'WEBGL_PAGING_ENABLED') {
             return this.get('IS_BROWSER') && !this.get('PROD');
@@ -7737,8 +7866,8 @@ var Environment = (function () {
                 TEST_EPSILON_FLOAT16;
         }
         else if (feature === 'EPSILON') {
-            return this.backend.floatPrecision() === 32 ? EPSILON_FLOAT32 :
-                EPSILON_FLOAT16;
+            return this.backend.floatPrecision() === 32 ? exports.EPSILON_FLOAT32 :
+                exports.EPSILON_FLOAT16;
         }
         else if (feature === 'PROD') {
             return false;
@@ -7843,7 +7972,7 @@ function getOrMakeEnvironment() {
 exports.ENV = getOrMakeEnvironment();
 
 }).call(this,require('_process'))
-},{"./device_util":51,"./engine":52,"./environment_util":54,"./tensor":198,"./tensor_util":200,"_process":266}],54:[function(require,module,exports){
+},{"./device_util":53,"./engine":54,"./environment_util":56,"./tensor":202,"./tensor_util":204,"_process":296}],56:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var canvas_util_1 = require("./canvas_util");
@@ -7858,7 +7987,10 @@ exports.URL_PROPERTIES = [
     { name: 'IS_BROWSER', type: Type.BOOLEAN },
     { name: 'WEBGL_LAZILY_UNPACK', type: Type.BOOLEAN },
     { name: 'WEBGL_CPU_FORWARD', type: Type.BOOLEAN },
+    { name: 'WEBGL_PACK', type: Type.BOOLEAN },
     { name: 'WEBGL_PACK_BATCHNORMALIZATION', type: Type.BOOLEAN },
+    { name: 'WEBGL_PACK_CLIP', type: Type.BOOLEAN },
+    { name: 'WEBGL_PACK_DEPTHWISECONV', type: Type.BOOLEAN },
     { name: 'WEBGL_CONV_IM2COL', type: Type.BOOLEAN },
     { name: 'WEBGL_MAX_TEXTURE_SIZE', type: Type.NUMBER },
     { name: 'WEBGL_PAGING_ENABLED', type: Type.BOOLEAN },
@@ -8044,7 +8176,7 @@ function decodeParam(params, name, value) {
     params[decodeURIComponent(name)] = decodeURIComponent(value || '');
 }
 
-},{"./canvas_util":50}],55:[function(require,module,exports){
+},{"./canvas_util":52}],57:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("./environment");
@@ -8061,7 +8193,7 @@ exports.dispose = environment_1.Environment.dispose;
 exports.time = environment_1.Environment.time;
 exports.profile = environment_1.Environment.profile;
 
-},{"./environment":53,"./gradients":56}],56:[function(require,module,exports){
+},{"./environment":55,"./gradients":58}],58:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("./environment");
@@ -8174,7 +8306,7 @@ function checkGrads(grads) {
     }
 }
 
-},{"./environment":53,"./tensor":198,"./util":205}],57:[function(require,module,exports){
+},{"./environment":55,"./tensor":202,"./util":209}],59:[function(require,module,exports){
 "use strict";
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
@@ -8243,7 +8375,7 @@ exports.DataStorage = backend_1.DataStorage;
 var ops = require("./ops/ops");
 tensor_1.setOpHandler(ops);
 
-},{"./browser_util":49,"./environment":53,"./globals":55,"./io/io":61,"./kernels/backend":69,"./kernels/backend_cpu":70,"./kernels/backend_webgl":72,"./math":136,"./ops/loss_ops":156,"./ops/ops":163,"./optimizers/adadelta_optimizer":186,"./optimizers/adagrad_optimizer":187,"./optimizers/adam_optimizer":188,"./optimizers/adamax_optimizer":189,"./optimizers/momentum_optimizer":190,"./optimizers/optimizer":191,"./optimizers/rmsprop_optimizer":193,"./optimizers/sgd_optimizer":194,"./serialization":196,"./tensor":198,"./test_util":202,"./train":203,"./types":204,"./util":205,"./version":206,"./webgl":207}],58:[function(require,module,exports){
+},{"./browser_util":51,"./environment":55,"./globals":57,"./io/io":63,"./kernels/backend":71,"./kernels/backend_cpu":72,"./kernels/backend_webgl":74,"./math":140,"./ops/loss_ops":160,"./ops/ops":167,"./optimizers/adadelta_optimizer":190,"./optimizers/adagrad_optimizer":191,"./optimizers/adam_optimizer":192,"./optimizers/adamax_optimizer":193,"./optimizers/momentum_optimizer":194,"./optimizers/optimizer":195,"./optimizers/rmsprop_optimizer":197,"./optimizers/sgd_optimizer":198,"./serialization":200,"./tensor":202,"./test_util":206,"./train":207,"./types":208,"./util":209,"./version":210,"./webgl":211}],60:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8290,7 +8422,7 @@ var DEFAULT_WEIGHT_DATA_EXTENSION_NAME = '.weights.bin';
 var BrowserDownloads = (function () {
     function BrowserDownloads(fileNamePrefix) {
         if (!environment_1.ENV.get('IS_BROWSER')) {
-            throw new Error('triggerDownloads() cannot proceed because the current environment ' +
+            throw new Error('browserDownloads() cannot proceed because the current environment ' +
                 'is not a browser.');
         }
         if (fileNamePrefix.startsWith(BrowserDownloads.URL_SCHEME)) {
@@ -8309,7 +8441,7 @@ var BrowserDownloads = (function () {
             return __generator(this, function (_a) {
                 weightsURL = window.URL.createObjectURL(new Blob([modelArtifacts.weightData], { type: 'application/octet-stream' }));
                 if (modelArtifacts.modelTopology instanceof ArrayBuffer) {
-                    throw new Error('DownloadTrigger.save() does not support saving model topology ' +
+                    throw new Error('BrowserDownloads.save() does not support saving model topology ' +
                         'in binary formats yet.');
                 }
                 else {
@@ -8412,19 +8544,15 @@ var BrowserFiles = (function () {
                                         }
                                     };
                                     weightFileReader.onerror = function (error) {
-                                        reject("Failed to weights data from file of path '" + path + "'.");
-                                        return;
+                                        return reject("Failed to weights data from file of path '" + path + "'.");
                                     };
                                     weightFileReader.readAsArrayBuffer(pathToFile[path]);
                                 });
                             });
                         };
-                        jsonReader.onerror = function (error) {
-                            reject("Failed to read model topology and weights manifest JSON " +
-                                ("from file '" + jsonFile.name + "'. BrowserFiles supports loading ") +
-                                "Keras-style tf.Model artifacts only.");
-                            return;
-                        };
+                        jsonReader.onerror = function (error) { return reject("Failed to read model topology and weights manifest JSON " +
+                            ("from file '" + jsonFile.name + "'. BrowserFiles supports loading ") +
+                            "Keras-style tf.Model artifacts only."); };
                         jsonReader.readAsText(jsonFile);
                     })];
             });
@@ -8484,7 +8612,7 @@ function browserFiles(files) {
 }
 exports.browserFiles = browserFiles;
 
-},{"../environment":53,"./io_utils":62,"./router_registry":66}],59:[function(require,module,exports){
+},{"../environment":55,"./io_utils":64,"./router_registry":68}],61:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8527,11 +8655,22 @@ var io_utils_1 = require("./io_utils");
 var router_registry_1 = require("./router_registry");
 var weights_loader_1 = require("./weights_loader");
 var BrowserHTTPRequest = (function () {
-    function BrowserHTTPRequest(path, requestInit, weightPathPrefix) {
+    function BrowserHTTPRequest(path, requestInit, weightPathPrefix, fetchFunc) {
         this.weightPathPrefix = weightPathPrefix;
         this.DEFAULT_METHOD = 'POST';
-        if (typeof fetch === 'undefined') {
-            throw new Error('browserHTTPRequest is not supported outside the web browser without a fetch polyfill.');
+        if (fetchFunc == null) {
+            if (typeof fetch === 'undefined') {
+                throw new Error('browserHTTPRequest is not supported outside the web browser ' +
+                    'without a fetch polyfill.');
+            }
+            this.fetchFunc =
+                fetch.bind(typeof window === 'undefined' ? null : window);
+        }
+        else {
+            util_1.assert(typeof fetchFunc === 'function', 'Must pass a function that matches the signature of ' +
+                '`fetch` (see ' +
+                'https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)');
+            this.fetchFunc = fetchFunc;
         }
         util_1.assert(path != null && path.length > 0, 'URL path for browserHTTPRequest must not be null, undefined or ' +
             'empty.');
@@ -8569,7 +8708,7 @@ var BrowserHTTPRequest = (function () {
                         if (modelArtifacts.weightData != null) {
                             init.body.append('model.weights.bin', new Blob([modelArtifacts.weightData], { type: 'application/octet-stream' }), 'model.weights.bin');
                         }
-                        return [4, fetch(this.path, init)];
+                        return [4, this.getFetchFunc()(this.path, init)];
                     case 1:
                         response = _a.sent();
                         if (response.ok) {
@@ -8602,7 +8741,7 @@ var BrowserHTTPRequest = (function () {
                 switch (_a.label) {
                     case 0:
                         _a.trys.push([0, 3, , 4]);
-                        return [4, fetch(this.path[0], this.requestInit)];
+                        return [4, this.getFetchFunc()(this.path[0], this.requestInit)];
                     case 1:
                         response = _a.sent();
                         if (!response.ok) {
@@ -8625,7 +8764,7 @@ var BrowserHTTPRequest = (function () {
                 switch (_a.label) {
                     case 0:
                         graphPromise = this.loadBinaryTopology();
-                        return [4, fetch(this.path[1], this.requestInit)];
+                        return [4, this.getFetchFunc()(this.path[1], this.requestInit)];
                     case 1:
                         manifestPromise = _a.sent();
                         if (!manifestPromise.ok) {
@@ -8654,7 +8793,7 @@ var BrowserHTTPRequest = (function () {
             var modelConfigRequest, modelConfig, modelTopology, weightsManifest, weightSpecs, weightData, weightsManifest_1, results;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4, fetch(this.path, this.requestInit)];
+                    case 0: return [4, this.getFetchFunc()(this.path, this.requestInit)];
                     case 1:
                         modelConfigRequest = _a.sent();
                         if (!modelConfigRequest.ok) {
@@ -8703,13 +8842,16 @@ var BrowserHTTPRequest = (function () {
                         });
                         _b = [weightSpecs];
                         _c = io_utils_1.concatenateArrayBuffers;
-                        return [4, weights_loader_1.loadWeightsAsArrayBuffer(fetchURLs, this.requestInit)];
+                        return [4, weights_loader_1.loadWeightsAsArrayBuffer(fetchURLs, this.requestInit, this.getFetchFunc())];
                     case 1: return [2, _b.concat([
                             _c.apply(void 0, [_d.sent()])
                         ])];
                 }
             });
         });
+    };
+    BrowserHTTPRequest.prototype.getFetchFunc = function () {
+        return this.fetchFunc;
     };
     BrowserHTTPRequest.URL_SCHEME_REGEX = /^https?:\/\//;
     return BrowserHTTPRequest;
@@ -8726,6 +8868,7 @@ exports.parseUrl = parseUrl;
 function isHTTPScheme(url) {
     return url.match(BrowserHTTPRequest.URL_SCHEME_REGEX) != null;
 }
+exports.isHTTPScheme = isHTTPScheme;
 exports.httpRequestRouter = function (url) {
     if (typeof fetch === 'undefined') {
         return null;
@@ -8746,12 +8889,12 @@ exports.httpRequestRouter = function (url) {
 };
 router_registry_1.IORouterRegistry.registerSaveRouter(exports.httpRequestRouter);
 router_registry_1.IORouterRegistry.registerLoadRouter(exports.httpRequestRouter);
-function browserHTTPRequest(path, requestInit, weightPathPrefix) {
-    return new BrowserHTTPRequest(path, requestInit, weightPathPrefix);
+function browserHTTPRequest(path, requestInit, weightPathPrefix, fetchFunc) {
+    return new BrowserHTTPRequest(path, requestInit, weightPathPrefix, fetchFunc);
 }
 exports.browserHTTPRequest = browserHTTPRequest;
 
-},{"../util":205,"./io_utils":62,"./router_registry":66,"./weights_loader":68}],60:[function(require,module,exports){
+},{"../util":209,"./io_utils":64,"./router_registry":68,"./weights_loader":70}],62:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -9061,7 +9204,7 @@ if (environment_1.ENV.get('IS_BROWSER')) {
     }
 }
 
-},{"../environment":53,"./io_utils":62,"./model_management":64,"./router_registry":66}],61:[function(require,module,exports){
+},{"../environment":55,"./io_utils":64,"./model_management":66,"./router_registry":68}],63:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 require("./indexed_db");
@@ -9070,6 +9213,7 @@ var browser_files_1 = require("./browser_files");
 exports.browserFiles = browser_files_1.browserFiles;
 var browser_http_1 = require("./browser_http");
 exports.browserHTTPRequest = browser_http_1.browserHTTPRequest;
+exports.isHTTPScheme = browser_http_1.isHTTPScheme;
 var io_utils_1 = require("./io_utils");
 exports.concatenateArrayBuffers = io_utils_1.concatenateArrayBuffers;
 exports.decodeWeights = io_utils_1.decodeWeights;
@@ -9081,6 +9225,7 @@ exports.withSaveHandler = passthrough_1.withSaveHandler;
 var router_registry_1 = require("./router_registry");
 var weights_loader_1 = require("./weights_loader");
 exports.loadWeights = weights_loader_1.loadWeights;
+exports.weightsLoaderFactory = weights_loader_1.weightsLoaderFactory;
 var registerSaveRouter = router_registry_1.IORouterRegistry.registerSaveRouter;
 exports.registerSaveRouter = registerSaveRouter;
 var registerLoadRouter = router_registry_1.IORouterRegistry.registerLoadRouter;
@@ -9095,7 +9240,7 @@ exports.listModels = model_management_1.listModels;
 exports.moveModel = model_management_1.moveModel;
 exports.removeModel = model_management_1.removeModel;
 
-},{"./browser_files":58,"./browser_http":59,"./indexed_db":60,"./io_utils":62,"./local_storage":63,"./model_management":64,"./passthrough":65,"./router_registry":66,"./weights_loader":68}],62:[function(require,module,exports){
+},{"./browser_files":60,"./browser_http":61,"./indexed_db":62,"./io_utils":64,"./local_storage":65,"./model_management":66,"./passthrough":67,"./router_registry":68,"./weights_loader":70}],64:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -9332,7 +9477,7 @@ function getModelArtifactsInfoForJSON(modelArtifacts) {
 exports.getModelArtifactsInfoForJSON = getModelArtifactsInfoForJSON;
 
 }).call(this,require("buffer").Buffer)
-},{"../ops/tensor_ops":182,"../util":205,"./types":67,"buffer":264}],63:[function(require,module,exports){
+},{"../ops/tensor_ops":186,"../util":209,"./types":69,"buffer":293}],65:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -9580,7 +9725,7 @@ if (environment_1.ENV.get('IS_BROWSER')) {
     }
 }
 
-},{"../environment":53,"../util":205,"./io_utils":62,"./model_management":64,"./router_registry":66}],64:[function(require,module,exports){
+},{"../environment":55,"../util":209,"./io_utils":64,"./model_management":66,"./router_registry":68}],66:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -9784,7 +9929,7 @@ function moveModel(sourceURL, destURL) {
 }
 exports.moveModel = moveModel;
 
-},{"../util":205,"./router_registry":66}],65:[function(require,module,exports){
+},{"../util":209,"./router_registry":68}],67:[function(require,module,exports){
 "use strict";
 var __assign = (this && this.__assign) || Object.assign || function(t) {
     for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -9878,7 +10023,7 @@ function withSaveHandler(saveHandler) {
 }
 exports.withSaveHandler = withSaveHandler;
 
-},{}],66:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var IORouterRegistry = (function () {
@@ -9920,7 +10065,7 @@ var IORouterRegistry = (function () {
 }());
 exports.IORouterRegistry = IORouterRegistry;
 
-},{}],67:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DTYPE_VALUE_SIZE_MAP = {
@@ -9931,7 +10076,7 @@ exports.DTYPE_VALUE_SIZE_MAP = {
     'bool': 1,
 };
 
-},{}],68:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -9972,13 +10117,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var util = require("../util");
 var io_utils_1 = require("./io_utils");
 var types_1 = require("./types");
-function loadWeightsAsArrayBuffer(fetchURLs, requestOptions) {
+function loadWeightsAsArrayBuffer(fetchURLs, requestOptions, fetchFunc) {
     return __awaiter(this, void 0, void 0, function () {
         var requests, responses, buffers;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    requests = fetchURLs.map(function (fetchURL) { return fetch(fetchURL, requestOptions); });
+                    if (fetchFunc == null) {
+                        fetchFunc = fetch;
+                    }
+                    requests = fetchURLs.map(function (fetchURL) { return fetchFunc(fetchURL, requestOptions); });
                     return [4, Promise.all(requests)];
                 case 1:
                     responses = _a.sent();
@@ -9994,106 +10142,125 @@ exports.loadWeightsAsArrayBuffer = loadWeightsAsArrayBuffer;
 function loadWeights(manifest, filePathPrefix, weightNames, requestOptions) {
     if (filePathPrefix === void 0) { filePathPrefix = ''; }
     return __awaiter(this, void 0, void 0, function () {
-        var groupIndicesToFetchMap, groupWeightsToFetch, weightsFound, allManifestWeightNames, weightsNotFound, groupIndicesToFetch, fetchUrls, buffers, weightsTensorMap, bufferIndexOffset;
+        var fetchWeights, loadWeights;
         return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    groupIndicesToFetchMap = manifest.map(function () { return false; });
-                    groupWeightsToFetch = {};
-                    weightsFound = weightNames != null ? weightNames.map(function () { return false; }) : [];
-                    allManifestWeightNames = [];
-                    manifest.forEach(function (manifestGroupConfig, groupIndex) {
-                        var groupOffset = 0;
-                        manifestGroupConfig.weights.forEach(function (weightsEntry) {
-                            var rawDtype = ('quantization' in weightsEntry) ?
-                                weightsEntry.quantization.dtype :
-                                weightsEntry.dtype;
-                            var weightsBytes = types_1.DTYPE_VALUE_SIZE_MAP[rawDtype] *
-                                util.sizeFromShape(weightsEntry.shape);
-                            var enqueueWeightsForFetchingFn = function () {
-                                groupIndicesToFetchMap[groupIndex] = true;
-                                if (groupWeightsToFetch[groupIndex] == null) {
-                                    groupWeightsToFetch[groupIndex] = [];
-                                }
-                                groupWeightsToFetch[groupIndex].push({
-                                    manifestEntry: weightsEntry,
-                                    groupOffset: groupOffset,
-                                    sizeBytes: weightsBytes
-                                });
-                            };
-                            if (weightNames != null) {
-                                weightNames.forEach(function (weightName, weightIndex) {
-                                    if (weightName === weightsEntry.name) {
-                                        enqueueWeightsForFetchingFn();
-                                        weightsFound[weightIndex] = true;
-                                    }
-                                });
-                            }
-                            else {
-                                enqueueWeightsForFetchingFn();
-                            }
-                            allManifestWeightNames.push(weightsEntry.name);
-                            groupOffset += weightsBytes;
-                        });
-                    });
-                    if (!weightsFound.every(function (found) { return found; })) {
-                        weightsNotFound = weightNames.filter(function (weight, i) { return !weightsFound[i]; });
-                        throw new Error("Could not find weights in manifest with names: " +
-                            (weightsNotFound.join(', ') + ". \n") +
-                            "Manifest JSON has weights with names: " +
-                            (allManifestWeightNames.join(', ') + "."));
-                    }
-                    groupIndicesToFetch = groupIndicesToFetchMap.reduce(function (accumulator, shouldFetch, i) {
-                        if (shouldFetch) {
-                            accumulator.push(i);
-                        }
-                        return accumulator;
-                    }, []);
-                    fetchUrls = [];
-                    groupIndicesToFetch.forEach(function (i) {
-                        manifest[i].paths.forEach(function (filepath) {
-                            var fetchUrl = filePathPrefix +
-                                (!filePathPrefix.endsWith('/') ? '/' : '') + filepath;
-                            fetchUrls.push(fetchUrl);
-                        });
-                    });
-                    return [4, loadWeightsAsArrayBuffer(fetchUrls, requestOptions)];
-                case 1:
-                    buffers = _a.sent();
-                    weightsTensorMap = {};
-                    bufferIndexOffset = 0;
-                    groupIndicesToFetch.forEach(function (i) {
-                        var numBuffers = manifest[i].paths.length;
-                        var groupBytes = 0;
-                        for (var i_1 = 0; i_1 < numBuffers; i_1++) {
-                            groupBytes += buffers[bufferIndexOffset + i_1].byteLength;
-                        }
-                        var groupBuffer = new ArrayBuffer(groupBytes);
-                        var groupByteBuffer = new Uint8Array(groupBuffer);
-                        var groupBufferOffset = 0;
-                        for (var i_2 = 0; i_2 < numBuffers; i_2++) {
-                            var buffer = new Uint8Array(buffers[bufferIndexOffset + i_2]);
-                            groupByteBuffer.set(buffer, groupBufferOffset);
-                            groupBufferOffset += buffer.byteLength;
-                        }
-                        var weightsEntries = groupWeightsToFetch[i];
-                        weightsEntries.forEach(function (weightsEntry) {
-                            var byteBuffer = groupBuffer.slice(weightsEntry.groupOffset, weightsEntry.groupOffset + weightsEntry.sizeBytes);
-                            var nameToTensorMap = io_utils_1.decodeWeights(byteBuffer, [weightsEntry.manifestEntry]);
-                            for (var name_1 in nameToTensorMap) {
-                                weightsTensorMap[name_1] = nameToTensorMap[name_1];
-                            }
-                        });
-                        bufferIndexOffset += numBuffers;
-                    });
-                    return [2, weightsTensorMap];
-            }
+            fetchWeights = function (fetchUrls) {
+                return loadWeightsAsArrayBuffer(fetchUrls, requestOptions);
+            };
+            loadWeights = weightsLoaderFactory(fetchWeights);
+            return [2, loadWeights(manifest, filePathPrefix, weightNames)];
         });
     });
 }
 exports.loadWeights = loadWeights;
+function weightsLoaderFactory(fetchWeightsFunction) {
+    var _this = this;
+    return function (manifest, filePathPrefix, weightNames) {
+        if (filePathPrefix === void 0) { filePathPrefix = ''; }
+        return __awaiter(_this, void 0, void 0, function () {
+            var groupIndicesToFetchMap, groupWeightsToFetch, weightsFound, allManifestWeightNames, weightsNotFound, groupIndicesToFetch, fetchUrls, buffers, weightsTensorMap, bufferIndexOffset;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        groupIndicesToFetchMap = manifest.map(function () { return false; });
+                        groupWeightsToFetch = {};
+                        weightsFound = weightNames != null
+                            ? weightNames.map(function () { return false; })
+                            : [];
+                        allManifestWeightNames = [];
+                        manifest.forEach(function (manifestGroupConfig, groupIndex) {
+                            var groupOffset = 0;
+                            manifestGroupConfig.weights.forEach(function (weightsEntry) {
+                                var rawDtype = ('quantization' in weightsEntry) ?
+                                    weightsEntry.quantization.dtype :
+                                    weightsEntry.dtype;
+                                var weightsBytes = types_1.DTYPE_VALUE_SIZE_MAP[rawDtype] *
+                                    util.sizeFromShape(weightsEntry.shape);
+                                var enqueueWeightsForFetchingFn = function () {
+                                    groupIndicesToFetchMap[groupIndex] = true;
+                                    if (groupWeightsToFetch[groupIndex] == null) {
+                                        groupWeightsToFetch[groupIndex] = [];
+                                    }
+                                    groupWeightsToFetch[groupIndex].push({
+                                        manifestEntry: weightsEntry,
+                                        groupOffset: groupOffset,
+                                        sizeBytes: weightsBytes
+                                    });
+                                };
+                                if (weightNames != null) {
+                                    weightNames.forEach(function (weightName, weightIndex) {
+                                        if (weightName === weightsEntry.name) {
+                                            enqueueWeightsForFetchingFn();
+                                            weightsFound[weightIndex] = true;
+                                        }
+                                    });
+                                }
+                                else {
+                                    enqueueWeightsForFetchingFn();
+                                }
+                                allManifestWeightNames.push(weightsEntry.name);
+                                groupOffset += weightsBytes;
+                            });
+                        });
+                        if (!weightsFound.every(function (found) { return found; })) {
+                            weightsNotFound = weightNames.filter(function (_, i) { return !weightsFound[i]; });
+                            throw new Error("Could not find weights in manifest with names: " +
+                                (weightsNotFound.join(', ') + ". \n") +
+                                "Manifest JSON has weights with names: " +
+                                (allManifestWeightNames.join(', ') + "."));
+                        }
+                        groupIndicesToFetch = groupIndicesToFetchMap.reduce(function (accumulator, shouldFetch, i) {
+                            if (shouldFetch) {
+                                accumulator.push(i);
+                            }
+                            return accumulator;
+                        }, []);
+                        fetchUrls = [];
+                        groupIndicesToFetch.forEach(function (i) {
+                            manifest[i].paths.forEach(function (filepath) {
+                                var fetchUrl = filePathPrefix +
+                                    (!filePathPrefix.endsWith('/') ? '/' : '') + filepath;
+                                fetchUrls.push(fetchUrl);
+                            });
+                        });
+                        return [4, fetchWeightsFunction(fetchUrls)];
+                    case 1:
+                        buffers = _a.sent();
+                        weightsTensorMap = {};
+                        bufferIndexOffset = 0;
+                        groupIndicesToFetch.forEach(function (i) {
+                            var numBuffers = manifest[i].paths.length;
+                            var groupBytes = 0;
+                            for (var i_1 = 0; i_1 < numBuffers; i_1++) {
+                                groupBytes += buffers[bufferIndexOffset + i_1].byteLength;
+                            }
+                            var groupBuffer = new ArrayBuffer(groupBytes);
+                            var groupByteBuffer = new Uint8Array(groupBuffer);
+                            var groupBufferOffset = 0;
+                            for (var i_2 = 0; i_2 < numBuffers; i_2++) {
+                                var buffer = new Uint8Array(buffers[bufferIndexOffset + i_2]);
+                                groupByteBuffer.set(buffer, groupBufferOffset);
+                                groupBufferOffset += buffer.byteLength;
+                            }
+                            var weightsEntries = groupWeightsToFetch[i];
+                            weightsEntries.forEach(function (weightsEntry) {
+                                var byteBuffer = groupBuffer.slice(weightsEntry.groupOffset, weightsEntry.groupOffset + weightsEntry.sizeBytes);
+                                var nameToTensorMap = io_utils_1.decodeWeights(byteBuffer, [weightsEntry.manifestEntry]);
+                                for (var name_1 in nameToTensorMap) {
+                                    weightsTensorMap[name_1] = nameToTensorMap[name_1];
+                                }
+                            });
+                            bufferIndexOffset += numBuffers;
+                        });
+                        return [2, weightsTensorMap];
+                }
+            });
+        });
+    };
+}
+exports.weightsLoaderFactory = weightsLoaderFactory;
 
-},{"../util":205,"./io_utils":62,"./types":67}],69:[function(require,module,exports){
+},{"../util":209,"./io_utils":64,"./types":69}],71:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var DataStorage = (function () {
@@ -10392,6 +10559,15 @@ var KernelBackend = (function () {
     KernelBackend.prototype.depthwiseConv2DDerFilter = function (x, dY, convInfo) {
         throw new Error('Not yet implemented');
     };
+    KernelBackend.prototype.conv3d = function (x, filter, convInfo) {
+        throw new Error('Not yet implemented');
+    };
+    KernelBackend.prototype.conv3dDerInput = function (dy, filter, convInfo) {
+        throw new Error('Not yet implemented');
+    };
+    KernelBackend.prototype.conv3dDerFilter = function (x, dY, convInfo) {
+        throw new Error('Not yet implemented');
+    };
     KernelBackend.prototype.maxPool = function (x, convInfo) {
         throw new Error('Not yet implemented');
     };
@@ -10504,7 +10680,7 @@ var KernelBackend = (function () {
 }());
 exports.KernelBackend = KernelBackend;
 
-},{}],70:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -10697,7 +10873,9 @@ var MathBackendCPU = (function () {
     };
     MathBackendCPU.prototype.memory = function () {
         return {
-            unreliable: true
+            unreliable: true,
+            reasons: ['The reported memory is an upper bound. Due to automatic garbage ' +
+                    'collection, the true allocated memory may be less.']
         };
     };
     MathBackendCPU.prototype.complex = function (real, imag) {
@@ -10855,7 +11033,8 @@ var MathBackendCPU = (function () {
             [1, b.strides[1], b.strides[0]] :
             [b.strides[1], 1, b.strides[0]], bInnerStep = _b[0], bOuterStep = _b[1], bBatch = _b[2];
         var size = leftDim * rightDim;
-        var result = new Float32Array(batchDim * size);
+        var result = ops_1.buffer([batchDim, leftDim, rightDim], a.dtype);
+        var resVals = result.values;
         var blockSize = this.blockSize;
         for (var b_1 = 0; b_1 < batchDim; b_1++) {
             for (var i0 = 0; i0 < leftDim; i0 += blockSize) {
@@ -10871,14 +11050,14 @@ var MathBackendCPU = (function () {
                                     sum += aValues[b_1 * aBatch + i * aOuterStep + k * aInnerStep] *
                                         bValues[k * bInnerStep + j * bOuterStep + b_1 * bBatch];
                                 }
-                                result[b_1 * size + (i * rightDim + j)] += sum;
+                                resVals[b_1 * size + (i * rightDim + j)] += sum;
                             }
                         }
                     }
                 }
             }
         }
-        return ops.tensor3d(result, [batchDim, leftDim, rightDim]);
+        return result.toTensor();
     };
     MathBackendCPU.prototype.multiply = function (a, b) {
         if (a.dtype === 'complex64' || b.dtype === 'complex64') {
@@ -11071,7 +11250,7 @@ var MathBackendCPU = (function () {
     MathBackendCPU.prototype.logicalNot = function (x) {
         this.assertNotComplex(x, 'logicalNot');
         var values = x.dataSync();
-        var newValues = new Int32Array(values.length);
+        var newValues = new Uint8Array(values.length);
         for (var i = 0; i < values.length; ++i) {
             newValues[i] = values[i] ? 0 : 1;
         }
@@ -11446,7 +11625,7 @@ var MathBackendCPU = (function () {
         for (var i = 0; i < x.size; ++i) {
             var real = values[i * 2];
             var imag = values[i * 2 + 1];
-            resultValues[i] = Math.sqrt(real * real + imag * imag);
+            resultValues[i] = Math.hypot(real, imag);
         }
         return tensor_1.Tensor.make(x.shape, { values: resultValues });
     };
@@ -11689,6 +11868,70 @@ var MathBackendCPU = (function () {
         }
         return y.toTensor();
     };
+    MathBackendCPU.prototype.conv3d = function (x, filter, convInfo) {
+        var filterDepth = convInfo.filterDepth;
+        var filterHeight = convInfo.filterHeight;
+        var filterWidth = convInfo.filterWidth;
+        var dilationDepth = convInfo.dilationDepth;
+        var dilationHeight = convInfo.dilationHeight;
+        var dilationWidth = convInfo.dilationWidth;
+        var padFront = convInfo.padInfo.front;
+        var padLeft = convInfo.padInfo.left;
+        var padTop = convInfo.padInfo.top;
+        var y = ops.buffer(convInfo.outShape, x.dtype);
+        var xVals = x.dataSync();
+        var wVals = filter.dataSync();
+        var yVals = y.values;
+        for (var b = 0; b < convInfo.batchSize; ++b) {
+            var xOffset1 = b * x.strides[0];
+            var yOffset1 = b * y.strides[0];
+            for (var yF = 0; yF < convInfo.outDepth; ++yF) {
+                var yOffset2 = yOffset1 + yF * y.strides[1];
+                var xFCorner = yF * convInfo.strideDepth - padFront;
+                for (var wF = 0; wF < filterDepth; wF++) {
+                    var xF = xFCorner + wF * dilationDepth;
+                    if (xF < 0 || xF >= convInfo.inDepth) {
+                        continue;
+                    }
+                    var wOffset1 = wF * filter.strides[0];
+                    var xOffset2 = xOffset1 + xF * x.strides[1];
+                    for (var yR = 0; yR < convInfo.outHeight; ++yR) {
+                        var yOffset3 = yOffset2 + yR * y.strides[2];
+                        var xRCorner = yR * convInfo.strideHeight - padTop;
+                        for (var wR = 0; wR < filterHeight; wR++) {
+                            var xR = xRCorner + wR * dilationHeight;
+                            if (xR < 0 || xR >= convInfo.inHeight) {
+                                continue;
+                            }
+                            var wOffset2 = wOffset1 + wR * filter.strides[1];
+                            var xOffset3 = xOffset2 + xR * x.strides[2];
+                            for (var yC = 0; yC < convInfo.outWidth; ++yC) {
+                                var yOffset4 = yOffset3 + yC * convInfo.outChannels;
+                                var xCCorner = yC * convInfo.strideWidth - padLeft;
+                                for (var wC = 0; wC < filterWidth; wC++) {
+                                    var xC = xCCorner + wC * dilationWidth;
+                                    if (xC < 0 || xC >= convInfo.inWidth) {
+                                        continue;
+                                    }
+                                    var wOffset3 = wOffset2 + wC * filter.strides[2];
+                                    var xOffset4 = xOffset3 + xC * convInfo.inChannels;
+                                    var wOffset4 = wOffset3;
+                                    for (var d1 = 0; d1 < convInfo.inChannels; ++d1) {
+                                        var xVal = xVals[xOffset4 + d1];
+                                        for (var d2 = 0; d2 < convInfo.outChannels; ++d2) {
+                                            yVals[yOffset4 + d2] += xVal * wVals[wOffset4 + d2];
+                                        }
+                                        wOffset4 += convInfo.outChannels;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return y.toTensor();
+    };
     MathBackendCPU.prototype.conv2dDerInput = function (dy, filter, convInfo) {
         this.assertNotComplex([dy, filter], 'conv2dDerInput');
         var dx = ops.buffer(convInfo.inShape, 'float32');
@@ -11733,6 +11976,60 @@ var MathBackendCPU = (function () {
         }
         return dx.toTensor();
     };
+    MathBackendCPU.prototype.conv3dDerInput = function (dy, filter, convInfo) {
+        var dx = ops.buffer(convInfo.inShape, 'float32');
+        var dxValues = dx.values;
+        var _a = dx.strides, dxS0 = _a[0], dxS1 = _a[1], dxS2 = _a[2], dxS3 = _a[3];
+        var dyValues = dy.dataSync();
+        var _b = dy.strides, dyS0 = _b[0], dyS1 = _b[1], dyS2 = _b[2], dyS3 = _b[3];
+        var fltValues = filter.dataSync();
+        var _c = filter.strides, fltS0 = _c[0], fltS1 = _c[1], fltS2 = _c[2], fltS3 = _c[3];
+        var batchSize = convInfo.batchSize, filterDepth = convInfo.filterDepth, filterHeight = convInfo.filterHeight, filterWidth = convInfo.filterWidth, inChannels = convInfo.inChannels, inDepth = convInfo.inDepth, inHeight = convInfo.inHeight, inWidth = convInfo.inWidth, outChannels = convInfo.outChannels, outDepth = convInfo.outDepth, outHeight = convInfo.outHeight, outWidth = convInfo.outWidth, strideDepth = convInfo.strideDepth, strideHeight = convInfo.strideHeight, strideWidth = convInfo.strideWidth;
+        var frontPad = filterDepth - 1 - convInfo.padInfo.front;
+        var topPad = filterHeight - 1 - convInfo.padInfo.top;
+        var leftPad = filterWidth - 1 - convInfo.padInfo.left;
+        for (var b = 0; b < batchSize; ++b) {
+            for (var d1 = 0; d1 < inChannels; ++d1) {
+                for (var xF = 0; xF < inDepth; ++xF) {
+                    var xFCorner = xF - frontPad;
+                    var xFMin = Math.max(0, Math.ceil(xFCorner / strideDepth));
+                    var yFMax = Math.min(outDepth, (filterDepth + xFCorner) / strideDepth);
+                    for (var xR = 0; xR < inHeight; ++xR) {
+                        var xRCorner = xR - topPad;
+                        var xRMin = Math.max(0, Math.ceil(xRCorner / strideHeight));
+                        var yRMax = Math.min(outHeight, (filterHeight + xRCorner) / strideHeight);
+                        for (var xC = 0; xC < inWidth; ++xC) {
+                            var xCCorner = xC - leftPad;
+                            var xCMin = Math.max(0, Math.ceil(xCCorner / strideWidth));
+                            var yCMax = Math.min(outWidth, (filterWidth + xCCorner) / strideWidth);
+                            var dotProd = 0;
+                            for (var yF = xFMin; yF < yFMax; ++yF) {
+                                var wF = yF * strideDepth - xFCorner;
+                                for (var yR = xRMin; yR < yRMax; ++yR) {
+                                    var wR = yR * strideHeight - xRCorner;
+                                    for (var yC = xCMin; yC < yCMax; ++yC) {
+                                        var wC = yC * strideWidth - xCCorner;
+                                        var dyOffset = dyS0 * b + dyS1 * yF + dyS2 * yR + dyS3 * yC;
+                                        var fltOffset = fltS0 * (filterDepth - 1 - wF) +
+                                            fltS1 * (filterHeight - 1 - wR) +
+                                            fltS2 * (filterWidth - 1 - wC) + fltS3 * d1;
+                                        for (var d2 = 0; d2 < outChannels; ++d2) {
+                                            var pixel = dyValues[dyOffset + d2];
+                                            var weight = fltValues[fltOffset + d2];
+                                            dotProd += pixel * weight;
+                                        }
+                                    }
+                                }
+                            }
+                            dxValues[dxS0 * b + dxS1 * xF + dxS2 * xR + dxS3 * xC + d1] =
+                                dotProd;
+                        }
+                    }
+                }
+            }
+        }
+        return dx.toTensor();
+    };
     MathBackendCPU.prototype.conv2dDerFilter = function (x, dy, convInfo) {
         this.assertNotComplex([x, dy], 'conv2dDerFilter');
         var strideHeight = convInfo.strideHeight;
@@ -11766,6 +12063,68 @@ var MathBackendCPU = (function () {
             }
         }
         return dW.toTensor();
+    };
+    MathBackendCPU.prototype.conv3dDerFilter = function (x, dy, convInfo) {
+        var strideDepth = convInfo.strideDepth;
+        var strideHeight = convInfo.strideHeight;
+        var strideWidth = convInfo.strideWidth;
+        var filterDepth = convInfo.filterDepth;
+        var filterHeight = convInfo.filterHeight;
+        var filterWidth = convInfo.filterWidth;
+        var dw = ops.buffer(convInfo.filterShape, 'float32');
+        var dwValues = dw.values;
+        var _a = dw.strides, dwS0 = _a[0], dwS1 = _a[1], dwS2 = _a[2], dwS3 = _a[3];
+        var dyValues = dy.dataSync();
+        var _b = dy.strides, dyS0 = _b[0], dyS1 = _b[1], dyS2 = _b[2], dyS3 = _b[3];
+        var xValues = x.dataSync();
+        var _c = x.strides, xS0 = _c[0], xS1 = _c[1], xS2 = _c[2], xS3 = _c[3];
+        var frontPad = convInfo.padInfo.front;
+        var leftPad = convInfo.padInfo.left;
+        var topPad = convInfo.padInfo.top;
+        for (var wF = 0; wF < filterDepth; ++wF) {
+            var yFMin = Math.max(0, Math.ceil((frontPad - wF) / strideDepth));
+            var yFMax = Math.min(convInfo.outDepth, (convInfo.inDepth + frontPad - wF) / strideDepth);
+            var wOffset1 = wF * dwS0;
+            for (var wR = 0; wR < filterHeight; ++wR) {
+                var yRMin = Math.max(0, Math.ceil((topPad - wR) / strideHeight));
+                var yRMax = Math.min(convInfo.outHeight, (convInfo.inHeight + topPad - wR) / strideHeight);
+                var wOffset2 = wR * dwS1 + wOffset1;
+                for (var wC = 0; wC < filterWidth; ++wC) {
+                    var yCMin = Math.max(0, Math.ceil((leftPad - wC) / strideWidth));
+                    var yCMax = Math.min(convInfo.outWidth, (convInfo.inWidth + leftPad - wC) / strideWidth);
+                    var wOffset3 = wC * dwS2 + wOffset2;
+                    for (var d1 = 0; d1 < convInfo.inChannels; ++d1) {
+                        var wOffset4 = d1 * dwS3 + wOffset3;
+                        for (var d2 = 0; d2 < convInfo.outChannels; ++d2) {
+                            var dotProd = 0;
+                            for (var b = 0; b < convInfo.batchSize; ++b) {
+                                var xOffset1 = b * xS0;
+                                var yOffset1 = b * dyS0;
+                                for (var yF = yFMin; yF < yFMax; ++yF) {
+                                    var xF = wF + yF * strideDepth - frontPad;
+                                    var xOffset2 = xF * xS1 + xOffset1;
+                                    var yOffset2 = yF * dyS1 + yOffset1;
+                                    for (var yR = yRMin; yR < yRMax; ++yR) {
+                                        var xR = wR + yR * strideHeight - topPad;
+                                        var xOffset3 = xR * xS2 + xOffset2;
+                                        var yOffset3 = yR * dyS2 + yOffset2;
+                                        for (var yC = yCMin; yC < yCMax; ++yC) {
+                                            var xC = wC + yC * strideWidth - leftPad;
+                                            var xOffset4 = xC * xS3 + xOffset3;
+                                            var yOffset4 = yC * dyS3 + yOffset3;
+                                            dotProd +=
+                                                xValues[xOffset4 + d1] * dyValues[yOffset4 + d2];
+                                        }
+                                    }
+                                }
+                            }
+                            dwValues[wOffset4 + d2] = dotProd;
+                        }
+                    }
+                }
+            }
+        }
+        return dw.toTensor();
     };
     MathBackendCPU.prototype.depthwiseConv2D = function (x, filter, convInfo) {
         this.assertNotComplex([x, filter], 'depthwiseConv2D');
@@ -12557,18 +12916,31 @@ var MathBackendCPU = (function () {
         return non_max_suppression_impl_1.nonMaxSuppressionImpl(boxesVals, scoresVals, maxOutputSize, iouThreshold, scoreThreshold);
     };
     MathBackendCPU.prototype.fft = function (x) {
-        if (x.shape[0] !== 1) {
-            throw new Error("tf.fft() on CPU only supports vectors.");
-        }
-        var inverse = false;
-        return this.fftImpl(x, inverse);
+        return this.fftBatch(x, false);
     };
     MathBackendCPU.prototype.ifft = function (x) {
-        if (x.shape[0] !== 1) {
-            throw new Error("tf.ifft() on CPU only supports vectors.");
+        return this.fftBatch(x, true);
+    };
+    MathBackendCPU.prototype.fftBatch = function (x, inverse) {
+        var batch = x.shape[0];
+        var innerDim = x.shape[1];
+        var realResult = ops.buffer(x.shape, 'float32');
+        var imagResult = ops.buffer(x.shape, 'float32');
+        var real = ops.real(x).as2D(batch, innerDim);
+        var imag = ops.imag(x).as2D(batch, innerDim);
+        for (var b = 0; b < batch; b++) {
+            var r = real.slice([b, 0], [1, innerDim]);
+            var i = imag.slice([b, 0], [1, innerDim]);
+            var input = ops.complex(r, i);
+            var res = this.fftImpl(input, inverse).dataSync();
+            for (var d = 0; d < innerDim; d++) {
+                var c = complex_util.getComplexWithIndex(res, d);
+                realResult.values[b * innerDim + d] = c.real;
+                imagResult.values[b * innerDim + d] = c.imag;
+            }
         }
-        var inverse = true;
-        return this.fftImpl(x, inverse);
+        var t = ops.complex(realResult.toTensor(), imagResult.toTensor());
+        return t.as2D(batch, innerDim);
     };
     MathBackendCPU.prototype.fftImpl = function (x, inverse) {
         var x1D = x.as1D();
@@ -12743,7 +13115,7 @@ var MathBackendCPU = (function () {
         var _a = images.shape, batch = _a[0], imageHeight = _a[1], imageWidth = _a[2], numChannels = _a[3];
         var numBoxes = boxes.shape[0];
         var cropHeight = cropSize[0], cropWidth = cropSize[1];
-        var output = ops.buffer([numBoxes, cropHeight, cropWidth, numChannels]);
+        var output = ops.buffer([numBoxes, cropHeight, cropWidth, numChannels], images.dtype);
         var boxVals = boxes.dataSync();
         var boxIndVals = boxIndex.dataSync();
         var imageVals = images.dataSync();
@@ -12917,7 +13289,7 @@ var MathBackendCPU = (function () {
 exports.MathBackendCPU = MathBackendCPU;
 environment_1.ENV.registerBackend('cpu', function () { return new MathBackendCPU(); }, 1, tensor_1.setTensorTracker);
 
-},{"../environment":53,"../log":135,"../ops/array_ops_util":138,"../ops/axis_util":139,"../ops/broadcast_util":142,"../ops/concat_util":146,"../ops/erf_util":150,"../ops/gather_nd_util":152,"../ops/ops":163,"../ops/scatter_nd_util":171,"../ops/selu_util":174,"../ops/slice_util":176,"../tensor":198,"../types":204,"../util":205,"./backend":69,"./backend_util":71,"./complex_util":73,"./non_max_suppression_impl":74,"./split_shared":76,"./topk_impl":77,"./where_impl":134,"seedrandom":278}],71:[function(require,module,exports){
+},{"../environment":55,"../log":139,"../ops/array_ops_util":142,"../ops/axis_util":143,"../ops/broadcast_util":146,"../ops/concat_util":150,"../ops/erf_util":154,"../ops/gather_nd_util":156,"../ops/ops":167,"../ops/scatter_nd_util":175,"../ops/selu_util":178,"../ops/slice_util":180,"../tensor":202,"../types":208,"../util":209,"./backend":71,"./backend_util":73,"./complex_util":75,"./non_max_suppression_impl":76,"./split_shared":78,"./topk_impl":79,"./where_impl":138,"seedrandom":308}],73:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tensor_ops_1 = require("../ops/tensor_ops");
@@ -12963,7 +13335,7 @@ function reshapeTensor(x, shape) {
 }
 exports.reshapeTensor = reshapeTensor;
 
-},{"../ops/tensor_ops":182,"../tensor":198,"../util":205}],72:[function(require,module,exports){
+},{"../ops/tensor_ops":186,"../tensor":202,"../util":209}],74:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -13034,12 +13406,14 @@ var binaryop_complex_gpu_1 = require("./webgl/binaryop_complex_gpu");
 var binaryop_gpu = require("./webgl/binaryop_gpu");
 var binaryop_gpu_1 = require("./webgl/binaryop_gpu");
 var clip_gpu_1 = require("./webgl/clip_gpu");
+var clip_packed_gpu_1 = require("./webgl/clip_packed_gpu");
 var complex_abs_gpu_1 = require("./webgl/complex_abs_gpu");
 var concat_gpu_1 = require("./webgl/concat_gpu");
 var conv_backprop_gpu_1 = require("./webgl/conv_backprop_gpu");
 var conv_backprop_gpu_depthwise_1 = require("./webgl/conv_backprop_gpu_depthwise");
 var conv_gpu_1 = require("./webgl/conv_gpu");
 var conv_gpu_depthwise_1 = require("./webgl/conv_gpu_depthwise");
+var conv_packed_gpu_depthwise_1 = require("./webgl/conv_packed_gpu_depthwise");
 var crop_and_resize_gpu_1 = require("./webgl/crop_and_resize_gpu");
 var cumsum_gpu_1 = require("./webgl/cumsum_gpu");
 var depth_to_space_gpu_1 = require("./webgl/depth_to_space_gpu");
@@ -13074,6 +13448,7 @@ var segment_gpu_1 = require("./webgl/segment_gpu");
 var select_gpu_1 = require("./webgl/select_gpu");
 var slice_gpu_1 = require("./webgl/slice_gpu");
 var strided_slice_gpu_1 = require("./webgl/strided_slice_gpu");
+var tex_util = require("./webgl/tex_util");
 var tex_util_1 = require("./webgl/tex_util");
 var texture_manager_1 = require("./webgl/texture_manager");
 var tile_gpu_1 = require("./webgl/tile_gpu");
@@ -13125,16 +13500,7 @@ var MathBackendWebGL = (function () {
         if (this.texData.has(dataId)) {
             throw new Error('Data buffer is already registered');
         }
-        this.texData.set(dataId, {
-            shape: shape,
-            dtype: dtype,
-            values: null,
-            texture: null,
-            complexTensors: null,
-            texShape: null,
-            usage: tex_util_1.TextureUsage.RENDER,
-            isPacked: false
-        });
+        this.texData.set(dataId, { shape: shape, dtype: dtype });
     };
     MathBackendWebGL.prototype.setDataMover = function (dataMover) {
         this.texData = new backend_1.DataStorage(dataMover);
@@ -13211,6 +13577,9 @@ var MathBackendWebGL = (function () {
         if (values != null) {
             return this.convertAndCacheOnCPU(dataId);
         }
+        if (dtype === 'string') {
+            return values;
+        }
         var shouldTimeProgram = this.activeTimers != null;
         var start;
         if (shouldTimeProgram) {
@@ -13232,16 +13601,16 @@ var MathBackendWebGL = (function () {
     };
     MathBackendWebGL.prototype.read = function (dataId) {
         return __awaiter(this, void 0, void 0, function () {
-            var subscribers_1, texData, texture, values, texShape, bufferOrTexture, vals, dTypeVals, subscribers;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var _a, _b, subscribers_1, texData, texture, values, texShape, isPacked, shape, width, height, bufferOrTexture, vals, batch, rows, cols, dTypeVals, subscribers;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
                     case 0:
                         if (this.pendingRead.has(dataId)) {
                             subscribers_1 = this.pendingRead.get(dataId);
                             return [2, new Promise(function (resolve) { return subscribers_1.push(resolve); })];
                         }
                         texData = this.texData.get(dataId);
-                        texture = texData.texture, values = texData.values, texShape = texData.texShape;
+                        texture = texData.texture, values = texData.values, texShape = texData.texShape, isPacked = texData.isPacked, shape = texData.shape;
                         if (values != null) {
                             return [2, this.convertAndCacheOnCPU(dataId)];
                         }
@@ -13251,15 +13620,30 @@ var MathBackendWebGL = (function () {
                             throw new Error("tensor.data() with WEBGL_DOWNLOAD_FLOAT_ENABLED=false and " +
                                 "WEBGL_VERSION=2 not yet supported.");
                         }
-                        bufferOrTexture = this.gpgpu.maybeCreateBufferFromTexture(texture, texShape[0], texShape[1]);
+                        width = texShape[1];
+                        height = texShape[0];
+                        if (isPacked) {
+                            _a = tex_util.getPackedMatrixTextureShapeWidthHeight(texShape[0], texShape[1]), width = _a[0], height = _a[1];
+                        }
+                        bufferOrTexture = this.gpgpu.maybeCreateBufferFromTexture(texture, height, width);
                         return [4, this.gpgpu.createAndWaitForFence()];
                     case 1:
-                        _a.sent();
+                        _c.sent();
                         if (bufferOrTexture instanceof WebGLTexture) {
                             vals = this.getValuesFromTexture(dataId);
                         }
                         else {
-                            vals = this.gpgpu.downloadFloat32MatrixFromBuffer(bufferOrTexture, texShape[0], texShape[1]);
+                            if (isPacked) {
+                                batch = this.getBatchDim(shape);
+                                rows = 1, cols = 1;
+                                if (shape.length) {
+                                    _b = this.getRowsCols(shape), rows = _b[0], cols = _b[1];
+                                }
+                                vals = this.gpgpu.downloadPackedMatrixFromBuffer(bufferOrTexture, batch, rows, cols, texShape[0], texShape[1]);
+                            }
+                            else {
+                                vals = this.gpgpu.downloadFloat32MatrixFromBuffer(bufferOrTexture, texShape[0], texShape[1]);
+                            }
                         }
                         dTypeVals = this.convertAndCacheOnCPU(dataId, vals);
                         subscribers = this.pendingRead.get(dataId);
@@ -13275,12 +13659,15 @@ var MathBackendWebGL = (function () {
         });
     };
     MathBackendWebGL.prototype.getValuesFromTexture = function (dataId) {
-        var _a = this.texData.get(dataId), shape = _a.shape, dtype = _a.dtype, texture = _a.texture, texShape = _a.texShape;
+        var _a;
+        var _b = this.texData.get(dataId), shape = _b.shape, dtype = _b.dtype, texture = _b.texture, texShape = _b.texShape;
         if (environment_1.ENV.get('WEBGL_DOWNLOAD_FLOAT_ENABLED')) {
             if (this.texData.get(dataId).isPacked) {
-                var batch = util.sizeFromShape(shape.slice(0, shape.length - 2));
-                var rows = shape.length > 1 ? shape[shape.length - 2] : 1;
-                var cols = shape[shape.length - 1];
+                var batch = this.getBatchDim(shape);
+                var rows = 1, cols = 1;
+                if (shape.length) {
+                    _a = this.getRowsCols(shape), rows = _a[0], cols = _a[1];
+                }
                 return this.gpgpu.downloadMatrixFromPackedTexture(texture, batch, rows, cols, texShape[0], texShape[1]);
             }
             else {
@@ -13504,18 +13891,19 @@ var MathBackendWebGL = (function () {
             var b3D = outerShapeB === 1 ? b.as3D(batch, 1, sharedDim) : b;
             return this.multiply(a3D, b3D).sum(axis, true);
         }
+        var dtype = types_1.upcastType(a.dtype, b.dtype);
         if (batch === 1) {
             var aSqueezed = a.as2D(a.shape[1], a.shape[2]);
             var bSqueezed = b.as2D(b.shape[1], b.shape[2]);
             var program = new mulmat_packed_gpu_1.MatMulPackedProgram(aSqueezed.shape, bSqueezed.shape, [outerShapeA, outerShapeB], transposeA, transposeB);
-            var result = this.compileAndRun(program, [aSqueezed, bSqueezed], this.makePackedTensor(program.outputShape));
-            if (environment_1.ENV.get('WEBGL_LAZILY_UNPACK') === false) {
-                result = this.unpackTensor(result);
-            }
+            var output = this.makePackedTensor(program.outputShape, dtype);
+            var result = this.compileAndRun(program, [aSqueezed, bSqueezed], output);
             return result.reshape([1, result.shape[0], result.shape[1]]);
         }
         else {
-            return this.compileAndRun(new mulmat_gpu_1.MatMulProgram(a.shape, b.shape, transposeA, transposeB), [a, b]);
+            var program = new mulmat_gpu_1.MatMulProgram(a.shape, b.shape, transposeA, transposeB);
+            var output = this.makeOutputArray(program.outputShape, dtype);
+            return this.compileAndRun(program, [a, b], output);
         }
     };
     MathBackendWebGL.prototype.multiply = function (a, b) {
@@ -13556,14 +13944,12 @@ var MathBackendWebGL = (function () {
             scaleShape = scale.shape;
             inputs.push(scale);
         }
-        var output = null;
-        var envSpecificBatchNormProgram = batchnorm_gpu_1.BatchNormProgram;
         if (environment_1.ENV.get('WEBGL_PACK_BATCHNORMALIZATION')) {
-            output = this.makePackedTensor(x.shape);
-            envSpecificBatchNormProgram = batchnorm_packed_gpu_1.BatchNormPackedProgram;
+            var batchNormPackedProgram = new batchnorm_packed_gpu_1.BatchNormPackedProgram(x.shape, mean.shape, variance.shape, offsetShape, scaleShape, varianceEpsilon);
+            return this.compileAndRun(batchNormPackedProgram, inputs);
         }
-        var program = new envSpecificBatchNormProgram(x.shape, mean.shape, variance.shape, offsetShape, scaleShape, varianceEpsilon);
-        return this.compileAndRun(program, inputs, output);
+        var batchNormProgram = new batchnorm_gpu_1.BatchNormProgram(x.shape, mean.shape, variance.shape, offsetShape, scaleShape, varianceEpsilon);
+        return this.compileAndRun(batchNormProgram, inputs);
     };
     MathBackendWebGL.prototype.localResponseNormalization4D = function (x, radius, bias, alpha, beta) {
         var program = new lrn_gpu_1.LRNProgram(x.shape, radius, bias, alpha, beta);
@@ -13988,7 +14374,13 @@ var MathBackendWebGL = (function () {
         return this.compileAndRun(program, [x], output);
     };
     MathBackendWebGL.prototype.clip = function (x, min, max) {
-        var program = new clip_gpu_1.ClipProgram(x.shape, min, max);
+        var program;
+        if (environment_1.ENV.get('WEBGL_PACK_CLIP')) {
+            program = new clip_packed_gpu_1.ClipPackedProgram(x.shape, min, max);
+        }
+        else {
+            program = new clip_gpu_1.ClipProgram(x.shape, min, max);
+        }
         return this.compileAndRun(program, [x]);
     };
     MathBackendWebGL.prototype.abs = function (x) {
@@ -14082,12 +14474,9 @@ var MathBackendWebGL = (function () {
         var xSqueezed = x.squeeze([0]);
         var w2Row = filter.reshape([sharedDim, -1]);
         var im2ColProgram = new im2col_gpu_1.Im2ColProgram(x2ColShape, xSqueezed.shape, convInfo);
-        var im2Col = this.compileAndRun(im2ColProgram, [xSqueezed], this.makePackedTensor(x2ColShape));
+        var im2Col = this.compileAndRun(im2ColProgram, [xSqueezed]);
         var matmulProgram = new mulmat_packed_gpu_1.MatMulPackedProgram(im2Col.shape, w2Row.shape, [numCols, convInfo.outChannels], true, false);
-        var product = this.compileAndRun(matmulProgram, [im2Col, w2Row], this.makePackedTensor(matmulProgram.outputShape));
-        if (environment_1.ENV.get('WEBGL_LAZILY_UNPACK') === false) {
-            product = this.unpackTensor(product);
-        }
+        var product = this.compileAndRun(matmulProgram, [im2Col, w2Row]);
         return product.reshape([1, outHeight, outWidth, convInfo.outChannels]);
     };
     MathBackendWebGL.prototype.conv2d = function (x, filter, convInfo) {
@@ -14106,7 +14495,15 @@ var MathBackendWebGL = (function () {
         return this.compileAndRun(program, [x, dy]);
     };
     MathBackendWebGL.prototype.depthwiseConv2D = function (x, filter, convInfo) {
-        var program = new conv_gpu_depthwise_1.DepthwiseConv2DProgram(convInfo);
+        var program;
+        if (environment_1.ENV.get('WEBGL_PACK_DEPTHWISECONV') && convInfo.dilationWidth === 1 &&
+            convInfo.dilationHeight === 1 && convInfo.padInfo.left <= 1 &&
+            convInfo.strideWidth <= 2 &&
+            convInfo.outChannels / convInfo.inChannels === 1) {
+            program = new conv_packed_gpu_depthwise_1.DepthwiseConvPacked2DProgram(convInfo);
+            return this.compileAndRun(program, [x, filter], this.makePackedTensor(convInfo.outShape, x.dtype));
+        }
+        program = new conv_gpu_depthwise_1.DepthwiseConv2DProgram(convInfo);
         return this.compileAndRun(program, [x, filter]);
     };
     MathBackendWebGL.prototype.depthwiseConv2DDerInput = function (dy, filter, convInfo) {
@@ -14115,6 +14512,18 @@ var MathBackendWebGL = (function () {
     };
     MathBackendWebGL.prototype.depthwiseConv2DDerFilter = function (x, dy, convInfo) {
         var program = new conv_backprop_gpu_depthwise_1.DepthwiseConv2DDerFilterProgram(convInfo);
+        return this.compileAndRun(program, [x, dy]);
+    };
+    MathBackendWebGL.prototype.conv3d = function (x, filter, convInfo) {
+        var program = new conv_gpu_1.Conv3DProgram(convInfo);
+        return this.compileAndRun(program, [x, filter]);
+    };
+    MathBackendWebGL.prototype.conv3dDerInput = function (dy, filter, convInfo) {
+        var program = new conv_backprop_gpu_1.Conv3DDerInputProgram(convInfo);
+        return this.compileAndRun(program, [dy, filter]);
+    };
+    MathBackendWebGL.prototype.conv3dDerFilter = function (x, dy, convInfo) {
+        var program = new conv_backprop_gpu_1.Conv3DDerFilterProgram(convInfo);
         return this.compileAndRun(program, [x, dy]);
     };
     MathBackendWebGL.prototype.maxPool = function (x, convInfo) {
@@ -14266,14 +14675,14 @@ var MathBackendWebGL = (function () {
     MathBackendWebGL.prototype.makeOutputArray = function (shape, dtype) {
         return tensor_1.Tensor.make(shape, {}, dtype);
     };
-    MathBackendWebGL.prototype.makePackedTensor = function (shape) {
-        var packedTensor = tensor_1.Tensor.make(shape, {});
+    MathBackendWebGL.prototype.makePackedTensor = function (shape, dtype) {
+        var packedTensor = tensor_1.Tensor.make(shape, {}, dtype);
         this.texData.get(packedTensor.dataId).isPacked = true;
         return packedTensor;
     };
     MathBackendWebGL.prototype.unpackTensor = function (input) {
         var program = new unpack_gpu_1.UnpackProgram(input.shape);
-        return this.compileAndRun(program, [input]);
+        return this.compileAndRun(program, [input], tensor_1.Tensor.make(program.outputShape, {}, input.dtype));
     };
     MathBackendWebGL.prototype.getBatchDim = function (shape, dimsToSkip) {
         if (dimsToSkip === void 0) { dimsToSkip = 2; }
@@ -14291,16 +14700,19 @@ var MathBackendWebGL = (function () {
         var inputAs3D = input.reshape([this.getBatchDim(input.shape)].concat(this.getRowsCols(input.shape)));
         var afterShapeAs3D = [this.getBatchDim(afterShape)].concat(this.getRowsCols(afterShape));
         var program = new reshape_packed_gpu_1.ReshapePackedProgram(afterShapeAs3D, inputAs3D.shape);
-        return this
-            .compileAndRun(program, [inputAs3D], this.makePackedTensor(afterShapeAs3D))
+        return this.compileAndRun(program, [inputAs3D])
             .reshape(afterShape);
     };
     MathBackendWebGL.prototype.compileAndRun = function (program, inputs, output, customSetup, pageToCpu) {
         var _this = this;
         if (pageToCpu === void 0) { pageToCpu = true; }
         if (output == null) {
-            output =
-                this.makeOutputArray(program.outputShape, inputs[0].dtype);
+            if (program.usesPackedTextures) {
+                output = this.makePackedTensor(program.outputShape, inputs[0].dtype);
+            }
+            else {
+                output = this.makeOutputArray(program.outputShape, inputs[0].dtype);
+            }
         }
         if (output.size === 0) {
             this.texData.get(output.dataId).values =
@@ -14314,30 +14726,44 @@ var MathBackendWebGL = (function () {
                     "parts.");
             }
             var texData = _this.texData.get(input.dataId);
-            if (texData.texture == null &&
-                !(!texData.isPacked && program.usesPackedTextures) &&
-                util.sizeFromShape(input.shape) <=
-                    environment_1.ENV.get('WEBGL_SIZE_UPLOAD_UNIFORM')) {
-                return {
-                    shape: input.shape,
-                    texData: null,
-                    isUniform: true,
-                    uniformValues: _this.readSync(input.dataId)
-                };
+            if (texData.texture == null) {
+                if (!program.usesPackedTextures &&
+                    util.sizeFromShape(input.shape) <=
+                        environment_1.ENV.get('WEBGL_SIZE_UPLOAD_UNIFORM')) {
+                    return {
+                        shape: input.shape,
+                        texData: null,
+                        isUniform: true,
+                        uniformValues: _this.readSync(input.dataId)
+                    };
+                }
+                if (program.usesPackedTextures) {
+                    texData.isPacked = true;
+                    texData.shape = input.shape;
+                }
             }
-            if (texData.isPacked !== !!program.usesPackedTextures) {
+            else if (!!texData.isPacked !== !!program.usesPackedTextures) {
                 var preProcessProgram = void 0;
                 var processedInput = void 0;
                 if (texData.isPacked) {
                     preProcessProgram = new unpack_gpu_1.UnpackProgram(input.shape);
-                    processedInput = _this.compileAndRun(preProcessProgram, [input]);
+                    processedInput = _this.compileAndRun(preProcessProgram, [input], tensor_1.Tensor.make(preProcessProgram.outputShape, {}, input.dtype));
                 }
                 else {
                     preProcessProgram = new pack_gpu_1.PackProgram(input.shape);
-                    processedInput = _this.compileAndRun(preProcessProgram, [input], _this.makePackedTensor(input.shape));
+                    processedInput = _this.compileAndRun(preProcessProgram, [input], _this.makePackedTensor(input.shape, input.dtype));
                 }
                 texData = _this.texData.get(processedInput.dataId);
                 input = processedInput;
+            }
+            else if (texData.isPacked &&
+                !webgl_util.isReshapeFree(texData.shape, input.shape)) {
+                _this.delayedStorage = false;
+                var inputValues = input.dataSync();
+                _this.delayedStorage = true;
+                input = tensor_1.Tensor.make(input.shape, { values: inputValues }, input.dtype);
+                texData = _this.texData.get(input.dataId);
+                texData.isPacked = true;
             }
             _this.uploadToGPU(input.dataId);
             return { shape: input.shape, texData: texData, isUniform: false };
@@ -14371,6 +14797,10 @@ var MathBackendWebGL = (function () {
         if (shouldTimeProgram) {
             query = this.endTimer(query);
             this.activeTimers.push({ name: program.constructor.name, query: this.getQueryTime(query) });
+        }
+        if (!environment_1.ENV.get('WEBGL_LAZILY_UNPACK') &&
+            this.texData.get(output.dataId).isPacked && !program.isPackShader) {
+            return this.unpackTensor(output);
         }
         return output;
     };
@@ -14410,8 +14840,9 @@ var MathBackendWebGL = (function () {
         });
     };
     MathBackendWebGL.prototype.uploadToGPU = function (dataId) {
+        var _a;
         var texData = this.texData.get(dataId);
-        var shape = texData.shape, values = texData.values, texture = texData.texture, dtype = texData.dtype, usage = texData.usage, isPacked = texData.isPacked;
+        var shape = texData.shape, values = texData.values, texture = texData.texture, usage = texData.usage, isPacked = texData.isPacked;
         if (texture != null) {
             if (environment_1.ENV.get('WEBGL_PAGING_ENABLED')) {
                 var index = this.lruDataGPU.indexOf(dataId);
@@ -14433,13 +14864,15 @@ var MathBackendWebGL = (function () {
         texData.texture = newTexture;
         if (values != null) {
             if (isPacked) {
-                var batch = util.sizeFromShape(shape.slice(0, shape.length - 2));
-                var rows = shape.length > 1 ? shape[shape.length - 2] : 1;
-                var cols = shape[shape.length - 1];
-                this.gpgpu.uploadMatrixToPackedTexture(newTexture, batch, rows, cols, typedArrayToFloat32(values, dtype));
+                var batch = this.getBatchDim(shape);
+                var rows = 1, cols = 1;
+                if (shape.length) {
+                    _a = this.getRowsCols(shape), rows = _a[0], cols = _a[1];
+                }
+                this.gpgpu.uploadMatrixToPackedTexture(newTexture, batch, rows, cols, texShape[0], texShape[1], typedArrayToFloat32(values));
             }
             else {
-                this.gpgpu.uploadMatrixToTexture(newTexture, texShape[0], texShape[1], typedArrayToFloat32(values, dtype));
+                this.gpgpu.uploadMatrixToTexture(newTexture, texShape[0], texShape[1], typedArrayToFloat32(values));
             }
             texData.values = null;
             if (shouldTimeProgram) {
@@ -14506,11 +14939,11 @@ function float32ToTypedArray(a, dtype) {
         throw new Error("Unknown dtype " + dtype);
     }
 }
-function typedArrayToFloat32(a, dtype) {
+function typedArrayToFloat32(a) {
     return (a instanceof Float32Array) ? a : new Float32Array(a);
 }
 
-},{"../canvas_util":50,"../environment":53,"../globals":55,"../log":135,"../ops/array_ops_util":138,"../ops/axis_util":139,"../ops/concat_util":146,"../ops/gather_nd_util":152,"../ops/reduce_util":166,"../ops/scatter_nd_util":171,"../ops/segment_util":173,"../ops/slice_util":176,"../ops/softmax":177,"../ops/tensor_ops":182,"../tensor":198,"../types":204,"../util":205,"./backend":69,"./backend_util":71,"./complex_util":73,"./non_max_suppression_impl":74,"./split_shared":76,"./topk_impl":77,"./webgl/argminmax_gpu":78,"./webgl/avg_pool_backprop_gpu":79,"./webgl/batchnorm_gpu":80,"./webgl/batchnorm_packed_gpu":81,"./webgl/binaryop_complex_gpu":82,"./webgl/binaryop_gpu":83,"./webgl/clip_gpu":84,"./webgl/complex_abs_gpu":85,"./webgl/concat_gpu":86,"./webgl/conv_backprop_gpu":87,"./webgl/conv_backprop_gpu_depthwise":88,"./webgl/conv_gpu":89,"./webgl/conv_gpu_depthwise":90,"./webgl/crop_and_resize_gpu":91,"./webgl/cumsum_gpu":92,"./webgl/depth_to_space_gpu":93,"./webgl/encode_float_gpu":94,"./webgl/fft_gpu":95,"./webgl/from_pixels_gpu":96,"./webgl/gather_gpu":97,"./webgl/gather_nd_gpu":98,"./webgl/gpgpu_context":99,"./webgl/gpgpu_math":100,"./webgl/im2col_gpu":102,"./webgl/lrn_gpu":103,"./webgl/lrn_grad_gpu":104,"./webgl/max_pool_backprop_gpu":105,"./webgl/mulmat_gpu":106,"./webgl/mulmat_packed_gpu":107,"./webgl/multinomial_gpu":108,"./webgl/onehot_gpu":109,"./webgl/pack_gpu":110,"./webgl/pad_gpu":111,"./webgl/pool_gpu":112,"./webgl/reduce_gpu":113,"./webgl/reshape_packed_gpu":114,"./webgl/resize_bilinear_backprop_gpu":115,"./webgl/resize_bilinear_gpu":116,"./webgl/resize_nearest_neighbor_backprop_gpu":117,"./webgl/resize_nearest_neighbor_gpu":118,"./webgl/reverse_gpu":119,"./webgl/scatter_gpu":120,"./webgl/segment_gpu":121,"./webgl/select_gpu":122,"./webgl/slice_gpu":125,"./webgl/strided_slice_gpu":126,"./webgl/tex_util":127,"./webgl/texture_manager":128,"./webgl/tile_gpu":129,"./webgl/transpose_gpu":130,"./webgl/unaryop_gpu":131,"./webgl/unpack_gpu":132,"./webgl/webgl_util":133,"./where_impl":134}],73:[function(require,module,exports){
+},{"../canvas_util":52,"../environment":55,"../globals":57,"../log":139,"../ops/array_ops_util":142,"../ops/axis_util":143,"../ops/concat_util":150,"../ops/gather_nd_util":156,"../ops/reduce_util":170,"../ops/scatter_nd_util":175,"../ops/segment_util":177,"../ops/slice_util":180,"../ops/softmax":181,"../ops/tensor_ops":186,"../tensor":202,"../types":208,"../util":209,"./backend":71,"./backend_util":73,"./complex_util":75,"./non_max_suppression_impl":76,"./split_shared":78,"./topk_impl":79,"./webgl/argminmax_gpu":80,"./webgl/avg_pool_backprop_gpu":81,"./webgl/batchnorm_gpu":82,"./webgl/batchnorm_packed_gpu":83,"./webgl/binaryop_complex_gpu":84,"./webgl/binaryop_gpu":85,"./webgl/clip_gpu":86,"./webgl/clip_packed_gpu":87,"./webgl/complex_abs_gpu":88,"./webgl/concat_gpu":89,"./webgl/conv_backprop_gpu":90,"./webgl/conv_backprop_gpu_depthwise":91,"./webgl/conv_gpu":92,"./webgl/conv_gpu_depthwise":93,"./webgl/conv_packed_gpu_depthwise":94,"./webgl/crop_and_resize_gpu":95,"./webgl/cumsum_gpu":96,"./webgl/depth_to_space_gpu":97,"./webgl/encode_float_gpu":98,"./webgl/fft_gpu":99,"./webgl/from_pixels_gpu":100,"./webgl/gather_gpu":101,"./webgl/gather_nd_gpu":102,"./webgl/gpgpu_context":103,"./webgl/gpgpu_math":104,"./webgl/im2col_gpu":106,"./webgl/lrn_gpu":107,"./webgl/lrn_grad_gpu":108,"./webgl/max_pool_backprop_gpu":109,"./webgl/mulmat_gpu":110,"./webgl/mulmat_packed_gpu":111,"./webgl/multinomial_gpu":112,"./webgl/onehot_gpu":113,"./webgl/pack_gpu":114,"./webgl/pad_gpu":115,"./webgl/pool_gpu":116,"./webgl/reduce_gpu":117,"./webgl/reshape_packed_gpu":118,"./webgl/resize_bilinear_backprop_gpu":119,"./webgl/resize_bilinear_gpu":120,"./webgl/resize_nearest_neighbor_backprop_gpu":121,"./webgl/resize_nearest_neighbor_gpu":122,"./webgl/reverse_gpu":123,"./webgl/scatter_gpu":124,"./webgl/segment_gpu":125,"./webgl/select_gpu":126,"./webgl/slice_gpu":129,"./webgl/strided_slice_gpu":130,"./webgl/tex_util":131,"./webgl/texture_manager":132,"./webgl/tile_gpu":133,"./webgl/transpose_gpu":134,"./webgl/unaryop_gpu":135,"./webgl/unpack_gpu":136,"./webgl/webgl_util":137,"./where_impl":138}],75:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function mergeRealAndImagArrays(real, imag) {
@@ -14588,7 +15021,7 @@ function exponent(k, n, inverse) {
 }
 exports.exponent = exponent;
 
-},{}],74:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tensor_ops_1 = require("../ops/tensor_ops");
@@ -14646,7 +15079,7 @@ function intersectionOverUnion(boxes, i, j) {
     return intersectionArea / (areaI + areaJ - intersectionArea);
 }
 
-},{"../ops/tensor_ops":182}],75:[function(require,module,exports){
+},{"../ops/tensor_ops":186}],77:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function getVecChannels(name, rank) {
@@ -14675,7 +15108,7 @@ function getSourceCoords(rank, dims) {
 }
 exports.getSourceCoords = getSourceCoords;
 
-},{}],76:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function split(x, sizeSplits, axis) {
@@ -14690,7 +15123,7 @@ function split(x, sizeSplits, axis) {
 }
 exports.split = split;
 
-},{}],77:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tensor_ops_1 = require("../ops/tensor_ops");
@@ -14725,7 +15158,7 @@ function topkImpl(x, xShape, xDtype, k, sorted) {
 }
 exports.topkImpl = topkImpl;
 
-},{"../ops/tensor_ops":182,"../util":205}],78:[function(require,module,exports){
+},{"../ops/tensor_ops":186,"../util":209}],80:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ArgMinMaxProgram = (function () {
@@ -14749,7 +15182,7 @@ var ArgMinMaxProgram = (function () {
 }());
 exports.ArgMinMaxProgram = ArgMinMaxProgram;
 
-},{}],79:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var AvgPool2DBackpropProgram = (function () {
@@ -14773,7 +15206,7 @@ var AvgPool2DBackpropProgram = (function () {
 }());
 exports.AvgPool2DBackpropProgram = AvgPool2DBackpropProgram;
 
-},{}],80:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var broadcast_util = require("../../ops/broadcast_util");
@@ -14803,7 +15236,7 @@ var BatchNormProgram = (function () {
 }());
 exports.BatchNormProgram = BatchNormProgram;
 
-},{"../../ops/broadcast_util":142}],81:[function(require,module,exports){
+},{"../../ops/broadcast_util":146}],83:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var broadcast_util = require("../../ops/broadcast_util");
@@ -14814,35 +15247,26 @@ var BatchNormPackedProgram = (function () {
         this.variableNames = ['x', 'mean', 'variance'];
         broadcast_util.assertAndGetBroadcastShape(xShape, meanShape);
         broadcast_util.assertAndGetBroadcastShape(xShape, varianceShape);
-        var meanSnippet = broadcastSample('mean', meanShape.length);
-        var varianceSnippet = broadcastSample('variance', varianceShape.length);
-        var offsetSnippet = 'vec4 offset = vec4(0.0)';
+        var offsetSnippet = 'vec4(0.0)';
         if (offsetShape != null) {
             broadcast_util.assertAndGetBroadcastShape(xShape, offsetShape);
             this.variableNames.push('offset');
-            offsetSnippet = broadcastSample('offset', offsetShape.length);
+            offsetSnippet = 'getOffsetAtOutCoords()';
         }
-        var scaleSnippet = 'vec4 scale = vec4(1.0)';
+        var scaleSnippet = 'vec4(1.0)';
         if (scaleShape != null) {
             broadcast_util.assertAndGetBroadcastShape(xShape, scaleShape);
             this.variableNames.push('scale');
-            scaleSnippet = broadcastSample('scale', scaleShape.length);
+            scaleSnippet = 'getScaleAtOutCoords()';
         }
         this.outputShape = xShape;
-        this.userCode = "\n      void main() {\n        ivec4 rc = getOutputCoords();\n\n        " + offsetSnippet + ";\n        " + scaleSnippet + ";\n\n        vec4 x = getX(rc.x, rc.y, rc.z, rc.w);\n        " + meanSnippet + ";\n        " + varianceSnippet + ";\n\n        vec4 inv = scale * inversesqrt(variance + vec4(" + varianceEpsilon + "));\n\n        setOutput((x - mean) * inv + offset);\n      }\n    ";
+        this.userCode = "\n      void main() {\n        vec4 offset = " + offsetSnippet + ";\n        vec4 scale = " + scaleSnippet + ";\n\n        vec4 x = getXAtOutCoords();\n        vec4 mean = getMeanAtOutCoords();\n        vec4 variance = getVarianceAtOutCoords();\n\n        vec4 inv = scale * inversesqrt(variance + vec4(" + varianceEpsilon + "));\n\n        setOutput((x - mean) * inv + offset);\n      }\n    ";
     }
     return BatchNormPackedProgram;
 }());
 exports.BatchNormPackedProgram = BatchNormPackedProgram;
-function broadcastSample(texName, rank) {
-    var texSampler = "get" + texName.charAt(0).toUpperCase() + texName.slice(1);
-    if (rank === 1) {
-        return "\n      vec4 " + texName + "Sample = " + texSampler + "(rc.w);\n      vec4 " + texName + " = vec4(" + texName + "Sample.xy, " + texName + "Sample.xy);\n    ";
-    }
-    return "vec4 " + texName + " = " + texSampler + "(rc.x, rc.y, rc.z, rc.w)";
-}
 
-},{"../../ops/broadcast_util":142}],82:[function(require,module,exports){
+},{"../../ops/broadcast_util":146}],84:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var broadcast_util = require("../../ops/broadcast_util");
@@ -14862,7 +15286,7 @@ var BinaryOpComplexProgram = (function () {
 }());
 exports.BinaryOpComplexProgram = BinaryOpComplexProgram;
 
-},{"../../ops/broadcast_util":142}],83:[function(require,module,exports){
+},{"../../ops/broadcast_util":146}],85:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var broadcast_util = require("../../ops/broadcast_util");
@@ -14911,7 +15335,7 @@ var BinaryOpProgram = (function () {
 }());
 exports.BinaryOpProgram = BinaryOpProgram;
 
-},{"../../ops/broadcast_util":142}],84:[function(require,module,exports){
+},{"../../ops/broadcast_util":146}],86:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ClipProgram = (function () {
@@ -14924,20 +15348,34 @@ var ClipProgram = (function () {
 }());
 exports.ClipProgram = ClipProgram;
 
-},{}],85:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var ClipPackedProgram = (function () {
+    function ClipPackedProgram(aShape, min, max) {
+        this.variableNames = ['A'];
+        this.usesPackedTextures = true;
+        this.outputShape = aShape;
+        this.userCode = "\n      void main() {\n        vec4 value = getAAtOutCoords();\n\n        if (hasNaN(value)) {\n          setOutput(value);\n          return;\n        }\n\n        setOutput(clamp(value, vec4(" + min + "), vec4(" + max + ")));\n      }\n    ";
+    }
+    return ClipPackedProgram;
+}());
+exports.ClipPackedProgram = ClipPackedProgram;
+
+},{}],88:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ComplexAbsProgram = (function () {
     function ComplexAbsProgram(shape) {
         this.variableNames = ['real', 'imag'];
         this.outputShape = shape;
-        this.userCode = "\n      void main() {\n        float real = getRealAtOutCoords();\n        float imag = getImagAtOutCoords();\n        vec2 v = vec2(real, imag);\n\n        setOutput(sqrt(dot(v, v)));\n      }\n    ";
+        this.userCode = "\n      void main() {\n        float re = abs(getRealAtOutCoords());\n        float im = abs(getImagAtOutCoords());\n        float mx = max(re, im);\n\n        // sadly the length function in glsl is not underflow-safe\n        // (at least not on Intel GPUs). So the safe solution is\n        // to ensure underflow-safety in all cases.\n        setOutput(\n          mx == 0.0 ? 0.0 : mx * length(vec2(1, min(re, im)/mx))\n        );\n      }\n    ";
     }
     return ComplexAbsProgram;
 }());
 exports.ComplexAbsProgram = ComplexAbsProgram;
 
-},{}],86:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var concat_util = require("../../ops/concat_util");
@@ -14953,7 +15391,7 @@ var ConcatProgram = (function () {
 }());
 exports.ConcatProgram = ConcatProgram;
 
-},{"../../ops/concat_util":146}],87:[function(require,module,exports){
+},{"../../ops/concat_util":150}],90:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Conv2DDerFilterProgram = (function () {
@@ -14984,8 +15422,41 @@ var Conv2DDerInputProgram = (function () {
     return Conv2DDerInputProgram;
 }());
 exports.Conv2DDerInputProgram = Conv2DDerInputProgram;
+var Conv3DDerFilterProgram = (function () {
+    function Conv3DDerFilterProgram(convInfo) {
+        this.variableNames = ['x', 'dy'];
+        this.outputShape = convInfo.filterShape;
+        var strideDepth = convInfo.strideDepth;
+        var strideHeight = convInfo.strideHeight;
+        var strideWidth = convInfo.strideWidth;
+        var padFront = convInfo.padInfo.front;
+        var padTop = convInfo.padInfo.top;
+        var padLeft = convInfo.padInfo.left;
+        this.userCode = "\n      void main() {\n        ivec5 coords = getOutputCoords();\n        int wF = coords.x;\n        int wR = coords.y;\n        int wC = coords.z;\n        int d1 = coords.w;\n        int d2 = coords.u;\n\n        float dotProd = 0.0;\n\n        for (int b = 0; b < " + convInfo.batchSize + "; b++) {\n          for (int yF = 0; yF < " + convInfo.outDepth + "; yF++) {\n            int xF = wF + yF * " + strideDepth + " - " + padFront + ";\n\n            if (xF < 0 || xF >= " + convInfo.inDepth + ") {\n              continue;\n            }\n\n            for (int yR = 0; yR < " + convInfo.outHeight + "; yR++) {\n              int xR = wR + yR * " + strideHeight + " - " + padTop + ";\n\n              if (xR < 0 || xR >= " + convInfo.inHeight + ") {\n                continue;\n              }\n\n              for (int yC = 0; yC < " + convInfo.outWidth + "; yC++) {\n                int xC = wC + yC * " + strideWidth + " - " + padLeft + ";\n\n                if (xC < 0 || xC >= " + convInfo.inWidth + ") {\n                  continue;\n                }\n\n                float dyValue = getDy(b, yF, yR, yC, d2);\n                float xValue = getX(b, xF, xR, xC, d1);\n                dotProd += (xValue * dyValue);\n              }\n            }\n          }\n        }\n        setOutput(dotProd);\n      }\n    ";
+    }
+    return Conv3DDerFilterProgram;
+}());
+exports.Conv3DDerFilterProgram = Conv3DDerFilterProgram;
+var Conv3DDerInputProgram = (function () {
+    function Conv3DDerInputProgram(convInfo) {
+        this.variableNames = ['dy', 'W'];
+        this.outputShape = convInfo.inShape;
+        var filterDepth = convInfo.filterDepth;
+        var filterHeight = convInfo.filterHeight;
+        var filterWidth = convInfo.filterWidth;
+        var strideDepth = convInfo.strideDepth;
+        var strideHeight = convInfo.strideHeight;
+        var strideWidth = convInfo.strideWidth;
+        var padFront = filterDepth - 1 - convInfo.padInfo.front;
+        var padTop = filterHeight - 1 - convInfo.padInfo.top;
+        var padLeft = filterWidth - 1 - convInfo.padInfo.left;
+        this.userCode = "\n      const ivec3 pads = ivec3(" + padFront + ", " + padTop + ", " + padLeft + ");\n\n      void main() {\n        ivec5 coords = getOutputCoords();\n        int batch = coords.x;\n        int d1 = coords.u;\n\n\n        ivec3 dyCorner = ivec3(coords.y, coords.z, coords.w) - pads;\n        int dyFCorner = dyCorner.x;\n        int dyRCorner = dyCorner.y;\n        int dyCCorner = dyCorner.z;\n\n        float dotProd = 0.0;\n        for (int wF = 0; wF < " + filterDepth + "; wF++) {\n          float dyF = float(dyFCorner + wF) / " + strideDepth + ".0;\n\n          if (dyF < 0.0 || dyF >= " + convInfo.outDepth + ".0 || fract(dyF) > 0.0) {\n            continue;\n          }\n          int idyF = int(dyF);\n\n          int wFPerm = " + filterDepth + " - 1 - wF;\n\n          for (int wR = 0; wR < " + filterHeight + "; wR++) {\n            float dyR = float(dyRCorner + wR) / " + strideHeight + ".0;\n\n            if (dyR < 0.0 || dyR >= " + convInfo.outHeight + ".0 ||\n              fract(dyR) > 0.0) {\n              continue;\n            }\n            int idyR = int(dyR);\n\n            int wRPerm = " + filterHeight + " - 1 - wR;\n\n            for (int wC = 0; wC < " + filterWidth + "; wC++) {\n              float dyC = float(dyCCorner + wC) / " + strideWidth + ".0;\n\n              if (dyC < 0.0 || dyC >= " + convInfo.outWidth + ".0 ||\n                  fract(dyC) > 0.0) {\n                continue;\n              }\n              int idyC = int(dyC);\n\n              int wCPerm = " + filterWidth + " - 1 - wC;\n\n              for (int d2 = 0; d2 < " + convInfo.outChannels + "; d2++) {\n                float xValue = getDy(batch, idyF, idyR, idyC, d2);\n                float wValue = getW(wFPerm, wRPerm, wCPerm, d1, d2);\n                dotProd += xValue * wValue;\n              }\n            }\n          }\n        }\n        setOutput(dotProd);\n      }\n    ";
+    }
+    return Conv3DDerInputProgram;
+}());
+exports.Conv3DDerInputProgram = Conv3DDerInputProgram;
 
-},{}],88:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var DepthwiseConv2DDerFilterProgram = (function () {
@@ -15019,7 +15490,7 @@ var DepthwiseConv2DDerInputProgram = (function () {
 }());
 exports.DepthwiseConv2DDerInputProgram = DepthwiseConv2DDerInputProgram;
 
-},{}],89:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Conv2DProgram = (function () {
@@ -15041,8 +15512,31 @@ var Conv2DProgram = (function () {
     return Conv2DProgram;
 }());
 exports.Conv2DProgram = Conv2DProgram;
+var Conv3DProgram = (function () {
+    function Conv3DProgram(convInfo) {
+        this.variableNames = ['x', 'W'];
+        this.outputShape = convInfo.outShape;
+        var padFront = convInfo.padInfo.front;
+        var padTop = convInfo.padInfo.top;
+        var padLeft = convInfo.padInfo.left;
+        var strideDepth = convInfo.strideDepth;
+        var strideHeight = convInfo.strideHeight;
+        var strideWidth = convInfo.strideWidth;
+        var dilationDepth = convInfo.dilationDepth;
+        var dilationHeight = convInfo.dilationHeight;
+        var dilationWidth = convInfo.dilationWidth;
+        var filterDepth = convInfo.filterDepth;
+        var filterHeight = convInfo.filterHeight;
+        var filterWidth = convInfo.filterWidth;
+        var inputDepthNearestVec4 = Math.floor(convInfo.inChannels / 4) * 4;
+        var inputDepthVec4Remainder = convInfo.inChannels % 4;
+        this.userCode = "\n      const ivec3 strides = ivec3(" + strideDepth + ", " + strideHeight + ", " + strideWidth + ");\n      const ivec3 pads = ivec3(" + padFront + ", " + padTop + ", " + padLeft + ");\n\n      void main() {\n        ivec5 coords = getOutputCoords();\n        int batch = coords.x;\n        int d2 = coords.u;\n\n        ivec3 xFRCCorner = ivec3(coords.y, coords.z, coords.w) * strides - pads;\n        int xFCorner = xFRCCorner.x;\n        int xRCorner = xFRCCorner.y;\n        int xCCorner = xFRCCorner.z;\n\n        // Convolve x(?, ?, ?, d1) with w(:, :, :, d1, d2) to get\n        // y(yF, yR, yC, d2). ? = to be determined. : = across all\n        // values in that axis.\n        float dotProd = 0.0;\n        for (int wF = 0; wF < " + filterDepth + "; wF++) {\n          int xF = xFCorner + wF * " + dilationDepth + ";\n\n          if (xF < 0 || xF >= " + convInfo.inDepth + ") {\n            continue;\n          }\n\n          for (int wR = 0; wR < " + filterHeight + "; wR++) {\n            int xR = xRCorner + wR * " + dilationHeight + ";\n\n            if (xR < 0 || xR >= " + convInfo.inHeight + ") {\n              continue;\n            }\n\n            for (int wC = 0; wC < " + filterWidth + "; wC++) {\n              int xC = xCCorner + wC * " + dilationWidth + ";\n\n              if (xC < 0 || xC >= " + convInfo.inWidth + ") {\n                continue;\n              }\n\n              for (int d1 = 0; d1 < " + inputDepthNearestVec4 + "; d1 += 4) {\n                vec4 xValues = vec4(\n                  getX(batch, xF, xR, xC, d1),\n                  getX(batch, xF, xR, xC, d1 + 1),\n                  getX(batch, xF, xR, xC, d1 + 2),\n                  getX(batch, xF, xR, xC, d1 + 3)\n                );\n                vec4 wValues = vec4(\n                  getW(wF, wR, wC, d1, d2),\n                  getW(wF, wR, wC, d1 + 1, d2),\n                  getW(wF, wR, wC, d1 + 2, d2),\n                  getW(wF, wR, wC, d1 + 3, d2)\n                );\n\n                dotProd += dot(xValues, wValues);\n              }\n\n              if (" + (inputDepthVec4Remainder === 1) + ") {\n                dotProd +=\n                  getX(batch, xF, xR, xC, " + inputDepthNearestVec4 + ") *\n                  getW(wF, wR, wC, " + inputDepthNearestVec4 + ", d2);\n              } else if (" + (inputDepthVec4Remainder === 2) + ") {\n                vec2 xValues = vec2(\n                  getX(batch, xF, xR, xC, " + inputDepthNearestVec4 + "),\n                  getX(batch, xF, xR, xC, " + inputDepthNearestVec4 + " + 1)\n                );\n                vec2 wValues = vec2(\n                  getW(wF, wR, wC, " + inputDepthNearestVec4 + ", d2),\n                  getW(wF, wR, wC, " + inputDepthNearestVec4 + " + 1, d2)\n                );\n                dotProd += dot(xValues, wValues);\n              } else if (" + (inputDepthVec4Remainder === 3) + ") {\n                vec3 xValues = vec3(\n                  getX(batch, xF, xR, xC, " + inputDepthNearestVec4 + "),\n                  getX(batch, xF, xR, xC, " + inputDepthNearestVec4 + " + 1),\n                  getX(batch, xF, xR, xC, " + inputDepthNearestVec4 + " + 2)\n                );\n                vec3 wValues = vec3(\n                  getW(wF, wR, wC, " + inputDepthNearestVec4 + ", d2),\n                  getW(wF, wR, wC, " + inputDepthNearestVec4 + " + 1, d2),\n                  getW(wF, wR, wC, " + inputDepthNearestVec4 + " + 2, d2)\n                );\n                dotProd += dot(xValues, wValues);\n              }\n            }\n          }\n        }\n        setOutput(dotProd);\n      }\n    ";
+    }
+    return Conv3DProgram;
+}());
+exports.Conv3DProgram = Conv3DProgram;
 
-},{}],90:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var DepthwiseConv2DProgram = (function () {
@@ -15066,7 +15560,89 @@ var DepthwiseConv2DProgram = (function () {
 }());
 exports.DepthwiseConv2DProgram = DepthwiseConv2DProgram;
 
-},{}],91:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var DepthwiseConvPacked2DProgram = (function () {
+    function DepthwiseConvPacked2DProgram(convInfo) {
+        this.variableNames = ['x', 'W'];
+        this.usesPackedTextures = true;
+        this.outputShape = convInfo.outShape;
+        var xNumRows = convInfo.inHeight;
+        var xNumCols = convInfo.inWidth;
+        var padTop = convInfo.padInfo.top;
+        var padLeft = convInfo.padInfo.left;
+        var strideHeight = convInfo.strideHeight;
+        var strideWidth = convInfo.strideWidth;
+        var filterHeight = convInfo.filterHeight;
+        var filterWidth = convInfo.filterWidth;
+        var texelsAcross = Math.ceil((filterWidth + 1) / 2);
+        var mainLoop = "int xR; int xC;";
+        for (var r = 0; r < filterHeight; r++) {
+            for (var c = -padLeft; c < texelsAcross * 2; c++) {
+                mainLoop += "vec4 " + xTexelName(r, c) + " = vec4(0.);";
+            }
+            for (var c = 0; c < filterWidth; c++) {
+                mainLoop += "\n          vec4 wR" + r + "C" + c + " = vec4(0.);\n          vec4 xR" + r + "C" + c + " = vec4(0.);";
+            }
+        }
+        for (var r = 0; r < filterHeight; r++) {
+            for (var c = 0; c < texelsAcross; c++) {
+                var col = c * 2;
+                var left = c * 2 + padLeft;
+                mainLoop += "\n          xR = xRCorner + " + r + ";\n          xC = xCCorner + " + left + ";\n\n          if(xR >= 0 && xR < " + xNumRows + " && xC >= 0 && xC < " + xNumCols + ") {\n            " + xTexelName(r, left) + " = getX(batch, xR, xC, d1);\n          }";
+                if (padLeft === 0) {
+                    if (col < filterWidth && c === texelsAcross - 1) {
+                        if (strideWidth > 1) {
+                            mainLoop += "\n                vec4 " + xTexelName(r, left + 2) + " = vec4(0.);\n\n                if(xR >= 0 && xR < " + xNumRows + " && xC + 2 < " + xNumCols + ") {\n                  " + xTexelName(r, left + 2) + " = getX(batch, xR, xC + 2, d1);\n                }";
+                        }
+                        mainLoop += "\n              xR" + r + "C" + left + " = " + constructTexel(r, left, strideWidth, padLeft) + ";\n            ";
+                    }
+                }
+                else if (c === 0) {
+                    mainLoop += "\n            if(xR >= 0 && xR < " + xNumRows + " && xC - 2 >= 0) {\n              " + xTexelName(r, left - 2) + " = getX(batch, xR, xC - 2, d1);\n            }";
+                }
+                if (col > 0) {
+                    mainLoop += "xR" + r + "C" + (left - 2) + " =\n            " + constructTexel(r, left - 2, strideWidth, padLeft) + ";";
+                }
+                if (left - 1 >= 0 && left - 1 < filterWidth) {
+                    mainLoop += "xR" + r + "C" + (left - 1) + " =\n              " + constructTexel(r, left - 1, strideWidth, padLeft) + ";";
+                }
+                if (col < filterWidth) {
+                    mainLoop += "\n            vec4 wTexel" + r + "C" + col + " = getW(" + r + ", " + col + ", d1, q);\n            wR" + r + "C" + col + " = vec4(wTexel" + r + "C" + col + ".xz, wTexel" + r + "C" + col + ".xz);\n          ";
+                    if (col + 1 < filterWidth) {
+                        mainLoop += "\n              vec4 wTexelR" + r + "C" + (col + 1) + " = getW(" + r + ", " + (col + 1) + ", d1, q);\n              wR" + r + "C" + (col + 1) + " =\n                vec4(wTexelR" + r + "C" + (col + 1) + ".xz, wTexelR" + r + "C" + (col + 1) + ".xz);";
+                    }
+                }
+            }
+        }
+        for (var r = 0; r < filterHeight; r++) {
+            for (var c = 0; c < filterWidth; c++) {
+                mainLoop += "result += xR" + r + "C" + c + " * wR" + r + "C" + c + ";";
+            }
+        }
+        this.userCode = "\n      const ivec2 strides = ivec2(" + strideHeight + ", " + strideWidth + ");\n      const ivec2 pads = ivec2(" + padTop + ", " + padLeft + ");\n\n      void main() {\n        ivec4 coords = getOutputCoords();\n        int batch = coords.x;\n        ivec2 xRCCorner = coords.yz * strides - pads;\n        int d2 = coords.w;\n        int d1 = d2;\n        int q = 0;\n        int xRCorner = xRCCorner.x;\n        int xCCorner = xRCCorner.y;\n\n        vec4 result = vec4(0.);\n\n        " + mainLoop + "\n\n        setOutput(result);\n      }\n    ";
+    }
+    return DepthwiseConvPacked2DProgram;
+}());
+exports.DepthwiseConvPacked2DProgram = DepthwiseConvPacked2DProgram;
+function xTexelName(r, c) {
+    return "xTexelR" + r + "C" + (c < 0 ? 'minus' + Math.abs(c).toString() : c);
+}
+function constructTexel(r, c, stride, padLeft) {
+    if (stride === 1) {
+        if (padLeft % 2 === c % 2) {
+            return xTexelName(r, c);
+        }
+        return "vec4(" + xTexelName(r, c - 1) + ".zw, " + xTexelName(r, c + 1) + ".xy)";
+    }
+    if (padLeft % 2 === c % 2) {
+        return "vec4(" + xTexelName(r, c) + ".xy, " + xTexelName(r, c + 2) + ".xy)";
+    }
+    return "vec4(" + xTexelName(r, c - 1) + ".zw, " + xTexelName(r, c + 1) + ".zw)";
+}
+
+},{}],95:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var CropAndResizeProgram = (function () {
@@ -15107,7 +15683,7 @@ var CropAndResizeProgram = (function () {
 }());
 exports.CropAndResizeProgram = CropAndResizeProgram;
 
-},{}],92:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var shader_compiler_1 = require("./shader_compiler");
@@ -15158,7 +15734,7 @@ function getFinalCoord(rank, name) {
     }
 }
 
-},{"./shader_compiler":123}],93:[function(require,module,exports){
+},{"./shader_compiler":127}],97:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var DepthToSpaceProgram = (function () {
@@ -15214,7 +15790,7 @@ var DepthToSpaceProgram = (function () {
 }());
 exports.DepthToSpaceProgram = DepthToSpaceProgram;
 
-},{}],94:[function(require,module,exports){
+},{}],98:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var EncodeFloatProgram = (function () {
@@ -15227,7 +15803,7 @@ var EncodeFloatProgram = (function () {
 }());
 exports.EncodeFloatProgram = EncodeFloatProgram;
 
-},{}],95:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.COMPLEX_FFT = {
@@ -15247,7 +15823,7 @@ var FFTProgram = (function () {
 }());
 exports.FFTProgram = FFTProgram;
 
-},{}],96:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var FromPixelsProgram = (function () {
@@ -15261,7 +15837,7 @@ var FromPixelsProgram = (function () {
 }());
 exports.FromPixelsProgram = FromPixelsProgram;
 
-},{}],97:[function(require,module,exports){
+},{}],101:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var shader_compiler_1 = require("./shader_compiler");
@@ -15300,7 +15876,7 @@ function getSourceCoords(aShape, axis) {
     return sourceCoords.join();
 }
 
-},{"./shader_compiler":123}],98:[function(require,module,exports){
+},{"./shader_compiler":127}],102:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var shader_compiler_1 = require("./shader_compiler");
@@ -15319,7 +15895,7 @@ var GatherNDProgram = (function () {
 }());
 exports.GatherNDProgram = GatherNDProgram;
 
-},{"./shader_compiler":123}],99:[function(require,module,exports){
+},{"./shader_compiler":127}],103:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -15466,9 +16042,9 @@ var GPGPUContext = (function () {
         var numChannels = webgl_util.getNumChannels();
         return gpgpu_util.uploadMatrixToTexture(this.gl, texture, rows, columns, matrix, numChannels, this.textureConfig);
     };
-    GPGPUContext.prototype.uploadMatrixToPackedTexture = function (texture, batch, rows, columns, matrix) {
+    GPGPUContext.prototype.uploadMatrixToPackedTexture = function (texture, batch, rows, columns, physicalRows, physicalCols, matrix) {
         this.throwIfDisposed();
-        return gpgpu_util.uploadMatrixToPackedTexture(this.gl, texture, batch, rows, columns, matrix, this.textureConfig);
+        return gpgpu_util.uploadMatrixToPackedTexture(this.gl, texture, batch, rows, columns, physicalRows, physicalCols, matrix, this.textureConfig);
     };
     GPGPUContext.prototype.downloadFloat32MatrixFromOutputTexture = function (texture, rows, columns) {
         var _this = this;
@@ -15477,6 +16053,9 @@ var GPGPUContext = (function () {
     GPGPUContext.prototype.downloadByteEncodedFloatMatrixFromOutputTexture = function (texture, rows, columns) {
         var _this = this;
         return this.downloadMatrixDriver(texture, function () { return gpgpu_util.downloadByteEncodedFloatMatrixFromOutputTexture(_this.gl, rows, columns, _this.textureConfig); });
+    };
+    GPGPUContext.prototype.downloadPackedMatrixFromBuffer = function (buffer, batch, rows, columns, physicalRows, physicalCols) {
+        return gpgpu_util.downloadPackedMatrixFromBuffer(this.gl, buffer, batch, rows, columns, physicalRows, physicalCols, this.textureConfig);
     };
     GPGPUContext.prototype.downloadFloat32MatrixFromBuffer = function (buffer, rows, columns) {
         return gpgpu_util.downloadFloat32MatrixFromBuffer(this.gl, buffer, rows, columns, this.textureConfig);
@@ -15801,7 +16380,7 @@ function binSearchLastTrue(arr) {
 }
 exports.binSearchLastTrue = binSearchLastTrue;
 
-},{"../../canvas_util":50,"../../environment":53,"../../util":205,"./gpgpu_util":101,"./tex_util":127,"./webgl_util":133}],100:[function(require,module,exports){
+},{"../../canvas_util":52,"../../environment":55,"../../util":209,"./gpgpu_util":105,"./tex_util":131,"./webgl_util":137}],104:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var util = require("../../util");
@@ -15921,7 +16500,7 @@ function makeShaderKey(program, inputs, output) {
 }
 exports.makeShaderKey = makeShaderKey;
 
-},{"../../util":205,"./shader_compiler":123}],101:[function(require,module,exports){
+},{"../../util":209,"./shader_compiler":127}],105:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../../environment");
@@ -16060,9 +16639,9 @@ function uploadMatrixToTexture(gl, texture, rows, columns, matrix, numChannels, 
     uploadDataToTexture(gl, texture, w, h, unpackedArray, textureConfig.textureFormatFloat);
 }
 exports.uploadMatrixToTexture = uploadMatrixToTexture;
-function uploadMatrixToPackedTexture(gl, texture, batch, rows, columns, matrix, textureConfig) {
-    var _a = tex_util.getPackedMatrixTextureShapeWidthHeight(rows, columns), w = _a[0], h = _a[1];
-    var packedRGBA = new Float32Array(tex_util.getPackedRGBAArraySizeFromMatrixShape(rows, columns));
+function uploadMatrixToPackedTexture(gl, texture, batch, rows, columns, physicalRows, physicalCols, matrix, textureConfig) {
+    var _a = tex_util.getPackedMatrixTextureShapeWidthHeight(physicalRows, physicalCols), w = _a[0], h = _a[1];
+    var packedRGBA = new Float32Array(batch * tex_util.getPackedRGBAArraySizeFromMatrixShape(rows, columns));
     tex_util.encodeMatrixToPackedRGBA(matrix, batch, rows, columns, packedRGBA);
     uploadDataToTexture(gl, texture, w, h, packedRGBA, gl.RGBA);
 }
@@ -16112,6 +16691,17 @@ function downloadByteEncodedFloatMatrixFromOutputTexture(gl, rows, columns, text
     return new Float32Array(downloadTarget.buffer);
 }
 exports.downloadByteEncodedFloatMatrixFromOutputTexture = downloadByteEncodedFloatMatrixFromOutputTexture;
+function downloadPackedMatrixFromBuffer(gl, buffer, batch, rows, cols, physicalRows, physicalCols, textureConfig) {
+    var gl2 = gl;
+    var downloadTarget = new Float32Array(tex_util.getPackedRGBAArraySizeFromMatrixShape(physicalRows, physicalCols));
+    gl2.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl2.getBufferSubData(gl.ARRAY_BUFFER, 0, downloadTarget);
+    gl2.bindBuffer(gl.ARRAY_BUFFER, null);
+    var matrix = new Float32Array(util.sizeFromShape([batch, rows, cols]));
+    tex_util.decodeMatrixFromPackedRGBA(downloadTarget, batch, rows, cols, matrix);
+    return matrix;
+}
+exports.downloadPackedMatrixFromBuffer = downloadPackedMatrixFromBuffer;
 function downloadMatrixFromPackedOutputTexture(gl, batch, rows, cols, physicalRows, physicalCols, textureConfig) {
     var _a = tex_util.getPackedMatrixTextureShapeWidthHeight(physicalRows, physicalCols), w = _a[0], h = _a[1];
     var packedRGBA = new Float32Array(tex_util.getPackedRGBAArraySizeFromMatrixShape(physicalRows, physicalCols));
@@ -16121,7 +16711,7 @@ function downloadMatrixFromPackedOutputTexture(gl, batch, rows, cols, physicalRo
 }
 exports.downloadMatrixFromPackedOutputTexture = downloadMatrixFromPackedOutputTexture;
 
-},{"../../environment":53,"../../util":205,"./tex_util":127,"./webgl_util":133}],102:[function(require,module,exports){
+},{"../../environment":55,"../../util":209,"./tex_util":131,"./webgl_util":137}],106:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Im2ColProgram = (function () {
@@ -16137,7 +16727,7 @@ var Im2ColProgram = (function () {
 }());
 exports.Im2ColProgram = Im2ColProgram;
 
-},{}],103:[function(require,module,exports){
+},{}],107:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var LRNProgram = (function () {
@@ -16164,7 +16754,7 @@ var LRNProgram = (function () {
 }());
 exports.LRNProgram = LRNProgram;
 
-},{}],104:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var LRNGradProgram = (function () {
@@ -16183,7 +16773,7 @@ var LRNGradProgram = (function () {
 }());
 exports.LRNGradProgram = LRNGradProgram;
 
-},{}],105:[function(require,module,exports){
+},{}],109:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var MaxPool2DBackpropProgram = (function () {
@@ -16204,7 +16794,7 @@ var MaxPool2DBackpropProgram = (function () {
 }());
 exports.MaxPool2DBackpropProgram = MaxPool2DBackpropProgram;
 
-},{}],106:[function(require,module,exports){
+},{}],110:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var MatMulProgram = (function () {
@@ -16233,7 +16823,7 @@ var MatMulProgram = (function () {
 }());
 exports.MatMulProgram = MatMulProgram;
 
-},{}],107:[function(require,module,exports){
+},{}],111:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var MatMulPackedProgram = (function () {
@@ -16255,7 +16845,7 @@ var MatMulPackedProgram = (function () {
 }());
 exports.MatMulPackedProgram = MatMulPackedProgram;
 
-},{}],108:[function(require,module,exports){
+},{}],112:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var MultinomialProgram = (function () {
@@ -16277,7 +16867,7 @@ var MultinomialProgram = (function () {
 }());
 exports.MultinomialProgram = MultinomialProgram;
 
-},{}],109:[function(require,module,exports){
+},{}],113:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var OneHotProgram = (function () {
@@ -16290,7 +16880,7 @@ var OneHotProgram = (function () {
 }());
 exports.OneHotProgram = OneHotProgram;
 
-},{}],110:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var packing_util_1 = require("../packing_util");
@@ -16298,14 +16888,20 @@ var shader_compiler_1 = require("./shader_compiler");
 var PackProgram = (function () {
     function PackProgram(outputShape) {
         this.variableNames = ['A'];
+        this.isPackShader = true;
         this.outputShape = outputShape;
         var rank = outputShape.length;
-        var channels = packing_util_1.getChannels('rc', rank);
-        var dtype = shader_compiler_1.getCoordsDataType(rank);
-        var outOfBoundsCondition = getOutOfBoundsCondition(rank, outputShape, channels);
-        var setup = getSetup(rank, outputShape[outputShape.length - 1], outputShape[outputShape.length - 2], channels);
-        var output = getOutput(outputShape, channels);
-        this.userCode = "\n      void main() {\n        " + dtype + " rc = getOutputCoords();\n\n        if(" + outOfBoundsCondition + ") {\n          gl_FragColor = vec4(0);\n        } else {\n          " + setup + "\n\n          setOutput(vec4(" + output + "));\n        }\n      }\n    ";
+        if (rank === 0) {
+            this.userCode = "\n        void main() {\n          setOutput(vec4(getA(), 0., 0., 0.));\n        }\n      ";
+        }
+        else {
+            var channels = packing_util_1.getChannels('rc', rank);
+            var dtype = shader_compiler_1.getCoordsDataType(rank);
+            var outOfBoundsCondition = getOutOfBoundsCondition(rank, outputShape, channels);
+            var setup = getSetup(rank, outputShape[outputShape.length - 1], outputShape[outputShape.length - 2], channels);
+            var output = getOutput(outputShape, channels);
+            this.userCode = "\n        void main() {\n          " + dtype + " rc = getOutputCoords();\n\n          if(" + outOfBoundsCondition + ") {\n            setOutput(vec4(0));\n          } else {\n            " + setup + "\n\n            setOutput(vec4(" + output + "));\n          }\n        }\n      ";
+        }
     }
     return PackProgram;
 }());
@@ -16352,7 +16948,7 @@ function getOutput(shape, dims) {
     return "getA(" + sourceCoords[0] + "),\n          cEdge ? 0. : getA(" + sourceCoords[1] + "),\n          rEdge ? 0. : getA(" + sourceCoords[2] + "),\n          rEdge || cEdge ? 0. : getA(" + sourceCoords[3] + ")";
 }
 
-},{"../packing_util":75,"./shader_compiler":123}],111:[function(require,module,exports){
+},{"../packing_util":77,"./shader_compiler":127}],115:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var shader_compiler_1 = require("./shader_compiler");
@@ -16375,7 +16971,7 @@ var PadProgram = (function () {
 }());
 exports.PadProgram = PadProgram;
 
-},{"./shader_compiler":123}],112:[function(require,module,exports){
+},{"./shader_compiler":127}],116:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Pool2DProgram = (function () {
@@ -16419,7 +17015,7 @@ var Pool2DProgram = (function () {
 }());
 exports.Pool2DProgram = Pool2DProgram;
 
-},{}],113:[function(require,module,exports){
+},{}],117:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ReduceProgram = (function () {
@@ -16481,7 +17077,7 @@ var ReduceProgram = (function () {
 }());
 exports.ReduceProgram = ReduceProgram;
 
-},{}],114:[function(require,module,exports){
+},{}],118:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var util = require("../../util");
@@ -16516,7 +17112,7 @@ function getReshapedInputCoords(shape) {
     return "\n    ivec3 inputCoordsFromReshapedOutCoords(int index) {\n      " + coordsFromIndexSnippet + "\n      return ivec3(r, c, d);\n    }\n  ";
 }
 
-},{"../../util":205,"./shader_compiler_util":124}],115:[function(require,module,exports){
+},{"../../util":209,"./shader_compiler_util":128}],119:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ResizeBilinearBackpropProgram = (function () {
@@ -16546,7 +17142,7 @@ var ResizeBilinearBackpropProgram = (function () {
 }());
 exports.ResizeBilinearBackpropProgram = ResizeBilinearBackpropProgram;
 
-},{}],116:[function(require,module,exports){
+},{}],120:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ResizeBilinearProgram = (function () {
@@ -16569,7 +17165,7 @@ var ResizeBilinearProgram = (function () {
 }());
 exports.ResizeBilinearProgram = ResizeBilinearProgram;
 
-},{}],117:[function(require,module,exports){
+},{}],121:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ResizeNearestNeigborBackpropProgram = (function () {
@@ -16599,7 +17195,7 @@ var ResizeNearestNeigborBackpropProgram = (function () {
 }());
 exports.ResizeNearestNeigborBackpropProgram = ResizeNearestNeigborBackpropProgram;
 
-},{}],118:[function(require,module,exports){
+},{}],122:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ResizeNearestNeighborProgram = (function () {
@@ -16623,7 +17219,7 @@ var ResizeNearestNeighborProgram = (function () {
 }());
 exports.ResizeNearestNeighborProgram = ResizeNearestNeighborProgram;
 
-},{}],119:[function(require,module,exports){
+},{}],123:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var shader_compiler_1 = require("./shader_compiler");
@@ -16653,7 +17249,7 @@ var ReverseProgram = (function () {
 }());
 exports.ReverseProgram = ReverseProgram;
 
-},{"./shader_compiler":123}],120:[function(require,module,exports){
+},{"./shader_compiler":127}],124:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var shader_compiler_1 = require("./shader_compiler");
@@ -16687,7 +17283,7 @@ var ScatterProgram = (function () {
 }());
 exports.ScatterProgram = ScatterProgram;
 
-},{"./shader_compiler":123}],121:[function(require,module,exports){
+},{"./shader_compiler":127}],125:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var SegmentOpProgram = (function () {
@@ -16718,7 +17314,7 @@ var SegmentOpProgram = (function () {
 }());
 exports.SegmentOpProgram = SegmentOpProgram;
 
-},{}],122:[function(require,module,exports){
+},{}],126:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var shader_compiler_1 = require("./shader_compiler");
@@ -16755,9 +17351,10 @@ var SelectProgram = (function () {
 }());
 exports.SelectProgram = SelectProgram;
 
-},{"./shader_compiler":123}],123:[function(require,module,exports){
+},{"./shader_compiler":127}],127:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var environment_1 = require("../../environment");
 var broadcast_util = require("../../ops/broadcast_util");
 var util = require("../../util");
 var shader_util = require("./shader_compiler_util");
@@ -16770,7 +17367,8 @@ function makeShader(inputsInfo, outputShape, userCode, broadcast, usesPackedText
         return "uniform sampler2D " + x.name + ";";
     });
     inputPrefixSnippet = inputPrefixSnippet.join('\n');
-    var inputSamplingSnippet = inputsInfo.map(function (x) { return getInputSamplingSnippet(x, outputShape, broadcast); })
+    var inputSamplingSnippet = inputsInfo
+        .map(function (x) { return getInputSamplingSnippet(x, outputShape, broadcast, usesPackedTextures); })
         .join('\n');
     var outTexShape = outputShape.texShape;
     var outputSamplingSnippet;
@@ -16821,6 +17419,8 @@ function getSamplerFromInInfo(inInfo) {
 function getPackedSamplerFromInInfo(inInfo) {
     var shape = inInfo.shapeInfo.logicalShape;
     switch (shape.length) {
+        case 0:
+            return getPackedSamplerScalar(inInfo);
         case 1:
             return getPackedSampler1D(inInfo);
         case 2:
@@ -16834,9 +17434,10 @@ function getPackedSamplerFromInInfo(inInfo) {
                 " is not yet supported");
     }
 }
-function getInputSamplingSnippet(inInfo, outShapeInfo, broadcast) {
+function getInputSamplingSnippet(inInfo, outShapeInfo, broadcast, usesPackedTextures) {
+    if (usesPackedTextures === void 0) { usesPackedTextures = false; }
     var res = getSamplerFlat(inInfo);
-    if (inInfo.shapeInfo.isPacked) {
+    if (usesPackedTextures) {
         res += getPackedSamplerFromInInfo(inInfo);
     }
     else {
@@ -16844,7 +17445,12 @@ function getInputSamplingSnippet(inInfo, outShapeInfo, broadcast) {
     }
     if (broadcast ||
         util.arraysEqual(inInfo.shapeInfo.logicalShape, outShapeInfo.logicalShape)) {
-        res += getSamplerAtOutputCoords(inInfo, outShapeInfo, broadcast);
+        if (usesPackedTextures) {
+            res += getPackedSamplerAtOutputCoords(inInfo, outShapeInfo, broadcast);
+        }
+        else {
+            res += getSamplerAtOutputCoords(inInfo, outShapeInfo, broadcast);
+        }
     }
     return res;
 }
@@ -16894,7 +17500,14 @@ var SAMPLE_6D_SNIPPET = "\nvec2 UVfrom6D(int texNumR, int texNumC, int stride0,\
 var FLOAT_TEXTURE_SAMPLE_SNIPPET = "\n  float sampleTexture(sampler2D textureSampler, vec2 uv) {\n    return texture2D(textureSampler, uv).r;\n  }\n";
 var FLOAT_TEXTURE_SET_R_SNIPPET = "\n  void setOutput(float val) {\n    gl_FragColor = vec4(val, 0, 0, 0);\n  }\n";
 var FLOAT_TEXTURE_SET_RGBA_SNIPPET = "\n  void setOutput(vec4 val) {\n    gl_FragColor = val;\n  }\n";
-var SHADER_PREFIX = "\n  precision highp float;\n  precision highp int;\n  varying vec2 resultUV;\n  const vec2 halfCR = vec2(0.5, 0.5);\n\n  struct ivec5\n  {\n    int x;\n    int y;\n    int z;\n    int w;\n    int u;\n  };\n\n  struct ivec6\n  {\n    int x;\n    int y;\n    int z;\n    int w;\n    int u;\n    int v;\n  };\n\n  bool isNaN(float val) {\n    return (val < 1.0 || 0.0 < val || val == 0.0) ? false : true;\n  }\n\n  bool hasNaN(vec4 values) {\n    vec4 v1 = values * values;\n    vec4 v2 = values * values;\n    return any(notEqual(v1, v2));\n  }\n\n  float getNaN(vec4 values) {\n    return dot(vec4(1), values);\n  }\n\n  int round(float value) {\n    return int(floor(value + 0.5));\n  }\n\n  int imod(int x, int y) {\n    return x - y * (x / y);\n  }\n\n  //Based on the work of Dave Hoskins\n  //https://www.shadertoy.com/view/4djSRW\n  #define HASHSCALE1 443.8975\n  float random(float seed){\n    vec2 p = resultUV * seed;\n    vec3 p3  = fract(vec3(p.xyx) * HASHSCALE1);\n    p3 += dot(p3, p3.yzx + 19.19);\n    return fract((p3.x + p3.y) * p3.z);\n  }\n\n  " + SAMPLE_1D_SNIPPET + "\n  " + SAMPLE_2D_SNIPPET + "\n  " + SAMPLE_3D_SNIPPET + "\n  " + SAMPLE_4D_SNIPPET + "\n  " + SAMPLE_5D_SNIPPET + "\n  " + SAMPLE_6D_SNIPPET + "\n";
+var NAN_CHECKS = '';
+if (environment_1.ENV.get('PROD')) {
+    NAN_CHECKS = "\n    bool isNaN(float val) {\n      return false;\n    }\n\n    bool hasNaN(vec4 values) {\n      return false;\n    }\n  ";
+}
+else {
+    NAN_CHECKS = "\n    bool isNaN(float val) {\n      return (val < 1.0 || 0.0 < val || val == 0.0) ? false : true;\n    }\n\n    bool hasNaN(vec4 values) {\n      return any(bvec4(\n        isNaN(values.x),\n        isNaN(values.y),\n        isNaN(values.z),\n        isNaN(values.w)\n      ));\n    }\n  ";
+}
+var SHADER_PREFIX = "\n  precision highp float;\n  precision highp int;\n  varying vec2 resultUV;\n  const vec2 halfCR = vec2(0.5, 0.5);\n\n  struct ivec5\n  {\n    int x;\n    int y;\n    int z;\n    int w;\n    int u;\n  };\n\n  struct ivec6\n  {\n    int x;\n    int y;\n    int z;\n    int w;\n    int u;\n    int v;\n  };\n\n  " + NAN_CHECKS + "\n\n  float getNaN(vec4 values) {\n    return dot(vec4(1), values);\n  }\n\n  int round(float value) {\n    return int(floor(value + 0.5));\n  }\n\n  int imod(int x, int y) {\n    return x - y * (x / y);\n  }\n\n  //Based on the work of Dave Hoskins\n  //https://www.shadertoy.com/view/4djSRW\n  #define HASHSCALE1 443.8975\n  float random(float seed){\n    vec2 p = resultUV * seed;\n    vec3 p3  = fract(vec3(p.xyx) * HASHSCALE1);\n    p3 += dot(p3, p3.yzx + 19.19);\n    return fract((p3.x + p3.y) * p3.z);\n  }\n\n  " + SAMPLE_1D_SNIPPET + "\n  " + SAMPLE_2D_SNIPPET + "\n  " + SAMPLE_3D_SNIPPET + "\n  " + SAMPLE_4D_SNIPPET + "\n  " + SAMPLE_5D_SNIPPET + "\n  " + SAMPLE_6D_SNIPPET + "\n";
 var SHADER_PACKED_PREFIX = "\n  float getChannel(vec4 frag, vec2 innerDims) {\n    vec2 modCoord = mod(innerDims, 2.);\n    return modCoord.x == 0. ?\n      (modCoord.y == 0. ? frag.r : frag.g) :\n      (modCoord.y == 0. ? frag.b : frag.a);\n  }\n  float getChannel(vec4 frag, int dim) {\n    float modCoord = mod(float(dim), 2.);\n    return modCoord == 0. ? frag.r : frag.g;\n  }\n";
 function getOutputScalarCoords() {
     return "\n    int getOutputCoords() {\n      return 0;\n    }\n  ";
@@ -16966,6 +17579,11 @@ function getOutput2DCoords(shape, texShape) {
         return "\n      ivec2 getOutputCoords() {\n        ivec2 resTexRC = ivec2(resultUV.yx *\n                               vec2(" + texShape[0] + ", " + texShape[1] + "));\n        int index = resTexRC.x * " + texShape[1] + " + resTexRC.y;\n        return ivec2(0, index);\n      }\n    ";
     }
     return "\n    ivec2 getOutputCoords() {\n      ivec2 resTexRC = ivec2(resultUV.yx *\n                             vec2(" + texShape[0] + ", " + texShape[1] + "));\n      int index = resTexRC.x * " + texShape[1] + " + resTexRC.y;\n      int r = index / " + shape[1] + ";\n      int c = index - r * " + shape[1] + ";\n      return ivec2(r, c);\n    }\n  ";
+}
+function getPackedSamplerScalar(inputInfo) {
+    var texName = inputInfo.name;
+    var funcName = 'get' + texName.charAt(0).toUpperCase() + texName.slice(1);
+    return "\n    vec4 " + funcName + "() {\n      return texture2D(" + texName + ", halfCR);\n    }\n  ";
 }
 function getSamplerScalar(inputInfo) {
     var texName = inputInfo.name;
@@ -17235,6 +17853,39 @@ function getBroadcastOutputCoordsSampler(inputInfo, outShapeInfo, texFuncSnippet
     }
     return "\n    float " + funcName + "() {\n      " + type + " coords = getOutputCoords();\n      " + coordsSnippet + "\n      return get" + texFuncSnippet + "(" + unpackedCoordsSnippet + ");\n    }\n  ";
 }
+function getPackedSamplerAtOutputCoords(inputInfo, outShapeInfo, supportsBroadcasting) {
+    var texName = inputInfo.name;
+    var texFuncSnippet = texName.charAt(0).toUpperCase() + texName.slice(1);
+    var texShape = inputInfo.shapeInfo.texShape;
+    var funcName = 'get' + texFuncSnippet + 'AtOutCoords';
+    var outTexShape = outShapeInfo.texShape;
+    var packedTexShape = [Math.ceil(texShape[0] / 2), Math.ceil(texShape[1] / 2)];
+    var texNumR = packedTexShape[0];
+    var texNumC = packedTexShape[1];
+    var broadcastDims = broadcast_util.getBroadcastDims(inputInfo.shapeInfo.logicalShape, outShapeInfo.logicalShape);
+    var inRank = inputInfo.shapeInfo.logicalShape.length;
+    var outRank = outShapeInfo.logicalShape.length;
+    if (broadcastDims.length) {
+        throw Error('Packed broadcast sampling is not implemented yet.');
+    }
+    var inTexShape = inputInfo.shapeInfo.texShape;
+    if (util.arraysEqual(inTexShape, outTexShape)) {
+        return "\n      vec4 " + funcName + "() {\n        return texture2D(" + texName + ", resultUV);\n      }\n    ";
+    }
+    var output = "return texture2D(" + texName + ", uv)";
+    if (inRank === 1 && outRank > 1) {
+        output = "\n      vec4 sample = texture2D(" + texName + ", uv);\n      return vec4(sample.xy, sample.xy);\n    ";
+    }
+    else if (inRank === 0 && outRank > 0) {
+        if (outRank === 1) {
+            output = "\n        vec4 sample = texture2D(" + texName + ", uv);\n        return vec4(sample.x, sample.x, 0., 0.);\n      ";
+        }
+        else {
+            output = "\n        vec4 sample = texture2D(" + texName + ", uv);\n        return vec4(sample.x);\n      ";
+        }
+    }
+    return "\n    vec4 " + funcName + "() {\n      ivec2 resTexRC = ivec2(resultUV.yx *\n                             vec2(" + packedTexShape[0] + ", " + packedTexShape[1] + "));\n      int index = resTexRC.x * " + packedTexShape[1] + " + resTexRC.y;\n\n      int texR = index / " + texNumC + ";\n      int texC = index - texR * " + texNumC + ";\n      vec2 uv = (vec2(texC, texR) + halfCR) / vec2(" + texNumC + ", " + texNumR + ");\n\n      " + output + ";\n    }\n  ";
+}
 function getSamplerAtOutputCoords(inputInfo, outShapeInfo, supportsBroadcasting) {
     var texName = inputInfo.name;
     var texFuncSnippet = texName.charAt(0).toUpperCase() + texName.slice(1);
@@ -17299,7 +17950,7 @@ function getSqueezedParams(params, keptDims) {
     return keptDims.map(function (d) { return params[d]; }).join(', ');
 }
 
-},{"../../ops/broadcast_util":142,"../../util":205,"./shader_compiler_util":124}],124:[function(require,module,exports){
+},{"../../environment":55,"../../ops/broadcast_util":146,"../../util":209,"./shader_compiler_util":128}],128:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var util = require("../../util");
@@ -17349,7 +18000,7 @@ function dotify(x, y) {
 }
 exports.dotify = dotify;
 
-},{"../../util":205}],125:[function(require,module,exports){
+},{"../../util":209}],129:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var shader_compiler_1 = require("./shader_compiler");
@@ -17413,7 +18064,7 @@ function getCoords(rank) {
     }
 }
 
-},{"./shader_compiler":123}],126:[function(require,module,exports){
+},{"./shader_compiler":127}],130:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var shader_compiler_1 = require("./shader_compiler");
@@ -17451,7 +18102,7 @@ var StridedSliceProgram = (function () {
 }());
 exports.StridedSliceProgram = StridedSliceProgram;
 
-},{"./shader_compiler":123}],127:[function(require,module,exports){
+},{"./shader_compiler":127}],131:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var util = require("../../util");
@@ -17528,7 +18179,9 @@ function decodeMatrixFromUnpackedColorRGBAArray(unpackedArray, matrix, channels)
 }
 exports.decodeMatrixFromUnpackedColorRGBAArray = decodeMatrixFromUnpackedColorRGBAArray;
 function getPackedMatrixTextureShapeWidthHeight(rows, columns) {
-    return [Math.ceil(columns / 2), Math.ceil(rows / 2)];
+    return [
+        Math.max(1, Math.ceil(columns / 2)), Math.max(1, Math.ceil(rows / 2))
+    ];
 }
 exports.getPackedMatrixTextureShapeWidthHeight = getPackedMatrixTextureShapeWidthHeight;
 function getPackedRGBAArraySizeFromMatrixShape(rows, columns) {
@@ -17659,7 +18312,7 @@ function decodeMatrixFromPackedRGBA(packedRGBA, batches, rows, columns, matrix) 
 }
 exports.decodeMatrixFromPackedRGBA = decodeMatrixFromPackedRGBA;
 
-},{"../../util":205}],128:[function(require,module,exports){
+},{"../../util":209}],132:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../../environment");
@@ -17773,22 +18426,23 @@ var TextureManager = (function () {
 }());
 exports.TextureManager = TextureManager;
 function getPhysicalFromLogicalTextureType(logicalTexType, isPacked) {
-    if (isPacked) {
+    if (logicalTexType === tex_util_1.TextureUsage.UPLOAD) {
+        return isPacked ? tex_util_1.PhysicalTextureType.PACKED_2X2_FLOAT32 :
+            tex_util_1.PhysicalTextureType.UNPACKED_FLOAT32;
+    }
+    else if (logicalTexType === tex_util_1.TextureUsage.RENDER || logicalTexType == null) {
+        if (isPacked) {
+            return environment_1.ENV.get('WEBGL_RENDER_FLOAT32_ENABLED') ?
+                tex_util_1.PhysicalTextureType.PACKED_2X2_FLOAT32 :
+                tex_util_1.PhysicalTextureType.PACKED_2X2_FLOAT16;
+        }
         return environment_1.ENV.get('WEBGL_RENDER_FLOAT32_ENABLED') ?
-            tex_util_1.PhysicalTextureType.PACKED_2X2_FLOAT32 :
-            tex_util_1.PhysicalTextureType.PACKED_2X2_FLOAT16;
+            tex_util_1.PhysicalTextureType.UNPACKED_FLOAT32 :
+            tex_util_1.PhysicalTextureType.UNPACKED_FLOAT16;
     }
     else if (logicalTexType === tex_util_1.TextureUsage.DOWNLOAD ||
         logicalTexType === tex_util_1.TextureUsage.PIXELS) {
         return tex_util_1.PhysicalTextureType.PACKED_4X1_UNSIGNED_BYTE;
-    }
-    else if (logicalTexType === tex_util_1.TextureUsage.UPLOAD) {
-        return tex_util_1.PhysicalTextureType.UNPACKED_FLOAT32;
-    }
-    else if (logicalTexType === tex_util_1.TextureUsage.RENDER) {
-        return environment_1.ENV.get('WEBGL_RENDER_FLOAT32_ENABLED') ?
-            tex_util_1.PhysicalTextureType.UNPACKED_FLOAT32 :
-            tex_util_1.PhysicalTextureType.UNPACKED_FLOAT16;
     }
     throw new Error("Unknown logical texture type " + logicalTexType);
 }
@@ -17796,7 +18450,7 @@ function getKeyFromTextureShape(shapeRowsCol, physicalTexType, isPacked) {
     return shapeRowsCol[0] + "_" + shapeRowsCol[1] + "_" + physicalTexType + "_" + isPacked;
 }
 
-},{"../../environment":53,"./tex_util":127}],129:[function(require,module,exports){
+},{"../../environment":55,"./tex_util":131}],133:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var shader_compiler_1 = require("./shader_compiler");
@@ -17832,7 +18486,7 @@ function getSourceCoords(aShape) {
     return sourceCoords.join();
 }
 
-},{"./shader_compiler":123}],130:[function(require,module,exports){
+},{"./shader_compiler":127}],134:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var shader_compiler_1 = require("./shader_compiler");
@@ -17865,7 +18519,7 @@ function getSwitchedCoords(newDim) {
     return switchedCoords.join();
 }
 
-},{"./shader_compiler":123}],131:[function(require,module,exports){
+},{"./shader_compiler":127}],135:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var erf_util = require("../../ops/erf_util");
@@ -17932,7 +18586,7 @@ exports.RECIPROCAL = "return 1.0 / x;";
 exports.LOGICAL_NOT = "return float(!(x >= 1.0));";
 exports.TO_INT = "return float(int(x));";
 
-},{"../../ops/erf_util":150,"../../ops/selu_util":174}],132:[function(require,module,exports){
+},{"../../ops/erf_util":154,"../../ops/selu_util":178}],136:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var packing_util_1 = require("../packing_util");
@@ -17947,14 +18601,14 @@ var UnpackProgram = (function () {
         var dtype = shader_compiler_1.getCoordsDataType(rank);
         var sourceCoords = packing_util_1.getSourceCoords(rank, channels);
         var innerDims = channels.slice(-2);
-        var coords = rank === 1 ? 'rc' : "vec2(" + innerDims.join(',') + ")";
+        var coords = rank <= 1 ? 'rc' : "vec2(" + innerDims.join(',') + ")";
         this.userCode = "\n      void main() {\n        " + dtype + " rc = getOutputCoords();\n        vec4 packedInput = getA(" + sourceCoords + ");\n\n        setOutput(getChannel(packedInput, " + coords + "));\n      }\n    ";
     }
     return UnpackProgram;
 }());
 exports.UnpackProgram = UnpackProgram;
 
-},{"../packing_util":75,"./shader_compiler":123}],133:[function(require,module,exports){
+},{"../packing_util":77,"./shader_compiler":127}],137:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../../environment");
@@ -18219,7 +18873,7 @@ function getTextureShapeFromLogicalShape(logShape, isPacked) {
     }
     var size = util.sizeFromShape(logShape);
     if (logShape.length <= 1 && size <= maxTexSize) {
-        return [size, 1];
+        return [1, size];
     }
     else if (logShape.length === 2 && logShape[0] <= maxTexSize &&
         logShape[1] <= maxTexSize) {
@@ -18264,7 +18918,13 @@ function isReshapeFree(shape1, shape2) {
         return true;
     }
     if (shape1.length !== shape2.length) {
-        if (util.arraysEqual(util.squeezeShape(shape1).newShape, util.squeezeShape(shape2).newShape)) {
+        var shape1Cols = shape1.slice(-1)[0];
+        var shape2Cols = shape2.slice(-1)[0];
+        if (shape1Cols === shape2Cols) {
+            return true;
+        }
+        if (isEven(shape1Cols) && isEven(shape2Cols) &&
+            (shape1[0] === 1 || shape2[0] === 1)) {
             return true;
         }
     }
@@ -18282,7 +18942,7 @@ function isReshapeFree(shape1, shape2) {
 }
 exports.isReshapeFree = isReshapeFree;
 
-},{"../../environment":53,"../../util":205}],134:[function(require,module,exports){
+},{"../../environment":55,"../../util":209}],138:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var array_ops_1 = require("../ops/array_ops");
@@ -18304,7 +18964,7 @@ function whereImpl(condShape, condVals) {
 }
 exports.whereImpl = whereImpl;
 
-},{"../ops/array_ops":137}],135:[function(require,module,exports){
+},{"../ops/array_ops":141}],139:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("./environment");
@@ -18329,13 +18989,13 @@ function log() {
 }
 exports.log = log;
 
-},{"./environment":53}],136:[function(require,module,exports){
+},{"./environment":55}],140:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var confusion_matrix_1 = require("./ops/confusion_matrix");
 exports.confusionMatrix = confusion_matrix_1.confusionMatrix;
 
-},{"./ops/confusion_matrix":147}],137:[function(require,module,exports){
+},{"./ops/confusion_matrix":151}],141:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -18383,7 +19043,7 @@ var operation_1 = require("./operation");
 var rand_1 = require("./rand");
 var tensor_ops_1 = require("./tensor_ops");
 function clone_(x) {
-    var $x = tensor_util_env_1.convertToTensor(x, 'x', 'clone');
+    var $x = tensor_util_env_1.convertToTensor(x, 'x', 'clone', null);
     var der = function (dy) {
         return { $x: function () { return dy.toFloat(); } };
     };
@@ -18498,12 +19158,11 @@ function oneHot_(indices, depth, onValue, offValue) {
     if (onValue === void 0) { onValue = 1; }
     if (offValue === void 0) { offValue = 0; }
     var $indices = tensor_util_env_1.convertToTensor(indices, 'indices', 'oneHot', 'int32');
-    util.assert($indices.dtype === 'int32', 'Indices must be of dtype `int32`');
     if (depth < 2) {
         throw new Error("Error in oneHot: depth must be >=2, but it is " + depth);
     }
     var grad = function (dy) {
-        return { $indices: function () { return tensor_ops_1.zerosLike($indices); } };
+        return { $indices: function () { return tensor_ops_1.zeros($indices.shape, 'float32'); } };
     };
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.oneHot($indices, depth, onValue, offValue); }, { $indices: $indices }, grad);
 }
@@ -18520,7 +19179,10 @@ function toPixels(img, canvas) {
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
-                    $img = tensor_util_env_1.convertToTensor(img, 'img', 'toPixels', 'int32');
+                    $img = tensor_util_env_1.convertToTensor(img, 'img', 'toPixels');
+                    if (!(img instanceof tensor_1.Tensor)) {
+                        $img = $img.toInt();
+                    }
                     if ($img.rank !== 2 && $img.rank !== 3) {
                         throw new Error("toPixels only supports rank 2 or 3 tensors, got rank " + $img.rank + ".");
                     }
@@ -18604,7 +19266,7 @@ function toPixels(img, canvas) {
 }
 exports.toPixels = toPixels;
 function reshape_(x, shape) {
-    var $x = tensor_util_env_1.convertToTensor(x, 'x', 'reshape');
+    var $x = tensor_util_env_1.convertToTensor(x, 'x', 'reshape', null);
     shape = util.inferFromImplicitShape(shape, $x.size);
     util.assert($x.size === util.sizeFromShape(shape), 'new shape and old shape must have the same number of elements.');
     var grad = function (dy) {
@@ -18868,6 +19530,7 @@ function setdiff1dAsync_(x, y) {
 }
 function buffer(shape, dtype, values) {
     if (dtype === void 0) { dtype = 'float32'; }
+    dtype = dtype || 'float32';
     return new tensor_1.TensorBuffer(shape, dtype, values);
 }
 exports.buffer = buffer;
@@ -18903,7 +19566,7 @@ exports.truncatedNormal = operation_1.op({ truncatedNormal_: truncatedNormal_ })
 exports.unstack = operation_1.op({ unstack_: unstack_ });
 exports.setdiff1dAsync = setdiff1dAsync_;
 
-},{"../environment":53,"../tensor":198,"../tensor_util_env":201,"../util":205,"./axis_util":139,"./concat_split":145,"./operation":162,"./rand":165,"./tensor_ops":182}],138:[function(require,module,exports){
+},{"../environment":55,"../tensor":202,"../tensor_util_env":205,"../util":209,"./axis_util":143,"./concat_split":149,"./operation":166,"./rand":169,"./tensor_ops":186}],142:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function getReshaped(inputShape, blockShape, prod, batchToSpace) {
@@ -19001,7 +19664,7 @@ function getSliceSize(uncroppedShape, crops, blockShape) {
 }
 exports.getSliceSize = getSliceSize;
 
-},{}],139:[function(require,module,exports){
+},{}],143:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var util = require("../util");
@@ -19091,7 +19754,7 @@ function getInnerMostAxes(numAxes, rank) {
 }
 exports.getInnerMostAxes = getInnerMostAxes;
 
-},{"../util":205}],140:[function(require,module,exports){
+},{"../util":209}],144:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -19311,7 +19974,7 @@ exports.batchNormalization3d = operation_1.op({ batchNormalization3d_: batchNorm
 exports.batchNormalization4d = operation_1.op({ batchNormalization4d_: batchNormalization4d_ });
 exports.batchNormalization = operation_1.op({ batchNormalization_: batchNormalization_ });
 
-},{"../environment":53,"../tensor_util_env":201,"../util":205,"./array_ops":137,"./broadcast_util":142,"./operation":162,"./tensor_ops":182,"./unary_ops":185}],141:[function(require,module,exports){
+},{"../environment":55,"../tensor_util_env":205,"../util":209,"./array_ops":141,"./broadcast_util":146,"./operation":166,"./tensor_ops":186,"./unary_ops":189}],145:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -19324,9 +19987,10 @@ var operation_1 = require("./operation");
 var tensor_ops_1 = require("./tensor_ops");
 var unary_ops_1 = require("./unary_ops");
 function add_(a, b) {
+    var _a;
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'add');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'add');
-    tensor_util_1.assertTypesMatch($a, $b);
+    _a = tensor_util_1.makeTypesMatch($a, $b), $a = _a[0], $b = _a[1];
     var outShape = broadcast_util.assertAndGetBroadcastShape($a.shape, $b.shape);
     var der = function (dy) {
         var derA = function () {
@@ -19376,13 +20040,16 @@ function addN_(tensors) {
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.addN($tensors); }, inputs, der);
 }
 function addStrict_(a, b) {
-    util.assertShapesMatch(a.shape, b.shape, 'Error in addStrict: ');
-    return a.add(b);
+    var $a = tensor_util_env_1.convertToTensor(a, 'a', 'addStrict');
+    var $b = tensor_util_env_1.convertToTensor(b, 'b', 'addStrict');
+    util.assertShapesMatch($a.shape, $b.shape, 'Error in addStrict: ');
+    return $a.add($b);
 }
 function sub_(a, b) {
+    var _a;
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'sub');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'sub');
-    tensor_util_1.assertTypesMatch($a, $b);
+    _a = tensor_util_1.makeTypesMatch($a, $b), $a = _a[0], $b = _a[1];
     var outShape = broadcast_util.assertAndGetBroadcastShape($a.shape, $b.shape);
     var der = function (dy) {
         var derA = function () {
@@ -19406,8 +20073,10 @@ function sub_(a, b) {
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.subtract($a, $b); }, { $a: $a, $b: $b }, der);
 }
 function subStrict_(a, b) {
-    util.assertShapesMatch(a.shape, b.shape, 'Error in subStrict: ');
-    return a.sub(b);
+    var $a = tensor_util_env_1.convertToTensor(a, 'a', 'subStrict');
+    var $b = tensor_util_env_1.convertToTensor(b, 'b', 'subStrict');
+    util.assertShapesMatch($a.shape, $b.shape, 'Error in subStrict: ');
+    return $a.sub($b);
 }
 function pow_(base, exp) {
     var $base = tensor_util_env_1.convertToTensor(base, 'base', 'pow');
@@ -19443,9 +20112,10 @@ function powStrict_(base, exp) {
     return base.pow(exp);
 }
 function mul_(a, b) {
+    var _a;
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'mul');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'mul');
-    tensor_util_1.assertTypesMatch($a, $b);
+    _a = tensor_util_1.makeTypesMatch($a, $b), $a = _a[0], $b = _a[1];
     var outShape = broadcast_util.assertAndGetBroadcastShape($a.shape, $b.shape);
     var der = function (dy) {
         var derA = function () {
@@ -19469,13 +20139,16 @@ function mul_(a, b) {
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.multiply($a, $b); }, { $a: $a, $b: $b }, der);
 }
 function mulStrict_(a, b) {
-    util.assertShapesMatch(a.shape, b.shape, 'Error in multiplyStrict: ');
-    return a.mul(b);
+    var $a = tensor_util_env_1.convertToTensor(a, 'a', 'mul');
+    var $b = tensor_util_env_1.convertToTensor(b, 'b', 'mul');
+    util.assertShapesMatch($a.shape, $b.shape, 'Error in multiplyStrict: ');
+    return $a.mul($b);
 }
 function div_(a, b) {
+    var _a;
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'div');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'div');
-    tensor_util_1.assertTypesMatch($a, $b);
+    _a = tensor_util_1.makeTypesMatch($a, $b), $a = _a[0], $b = _a[1];
     var forwardFunc;
     if ($a.dtype === 'int32' && $b.dtype === 'int32') {
         return exports.floorDiv($a, $b);
@@ -19507,9 +20180,10 @@ function div_(a, b) {
     return environment_1.ENV.engine.runKernel(forwardFunc, { $a: $a, $b: $b }, der);
 }
 function floorDiv_(a, b) {
+    var _a;
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'floorDiv');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'floorDiv');
-    tensor_util_1.assertTypesMatch($a, $b);
+    _a = tensor_util_1.makeTypesMatch($a, $b), $a = _a[0], $b = _a[1];
     var forwardFunc = function (backend) { return backend.floorDiv($a, $b); };
     var outShape = broadcast_util.assertAndGetBroadcastShape($a.shape, $b.shape);
     var der = function (dy) {
@@ -19535,13 +20209,16 @@ function floorDiv_(a, b) {
     return environment_1.ENV.engine.runKernel(forwardFunc, { $a: $a, $b: $b }, der);
 }
 function divStrict_(a, b) {
-    util.assertShapesMatch(a.shape, b.shape, 'Error in divideStrict: ');
-    return a.div(b);
+    var $a = tensor_util_env_1.convertToTensor(a, 'a', 'div');
+    var $b = tensor_util_env_1.convertToTensor(b, 'b', 'div');
+    util.assertShapesMatch($a.shape, $b.shape, 'Error in divideStrict: ');
+    return $a.div($b);
 }
 function mod_(a, b) {
+    var _a;
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'mod');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'mod');
-    tensor_util_1.assertTypesMatch($a, $b);
+    _a = tensor_util_1.makeTypesMatch($a, $b), $a = _a[0], $b = _a[1];
     var outShape = broadcast_util.assertAndGetBroadcastShape($a.shape, $b.shape);
     var der = function (dy) {
         var derA = function () {
@@ -19564,17 +20241,18 @@ function mod_(a, b) {
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.mod($a, $b); }, { $a: $a, $b: $b }, der);
 }
 function modStrict_(a, b) {
-    util.assertShapesMatch(a.shape, b.shape, 'Error in modStrict: ');
-    return a.mod(b);
+    var $a = tensor_util_env_1.convertToTensor(a, 'a', 'modStrict');
+    var $b = tensor_util_env_1.convertToTensor(b, 'b', 'modStrict');
+    util.assertShapesMatch($a.shape, $b.shape, 'Error in modStrict: ');
+    return $a.mod($b);
 }
 function minimum_(a, b) {
+    var _a;
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'minimum');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'minimum');
-    tensor_util_1.assertTypesMatch($a, $b);
+    _a = tensor_util_1.makeTypesMatch($a, $b), $a = _a[0], $b = _a[1];
     if ($a.dtype === 'bool') {
         $a = $a.toInt();
-    }
-    if ($b.dtype === 'bool') {
         $b = $b.toInt();
     }
     broadcast_util.assertAndGetBroadcastShape($a.shape, $b.shape);
@@ -19586,17 +20264,18 @@ function minimum_(a, b) {
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.minimum($a, $b); }, { $a: $a, $b: $b }, der);
 }
 function minimumStrict_(a, b) {
-    util.assertShapesMatch(a.shape, b.shape, 'Error in minimumStrict: ');
-    return a.minimum(b);
+    var $a = tensor_util_env_1.convertToTensor(a, 'a', 'minimumStrict');
+    var $b = tensor_util_env_1.convertToTensor(b, 'b', 'minimumStrict');
+    util.assertShapesMatch($a.shape, $b.shape, 'Error in minimumStrict: ');
+    return $a.minimum($b);
 }
 function maximum_(a, b) {
+    var _a;
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'maximum');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'maximum');
-    tensor_util_1.assertTypesMatch($a, $b);
+    _a = tensor_util_1.makeTypesMatch($a, $b), $a = _a[0], $b = _a[1];
     if ($a.dtype === 'bool') {
         $a = $a.toInt();
-    }
-    if ($b.dtype === 'bool') {
         $b = $b.toInt();
     }
     broadcast_util.assertAndGetBroadcastShape($a.shape, $b.shape);
@@ -19608,13 +20287,16 @@ function maximum_(a, b) {
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.maximum($a, $b); }, { $a: $a, $b: $b }, der);
 }
 function maximumStrict_(a, b) {
-    util.assertShapesMatch(a.shape, b.shape, 'Error in maximumStrict: ');
-    return a.maximum(b);
+    var $a = tensor_util_env_1.convertToTensor(a, 'a', 'maximumStrict');
+    var $b = tensor_util_env_1.convertToTensor(b, 'b', 'maximumStrict');
+    util.assertShapesMatch($a.shape, $b.shape, 'Error in maximumStrict: ');
+    return $a.maximum($b);
 }
 function squaredDifference_(a, b) {
+    var _a;
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'squaredDifference');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'squaredDifference');
-    tensor_util_1.assertTypesMatch($a, $b);
+    _a = tensor_util_1.makeTypesMatch($a, $b), $a = _a[0], $b = _a[1];
     broadcast_util.assertAndGetBroadcastShape($a.shape, $b.shape);
     var der = function (dy) {
         var two = tensor_ops_1.scalar(2);
@@ -19625,13 +20307,16 @@ function squaredDifference_(a, b) {
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.squaredDifference($a, $b); }, { $a: $a, $b: $b }, der);
 }
 function squaredDifferenceStrict_(a, b) {
-    util.assertShapesMatch(a.shape, b.shape, 'Error in squaredDifferenceStrict: ');
-    return a.squaredDifference(b);
+    var $a = tensor_util_env_1.convertToTensor(a, 'a', 'squaredDifferenceStrict');
+    var $b = tensor_util_env_1.convertToTensor(b, 'b', 'squaredDifferenceStrict');
+    util.assertShapesMatch($a.shape, $b.shape, 'Error in squaredDifferenceStrict: ');
+    return $a.squaredDifference($b);
 }
 function atan2_(a, b) {
+    var _a;
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'atan2');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'atan2');
-    tensor_util_1.assertTypesMatch($a, $b);
+    _a = tensor_util_1.makeTypesMatch($a, $b), $a = _a[0], $b = _a[1];
     var outShape = broadcast_util.assertAndGetBroadcastShape($a.shape, $b.shape);
     var der = function (dy) {
         var derA = function () {
@@ -19678,7 +20363,7 @@ exports.squaredDifferenceStrict = operation_1.op({ squaredDifferenceStrict_: squ
 exports.sub = operation_1.op({ sub_: sub_ });
 exports.subStrict = operation_1.op({ subStrict_: subStrict_ });
 
-},{"../environment":53,"../tensor_util":200,"../tensor_util_env":201,"../types":204,"../util":205,"./broadcast_util":142,"./operation":162,"./tensor_ops":182,"./unary_ops":185}],142:[function(require,module,exports){
+},{"../environment":55,"../tensor_util":204,"../tensor_util_env":205,"../types":208,"../util":209,"./broadcast_util":146,"./operation":166,"./tensor_ops":186,"./unary_ops":189}],146:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function getBroadcastDims(inShape, outShape) {
@@ -19748,7 +20433,7 @@ function assertAndGetBroadcastShape(shapeA, shapeB) {
 }
 exports.assertAndGetBroadcastShape = assertAndGetBroadcastShape;
 
-},{}],143:[function(require,module,exports){
+},{}],147:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -19759,9 +20444,10 @@ var broadcast_util_1 = require("./broadcast_util");
 var operation_1 = require("./operation");
 var tensor_ops_1 = require("./tensor_ops");
 function notEqual_(a, b) {
+    var _a;
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'notEqual');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'notEqual');
-    tensor_util_1.assertTypesMatch($a, $b);
+    _a = tensor_util_1.makeTypesMatch($a, $b), $a = _a[0], $b = _a[1];
     broadcast_util_1.assertAndGetBroadcastShape($a.shape, $b.shape);
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.notEqual($a, $b); }, { $a: $a, $b: $b });
 }
@@ -19772,9 +20458,10 @@ function notEqualStrict_(a, b) {
     return $a.notEqual($b);
 }
 function less_(a, b) {
+    var _a;
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'less');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'less');
-    tensor_util_1.assertTypesMatch($a, $b);
+    _a = tensor_util_1.makeTypesMatch($a, $b), $a = _a[0], $b = _a[1];
     broadcast_util_1.assertAndGetBroadcastShape($a.shape, $b.shape);
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.less($a, $b); }, { $a: $a, $b: $b });
 }
@@ -19785,9 +20472,10 @@ function lessStrict_(a, b) {
     return $a.less($b);
 }
 function equal_(a, b) {
+    var _a;
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'equal');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'equal');
-    tensor_util_1.assertTypesMatch($a, $b);
+    _a = tensor_util_1.makeTypesMatch($a, $b), $a = _a[0], $b = _a[1];
     broadcast_util_1.assertAndGetBroadcastShape($a.shape, $b.shape);
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.equal($a, $b); }, { $a: $a, $b: $b });
 }
@@ -19798,9 +20486,10 @@ function equalStrict_(a, b) {
     return $a.equal($b);
 }
 function lessEqual_(a, b) {
+    var _a;
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'lessEqual');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'lessEqual');
-    tensor_util_1.assertTypesMatch($a, $b);
+    _a = tensor_util_1.makeTypesMatch($a, $b), $a = _a[0], $b = _a[1];
     broadcast_util_1.assertAndGetBroadcastShape($a.shape, $b.shape);
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.lessEqual($a, $b); }, { $a: $a, $b: $b });
 }
@@ -19811,9 +20500,10 @@ function lessEqualStrict_(a, b) {
     return $a.lessEqual($b);
 }
 function greater_(a, b) {
+    var _a;
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'greater');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'greater');
-    tensor_util_1.assertTypesMatch($a, $b);
+    _a = tensor_util_1.makeTypesMatch($a, $b), $a = _a[0], $b = _a[1];
     broadcast_util_1.assertAndGetBroadcastShape($a.shape, $b.shape);
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.greater($a, $b); }, { $a: $a, $b: $b });
 }
@@ -19824,9 +20514,10 @@ function greaterStrict_(a, b) {
     return $a.greater($b);
 }
 function greaterEqual_(a, b) {
+    var _a;
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'greaterEqual');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'greaterEqual');
-    tensor_util_1.assertTypesMatch($a, $b);
+    _a = tensor_util_1.makeTypesMatch($a, $b), $a = _a[0], $b = _a[1];
     broadcast_util_1.assertAndGetBroadcastShape($a.shape, $b.shape);
     var grad = function (dy) {
         return { $a: function () { return tensor_ops_1.zerosLike($a); }, $b: function () { return tensor_ops_1.zerosLike($b); } };
@@ -19852,7 +20543,7 @@ exports.lessStrict = operation_1.op({ lessStrict_: lessStrict_ });
 exports.notEqual = operation_1.op({ notEqual_: notEqual_ });
 exports.notEqualStrict = operation_1.op({ notEqualStrict_: notEqualStrict_ });
 
-},{"../environment":53,"../tensor_util":200,"../tensor_util_env":201,"../util":205,"./broadcast_util":142,"./operation":162,"./tensor_ops":182}],144:[function(require,module,exports){
+},{"../environment":55,"../tensor_util":204,"../tensor_util_env":205,"../util":209,"./broadcast_util":146,"./operation":166,"./tensor_ops":186}],148:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -19878,7 +20569,7 @@ exports.complex = operation_1.op({ complex_: complex_ });
 exports.real = operation_1.op({ real_: real_ });
 exports.imag = operation_1.op({ imag_: imag_ });
 
-},{"../environment":53,"../tensor_util_env":201,"../util":205,"./operation":162}],145:[function(require,module,exports){
+},{"../environment":55,"../tensor_util_env":205,"../util":209,"./operation":166}],149:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -19946,7 +20637,7 @@ exports.concat3d = operation_1.op({ concat3d_: concat3d_ });
 exports.concat4d = operation_1.op({ concat4d_: concat4d_ });
 exports.split = operation_1.op({ split_: split_ });
 
-},{"../environment":53,"../tensor_util_env":201,"../util":205,"./axis_util":139,"./concat_util":146,"./operation":162,"./tensor_ops":182}],146:[function(require,module,exports){
+},{"../environment":55,"../tensor_util_env":205,"../util":209,"./axis_util":143,"./concat_util":150,"./operation":166,"./tensor_ops":186}],150:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var util = require("../util");
@@ -19976,7 +20667,7 @@ function computeOutShape(shapes, axis) {
 }
 exports.computeOutShape = computeOutShape;
 
-},{"../util":205}],147:[function(require,module,exports){
+},{"../util":209}],151:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tensor_util_env_1 = require("../tensor_util_env");
@@ -19984,8 +20675,8 @@ var util = require("../util");
 var array_ops_1 = require("./array_ops");
 var operation_1 = require("./operation");
 function confusionMatrix_(labels, predictions, numClasses) {
-    var $labels = tensor_util_env_1.convertToTensor(labels, 'label', 'confusionMatrix', 'int32');
-    var $predictions = tensor_util_env_1.convertToTensor(predictions, 'label', 'confusionMatrix', 'int32');
+    var $labels = tensor_util_env_1.convertToTensor(labels, 'labels', 'confusionMatrix');
+    var $predictions = tensor_util_env_1.convertToTensor(predictions, 'predictions', 'confusionMatrix');
     util.assert(numClasses == null || numClasses > 0 && Number.isInteger(numClasses), "If provided, numClasses must be a positive integer, " +
         ("but got " + numClasses));
     util.assert($labels.rank === 1, "Expected the rank of labels to be 1, but got " + $labels.rank);
@@ -20002,7 +20693,7 @@ function confusionMatrix_(labels, predictions, numClasses) {
 exports.confusionMatrix_ = confusionMatrix_;
 exports.confusionMatrix = operation_1.op({ confusionMatrix_: confusionMatrix_ });
 
-},{"../tensor_util_env":201,"../util":205,"./array_ops":137,"./operation":162}],148:[function(require,module,exports){
+},{"../tensor_util_env":205,"../util":209,"./array_ops":141,"./operation":166}],152:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -20249,6 +20940,22 @@ function separableConv2d_(x, depthwiseFilter, pointwiseFilter, strides, pad, dil
     }
     return res;
 }
+function parseTupleParam(param) {
+    if (typeof param === 'number') {
+        return [param, param, param];
+    }
+    if (param.length === 2) {
+        return [param[0], param[1], 1];
+    }
+    return param;
+}
+function tupleValuesAreOne(param) {
+    var _a = parseTupleParam(param), dimA = _a[0], dimB = _a[1], dimC = _a[2];
+    return dimA === 1 && dimB === 1 && dimC === 1;
+}
+function eitherStridesOrDilationsAreOne(strides, dilations) {
+    return tupleValuesAreOne(strides) || tupleValuesAreOne(dilations);
+}
 function depthwiseConv2dDerInput(xShape, dy, filter, convInfo) {
     var dy4D = dy;
     var reshapedTo4D = false;
@@ -20273,14 +20980,103 @@ function depthwiseConv2dDerFilter(x, dy, filterShape, convInfo) {
     }
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.depthwiseConv2DDerFilter(x4D, dy4D, convInfo); }, { x4D: x4D, dy4D: dy4D });
 }
+function conv3d_(x, filter, strides, pad, dataFormat, dilations) {
+    if (dataFormat === void 0) { dataFormat = 'NHWC'; }
+    if (dilations === void 0) { dilations = [1, 1, 1]; }
+    var $x = tensor_util_env_1.convertToTensor(x, 'x', 'conv3d');
+    var $filter = tensor_util_env_1.convertToTensor(filter, 'filter', 'conv3d');
+    var x5D = $x;
+    var reshapedTo5D = false;
+    if ($x.rank === 4) {
+        reshapedTo5D = true;
+        x5D = $x.as5D(1, $x.shape[0], $x.shape[1], $x.shape[2], $x.shape[3]);
+    }
+    util.assert(x5D.rank === 5, "Error in conv3d: input must be rank 5, but got rank " + x5D.rank + ".");
+    util.assert($filter.rank === 5, "Error in conv3d: filter must be rank 5, but got rank " +
+        ($filter.rank + "."));
+    util.assert(x5D.shape[4] === $filter.shape[3], "Error in conv3d: depth of input (" + x5D.shape[4] + ") must match " +
+        ("input depth for filter " + $filter.shape[3] + "."));
+    util.assert(eitherStridesOrDilationsAreOne(strides, dilations), 'Error in conv3D: Either strides or dilations must be 1. ' +
+        ("Got strides " + strides + " and dilations '" + dilations + "'"));
+    util.assert(dataFormat === 'NHWC', "Error in conv3d: got dataFormat of " + dataFormat + " but only NHWC is currently supported.");
+    var convInfo = conv_util.computeConv3DInfo(x5D.shape, $filter.shape, strides, dilations, pad);
+    var grad = function (dy) {
+        util.assert(tupleValuesAreOne(dilations), 'Error in gradient of conv3D: dilation rates greater than 1 are not' +
+            ("yet supported in gradients. Got dilations '" + dilations + "'"));
+        return {
+            x: function () { return conv3dDerInput_(x5D.shape, dy, $filter, strides, pad); },
+            $filter: function () { return conv3dDerFilter_(x5D, dy, $filter.shape, strides, pad); }
+        };
+    };
+    var res = environment_1.ENV.engine.runKernel(function (backend) { return backend.conv3d(x5D, $filter, convInfo); }, { x: x5D, $filter: $filter }, grad);
+    if (reshapedTo5D) {
+        return res.as4D(res.shape[1], res.shape[2], res.shape[3], res.shape[4]);
+    }
+    return res;
+}
+function conv3dDerInput_(xShape, dy, filter, strides, pad) {
+    util.assert(xShape.length === dy.rank, "Length of inShape " +
+        ("(" + xShape.length + ") and rank of dy (" + dy.rank + ") must match"));
+    var xShape5D = xShape;
+    var dy5D = dy;
+    var reshapedTo5D = false;
+    if (dy.rank === 4) {
+        reshapedTo5D = true;
+        dy5D = dy.as5D(1, dy.shape[0], dy.shape[1], dy.shape[2], dy.shape[3]);
+        xShape5D = [1, xShape[0], xShape[1], xShape[2], xShape[3]];
+    }
+    var inDepth = xShape5D[4];
+    var outDepth = dy5D.shape[4];
+    util.assert(xShape5D.length === 5, "Error in conv3dDerInput: inShape must be length 5, but got length " +
+        (xShape5D.length + "."));
+    util.assert(dy5D.rank === 5, "Error in conv3dDerInput: dy must be rank 5, but got " +
+        ("rank " + dy5D.rank));
+    util.assert(filter.rank === 5, "Error in conv3dDerInput: filter must be rank 5, but got " +
+        ("rank " + filter.rank));
+    util.assert(inDepth === filter.shape[3], "Error in conv3dDerInput: depth of input (" + inDepth + ") must " +
+        ("match input depth for filter " + filter.shape[3] + "."));
+    util.assert(outDepth === filter.shape[4], "Error in conv3dDerInput: depth of output (" + outDepth + ") must " +
+        ("match output depth for filter " + filter.shape[4] + "."));
+    var dilations = 1;
+    var convInfo = conv_util.computeConv3DInfo(xShape5D, filter.shape, strides, dilations, pad);
+    var res = environment_1.ENV.engine.runKernel(function (backend) { return backend.conv3dDerInput(dy5D, filter, convInfo); }, { dy5D: dy5D });
+    if (reshapedTo5D) {
+        return res.as4D(res.shape[1], res.shape[2], res.shape[3], res.shape[4]);
+    }
+    return res;
+}
+function conv3dDerFilter_(x, dy, filterShape, strides, pad) {
+    var x5D = x;
+    if (x.rank === 4) {
+        x5D = x.as5D(1, x.shape[0], x.shape[1], x.shape[2], x.shape[3]);
+    }
+    var dy5D = dy;
+    if (dy5D.rank === 4) {
+        dy5D = dy.as5D(1, dy.shape[0], dy.shape[1], dy.shape[2], dy.shape[3]);
+    }
+    util.assert(x5D.rank === 5, "Error in conv3dDerFilter: input must be rank 5, but got shape " +
+        (x5D.shape + "."));
+    util.assert(dy5D.rank === 5, "Error in conv3dDerFilter: dy must be rank 5, but got shape " +
+        (dy5D.shape + "."));
+    util.assert(filterShape.length === 5, "Error in conv3dDerFilter: filterShape must be length 5, but got " +
+        (filterShape + "."));
+    util.assert(x5D.shape[4] === filterShape[3], "Error in conv3dDerFilter: depth of input " + x5D.shape[4] + ") must " +
+        ("match input depth in filter (" + filterShape[3] + "."));
+    util.assert(dy5D.shape[4] === filterShape[4], "Error in conv3dDerFilter: depth of dy (" + dy5D.shape[4] + ") must " +
+        ("match output depth for filter (" + filterShape[4] + ")."));
+    var dilations = 1;
+    var convInfo = conv_util.computeConv3DInfo(x5D.shape, filterShape, strides, dilations, pad);
+    return environment_1.ENV.engine.runKernel(function (backend) { return backend.conv3dDerFilter(x5D, dy5D, convInfo); }, { x5D: x5D, dy5D: dy5D });
+}
 exports.conv1d = operation_1.op({ conv1d_: conv1d_ });
 exports.conv2d = operation_1.op({ conv2d_: conv2d_ });
+exports.conv3d = operation_1.op({ conv3d_: conv3d_ });
 exports.conv2dDerFilter = operation_1.op({ conv2dDerFilter_: conv2dDerFilter_ });
 exports.depthwiseConv2d = operation_1.op({ depthwiseConv2d_: depthwiseConv2d_ });
 exports.separableConv2d = operation_1.op({ separableConv2d_: separableConv2d_ });
 exports.conv2dTranspose = operation_1.op({ conv2dTranspose_: conv2dTranspose_ });
 
-},{"../environment":53,"../tensor_util_env":201,"../util":205,"./conv_util":149,"./matmul":159,"./operation":162}],149:[function(require,module,exports){
+},{"../environment":55,"../tensor_util_env":205,"../util":209,"./conv_util":153,"./matmul":163,"./operation":166}],153:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var util = require("../util");
@@ -20351,6 +21147,61 @@ function computeConv2DInfo(inShape, filterShape, strides, dilations, pad, roundi
     };
 }
 exports.computeConv2DInfo = computeConv2DInfo;
+function computeConv3DInfo(inShape, filterShape, strides, dilations, pad, depthwise, dataFormat) {
+    if (depthwise === void 0) { depthwise = false; }
+    if (dataFormat === void 0) { dataFormat = 'channelsLast'; }
+    var _a = [-1, -1, -1, -1, -1], batchSize = _a[0], inDepth = _a[1], inHeight = _a[2], inWidth = _a[3], inChannels = _a[4];
+    if (dataFormat === 'channelsLast') {
+        batchSize = inShape[0], inDepth = inShape[1], inHeight = inShape[2], inWidth = inShape[3], inChannels = inShape[4];
+    }
+    else if (dataFormat === 'channelsFirst') {
+        batchSize = inShape[0], inChannels = inShape[1], inDepth = inShape[2], inHeight = inShape[3], inWidth = inShape[4];
+    }
+    else {
+        throw new Error("Unknown dataFormat " + dataFormat);
+    }
+    var filterDepth = filterShape[0], filterHeight = filterShape[1], filterWidth = filterShape[2], filterChannels = filterShape[4];
+    var _b = parse3TupleParam(strides), strideDepth = _b[0], strideHeight = _b[1], strideWidth = _b[2];
+    var _c = parse3TupleParam(dilations), dilationDepth = _c[0], dilationHeight = _c[1], dilationWidth = _c[2];
+    var effectiveFilterDepth = getEffectiveFilterSize(filterDepth, dilationDepth);
+    var effectiveFilterHeight = getEffectiveFilterSize(filterHeight, dilationHeight);
+    var effectiveFilterWidth = getEffectiveFilterSize(filterWidth, dilationWidth);
+    var _d = get3DPadAndOutInfo(pad, inDepth, inHeight, inWidth, strideDepth, strideHeight, strideWidth, effectiveFilterDepth, effectiveFilterHeight, effectiveFilterWidth), padInfo = _d.padInfo, outDepth = _d.outDepth, outHeight = _d.outHeight, outWidth = _d.outWidth;
+    var outChannels = depthwise ? filterChannels * inChannels : filterChannels;
+    var outShape;
+    if (dataFormat === 'channelsFirst') {
+        outShape = [batchSize, outChannels, outDepth, outHeight, outWidth];
+    }
+    else if (dataFormat === 'channelsLast') {
+        outShape = [batchSize, outDepth, outHeight, outWidth, outChannels];
+    }
+    return {
+        batchSize: batchSize,
+        dataFormat: dataFormat,
+        inDepth: inDepth,
+        inHeight: inHeight,
+        inWidth: inWidth,
+        inChannels: inChannels,
+        outDepth: outDepth,
+        outHeight: outHeight,
+        outWidth: outWidth,
+        outChannels: outChannels,
+        padInfo: padInfo,
+        strideDepth: strideDepth,
+        strideHeight: strideHeight,
+        strideWidth: strideWidth,
+        filterDepth: filterDepth,
+        filterHeight: filterHeight,
+        filterWidth: filterWidth,
+        dilationDepth: dilationDepth,
+        dilationHeight: dilationHeight,
+        dilationWidth: dilationWidth,
+        inShape: inShape,
+        outShape: outShape,
+        filterShape: filterShape
+    };
+}
+exports.computeConv3DInfo = computeConv3DInfo;
 function computeOutputShape3D(inShape, fieldSize, outDepth, stride, zeroPad, roundingMode) {
     if (zeroPad == null) {
         zeroPad = computeDefaultPad(inShape, fieldSize, stride);
@@ -20373,6 +21224,9 @@ function computeDefaultPad(inputShape, fieldSize, stride, dilation) {
 exports.computeDefaultPad = computeDefaultPad;
 function parseTupleParam(param) {
     return typeof param === 'number' ? [param, param] : param;
+}
+function parse3TupleParam(param) {
+    return typeof param === 'number' ? [param, param, param] : param;
 }
 function getEffectiveFilterSize(filterSize, dilation) {
     if (dilation <= 1) {
@@ -20412,6 +21266,45 @@ function getPadAndOutInfo(pad, inHeight, inWidth, strideHeight, strideWidth, fil
     }
     return { padInfo: padInfo, outHeight: outHeight, outWidth: outWidth };
 }
+function get3DPadAndOutInfo(pad, inDepth, inHeight, inWidth, strideDepth, strideHeight, strideWidth, filterDepth, filterHeight, filterWidth) {
+    var padInfo;
+    var outDepth;
+    var outHeight;
+    var outWidth;
+    if (pad === 'same') {
+        outDepth = Math.ceil(inDepth / strideDepth);
+        outHeight = Math.ceil(inHeight / strideHeight);
+        outWidth = Math.ceil(inWidth / strideWidth);
+        var padAlongDepth = (outDepth - 1) * strideDepth + filterDepth - inDepth;
+        var padAlongHeight = (outHeight - 1) * strideHeight + filterHeight - inHeight;
+        var padAlongWidth = (outWidth - 1) * strideWidth + filterWidth - inWidth;
+        var front = Math.floor(padAlongDepth / 2);
+        var back = padAlongDepth - front;
+        var top_2 = Math.floor(padAlongHeight / 2);
+        var bottom = padAlongHeight - top_2;
+        var left = Math.floor(padAlongWidth / 2);
+        var right = padAlongWidth - left;
+        padInfo = { top: top_2, bottom: bottom, left: left, right: right, front: front, back: back, type: 'SAME' };
+    }
+    else if (pad === 'valid') {
+        padInfo = {
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            front: 0,
+            back: 0,
+            type: 'VALID'
+        };
+        outDepth = Math.ceil((inDepth - filterDepth + 1) / strideDepth);
+        outHeight = Math.ceil((inHeight - filterHeight + 1) / strideHeight);
+        outWidth = Math.ceil((inWidth - filterWidth + 1) / strideWidth);
+    }
+    else {
+        throw Error("Unknown padding parameter: " + pad);
+    }
+    return { padInfo: padInfo, outDepth: outDepth, outHeight: outHeight, outWidth: outWidth };
+}
 function conditionalRound(value, roundingMode) {
     if (!roundingMode) {
         return value;
@@ -20437,7 +21330,7 @@ function eitherStridesOrDilationsAreOne(strides, dilations) {
 }
 exports.eitherStridesOrDilationsAreOne = eitherStridesOrDilationsAreOne;
 
-},{"../util":205}],150:[function(require,module,exports){
+},{"../util":209}],154:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ERF_P = 0.3275911;
@@ -20447,7 +21340,7 @@ exports.ERF_A3 = 1.421413741;
 exports.ERF_A4 = -1.453152027;
 exports.ERF_A5 = 1.061405429;
 
-},{}],151:[function(require,module,exports){
+},{}],155:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -20460,7 +21353,7 @@ function gatherND_(x, indices) {
 }
 exports.gatherND = operation_1.op({ gatherND_: gatherND_ });
 
-},{"../environment":53,"../tensor_util_env":201,"./operation":162}],152:[function(require,module,exports){
+},{"../environment":55,"../tensor_util_env":205,"./operation":166}],156:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var util_1 = require("../util");
@@ -20504,7 +21397,7 @@ function prepareAndValidate(tensor, indices) {
 }
 exports.prepareAndValidate = prepareAndValidate;
 
-},{"../util":205}],153:[function(require,module,exports){
+},{"../util":209}],157:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -20681,8 +21574,6 @@ function cropAndResize_(image, boxes, boxInd, cropSize, method, extrapolationVal
         ("but had shape " + $boxes.shape + "."));
     util.assert($boxInd.rank === 1 && $boxInd.shape[0] === numBoxes, "Error in cropAndResize: boxInd must be have size [" + numBoxes + "] " +
         ("but had shape " + $boxes.shape + "."));
-    util.assert($boxInd.dtype === 'int32', "Error in cropAndResize: boxInd must be of dtype int32, but got dtype " +
-        ($boxInd.dtype + "."));
     util.assert(cropSize.length === 2, "Error in cropAndResize: cropSize must be of length 2, but got length " +
         (cropSize.length + "."));
     util.assert(cropSize[0] >= 1 && cropSize[1] >= 1, "cropSize must be atleast [1,1], but was " + cropSize);
@@ -20699,7 +21590,7 @@ exports.nonMaxSuppression = operation_1.op({ nonMaxSuppression_: nonMaxSuppressi
 exports.nonMaxSuppressionAsync = nonMaxSuppressionAsync_;
 exports.cropAndResize = cropAndResize_;
 
-},{"../environment":53,"../kernels/non_max_suppression_impl":74,"../tensor_util_env":201,"../util":205,"./operation":162}],154:[function(require,module,exports){
+},{"../environment":55,"../kernels/non_max_suppression_impl":76,"../tensor_util_env":205,"../util":209,"./operation":166}],158:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -20845,7 +21736,7 @@ function qr2d(x, fullMatrices) {
 exports.gramSchmidt = operation_1.op({ gramSchmidt_: gramSchmidt_ });
 exports.qr = operation_1.op({ qr_: qr_ });
 
-},{"../environment":53,"../globals":55,"../util":205,"./array_ops":137,"./concat_split":145,"./norm":161,"./operation":162,"./reduction_ops":167,"./tensor_ops":182}],155:[function(require,module,exports){
+},{"../environment":55,"../globals":57,"../util":209,"./array_ops":141,"./concat_split":149,"./norm":165,"./operation":166,"./reduction_ops":171,"./tensor_ops":186}],159:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -20892,27 +21783,23 @@ var operation_1 = require("./operation");
 var tensor_ops_1 = require("./tensor_ops");
 function logicalNot_(x) {
     var $x = tensor_util_env_1.convertToTensor(x, 'x', 'logicalNot', 'bool');
-    util_1.assert($x.dtype === 'bool', 'Error Array must be of type bool.');
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.logicalNot($x); }, { $x: $x });
 }
 function logicalAnd_(a, b) {
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'logicalAnd', 'bool');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'logicalAnd', 'bool');
-    util_1.assert($a.dtype === 'bool' && $b.dtype === 'bool', 'Error Array must be of type bool.');
     broadcast_util_1.assertAndGetBroadcastShape($a.shape, $b.shape);
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.logicalAnd($a, $b); }, { $a: $a, $b: $b });
 }
 function logicalOr_(a, b) {
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'logicalOr', 'bool');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'logicalOr', 'bool');
-    util_1.assert($a.dtype === 'bool' && $b.dtype === 'bool', 'Error Array must be of type bool.');
     broadcast_util_1.assertAndGetBroadcastShape($a.shape, $b.shape);
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.logicalOr($a, $b); }, { $a: $a, $b: $b });
 }
 function logicalXor_(a, b) {
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'logicalXor', 'bool');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'logicalXor', 'bool');
-    util_1.assert($a.dtype === 'bool' && $b.dtype === 'bool', 'Error Array must be of type bool.');
     broadcast_util_1.assertAndGetBroadcastShape($a.shape, $b.shape);
     return exports.logicalOr(a, b).logicalAnd(exports.logicalAnd(a, b).logicalNot());
 }
@@ -20920,7 +21807,6 @@ function where_(condition, a, b) {
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'where');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'where');
     var $condition = tensor_util_env_1.convertToTensor(condition, 'condition', 'where', 'bool');
-    util_1.assert($condition.dtype === 'bool', 'Error Condition must be of type bool.');
     util_1.assertShapesMatch($a.shape, $b.shape, 'Error in where: ');
     if ($condition.rank === 1) {
         util_1.assert($condition.shape[0] === $a.shape[0], 'The first dimension of `a` must match the size of `condition`.');
@@ -20929,9 +21815,9 @@ function where_(condition, a, b) {
         util_1.assertShapesMatch($condition.shape, $b.shape, 'Error in where: ');
     }
     var grad = function (dy) { return ({
-        $condition: function () { return tensor_ops_1.zerosLike($condition); },
-        $a: function () { return dy.mul($condition.cast($a.dtype)); },
-        $b: function () { return dy.mul($condition.logicalNot().cast($b.dtype)); }
+        $condition: function () { return tensor_ops_1.zerosLike($condition).toFloat(); },
+        $a: function () { return dy.mul($condition.cast(dy.dtype)); },
+        $b: function () { return dy.mul($condition.logicalNot().cast(dy.dtype)); }
     }); };
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.select($condition, $a, $b); }, { $condition: $condition, $a: $a, $b: $b }, grad);
 }
@@ -20941,8 +21827,7 @@ function whereAsync_(condition) {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    $condition = tensor_util_env_1.convertToTensor(condition, 'condition', 'where', 'bool');
-                    util_1.assert($condition.dtype === 'bool', 'Condition must be of type bool.');
+                    $condition = tensor_util_env_1.convertToTensor(condition, 'condition', 'whereAsync', 'bool');
                     return [4, $condition.data()];
                 case 1:
                     vals = _a.sent();
@@ -20962,7 +21847,7 @@ exports.logicalXor = operation_1.op({ logicalXor_: logicalXor_ });
 exports.where = operation_1.op({ where_: where_ });
 exports.whereAsync = whereAsync_;
 
-},{"../environment":53,"../kernels/where_impl":134,"../tensor_util_env":201,"../util":205,"./broadcast_util":142,"./operation":162,"./tensor_ops":182}],156:[function(require,module,exports){
+},{"../environment":55,"../kernels/where_impl":138,"../tensor_util_env":205,"../util":209,"./broadcast_util":146,"./operation":166,"./tensor_ops":186}],160:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var globals_1 = require("../globals");
@@ -21187,7 +22072,7 @@ exports.meanSquaredError = operation_1.op({ meanSquaredError_: meanSquaredError_
 exports.sigmoidCrossEntropy = operation_1.op({ sigmoidCrossEntropy_: sigmoidCrossEntropy_ });
 exports.softmaxCrossEntropy = operation_1.op({ softmaxCrossEntropy_: softmaxCrossEntropy_ });
 
-},{"../globals":55,"../tensor_util_env":201,"../util":205,"./axis_util":139,"./binary_ops":141,"./operation":162,"./tensor_ops":182}],157:[function(require,module,exports){
+},{"../globals":57,"../tensor_util_env":205,"../util":209,"./axis_util":143,"./binary_ops":145,"./operation":166,"./tensor_ops":186}],161:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -21224,7 +22109,7 @@ function localResponseNormalization_(x, depthRadius, bias, alpha, beta) {
 }
 exports.localResponseNormalization = operation_1.op({ localResponseNormalization_: localResponseNormalization_ });
 
-},{"../environment":53,"../tensor_util_env":201,"../util":205,"./operation":162}],158:[function(require,module,exports){
+},{"../environment":55,"../tensor_util_env":205,"../util":209,"./operation":166}],162:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tensor_util_env_1 = require("../tensor_util_env");
@@ -21273,18 +22158,21 @@ function basicLSTMCell_(forgetBias, lstmKernel, lstmBias, data, c, h) {
 exports.basicLSTMCell = operation_1.op({ basicLSTMCell_: basicLSTMCell_ });
 exports.multiRNNCell = operation_1.op({ multiRNNCell_: multiRNNCell_ });
 
-},{"../tensor_util_env":201,"./operation":162}],159:[function(require,module,exports){
+},{"../tensor_util_env":205,"./operation":166}],163:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
+var tensor_util_1 = require("../tensor_util");
 var tensor_util_env_1 = require("../tensor_util_env");
 var util = require("../util");
 var operation_1 = require("./operation");
 function matMul_(a, b, transposeA, transposeB) {
     if (transposeA === void 0) { transposeA = false; }
     if (transposeB === void 0) { transposeB = false; }
+    var _a;
     var $a = tensor_util_env_1.convertToTensor(a, 'a', 'matMul');
     var $b = tensor_util_env_1.convertToTensor(b, 'b', 'matMul');
+    _a = tensor_util_1.makeTypesMatch($a, $b), $a = _a[0], $b = _a[1];
     var innerShapeA = transposeA ? $a.shape[$a.rank - 2] : $a.shape[$a.rank - 1];
     var innerShapeB = transposeB ? $b.shape[$b.rank - 1] : $b.shape[$b.rank - 2];
     var outerShapeA = transposeA ? $a.shape[$a.rank - 1] : $a.shape[$a.rank - 2];
@@ -21310,26 +22198,26 @@ function matMul_(a, b, transposeA, transposeB) {
     var grad = function (dy) {
         if (!transposeA && !transposeB) {
             return {
-                $a: function () { return dy.matMul(b3D.toFloat(), false, true); },
-                $b: function () { return a3D.toFloat().matMul(dy, true, false); }
+                $a: function () { return dy.matMul(b3D, false, true); },
+                $b: function () { return a3D.matMul(dy, true, false); }
             };
         }
         else if (!transposeA && transposeB) {
             return {
-                $a: function () { return dy.matMul(b3D.toFloat(), false, false); },
-                $b: function () { return dy.matMul(a3D.toFloat(), true, false); }
+                $a: function () { return dy.matMul(b3D, false, false); },
+                $b: function () { return dy.matMul(a3D, true, false); }
             };
         }
         else if (transposeA && !transposeB) {
             return {
-                $a: function () { return b3D.toFloat().matMul(dy, false, true); },
-                $b: function () { return a3D.toFloat().matMul(dy, false, false); }
+                $a: function () { return b3D.matMul(dy, false, true); },
+                $b: function () { return a3D.matMul(dy, false, false); }
             };
         }
         else {
             return {
-                $a: function () { return b3D.toFloat().matMul(dy, true, true); },
-                $b: function () { return dy.matMul(a3D.toFloat(), true, true); }
+                $a: function () { return b3D.matMul(dy, true, true); },
+                $b: function () { return dy.matMul(a3D, true, true); }
             };
         }
     };
@@ -21369,7 +22257,7 @@ exports.matMul = operation_1.op({ matMul_: matMul_ });
 exports.dot = operation_1.op({ dot_: dot_ });
 exports.outerProduct = operation_1.op({ outerProduct_: outerProduct_ });
 
-},{"../environment":53,"../tensor_util_env":201,"../util":205,"./operation":162}],160:[function(require,module,exports){
+},{"../environment":55,"../tensor_util":204,"../tensor_util_env":205,"../util":209,"./operation":166}],164:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tensor_util_1 = require("../tensor_util");
@@ -21397,7 +22285,7 @@ function movingAverage_(v, x, decay, step, zeroDebias) {
 }
 exports.movingAverage = operation_1.op({ movingAverage_: movingAverage_ });
 
-},{"../tensor_util":200,"../tensor_util_env":201,"../util":205,"./binary_ops":141,"./operation":162,"./tensor_ops":182}],161:[function(require,module,exports){
+},{"../tensor_util":204,"../tensor_util_env":205,"../util":209,"./binary_ops":145,"./operation":166,"./tensor_ops":186}],165:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tensor_util_env_1 = require("../tensor_util_env");
@@ -21460,7 +22348,7 @@ function normImpl(x, p, axis) {
 }
 exports.norm = operation_1.op({ norm_: norm_ });
 
-},{"../tensor_util_env":201,"./axis_util":139,"./operation":162,"./tensor_ops":182}],162:[function(require,module,exports){
+},{"../tensor_util_env":205,"./axis_util":143,"./operation":166,"./tensor_ops":186}],166:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -21500,7 +22388,7 @@ function op(f) {
 }
 exports.op = op;
 
-},{"../environment":53}],163:[function(require,module,exports){
+},{"../environment":55}],167:[function(require,module,exports){
 "use strict";
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
@@ -21546,7 +22434,7 @@ exports.image = image;
 var spectral = require("./spectral_ops");
 exports.spectral = spectral;
 
-},{"./array_ops":137,"./batchnorm":140,"./binary_ops":141,"./compare":143,"./complex_ops":144,"./concat_split":145,"./conv":148,"./gather_nd":151,"./image_ops":153,"./linalg_ops":154,"./logical_ops":155,"./loss_ops":156,"./lrn":157,"./lstm":158,"./matmul":159,"./moving_average":160,"./norm":161,"./operation":162,"./pool":164,"./reduction_ops":167,"./relu_ops":168,"./reverse":169,"./scatter_nd":170,"./segment_ops":172,"./slice":175,"./softmax":177,"./sparse_to_dense":178,"./spectral_ops":180,"./strided_slice":181,"./tensor_ops":182,"./topk":183,"./transpose":184,"./unary_ops":185}],164:[function(require,module,exports){
+},{"./array_ops":141,"./batchnorm":144,"./binary_ops":145,"./compare":147,"./complex_ops":148,"./concat_split":149,"./conv":152,"./gather_nd":155,"./image_ops":157,"./linalg_ops":158,"./logical_ops":159,"./loss_ops":160,"./lrn":161,"./lstm":162,"./matmul":163,"./moving_average":164,"./norm":165,"./operation":166,"./pool":168,"./reduction_ops":171,"./relu_ops":172,"./reverse":173,"./scatter_nd":174,"./segment_ops":176,"./slice":179,"./softmax":181,"./sparse_to_dense":182,"./spectral_ops":184,"./strided_slice":185,"./tensor_ops":186,"./topk":187,"./transpose":188,"./unary_ops":189}],168:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -21590,8 +22478,7 @@ function maxPool_(x, filterSize, strides, pad, dimRoundingMode) {
     return maxPoolImpl_(x, filterSize, strides, 1, pad, dimRoundingMode);
 }
 function avgPoolImpl_(x, filterSize, strides, dilations, pad, dimRoundingMode) {
-    var $x = tensor_util_env_1.convertToTensor(x, 'x', 'avgPool');
-    util.assert($x.dtype === 'float32', 'The input dtype to avgPool must be float32');
+    var $x = tensor_util_env_1.convertToTensor(x, 'x', 'avgPool', 'float32');
     if (dilations == null) {
         dilations = [1, 1];
     }
@@ -21741,7 +22628,7 @@ exports.maxPool = operation_1.op({ maxPool_: maxPool_ });
 exports.avgPool = operation_1.op({ avgPool_: avgPool_ });
 exports.pool = operation_1.op({ pool_: pool_ });
 
-},{"../environment":53,"../tensor_util_env":201,"../util":205,"./array_ops":137,"./conv_util":149,"./operation":162}],165:[function(require,module,exports){
+},{"../environment":55,"../tensor_util_env":205,"../util":209,"./array_ops":141,"./conv_util":153,"./operation":166}],169:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var seedrandom = require("seedrandom");
@@ -21799,7 +22686,7 @@ var MPRandGauss = (function () {
 }());
 exports.MPRandGauss = MPRandGauss;
 
-},{"seedrandom":278}],166:[function(require,module,exports){
+},{"seedrandom":308}],170:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var util_1 = require("../util");
@@ -21812,7 +22699,7 @@ function computeOptimalWindowSize(inSize) {
 }
 exports.computeOptimalWindowSize = computeOptimalWindowSize;
 
-},{"../util":205}],167:[function(require,module,exports){
+},{"../util":209}],171:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -22018,7 +22905,6 @@ function all_(x, axis, keepDims) {
     if (axis === void 0) { axis = null; }
     if (keepDims === void 0) { keepDims = false; }
     var $x = tensor_util_env_1.convertToTensor(x, 'x', 'all', 'bool');
-    util.assert($x.dtype === 'bool', "Error Tensor must be of type bool. Got: " + $x.dtype);
     var origAxes = axis_util.parseAxisParam(axis, $x.shape);
     var axes = origAxes;
     var permutedAxes = axis_util.getAxesPermutation(axes, $x.rank);
@@ -22037,7 +22923,6 @@ function any_(x, axis, keepDims) {
     if (axis === void 0) { axis = null; }
     if (keepDims === void 0) { keepDims = false; }
     var $x = tensor_util_env_1.convertToTensor(x, 'x', 'any', 'bool');
-    util.assert($x.dtype === 'bool', "Error Tensor must be of type bool. Got: " + $x.dtype);
     var origAxes = axis_util.parseAxisParam(axis, $x.shape);
     var axes = origAxes;
     var permutedAxes = axis_util.getAxesPermutation(axes, $x.rank);
@@ -22078,7 +22963,7 @@ exports.moments = operation_1.op({ moments_: moments_ });
 exports.sum = operation_1.op({ sum_: sum_ });
 exports.prod = operation_1.op({ prod_: prod_ });
 
-},{"../environment":53,"../globals":55,"../tensor_util_env":201,"../util":205,"./axis_util":139,"./operation":162,"./tensor_ops":182}],168:[function(require,module,exports){
+},{"../environment":55,"../globals":57,"../tensor_util_env":205,"../util":209,"./axis_util":143,"./operation":166,"./tensor_ops":186}],172:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -22144,7 +23029,7 @@ exports.prelu = operation_1.op({ prelu_: prelu_ });
 exports.relu = operation_1.op({ relu_: relu_ });
 exports.selu = operation_1.op({ selu_: selu_ });
 
-},{"../environment":53,"../tensor_util_env":201,"./binary_ops":141,"./logical_ops":155,"./operation":162,"./selu_util":174,"./tensor_ops":182}],169:[function(require,module,exports){
+},{"../environment":55,"../tensor_util_env":205,"./binary_ops":145,"./logical_ops":159,"./operation":166,"./selu_util":178,"./tensor_ops":186}],173:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -22190,7 +23075,7 @@ exports.reverse2d = operation_1.op({ reverse2d_: reverse2d_ });
 exports.reverse3d = operation_1.op({ reverse3d_: reverse3d_ });
 exports.reverse4d = operation_1.op({ reverse4d_: reverse4d_ });
 
-},{"../environment":53,"../tensor_util_env":201,"../util":205,"./axis_util":139,"./operation":162}],170:[function(require,module,exports){
+},{"../environment":55,"../tensor_util_env":205,"../util":209,"./axis_util":143,"./operation":166}],174:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -22205,7 +23090,7 @@ function scatterND_(indices, updates, shape) {
 }
 exports.scatterND = operation_1.op({ scatterND_: scatterND_ });
 
-},{"../environment":53,"../tensor_util_env":201,"./operation":162,"./scatter_nd_util":171}],171:[function(require,module,exports){
+},{"../environment":55,"../tensor_util_env":205,"./operation":166,"./scatter_nd_util":175}],175:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var util_1 = require("../util");
@@ -22282,7 +23167,7 @@ function calculateShapes(updates, indices, shape) {
 }
 exports.calculateShapes = calculateShapes;
 
-},{"../util":205}],172:[function(require,module,exports){
+},{"../util":209}],176:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -22298,7 +23183,6 @@ var tensor_ops_1 = require("./tensor_ops");
 function unsortedSegmentSum_(x, segmentIds, numSegments) {
     var $x = tensor_util_env_1.convertToTensor(x, 'x', 'unsortedSegmentSum');
     var $segmentIds = tensor_util_env_1.convertToTensor(segmentIds, 'segmentIds', 'unsortedSegmentSum', 'int32');
-    util_1.assert($segmentIds.dtype === 'int32', 'segmentIds must be of dtype `int32`');
     util_1.assert(util_1.isInt(numSegments), 'numSegments must be of dtype int');
     var gradFunc = function (dy) {
         var derX = function () {
@@ -22314,7 +23198,6 @@ function gather_(x, indices, axis) {
     if (axis === void 0) { axis = 0; }
     var $x = tensor_util_env_1.convertToTensor(x, 'x', 'gather');
     var $indices = tensor_util_env_1.convertToTensor(indices, 'indices', 'gather', 'int32');
-    util_1.assert($indices.dtype === 'int32', 'Indices must be of dtype `int32`');
     axis = axis_util_1.parseAxisParam(axis, $x.shape)[0];
     var grad = function (dy) {
         var derX = function () {
@@ -22374,7 +23257,7 @@ function gatherDropNegatives(x, indices) {
 exports.gather = operation_1.op({ gather_: gather_ });
 exports.unsortedSegmentSum = operation_1.op({ unsortedSegmentSum_: unsortedSegmentSum_ });
 
-},{"../environment":53,"../tensor_util_env":201,"../util":205,"./array_ops":137,"./axis_util":139,"./binary_ops":141,"./compare":143,"./logical_ops":155,"./operation":162,"./tensor_ops":182}],173:[function(require,module,exports){
+},{"../environment":55,"../tensor_util_env":205,"../util":209,"./array_ops":141,"./axis_util":143,"./binary_ops":145,"./compare":147,"./logical_ops":159,"./operation":166,"./tensor_ops":186}],177:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var util_1 = require("../util");
@@ -22416,13 +23299,13 @@ function computeOutShape(aShape, axis, numSegments) {
 }
 exports.computeOutShape = computeOutShape;
 
-},{"../util":205,"./reduce_util":166}],174:[function(require,module,exports){
+},{"../util":209,"./reduce_util":170}],178:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SELU_SCALEALPHA = 1.7580993408473768599402175208123;
 exports.SELU_SCALE = 1.0507009873554804934193349852946;
 
-},{}],175:[function(require,module,exports){
+},{}],179:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -22504,7 +23387,7 @@ exports.slice2d = operation_1.op({ slice2d_: slice2d_ });
 exports.slice3d = operation_1.op({ slice3d_: slice3d_ });
 exports.slice4d = operation_1.op({ slice4d_: slice4d_ });
 
-},{"../environment":53,"../tensor_util_env":201,"../util":205,"./operation":162,"./slice_util":176}],176:[function(require,module,exports){
+},{"../environment":55,"../tensor_util_env":205,"../util":209,"./operation":166,"./slice_util":180}],180:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var util = require("../util");
@@ -22595,7 +23478,7 @@ function stopForAxis(endMask, stopIndices, strides, inputShape, axis) {
 }
 exports.stopForAxis = stopForAxis;
 
-},{"../util":205}],177:[function(require,module,exports){
+},{"../util":209}],181:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var gradients_1 = require("../gradients");
@@ -22651,7 +23534,7 @@ function logSoftmax_(logits, axis) {
 exports.softmax = operation_1.op({ softmax_: softmax_ });
 exports.logSoftmax = operation_1.op({ logSoftmax_: logSoftmax_ });
 
-},{"../gradients":56,"../tensor_util_env":201,"./operation":162}],178:[function(require,module,exports){
+},{"../gradients":58,"../tensor_util_env":205,"./operation":166}],182:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -22667,7 +23550,7 @@ function sparseToDense_(sparseIndices, sparseValues, outputShape, defaultValue) 
 }
 exports.sparseToDense = operation_1.op({ sparseToDense_: sparseToDense_ });
 
-},{"../environment":53,"../ops/sparse_to_dense_util":179,"../tensor_util_env":201,"./operation":162}],179:[function(require,module,exports){
+},{"../environment":55,"../ops/sparse_to_dense_util":183,"../tensor_util_env":205,"./operation":166}],183:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function validateInput(sparseIndices, sparseValues, outputShape, defaultValues) {
@@ -22697,13 +23580,14 @@ function validateInput(sparseIndices, sparseValues, outputShape, defaultValues) 
 }
 exports.validateInput = validateInput;
 
-},{}],180:[function(require,module,exports){
+},{}],184:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
 var complex_ops_1 = require("../ops/complex_ops");
 var operation_1 = require("../ops/operation");
 var util_1 = require("../util");
+var tensor_ops_1 = require("./tensor_ops");
 function fft_(input) {
     util_1.assert(input.dtype === 'complex64', "The dtype for tf.spectral.fft() must be complex64 " +
         ("but got " + input.dtype + "."));
@@ -22728,7 +23612,7 @@ function rfft_(input) {
     var batch = input.size / innerDimensionSize;
     var zeros = input.zerosLike();
     var complexInput = complex_ops_1.complex(input, zeros).as2D(batch, innerDimensionSize);
-    var ret = environment_1.ENV.engine.runKernel(function (backend) { return backend.fft(complexInput); }, { complexInput: complexInput });
+    var ret = exports.fft(complexInput);
     var half = Math.floor(innerDimensionSize / 2) + 1;
     var realValues = complex_ops_1.real(ret);
     var imagValues = complex_ops_1.imag(ret);
@@ -22739,11 +23623,35 @@ function rfft_(input) {
     return complex_ops_1.complex(realComplexConjugate[0], imagComplexConjugate[0])
         .reshape(outputShape);
 }
+function irfft_(input) {
+    var innerDimensionSize = input.shape[input.shape.length - 1];
+    var batch = input.size / innerDimensionSize;
+    if (innerDimensionSize <= 2) {
+        var complexInput = input.as2D(batch, innerDimensionSize);
+        var ret = exports.ifft(complexInput);
+        return complex_ops_1.real(ret);
+    }
+    else {
+        var outputShape = [batch, 2 * (innerDimensionSize - 1)];
+        var realInput = complex_ops_1.real(input).as2D(batch, innerDimensionSize);
+        var imagInput = complex_ops_1.imag(input).as2D(batch, innerDimensionSize);
+        var realConjugate = realInput.slice([0, 1], [batch, innerDimensionSize - 2]).reverse(1);
+        var imagConjugate = imagInput.slice([0, 1], [batch, innerDimensionSize - 2])
+            .reverse(1)
+            .mul(tensor_ops_1.scalar(-1));
+        var r = realInput.concat(realConjugate, 1);
+        var i = imagInput.concat(imagConjugate, 1);
+        var complexInput = complex_ops_1.complex(r, i).as2D(outputShape[0], outputShape[1]);
+        var ret = exports.ifft(complexInput);
+        return complex_ops_1.real(ret);
+    }
+}
 exports.fft = operation_1.op({ fft_: fft_ });
 exports.ifft = operation_1.op({ ifft_: ifft_ });
 exports.rfft = operation_1.op({ rfft_: rfft_ });
+exports.irfft = operation_1.op({ irfft_: irfft_ });
 
-},{"../environment":53,"../ops/complex_ops":144,"../ops/operation":162,"../util":205}],181:[function(require,module,exports){
+},{"../environment":55,"../ops/complex_ops":148,"../ops/operation":166,"../util":209,"./tensor_ops":186}],185:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -22766,55 +23674,67 @@ function stridedSlice_(x, begin, end, strides, beginMask, endMask, ellipsisMask,
 }
 exports.stridedSlice = operation_1.op({ stridedSlice_: stridedSlice_ });
 
-},{"../environment":53,"../tensor_util_env":201,"./operation":162}],182:[function(require,module,exports){
+},{"../environment":55,"../tensor_util_env":205,"./operation":166}],186:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
 var tensor_1 = require("../tensor");
 var tensor_util_env_1 = require("../tensor_util_env");
-var tensor_util_env_2 = require("../tensor_util_env");
 var util_1 = require("../util");
 var complex_ops_1 = require("./complex_ops");
 var operation_1 = require("./operation");
 function tensor(values, shape, dtype) {
-    if (dtype === void 0) { dtype = 'float32'; }
+    if (dtype == null) {
+        dtype = util_1.inferDtype(values);
+    }
     if (dtype === 'complex64') {
         throw new Error("Cannot construct a complex64 tensor directly. " +
             "Please use tf.complex(real, imag).");
     }
     if (!util_1.isTypedArray(values) && !Array.isArray(values) &&
-        typeof values !== 'number' && typeof values !== 'boolean') {
-        throw new Error('values passed to tensor(values) must be an ' +
-            'array of numbers or booleans, or a TypedArray');
+        typeof values !== 'number' && typeof values !== 'boolean' &&
+        typeof values !== 'string') {
+        throw new Error('values passed to tensor(values) must be a number/boolean/string or ' +
+            'an array of numbers/booleans/strings, or a TypedArray');
     }
-    var inferredShape = tensor_util_env_2.inferShape(values);
-    if (shape != null && inferredShape.length !== 1) {
-        util_1.assertShapesMatch(shape, inferredShape, "Error creating a new Tensor. " +
-            ("Inferred shape (" + inferredShape + ") does not match the ") +
-            ("provided shape (" + shape + "). "));
+    var inferredShape = tensor_util_env_1.inferShape(values);
+    if (shape != null) {
+        var providedSize_1 = util_1.sizeFromShape(shape);
+        var inferredSize_1 = util_1.sizeFromShape(inferredShape);
+        util_1.assert(providedSize_1 === inferredSize_1, function () {
+            return "Based on the provided shape, [" + shape + "], the tensor should have " +
+                (providedSize_1 + " values but has " + inferredSize_1);
+        });
+        for (var i = 0; i < inferredShape.length; ++i) {
+            var inferred = inferredShape[i];
+            var flatDimsDontMatch = i === inferredShape.length - 1 ?
+                inferred !== util_1.sizeFromShape(shape.slice(i)) :
+                true;
+            util_1.assert(inferredShape[i] === shape[i] || !flatDimsDontMatch, function () { return "Error creating a new Tensor. Inferred shape " +
+                ("(" + inferredShape + ") does not match the provided ") +
+                ("shape (" + shape + "). "); });
+        }
     }
     if (!util_1.isTypedArray(values) && !Array.isArray(values)) {
         values = [values];
     }
     shape = shape || inferredShape;
-    return tensor_1.Tensor.make(shape, {
-        values: util_1.toTypedArray(values, dtype, environment_1.ENV.get('DEBUG'))
-    }, dtype);
+    values = dtype !== 'string' ? util_1.toTypedArray(values, dtype, environment_1.ENV.get('DEBUG')) :
+        util_1.flatten(values);
+    return tensor_1.Tensor.make(shape, { values: values }, dtype);
 }
 exports.tensor = tensor;
 function scalar(value, dtype) {
-    if (dtype === void 0) { dtype = 'float32'; }
     if ((util_1.isTypedArray(value) || Array.isArray(value)) && dtype !== 'complex64') {
         throw new Error('Error creating a new Scalar: value must be a primitive ' +
-            '(number|boolean)');
+            '(number|boolean|string)');
     }
     return tensor(value, [], dtype);
 }
 exports.scalar = scalar;
 function tensor1d(values, dtype) {
-    if (dtype === void 0) { dtype = 'float32'; }
     util_1.assertNonNull(values);
-    var inferredShape = tensor_util_env_2.inferShape(values);
+    var inferredShape = tensor_util_env_1.inferShape(values);
     if (inferredShape.length !== 1) {
         throw new Error('tensor1d() requires values to be a flat/TypedArray');
     }
@@ -22822,12 +23742,11 @@ function tensor1d(values, dtype) {
 }
 exports.tensor1d = tensor1d;
 function tensor2d(values, shape, dtype) {
-    if (dtype === void 0) { dtype = 'float32'; }
     util_1.assertNonNull(values);
     if (shape != null && shape.length !== 2) {
         throw new Error('tensor2d() requires shape to have two numbers');
     }
-    var inferredShape = tensor_util_env_2.inferShape(values);
+    var inferredShape = tensor_util_env_1.inferShape(values);
     if (inferredShape.length !== 2 && inferredShape.length !== 1) {
         throw new Error('tensor2d() requires values to be number[][] or flat/TypedArray');
     }
@@ -22840,12 +23759,11 @@ function tensor2d(values, shape, dtype) {
 }
 exports.tensor2d = tensor2d;
 function tensor3d(values, shape, dtype) {
-    if (dtype === void 0) { dtype = 'float32'; }
     util_1.assertNonNull(values);
     if (shape != null && shape.length !== 3) {
         throw new Error('tensor3d() requires shape to have three numbers');
     }
-    var inferredShape = tensor_util_env_2.inferShape(values);
+    var inferredShape = tensor_util_env_1.inferShape(values);
     if (inferredShape.length !== 3 && inferredShape.length !== 1) {
         throw new Error('tensor3d() requires values to be number[][][] or flat/TypedArray');
     }
@@ -22858,12 +23776,11 @@ function tensor3d(values, shape, dtype) {
 }
 exports.tensor3d = tensor3d;
 function tensor4d(values, shape, dtype) {
-    if (dtype === void 0) { dtype = 'float32'; }
     util_1.assertNonNull(values);
     if (shape != null && shape.length !== 4) {
         throw new Error('tensor4d() requires shape to have four numbers');
     }
-    var inferredShape = tensor_util_env_2.inferShape(values);
+    var inferredShape = tensor_util_env_1.inferShape(values);
     if (inferredShape.length !== 4 && inferredShape.length !== 1) {
         throw new Error('tensor4d() requires values to be number[][][][] or flat/TypedArray');
     }
@@ -22876,12 +23793,11 @@ function tensor4d(values, shape, dtype) {
 }
 exports.tensor4d = tensor4d;
 function tensor5d(values, shape, dtype) {
-    if (dtype === void 0) { dtype = 'float32'; }
     util_1.assertNonNull(values);
     if (shape != null && shape.length !== 5) {
         throw new Error('tensor5d() requires shape to have five numbers');
     }
-    var inferredShape = tensor_util_env_2.inferShape(values);
+    var inferredShape = tensor_util_env_1.inferShape(values);
     if (inferredShape.length !== 5 && inferredShape.length !== 1) {
         throw new Error('tensor5d() requires values to be ' +
             'number[][][][][] or flat/TypedArray');
@@ -22895,12 +23811,11 @@ function tensor5d(values, shape, dtype) {
 }
 exports.tensor5d = tensor5d;
 function tensor6d(values, shape, dtype) {
-    if (dtype === void 0) { dtype = 'float32'; }
     util_1.assertNonNull(values);
     if (shape != null && shape.length !== 6) {
         throw new Error('tensor6d() requires shape to have six numbers');
     }
-    var inferredShape = tensor_util_env_2.inferShape(values);
+    var inferredShape = tensor_util_env_1.inferShape(values);
     if (inferredShape.length !== 6 && inferredShape.length !== 1) {
         throw new Error('tensor6d() requires values to be number[][][][] or flat/TypedArray');
     }
@@ -22936,8 +23851,8 @@ function zeros(shape, dtype) {
 }
 exports.zeros = zeros;
 function fill(shape, value, dtype) {
-    if (dtype === void 0) { dtype = 'float32'; }
-    var values = util_1.getTypedArrayFromDType(dtype, util_1.sizeFromShape(shape));
+    dtype = dtype || util_1.inferDtype(value);
+    var values = util_1.getArrayFromDType(dtype, util_1.sizeFromShape(shape));
     values.fill(value);
     return tensor_1.Tensor.make(shape, { values: values }, dtype);
 }
@@ -22991,7 +23906,7 @@ exports.range = range;
 exports.onesLike = operation_1.op({ onesLike_: onesLike_ });
 exports.zerosLike = operation_1.op({ zerosLike_: zerosLike_ });
 
-},{"../environment":53,"../tensor":198,"../tensor_util_env":201,"../util":205,"./complex_ops":144,"./operation":162}],183:[function(require,module,exports){
+},{"../environment":55,"../tensor":202,"../tensor_util_env":205,"../util":209,"./complex_ops":148,"./operation":166}],187:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -23014,7 +23929,7 @@ function topk_(x, k, sorted) {
 }
 exports.topk = operation_1.op({ topk_: topk_ });
 
-},{"../environment":53,"../tensor_util_env":201,"./operation":162}],184:[function(require,module,exports){
+},{"../environment":55,"../tensor_util_env":205,"./operation":166}],188:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -23044,7 +23959,7 @@ function transpose_(x, perm) {
 }
 exports.transpose = operation_1.op({ transpose_: transpose_ });
 
-},{"../environment":53,"../tensor_util_env":201,"../util":205,"./axis_util":139,"./operation":162}],185:[function(require,module,exports){
+},{"../environment":55,"../tensor_util_env":205,"../util":209,"./axis_util":143,"./operation":166}],189:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("../environment");
@@ -23112,28 +24027,28 @@ function log_(x) {
 function log1p_(x) {
     var $x = tensor_util_env_1.convertToTensor(x, 'x', 'log1p');
     var grad = function (dy) {
-        return { $x: function () { return dy.divStrict($x.add(tensor_ops_1.scalar(1))); } };
+        return { $x: function () { return dy.div($x.add(1)); } };
     };
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.log1p($x); }, { $x: $x }, grad);
 }
 function sqrt_(x) {
     var $x = tensor_util_env_1.convertToTensor(x, 'x', 'sqrt');
     var grad = function (dy) {
-        return { $x: function () { return dy.divStrict($x.toFloat().sqrt().mul(tensor_ops_1.scalar(2))); } };
+        return { $x: function () { return dy.div($x.toFloat().sqrt().mul(2)); } };
     };
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.sqrt($x); }, { $x: $x }, grad);
 }
 function rsqrt_(x) {
     var $x = tensor_util_env_1.convertToTensor(x, 'x', 'rsqrt');
     var grad = function (dy) {
-        return { $x: function () { return dy.divStrict($x.pow(tensor_ops_1.scalar(1.5)).mul(tensor_ops_1.scalar(2))).neg(); } };
+        return { $x: function () { return dy.div($x.pow(1.5).mul(2)).neg(); } };
     };
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.rsqrt($x); }, { $x: $x }, grad);
 }
 function square_(x) {
     var $x = tensor_util_env_1.convertToTensor(x, 'x', 'square');
     var grad = function (dy) {
-        return { $x: function () { return dy.mulStrict($x.toFloat().mul(tensor_ops_1.scalar(2))); } };
+        return { $x: function () { return dy.mul($x.toFloat().mul(2)); } };
     };
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.square($x); }, { $x: $x }, grad);
 }
@@ -23160,8 +24075,8 @@ function clipByValue_(x, clipValueMin, clipValueMax) {
         ("less than or equal to max (" + clipValueMax + ")."));
     var grad = function (dy) {
         return {
-            $x: function () { return dy.where($x.greaterEqual(tensor_ops_1.scalar(clipValueMin))
-                .logicalAnd($x.lessEqual(tensor_ops_1.scalar(clipValueMax))), tensor_ops_1.zerosLike(dy)); },
+            $x: function () { return dy.where($x.greaterEqual(clipValueMin)
+                .logicalAnd($x.lessEqual(clipValueMax)), tensor_ops_1.zerosLike(dy)); },
         };
     };
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.clip($x, clipValueMin, clipValueMax); }, { $x: $x }, grad);
@@ -23170,7 +24085,7 @@ function sigmoid_(x) {
     var $x = tensor_util_env_1.convertToTensor(x, 'x', 'sigmoid');
     var grad = function (dy, saved) {
         var y = saved[0];
-        return { $x: function () { return dy.mulStrict(y.mul(tensor_ops_1.scalar(1).sub(y))); } };
+        return { $x: function () { return dy.mul(y.mul(tensor_ops_1.scalar(1).sub(y))); } };
     };
     return environment_1.ENV.engine.runKernel(function (backend, save) { return save(backend.sigmoid($x)); }, { $x: $x }, grad);
 }
@@ -23232,7 +24147,7 @@ function acos_(x) {
 function atan_(x) {
     var $x = tensor_util_env_1.convertToTensor(x, 'x', 'atan');
     var grad = function (dy) {
-        return { $x: function () { return dy.divStrict(tensor_ops_1.scalar(1).add($x.toFloat().square())); } };
+        return { $x: function () { return dy.div($x.toFloat().square().add(1)); } };
     };
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.atan($x); }, { $x: $x }, grad);
 }
@@ -23270,16 +24185,14 @@ function asinh_(x) {
 function acosh_(x) {
     var $x = tensor_util_env_1.convertToTensor(x, 'x', 'acosh');
     var grad = function (dy) {
-        return {
-            $x: function () { return dy.divStrict($x.toFloat().square().sub(tensor_ops_1.scalar(1)).sqrt()); }
-        };
+        return { $x: function () { return dy.divStrict($x.toFloat().square().sub(1).sqrt()); } };
     };
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.acosh($x); }, { $x: $x }, grad);
 }
 function atanh_(x) {
     var $x = tensor_util_env_1.convertToTensor(x, 'x', 'atanh');
     var grad = function (dy) {
-        return { $x: function () { return dy.divStrict(tensor_ops_1.scalar(1).sub($x.toFloat().square())); } };
+        return { $x: function () { return dy.div(tensor_ops_1.scalar(1).sub($x.toFloat().square())); } };
     };
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.atanh($x); }, { $x: $x }, grad);
 }
@@ -23291,7 +24204,7 @@ function erf_(x) {
     }
     var grad = function (dy) {
         return {
-            $x: function () { return dy.mulStrict(tensor_ops_1.scalar(2 / Math.sqrt(Math.PI)).mul($x.square().neg().exp())); }
+            $x: function () { return dy.mul($x.square().neg().exp().mul(2 / Math.sqrt(Math.PI))); }
         };
     };
     return environment_1.ENV.engine.runKernel(function (backend) { return backend.erf($x); }, { $x: $x }, grad);
@@ -23337,7 +24250,7 @@ exports.step = operation_1.op({ step_: step_ });
 exports.tan = operation_1.op({ tan_: tan_ });
 exports.tanh = operation_1.op({ tanh_: tanh_ });
 
-},{"../environment":53,"../tensor_util_env":201,"../util":205,"./operation":162,"./tensor_ops":182}],186:[function(require,module,exports){
+},{"../environment":55,"../tensor_util_env":205,"../util":209,"./operation":166,"./tensor_ops":186}],190:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -23444,7 +24357,7 @@ var AdadeltaOptimizer = (function (_super) {
 exports.AdadeltaOptimizer = AdadeltaOptimizer;
 serialization_1.registerClass(AdadeltaOptimizer);
 
-},{"../environment":53,"../globals":55,"../ops/ops":163,"../serialization":196,"./optimizer":191}],187:[function(require,module,exports){
+},{"../environment":55,"../globals":57,"../ops/ops":167,"../serialization":200,"./optimizer":195}],191:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -23526,7 +24439,7 @@ var AdagradOptimizer = (function (_super) {
 exports.AdagradOptimizer = AdagradOptimizer;
 serialization_1.registerClass(AdagradOptimizer);
 
-},{"../environment":53,"../globals":55,"../ops/ops":163,"../serialization":196,"./optimizer":191}],188:[function(require,module,exports){
+},{"../environment":55,"../globals":57,"../ops/ops":167,"../serialization":200,"./optimizer":195}],192:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -23645,7 +24558,7 @@ var AdamOptimizer = (function (_super) {
 exports.AdamOptimizer = AdamOptimizer;
 serialization_1.registerClass(AdamOptimizer);
 
-},{"../environment":53,"../globals":55,"../ops/ops":163,"../serialization":196,"./optimizer":191}],189:[function(require,module,exports){
+},{"../environment":55,"../globals":57,"../ops/ops":167,"../serialization":200,"./optimizer":195}],193:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -23766,7 +24679,7 @@ var AdamaxOptimizer = (function (_super) {
 exports.AdamaxOptimizer = AdamaxOptimizer;
 serialization_1.registerClass(AdamaxOptimizer);
 
-},{"../environment":53,"../globals":55,"../ops/ops":163,"../serialization":196,"./optimizer":191}],190:[function(require,module,exports){
+},{"../environment":55,"../globals":57,"../ops/ops":167,"../serialization":200,"./optimizer":195}],194:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -23856,7 +24769,7 @@ var MomentumOptimizer = (function (_super) {
 exports.MomentumOptimizer = MomentumOptimizer;
 serialization_1.registerClass(MomentumOptimizer);
 
-},{"../environment":53,"../globals":55,"../ops/ops":163,"../serialization":196,"./sgd_optimizer":194}],191:[function(require,module,exports){
+},{"../environment":55,"../globals":57,"../ops/ops":167,"../serialization":200,"./sgd_optimizer":198}],195:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -23897,7 +24810,7 @@ var Optimizer = (function (_super) {
 }(serialization_1.Serializable));
 exports.Optimizer = Optimizer;
 
-},{"../globals":55,"../serialization":196}],192:[function(require,module,exports){
+},{"../globals":57,"../serialization":200}],196:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var adadelta_optimizer_1 = require("./adadelta_optimizer");
@@ -23953,7 +24866,7 @@ var OptimizerConstructors = (function () {
 }());
 exports.OptimizerConstructors = OptimizerConstructors;
 
-},{"./adadelta_optimizer":186,"./adagrad_optimizer":187,"./adam_optimizer":188,"./adamax_optimizer":189,"./momentum_optimizer":190,"./rmsprop_optimizer":193,"./sgd_optimizer":194}],193:[function(require,module,exports){
+},{"./adadelta_optimizer":190,"./adagrad_optimizer":191,"./adam_optimizer":192,"./adamax_optimizer":193,"./momentum_optimizer":194,"./rmsprop_optimizer":197,"./sgd_optimizer":198}],197:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -24097,7 +25010,7 @@ var RMSPropOptimizer = (function (_super) {
 exports.RMSPropOptimizer = RMSPropOptimizer;
 serialization_1.registerClass(RMSPropOptimizer);
 
-},{"../environment":53,"../globals":55,"../ops/ops":163,"../serialization":196,"./optimizer":191}],194:[function(require,module,exports){
+},{"../environment":55,"../globals":57,"../ops/ops":167,"../serialization":200,"./optimizer":195}],198:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -24157,7 +25070,7 @@ var SGDOptimizer = (function (_super) {
 exports.SGDOptimizer = SGDOptimizer;
 serialization_1.registerClass(SGDOptimizer);
 
-},{"../environment":53,"../globals":55,"../ops/ops":163,"../serialization":196,"./optimizer":191}],195:[function(require,module,exports){
+},{"../environment":55,"../globals":57,"../ops/ops":167,"../serialization":200,"./optimizer":195}],199:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var util = require("./util");
@@ -24208,7 +25121,7 @@ var Logger = (function () {
 }());
 exports.Logger = Logger;
 
-},{"./util":205}],196:[function(require,module,exports){
+},{"./util":209}],200:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var util_1 = require("./util");
@@ -24253,7 +25166,7 @@ function registerClass(cls) {
 }
 exports.registerClass = registerClass;
 
-},{"./util":205}],197:[function(require,module,exports){
+},{"./util":209}],201:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tensor_1 = require("./tensor");
@@ -24344,6 +25257,10 @@ function backpropagateGradients(tensorAccumulatedGradientMap, filteredTape) {
                     ("Available gradients found: " + Object.keys(inputGradients) + "."));
             }
             var dx = inputGradients[inputName]();
+            if (dx.dtype !== 'float32') {
+                throw new Error("Error in gradient for op " + node.name + ". The gradient of input " +
+                    (inputName + " must have 'float32' dtype, but has '" + dx.dtype + "'"));
+            }
             var x = node.inputs[inputName];
             if (!util.arraysEqual(dx.shape, x.shape)) {
                 throw new Error("Error in gradient for op " + node.name + ". The gradient of input " +
@@ -24366,7 +25283,7 @@ function backpropagateGradients(tensorAccumulatedGradientMap, filteredTape) {
 }
 exports.backpropagateGradients = backpropagateGradients;
 
-},{"./tensor":198,"./util":205}],198:[function(require,module,exports){
+},{"./tensor":202,"./util":209}],202:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -24432,8 +25349,8 @@ var TensorBuffer = (function () {
                 "a TensorBuffer for the real and imaginary parts separately and " +
                 "call tf.complex(real, imag).");
         }
-        this.values = values ||
-            util.getTypedArrayFromDType(dtype, util.sizeFromShape(this.shape));
+        this.values =
+            values || util.getArrayFromDType(dtype, util.sizeFromShape(this.shape));
         this.strides = util_1.computeStrides(shape);
     }
     TensorBuffer.prototype.set = function (value) {
@@ -24520,11 +25437,6 @@ var Tensor = (function () {
         this.shape = shape.slice();
         this.dtype = dtype || 'float32';
         this.size = util.sizeFromShape(shape);
-        if (values != null) {
-            util.assert(this.size === values.length, "Based on the provided shape, [" + shape + "], and dtype " +
-                (this.dtype + ", the tensor should have ") +
-                (this.size + " values but has " + values.length));
-        }
         this.strides = util_1.computeStrides(shape);
         this.dataId = dataId != null ? dataId : {};
         this.id = trackerFn().nextTensorId();
@@ -24561,6 +25473,10 @@ var Tensor = (function () {
     Tensor.prototype.as4D = function (rows, columns, depth, depth2) {
         this.throwIfDisposed();
         return this.reshape([rows, columns, depth, depth2]);
+    };
+    Tensor.prototype.as5D = function (rows, columns, depth, depth2, depth3) {
+        this.throwIfDisposed();
+        return this.reshape([rows, columns, depth, depth2, depth3]);
     };
     Tensor.prototype.asType = function (dtype) {
         this.throwIfDisposed();
@@ -24705,7 +25621,10 @@ var Tensor = (function () {
     Tensor.prototype.concat = function (x, axis) {
         if (axis === void 0) { axis = 0; }
         this.throwIfDisposed();
-        return opHandler.concat([this, x], axis);
+        if (x instanceof Tensor) {
+            x = [x];
+        }
+        return opHandler.concat([this].concat(x), axis);
     };
     Tensor.prototype.split = function (numOrSizeSplits, axis) {
         if (axis === void 0) { axis = 0; }
@@ -25268,7 +26187,7 @@ Object.defineProperty(Variable, Symbol.hasInstance, {
 var variable = Variable.variable;
 exports.variable = variable;
 
-},{"./tensor_format":199,"./util":205}],199:[function(require,module,exports){
+},{"./tensor_format":203,"./util":209}],203:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var util_1 = require("./util");
@@ -25313,6 +26232,9 @@ function valToString(val, pad) {
         valStr = parseFloat(val[0].toFixed(FORMAT_NUM_SIG_DIGITS)) + " + " +
             (parseFloat(val[1].toFixed(FORMAT_NUM_SIG_DIGITS)) + "j");
     }
+    else if (util_1.isString(val)) {
+        valStr = "'" + val + "'";
+    }
     else {
         valStr = parseFloat(val.toFixed(FORMAT_NUM_SIG_DIGITS)).toString();
     }
@@ -25333,8 +26255,8 @@ function subTensorToString(vals, shape, dtype, strides, padPerCol, isLast) {
     if (rank === 1) {
         if (size > FORMAT_LIMIT_NUM_VALS) {
             var firstValsSize = FORMAT_NUM_FIRST_LAST_VALS * storagePerElement;
-            var firstVals = Array.from(vals.subarray(0, firstValsSize));
-            var lastVals = Array.from(vals.subarray(size - FORMAT_NUM_FIRST_LAST_VALS * storagePerElement, size));
+            var firstVals = Array.from(vals.slice(0, firstValsSize));
+            var lastVals = Array.from(vals.slice(size - FORMAT_NUM_FIRST_LAST_VALS * storagePerElement, size));
             if (dtype === 'complex64') {
                 firstVals = createComplexTuples(firstVals);
                 lastVals = createComplexTuples(lastVals);
@@ -25348,7 +26270,8 @@ function subTensorToString(vals, shape, dtype, strides, padPerCol, isLast) {
                     ']'
             ];
         }
-        var displayVals = dtype === 'complex64' ? createComplexTuples(vals) : Array.from(vals);
+        var displayVals = dtype === 'complex64' ? createComplexTuples(vals) :
+            Array.from(vals);
         return [
             '[' + displayVals.map(function (x, i) { return valToString(x, padPerCol[i]); }).join(', ') +
                 ']'
@@ -25362,20 +26285,20 @@ function subTensorToString(vals, shape, dtype, strides, padPerCol, isLast) {
         for (var i = 0; i < FORMAT_NUM_FIRST_LAST_VALS; i++) {
             var start = i * stride;
             var end = start + stride;
-            lines.push.apply(lines, subTensorToString(vals.subarray(start, end), subshape, dtype, substrides, padPerCol, false));
+            lines.push.apply(lines, subTensorToString(vals.slice(start, end), subshape, dtype, substrides, padPerCol, false));
         }
         lines.push('...');
         for (var i = size - FORMAT_NUM_FIRST_LAST_VALS; i < size; i++) {
             var start = i * stride;
             var end = start + stride;
-            lines.push.apply(lines, subTensorToString(vals.subarray(start, end), subshape, dtype, substrides, padPerCol, i === size - 1));
+            lines.push.apply(lines, subTensorToString(vals.slice(start, end), subshape, dtype, substrides, padPerCol, i === size - 1));
         }
     }
     else {
         for (var i = 0; i < size; i++) {
             var start = i * stride;
             var end = start + stride;
-            lines.push.apply(lines, subTensorToString(vals.subarray(start, end), subshape, dtype, substrides, padPerCol, i === size - 1));
+            lines.push.apply(lines, subTensorToString(vals.slice(start, end), subshape, dtype, substrides, padPerCol, i === size - 1));
         }
     }
     var sep = rank === 2 ? ',' : '';
@@ -25399,11 +26322,20 @@ function createComplexTuples(vals) {
     return complexTuples;
 }
 
-},{"./util":205}],200:[function(require,module,exports){
+},{"./util":209}],204:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tensor_1 = require("./tensor");
+var types_1 = require("./types");
 var util_1 = require("./util");
+function makeTypesMatch(a, b) {
+    if (a.dtype === b.dtype) {
+        return [a, b];
+    }
+    var dtype = types_1.upcastType(a.dtype, b.dtype);
+    return [a.cast(dtype), b.cast(dtype)];
+}
+exports.makeTypesMatch = makeTypesMatch;
 function assertTypesMatch(a, b) {
     util_1.assert(a.dtype === b.dtype, "The dtypes of the first(" + a.dtype + ") and" +
         (" second(" + b.dtype + ") input must match"));
@@ -25474,7 +26406,7 @@ function isIterable(obj) {
     return Array.isArray(obj) || typeof obj === 'object';
 }
 
-},{"./tensor":198,"./util":205}],201:[function(require,module,exports){
+},{"./tensor":202,"./types":208,"./util":209}],205:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("./environment");
@@ -25489,7 +26421,7 @@ function inferShape(val) {
         return [];
     }
     var shape = [];
-    while (firstElem instanceof Array) {
+    while (firstElem instanceof Array || util_1.isTypedArray(firstElem)) {
         shape.push(firstElem.length);
         firstElem = firstElem[0];
     }
@@ -25501,9 +26433,9 @@ function inferShape(val) {
 exports.inferShape = inferShape;
 function deepAssertShapeConsistency(val, shape, indices) {
     indices = indices || [];
-    if (!(val instanceof Array)) {
+    if (!(val instanceof Array) && !util_1.isTypedArray(val)) {
         util_1.assert(shape.length === 0, function () { return "Element arr[" + indices.join('][') + "] is a primitive, " +
-            ("but should be an array of " + shape[0] + " elements"); });
+            ("but should be an array/TypedArray of " + shape[0] + " elements"); });
         return;
     }
     util_1.assert(shape.length > 0, function () { return "Element arr[" + indices.join('][') + "] should be a primitive, " +
@@ -25515,22 +26447,41 @@ function deepAssertShapeConsistency(val, shape, indices) {
         deepAssertShapeConsistency(val[i], subShape, indices.concat(i));
     }
 }
-function convertToTensor(x, argName, functionName, dtype) {
-    if (dtype === void 0) { dtype = 'float32'; }
-    dtype = dtype || 'float32';
+function assertDtype(expectedDtype, actualDType, argName, functionName) {
+    if (expectedDtype == null) {
+        return;
+    }
+    if (expectedDtype !== 'numeric' && expectedDtype !== actualDType ||
+        expectedDtype === 'numeric' && actualDType === 'string') {
+        throw new Error("Argument '" + argName + "' passed to '" + functionName + "' must " +
+            ("be " + expectedDtype + " tensor, but got " + actualDType + " tensor"));
+    }
+}
+function convertToTensor(x, argName, functionName, parseAsDtype) {
+    if (parseAsDtype === void 0) { parseAsDtype = 'numeric'; }
     if (x instanceof tensor_1.Tensor) {
+        assertDtype(parseAsDtype, x.dtype, argName, functionName);
         return x;
     }
+    var inferredDtype = util_1.inferDtype(x);
+    if (inferredDtype !== 'string' &&
+        ['bool', 'int32', 'float32'].indexOf(parseAsDtype) >= 0) {
+        inferredDtype = parseAsDtype;
+    }
+    assertDtype(parseAsDtype, inferredDtype, argName, functionName);
     if (!util_1.isTypedArray(x) && !Array.isArray(x) && typeof x !== 'number' &&
-        typeof x !== 'boolean') {
+        typeof x !== 'boolean' && typeof x !== 'string') {
         throw new Error("Argument '" + argName + "' passed to '" + functionName + "' must be a " +
-            ("Tensor or TensorLike, but got " + x.constructor.name));
+            ("Tensor or TensorLike, but got '" + x.constructor.name + "'"));
     }
     var inferredShape = inferShape(x);
     if (!util_1.isTypedArray(x) && !Array.isArray(x)) {
         x = [x];
     }
-    return tensor_1.Tensor.make(inferredShape, { values: util_1.toTypedArray(x, dtype, environment_1.ENV.get('DEBUG')) }, dtype);
+    var values = inferredDtype !== 'string' ?
+        util_1.toTypedArray(x, inferredDtype, environment_1.ENV.get('DEBUG')) :
+        util_1.flatten(x);
+    return tensor_1.Tensor.make(inferredShape, { values: values }, inferredDtype);
 }
 exports.convertToTensor = convertToTensor;
 function convertToTensorArray(arg, argName, functionName) {
@@ -25543,12 +26494,13 @@ function convertToTensorArray(arg, argName, functionName) {
 }
 exports.convertToTensorArray = convertToTensorArray;
 
-},{"./environment":53,"./tensor":198,"./util":205}],202:[function(require,module,exports){
+},{"./environment":55,"./tensor":202,"./util":209}],206:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var environment_1 = require("./environment");
 var tensor_1 = require("./tensor");
 var util = require("./util");
+var util_1 = require("./util");
 exports.WEBGL_ENVS = {
     'HAS_WEBGL': true
 };
@@ -25564,14 +26516,15 @@ exports.BROWSER_ENVS = {
 exports.CPU_ENVS = {
     'HAS_WEBGL': false
 };
-exports.BROWSER_CPU_ENVS = {
-    'BACKEND': 'test-cpu'
-};
 exports.ALL_ENVS = {};
 function expectArraysClose(actual, expected, epsilon) {
     if (epsilon == null) {
         epsilon = environment_1.ENV.get('TEST_EPSILON');
     }
+    return expectArraysPredicate(actual, expected, function (a, b) { return areClose(a, Number(b), epsilon); });
+}
+exports.expectArraysClose = expectArraysClose;
+function expectArraysPredicate(actual, expected, predicate) {
     if (!(actual instanceof tensor_1.Tensor) && !(expected instanceof tensor_1.Tensor)) {
         var aType = actual.constructor.name;
         var bType = expected.constructor.name;
@@ -25613,19 +26566,24 @@ function expectArraysClose(actual, expected, epsilon) {
     for (var i = 0; i < expectedValues.length; ++i) {
         var a = actualValues[i];
         var e = expectedValues[i];
-        if (!areClose(a, Number(e), epsilon)) {
+        if (!predicate(a, e)) {
             throw new Error("Arrays differ: actual[" + i + "] = " + a + ", expected[" + i + "] = " + e + ".\n" +
                 ("Actual:   " + actualValues + ".\n") +
                 ("Expected: " + expectedValues + "."));
         }
     }
 }
-exports.expectArraysClose = expectArraysClose;
 function expectPromiseToFail(fn, done) {
     fn().then(function () { return done.fail(); }, function () { return done(); });
 }
 exports.expectPromiseToFail = expectPromiseToFail;
 function expectArraysEqual(actual, expected) {
+    if (actual instanceof tensor_1.Tensor && actual.dtype === 'string' ||
+        expected instanceof tensor_1.Tensor && expected.dtype === 'string' ||
+        actual instanceof Array && util_1.isString(actual[0]) ||
+        expected instanceof Array && util_1.isString(expected[0])) {
+        return expectArraysPredicate(actual, expected, function (a, b) { return a == b; });
+    }
     return expectArraysClose(actual, expected, 0);
 }
 exports.expectArraysEqual = expectArraysEqual;
@@ -25667,7 +26625,7 @@ function expectArrayBuffersEqual(actual, expected) {
 }
 exports.expectArrayBuffersEqual = expectArrayBuffersEqual;
 
-},{"./environment":53,"./tensor":198,"./util":205}],203:[function(require,module,exports){
+},{"./environment":55,"./tensor":202,"./util":209}],207:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var adadelta_optimizer_1 = require("./optimizers/adadelta_optimizer");
@@ -25690,15 +26648,9 @@ exports.train = {
     adam: optimizer_constructors_1.OptimizerConstructors.adam
 };
 
-},{"./optimizers/adadelta_optimizer":186,"./optimizers/adagrad_optimizer":187,"./optimizers/adam_optimizer":188,"./optimizers/adamax_optimizer":189,"./optimizers/momentum_optimizer":190,"./optimizers/optimizer_constructors":192,"./optimizers/rmsprop_optimizer":193,"./optimizers/sgd_optimizer":194}],204:[function(require,module,exports){
+},{"./optimizers/adadelta_optimizer":190,"./optimizers/adagrad_optimizer":191,"./optimizers/adam_optimizer":192,"./optimizers/adamax_optimizer":193,"./optimizers/momentum_optimizer":194,"./optimizers/optimizer_constructors":196,"./optimizers/rmsprop_optimizer":197,"./optimizers/sgd_optimizer":198}],208:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var DType;
-(function (DType) {
-    DType["float32"] = "float32";
-    DType["int32"] = "int32";
-    DType["bool"] = "bool";
-})(DType = exports.DType || (exports.DType = {}));
 var Rank;
 (function (Rank) {
     Rank["R0"] = "R0";
@@ -25744,6 +26696,12 @@ var upcastTypeMap = {
     'complex64': UpcastComplex64AndMap
 };
 function upcastType(typeA, typeB) {
+    if (typeA === 'string' || typeB === 'string') {
+        if (typeA === 'string' && typeB === 'string') {
+            return 'string';
+        }
+        throw new Error("Can not upcast " + typeA + " with " + typeB);
+    }
     return upcastTypeMap[typeA][typeB];
 }
 exports.upcastType = upcastType;
@@ -25752,7 +26710,7 @@ function sumOutType(type) {
 }
 exports.sumOutType = sumOutType;
 
-},{}],205:[function(require,module,exports){
+},{}],209:[function(require,module,exports){
 (function (process){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -25816,7 +26774,7 @@ function assertNonNull(a) {
 exports.assertNonNull = assertNonNull;
 function flatten(arr, ret) {
     if (ret === void 0) { ret = []; }
-    if (Array.isArray(arr)) {
+    if (Array.isArray(arr) || isTypedArray(arr)) {
         for (var i = 0; i < arr.length; ++i) {
             flatten(arr[i], ret);
         }
@@ -26005,6 +26963,26 @@ function getTypedArrayFromDType(dtype, size) {
     return values;
 }
 exports.getTypedArrayFromDType = getTypedArrayFromDType;
+function getArrayFromDType(dtype, size) {
+    var values = null;
+    if (dtype == null || dtype === 'float32') {
+        values = new Float32Array(size);
+    }
+    else if (dtype === 'int32') {
+        values = new Int32Array(size);
+    }
+    else if (dtype === 'bool') {
+        values = new Uint8Array(size);
+    }
+    else if (dtype === 'string') {
+        values = new Array(size);
+    }
+    else {
+        throw new Error("Unknown data type " + dtype);
+    }
+    return values;
+}
+exports.getArrayFromDType = getArrayFromDType;
 function checkComputationForNaN(vals, dtype, name) {
     if (dtype !== 'float32') {
         return;
@@ -26043,29 +27021,6 @@ function hasEncodingLoss(oldType, newType) {
     return true;
 }
 exports.hasEncodingLoss = hasEncodingLoss;
-function copyTypedArray(array, dtype, debugMode) {
-    if (dtype == null || dtype === 'float32' || dtype === 'complex64') {
-        return new Float32Array(array);
-    }
-    else if (dtype === 'int32') {
-        if (debugMode) {
-            checkConversionForNaN(array, dtype);
-        }
-        return new Int32Array(array);
-    }
-    else if (dtype === 'bool') {
-        var bool = new Uint8Array(array.length);
-        for (var i = 0; i < bool.length; ++i) {
-            if (Math.round(array[i]) !== 0) {
-                bool[i] = 1;
-            }
-        }
-        return bool;
-    }
-    else {
-        throw new Error("Unknown data type " + dtype);
-    }
-}
 function isTypedArray(a) {
     return a instanceof Float32Array || a instanceof Int32Array ||
         a instanceof Uint8Array;
@@ -26086,6 +27041,49 @@ function bytesPerElement(dtype) {
     }
 }
 exports.bytesPerElement = bytesPerElement;
+function bytesFromStringArray(arr) {
+    if (arr == null) {
+        return 0;
+    }
+    var bytes = 0;
+    arr.forEach(function (x) { return bytes += x.length * 2; });
+    return bytes;
+}
+exports.bytesFromStringArray = bytesFromStringArray;
+function isString(value) {
+    return typeof value === 'string' || value instanceof String;
+}
+exports.isString = isString;
+function isBoolean(value) {
+    return typeof value === 'boolean';
+}
+exports.isBoolean = isBoolean;
+function isNumber(value) {
+    return typeof value === 'number';
+}
+exports.isNumber = isNumber;
+function inferDtype(values) {
+    if (values instanceof Array) {
+        return inferDtype(values[0]);
+    }
+    if (values instanceof Float32Array) {
+        return 'float32';
+    }
+    else if (values instanceof Int32Array || values instanceof Uint8Array) {
+        return 'int32';
+    }
+    else if (isNumber(values)) {
+        return 'float32';
+    }
+    else if (isString(values)) {
+        return 'string';
+    }
+    else if (isBoolean(values)) {
+        return 'bool';
+    }
+    return 'float32';
+}
+exports.inferDtype = inferDtype;
 function isFunction(f) {
     return !!(f && f.constructor && f.call && f.apply);
 }
@@ -26113,13 +27111,36 @@ function computeStrides(shape) {
 }
 exports.computeStrides = computeStrides;
 function toTypedArray(a, dtype, debugMode) {
+    if (dtype === 'string') {
+        throw new Error('Cannot convert a string[] to a TypedArray');
+    }
     if (noConversionNeeded(a, dtype)) {
         return a;
     }
     if (Array.isArray(a)) {
         a = flatten(a);
     }
-    return copyTypedArray(a, dtype, debugMode);
+    if (dtype == null || dtype === 'float32' || dtype === 'complex64') {
+        return new Float32Array(a);
+    }
+    else if (dtype === 'int32') {
+        if (debugMode) {
+            checkConversionForNaN(a, dtype);
+        }
+        return new Int32Array(a);
+    }
+    else if (dtype === 'bool') {
+        var bool = new Uint8Array(a.length);
+        for (var i = 0; i < bool.length; ++i) {
+            if (Math.round(a[i]) !== 0) {
+                bool[i] = 1;
+            }
+        }
+        return bool;
+    }
+    else {
+        throw new Error("Unknown data type " + dtype);
+    }
 }
 exports.toTypedArray = toTypedArray;
 function noConversionNeeded(a, dtype) {
@@ -26166,13 +27187,13 @@ function now() {
 exports.now = now;
 
 }).call(this,require('_process'))
-},{"_process":266}],206:[function(require,module,exports){
+},{"_process":296}],210:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var version = '0.13.11';
+var version = '0.14.2';
 exports.version = version;
 
-},{}],207:[function(require,module,exports){
+},{}],211:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var gpgpu_util = require("./kernels/webgl/gpgpu_util");
@@ -26184,7 +27205,3586 @@ exports.MathBackendWebGL = backend_webgl_1.MathBackendWebGL;
 var gpgpu_context_1 = require("./kernels/webgl/gpgpu_context");
 exports.GPGPUContext = gpgpu_context_1.GPGPUContext;
 
-},{"./kernels/backend_webgl":72,"./kernels/webgl/gpgpu_context":99,"./kernels/webgl/gpgpu_util":101,"./kernels/webgl/webgl_util":133}],208:[function(require,module,exports){
+},{"./kernels/backend_webgl":74,"./kernels/webgl/gpgpu_context":103,"./kernels/webgl/gpgpu_util":105,"./kernels/webgl/webgl_util":137}],212:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var tf = require("@tensorflow/tfjs-core");
+var seedrandom = require("seedrandom");
+var lazy_iterator_1 = require("./iterators/lazy_iterator");
+var lazy_iterator_2 = require("./iterators/lazy_iterator");
+var lazy_iterator_3 = require("./iterators/lazy_iterator");
+var deep_map_1 = require("./util/deep_map");
+var Dataset = (function () {
+    function Dataset() {
+    }
+    Dataset.prototype.filter = function (predicate) {
+        var _this = this;
+        var base = this;
+        return datasetFromIteratorFn(function () { return __awaiter(_this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, base.iterator()];
+                    case 1: return [2, (_a.sent()).filter(function (x) { return tf.tidy(function () { return predicate(x); }); })];
+                }
+            });
+        }); });
+    };
+    Dataset.prototype.map = function (transform) {
+        var _this = this;
+        var base = this;
+        return datasetFromIteratorFn(function () { return __awaiter(_this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, base.iterator()];
+                    case 1: return [2, (_a.sent()).map(function (x) { return tf.tidy(function () { return transform(x); }); })];
+                }
+            });
+        }); });
+    };
+    Dataset.prototype.mapAsync = function (transform) {
+        var _this = this;
+        var base = this;
+        return datasetFromIteratorFn(function () { return __awaiter(_this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, base.iterator()];
+                    case 1: return [2, (_a.sent()).mapAsync(transform)];
+                }
+            });
+        }); });
+    };
+    Dataset.prototype.batch = function (batchSize, smallLastBatch) {
+        var _this = this;
+        if (smallLastBatch === void 0) { smallLastBatch = true; }
+        var base = this;
+        return datasetFromIteratorFn(function () { return __awaiter(_this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, base.iterator()];
+                    case 1: return [2, (_a.sent())
+                            .columnMajorBatch(batchSize, smallLastBatch, deepBatchConcat)];
+                }
+            });
+        }); });
+    };
+    Dataset.prototype.concatenate = function (dataset) {
+        var _this = this;
+        var base = this;
+        return datasetFromIteratorFn(function () { return __awaiter(_this, void 0, void 0, function () { var _a, _b; return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0: return [4, base.iterator()];
+                case 1:
+                    _b = (_a = (_c.sent())).concatenate;
+                    return [4, dataset.iterator()];
+                case 2: return [2, _b.apply(_a, [_c.sent()])];
+            }
+        }); }); });
+    };
+    Dataset.prototype.repeat = function (count) {
+        var _this = this;
+        var base = this;
+        return datasetFromIteratorFn(function () { return __awaiter(_this, void 0, void 0, function () {
+            var _this = this;
+            var iteratorIterator;
+            return __generator(this, function (_a) {
+                iteratorIterator = lazy_iterator_1.iteratorFromFunction(function () { return __awaiter(_this, void 0, void 0, function () { var _a; return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            _a = {};
+                            return [4, base.iterator()];
+                        case 1: return [2, (_a.value = _b.sent(), _a.done = false, _a)];
+                    }
+                }); }); });
+                return [2, lazy_iterator_2.iteratorFromConcatenated(iteratorIterator.take(count))];
+            });
+        }); });
+    };
+    Dataset.prototype.take = function (count) {
+        var _this = this;
+        var base = this;
+        return datasetFromIteratorFn(function () { return __awaiter(_this, void 0, void 0, function () { return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4, base.iterator()];
+                case 1: return [2, (_a.sent()).take(count)];
+            }
+        }); }); });
+    };
+    Dataset.prototype.skip = function (count) {
+        var _this = this;
+        var base = this;
+        return datasetFromIteratorFn(function () { return __awaiter(_this, void 0, void 0, function () { return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4, base.iterator()];
+                case 1: return [2, (_a.sent()).skip(count)];
+            }
+        }); }); });
+    };
+    Dataset.prototype.shuffle = function (bufferSize, seed, reshuffleEachIteration) {
+        var _this = this;
+        if (reshuffleEachIteration === void 0) { reshuffleEachIteration = true; }
+        var base = this;
+        var random = seedrandom.alea(seed || tf.util.now().toString());
+        return datasetFromIteratorFn(function () { return __awaiter(_this, void 0, void 0, function () {
+            var seed2;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        seed2 = random.int32();
+                        if (reshuffleEachIteration) {
+                            seed2 += random.int32();
+                        }
+                        return [4, base.iterator()];
+                    case 1: return [2, (_a.sent()).shuffle(bufferSize, seed2.toString())];
+                }
+            });
+        }); });
+    };
+    Dataset.prototype.prefetch = function (bufferSize) {
+        var _this = this;
+        var base = this;
+        return datasetFromIteratorFn(function () { return __awaiter(_this, void 0, void 0, function () { return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4, base.iterator()];
+                case 1: return [2, (_a.sent()).prefetch(bufferSize)];
+            }
+        }); }); });
+    };
+    Dataset.prototype.collectAll = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this.iterator()];
+                    case 1: return [2, (_a.sent()).collect()];
+                }
+            });
+        });
+    };
+    Dataset.prototype.forEach = function (f) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this.iterator()];
+                    case 1: return [2, (_a.sent()).forEach(f)];
+                }
+            });
+        });
+    };
+    return Dataset;
+}());
+exports.Dataset = Dataset;
+function datasetFromIteratorFn(iteratorFn) {
+    return new (function (_super) {
+        __extends(class_1, _super);
+        function class_1() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        class_1.prototype.iterator = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2, iteratorFn()];
+                });
+            });
+        };
+        return class_1;
+    }(Dataset))();
+}
+exports.datasetFromIteratorFn = datasetFromIteratorFn;
+function array(items) {
+    var _this = this;
+    return datasetFromIteratorFn(function () { return __awaiter(_this, void 0, void 0, function () { return __generator(this, function (_a) {
+        return [2, lazy_iterator_3.iteratorFromItems(items)];
+    }); }); });
+}
+exports.array = array;
+function zip(datasets) {
+    var _this = this;
+    if (!deep_map_1.isIterable(datasets)) {
+        throw new Error('The argument to zip() must be an object or array.');
+    }
+    return datasetFromIteratorFn(function () { return __awaiter(_this, void 0, void 0, function () {
+        var streams;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4, deep_map_1.deepMapAndAwaitAll(datasets, function (d) {
+                        if (d instanceof Dataset) {
+                            return { value: d.iterator(), recurse: false };
+                        }
+                        else if (deep_map_1.isIterable(d)) {
+                            return { value: null, recurse: true };
+                        }
+                        else {
+                            throw new Error('Leaves of the structure passed to zip() must be Datasets, ' +
+                                'not primitives.');
+                        }
+                    })];
+                case 1:
+                    streams = _a.sent();
+                    return [2, lazy_iterator_1.iteratorFromZipped(streams, lazy_iterator_1.ZipMismatchMode.SHORTEST)];
+            }
+        });
+    }); });
+}
+exports.zip = zip;
+function deepBatchConcat(rows) {
+    if (rows === null) {
+        return null;
+    }
+    var exampleRow = rows[0];
+    if (typeof (exampleRow) === 'string') {
+        return { value: rows, recurse: false };
+    }
+    if (!deep_map_1.isIterable(exampleRow)) {
+        var value = batchConcat(rows);
+        return { value: value, recurse: false };
+    }
+    if (deep_map_1.isNumericArray(exampleRow)) {
+        var value = batchConcat(rows);
+        return { value: value, recurse: false };
+    }
+    return { value: null, recurse: true };
+}
+function batchConcat(arrays) {
+    var elementShape = shapeAndValues(arrays[0])[0];
+    var batchShape = [arrays.length].concat(elementShape);
+    var resultVals = new Float32Array(batchShape.reduce(function (x, y) { return x * y; }));
+    var offset = 0;
+    for (var _i = 0, arrays_1 = arrays; _i < arrays_1.length; _i++) {
+        var a = arrays_1[_i];
+        var _a = shapeAndValues(a), aShape = _a[0], aVals = _a[1];
+        if (!tf.util.arraysEqual(aShape, elementShape)) {
+            throw new Error('Elements must have the same shape to be batched');
+        }
+        resultVals.set(aVals, offset);
+        offset += aVals.length;
+    }
+    return tf.Tensor.make(batchShape, { values: resultVals });
+}
+function shapeAndValues(array) {
+    if (array instanceof tf.Tensor) {
+        return [array.shape, array.dataSync()];
+    }
+    else if (Array.isArray(array)) {
+        return [[array.length], array];
+    }
+    else {
+        return [[], [array]];
+    }
+}
+
+},{"./iterators/lazy_iterator":219,"./util/deep_map":225,"@tensorflow/tfjs-core":59,"seedrandom":229}],213:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var tfjs_core_1 = require("@tensorflow/tfjs-core");
+var dataset_1 = require("../dataset");
+var text_line_dataset_1 = require("./text_line_dataset");
+var CODE_QUOTE = '"';
+var STATE_OUT = Symbol('out');
+var STATE_FIELD = Symbol('field');
+var STATE_QUOTE = Symbol('quote');
+var STATE_QUOTE_AFTER_QUOTE = Symbol('quoteafterquote');
+var STATE_WITHIN_QUOTE_IN_QUOTE = Symbol('quoteinquote');
+var CSVDataset = (function (_super) {
+    __extends(CSVDataset, _super);
+    function CSVDataset(input, csvConfig) {
+        var _this = _super.call(this) || this;
+        _this.input = input;
+        _this.hasHeader = true;
+        _this.fullColumnNames = null;
+        _this.columnNamesValidated = false;
+        _this.columnConfigs = null;
+        _this.configuredColumnsOnly = false;
+        _this.delimiter = ',';
+        _this.base = new text_line_dataset_1.TextLineDataset(input);
+        if (!csvConfig) {
+            csvConfig = {};
+        }
+        _this.hasHeader = csvConfig.hasHeader === false ? false : true;
+        _this.fullColumnNames = csvConfig.columnNames;
+        _this.columnConfigs = csvConfig.columnConfigs;
+        _this.configuredColumnsOnly = csvConfig.configuredColumnsOnly;
+        _this.delimiter = csvConfig.delimiter ? csvConfig.delimiter : ',';
+        return _this;
+    }
+    CSVDataset.prototype.columnNames = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!!this.columnNamesValidated) return [3, 2];
+                        return [4, this.setColumnNames()];
+                    case 1:
+                        _a.sent();
+                        _a.label = 2;
+                    case 2: return [2, this.configuredColumnsOnly ? Object.keys(this.columnConfigs) :
+                            this.fullColumnNames];
+                }
+            });
+        });
+    };
+    CSVDataset.prototype.setColumnNames = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var columnNamesFromFile, counts, duplicateNames, _i, _a, key, index;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0: return [4, this.maybeReadHeaderLine()];
+                    case 1:
+                        columnNamesFromFile = _b.sent();
+                        if (!this.fullColumnNames && !columnNamesFromFile) {
+                            throw new Error('Column names must be provided if there is no header line.');
+                        }
+                        else if (this.fullColumnNames && columnNamesFromFile) {
+                            tfjs_core_1.util.assert(columnNamesFromFile.length === this.fullColumnNames.length, 'The length of provided columnNames (' +
+                                this.fullColumnNames.length.toString() +
+                                ') does not match the length of the header line read from ' +
+                                'file (' + columnNamesFromFile.length.toString() + ').');
+                        }
+                        if (!this.fullColumnNames) {
+                            this.fullColumnNames = columnNamesFromFile;
+                        }
+                        counts = this.fullColumnNames.reduce(function (countAcc, name) {
+                            countAcc[name] = (countAcc[name] + 1) || 1;
+                            return countAcc;
+                        }, {});
+                        duplicateNames = Object.keys(counts).filter(function (name) { return (counts[name] > 1); });
+                        tfjs_core_1.util.assert(duplicateNames.length === 0, 'Duplicate column names found: ' + duplicateNames.toString());
+                        if (this.columnConfigs) {
+                            for (_i = 0, _a = Object.keys(this.columnConfigs); _i < _a.length; _i++) {
+                                key = _a[_i];
+                                index = this.fullColumnNames.indexOf(key);
+                                if (index === -1) {
+                                    throw new Error('The key "' + key +
+                                        '" provided in columnConfigs does not match any of the column ' +
+                                        'names (' + this.fullColumnNames.toString() + ').');
+                                }
+                            }
+                        }
+                        this.columnNamesValidated = true;
+                        return [2];
+                }
+            });
+        });
+    };
+    CSVDataset.prototype.maybeReadHeaderLine = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var iter, firstElement, firstLine;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!this.hasHeader) return [3, 3];
+                        return [4, this.base.iterator()];
+                    case 1:
+                        iter = _a.sent();
+                        return [4, iter.next()];
+                    case 2:
+                        firstElement = _a.sent();
+                        if (firstElement.done) {
+                            throw new Error('No data was found for CSV parsing.');
+                        }
+                        firstLine = firstElement.value;
+                        return [2, firstLine.split(this.delimiter)];
+                    case 3: return [2, null];
+                }
+            });
+        });
+    };
+    CSVDataset.prototype.iterator = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            var lines;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!!this.columnNamesValidated) return [3, 2];
+                        return [4, this.setColumnNames()];
+                    case 1:
+                        _a.sent();
+                        _a.label = 2;
+                    case 2: return [4, this.base.iterator()];
+                    case 3:
+                        lines = _a.sent();
+                        if (this.hasHeader) {
+                            lines = lines.skip(1);
+                        }
+                        return [2, lines.map(function (x) { return _this.makeDataElement(x); })];
+                }
+            });
+        });
+    };
+    CSVDataset.prototype.makeDataElement = function (line) {
+        var values = this.parseRow(line);
+        var features = {};
+        var labels = {};
+        for (var i = 0; i < this.fullColumnNames.length; i++) {
+            var key = this.fullColumnNames[i];
+            var config = this.columnConfigs ? this.columnConfigs[key] : null;
+            if (this.configuredColumnsOnly && !config) {
+                continue;
+            }
+            else {
+                var value = values[i];
+                var parsedValue = null;
+                if (value === '') {
+                    if (config && config.default !== undefined) {
+                        parsedValue = config.default;
+                    }
+                    else if (config && (config.required || config.isLabel)) {
+                        throw new Error("Required column " + key + " is empty in this line: " + line);
+                    }
+                    else {
+                        parsedValue = undefined;
+                    }
+                }
+                else {
+                    var valueAsNum = Number(value);
+                    if (isNaN(valueAsNum)) {
+                        if (config && config.dtype === 'bool') {
+                            parsedValue = this.getBoolean(value);
+                        }
+                        else {
+                            parsedValue = value;
+                        }
+                    }
+                    else if (!config || !config.dtype) {
+                        parsedValue = valueAsNum;
+                    }
+                    else {
+                        switch (config.dtype) {
+                            case 'float32':
+                                parsedValue = valueAsNum;
+                                break;
+                            case 'int32':
+                                parsedValue = Math.floor(valueAsNum);
+                                break;
+                            case 'bool':
+                                parsedValue = this.getBoolean(value);
+                                break;
+                            default:
+                                parsedValue = valueAsNum;
+                        }
+                    }
+                }
+                (config && config.isLabel) ? labels[key] = parsedValue :
+                    features[key] = parsedValue;
+            }
+        }
+        if (Object.keys(labels).length === 0) {
+            return features;
+        }
+        else {
+            return [features, labels];
+        }
+    };
+    CSVDataset.prototype.getBoolean = function (value) {
+        if (value === '1' || value.toLowerCase() === 'true') {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    };
+    CSVDataset.prototype.parseRow = function (line) {
+        var result = [];
+        var readOffset = 0;
+        var readLength = line.length;
+        var currentState = STATE_FIELD;
+        for (var i = 0; i < readLength; i++) {
+            switch (currentState) {
+                case STATE_OUT:
+                    switch (line.charAt(i)) {
+                        case CODE_QUOTE:
+                            readOffset = i + 1;
+                            currentState = STATE_QUOTE;
+                            break;
+                        case this.delimiter:
+                            result.push('');
+                            currentState = STATE_OUT;
+                            readOffset = i + 1;
+                            break;
+                        default:
+                            currentState = STATE_FIELD;
+                            readOffset = i;
+                            break;
+                    }
+                    break;
+                case STATE_FIELD:
+                    switch (line.charAt(i)) {
+                        case this.delimiter:
+                            result.push(line.substring(readOffset, i));
+                            currentState = STATE_OUT;
+                            readOffset = i + 1;
+                            break;
+                        default:
+                    }
+                    break;
+                case STATE_QUOTE:
+                    switch (line.charAt(i)) {
+                        case CODE_QUOTE:
+                            currentState = STATE_QUOTE_AFTER_QUOTE;
+                            break;
+                        default:
+                    }
+                    break;
+                case STATE_QUOTE_AFTER_QUOTE:
+                    switch (line.charAt(i)) {
+                        case this.delimiter:
+                            result.push(line.substring(readOffset, i - 1));
+                            currentState = STATE_OUT;
+                            readOffset = i + 1;
+                            break;
+                        case CODE_QUOTE:
+                            currentState = STATE_QUOTE;
+                            break;
+                        default:
+                            currentState = STATE_WITHIN_QUOTE_IN_QUOTE;
+                            break;
+                    }
+                    break;
+                case STATE_WITHIN_QUOTE_IN_QUOTE:
+                    switch (line.charAt(i)) {
+                        case CODE_QUOTE:
+                            currentState = STATE_QUOTE;
+                            break;
+                        default:
+                    }
+                    break;
+                default:
+            }
+        }
+        if (currentState === STATE_QUOTE_AFTER_QUOTE) {
+            result.push(line.substring(readOffset, readLength - 1));
+        }
+        else {
+            result.push(line.substring(readOffset));
+        }
+        return result;
+    };
+    return CSVDataset;
+}(dataset_1.Dataset));
+exports.CSVDataset = CSVDataset;
+
+},{"../dataset":212,"./text_line_dataset":214,"@tensorflow/tfjs-core":59}],214:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var dataset_1 = require("../dataset");
+var TextLineDataset = (function (_super) {
+    __extends(TextLineDataset, _super);
+    function TextLineDataset(input) {
+        var _this = _super.call(this) || this;
+        _this.input = input;
+        return _this;
+    }
+    TextLineDataset.prototype.iterator = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var inputIterator, utf8Iterator, lineIterator;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this.input.iterator()];
+                    case 1:
+                        inputIterator = _a.sent();
+                        utf8Iterator = inputIterator.decodeUTF8();
+                        lineIterator = utf8Iterator.split('\n');
+                        return [2, lineIterator];
+                }
+            });
+        });
+    };
+    return TextLineDataset;
+}(dataset_1.Dataset));
+exports.TextLineDataset = TextLineDataset;
+
+},{"../dataset":212}],215:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var DataSource = (function () {
+    function DataSource() {
+    }
+    return DataSource;
+}());
+exports.DataSource = DataSource;
+
+},{}],216:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var dataset_1 = require("./dataset");
+exports.array = dataset_1.array;
+exports.Dataset = dataset_1.Dataset;
+exports.datasetFromIteratorFn = dataset_1.datasetFromIteratorFn;
+exports.zip = dataset_1.zip;
+var csv_dataset_1 = require("./datasets/csv_dataset");
+exports.CSVDataset = csv_dataset_1.CSVDataset;
+var text_line_dataset_1 = require("./datasets/text_line_dataset");
+exports.TextLineDataset = text_line_dataset_1.TextLineDataset;
+var readers_1 = require("./readers");
+exports.csv = readers_1.csv;
+var file_data_source_1 = require("./sources/file_data_source");
+exports.FileDataSource = file_data_source_1.FileDataSource;
+var url_data_source_1 = require("./sources/url_data_source");
+exports.URLDataSource = url_data_source_1.URLDataSource;
+var version_1 = require("./version");
+exports.version_data = version_1.version;
+
+},{"./dataset":212,"./datasets/csv_dataset":213,"./datasets/text_line_dataset":214,"./readers":222,"./sources/file_data_source":223,"./sources/url_data_source":224,"./version":228}],217:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var utf8 = require("utf8");
+var lazy_iterator_1 = require("./lazy_iterator");
+var string_iterator_1 = require("./string_iterator");
+var ByteChunkIterator = (function (_super) {
+    __extends(ByteChunkIterator, _super);
+    function ByteChunkIterator() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    ByteChunkIterator.prototype.decodeUTF8 = function () {
+        return new Utf8Iterator(this);
+    };
+    return ByteChunkIterator;
+}(lazy_iterator_1.LazyIterator));
+exports.ByteChunkIterator = ByteChunkIterator;
+var Utf8Iterator = (function (_super) {
+    __extends(Utf8Iterator, _super);
+    function Utf8Iterator(upstream) {
+        var _this = _super.call(this) || this;
+        _this.upstream = upstream;
+        _this.impl = new Utf8IteratorImpl(upstream);
+        return _this;
+    }
+    Utf8Iterator.prototype.summary = function () {
+        return this.impl.summary();
+    };
+    Utf8Iterator.prototype.next = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2, this.impl.next()];
+            });
+        });
+    };
+    return Utf8Iterator;
+}(string_iterator_1.StringIterator));
+var Utf8IteratorImpl = (function (_super) {
+    __extends(Utf8IteratorImpl, _super);
+    function Utf8IteratorImpl(upstream) {
+        var _this = _super.call(this) || this;
+        _this.upstream = upstream;
+        _this.partial = new Uint8Array([]);
+        _this.partialBytesValid = 0;
+        return _this;
+    }
+    Utf8IteratorImpl.prototype.summary = function () {
+        return this.upstream.summary() + " -> Utf8";
+    };
+    Utf8IteratorImpl.prototype.pump = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var chunkResult, chunk, partialBytesRemaining, nextIndex, okUpToIndex, splitUtfWidth, bulk, reassembled;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this.upstream.next()];
+                    case 1:
+                        chunkResult = _a.sent();
+                        if (chunkResult.done) {
+                            if (this.partial.length === 0) {
+                                return [2, false];
+                            }
+                            chunk = new Uint8Array([]);
+                        }
+                        else {
+                            chunk = chunkResult.value;
+                        }
+                        partialBytesRemaining = this.partial.length - this.partialBytesValid;
+                        nextIndex = partialBytesRemaining;
+                        okUpToIndex = nextIndex;
+                        splitUtfWidth = 0;
+                        while (nextIndex < chunk.length) {
+                            okUpToIndex = nextIndex;
+                            splitUtfWidth = utfWidth(chunk[nextIndex]);
+                            nextIndex = okUpToIndex + splitUtfWidth;
+                        }
+                        if (nextIndex === chunk.length) {
+                            okUpToIndex = nextIndex;
+                        }
+                        bulk = utf8.decode(String.fromCharCode.apply(null, chunk.slice(partialBytesRemaining, okUpToIndex)));
+                        if (partialBytesRemaining > 0) {
+                            this.partial.set(chunk.slice(0, partialBytesRemaining), this.partialBytesValid);
+                            reassembled = utf8.decode(String.fromCharCode.apply(null, this.partial));
+                            this.outputQueue.push(reassembled + bulk);
+                        }
+                        else {
+                            this.outputQueue.push(bulk);
+                        }
+                        if (okUpToIndex === chunk.length) {
+                            this.partial = new Uint8Array([]);
+                            this.partialBytesValid = 0;
+                        }
+                        else {
+                            this.partial = new Uint8Array(new ArrayBuffer(splitUtfWidth));
+                            this.partial.set(chunk.slice(okUpToIndex), 0);
+                            this.partialBytesValid = chunk.length - okUpToIndex;
+                        }
+                        return [2, true];
+                }
+            });
+        });
+    };
+    return Utf8IteratorImpl;
+}(lazy_iterator_1.OneToManyIterator));
+function utfWidth(firstByte) {
+    if (firstByte >= 252) {
+        return 6;
+    }
+    else if (firstByte >= 248) {
+        return 5;
+    }
+    else if (firstByte >= 240) {
+        return 4;
+    }
+    else if (firstByte >= 224) {
+        return 3;
+    }
+    else if (firstByte >= 192) {
+        return 2;
+    }
+    else {
+        return 1;
+    }
+}
+
+},{"./lazy_iterator":219,"./string_iterator":220,"utf8":317}],218:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var tfjs_core_1 = require("@tensorflow/tfjs-core");
+var byte_chunk_iterator_1 = require("./byte_chunk_iterator");
+var FileChunkIterator = (function (_super) {
+    __extends(FileChunkIterator, _super);
+    function FileChunkIterator(file, options) {
+        if (options === void 0) { options = {}; }
+        var _this = _super.call(this) || this;
+        _this.file = file;
+        _this.options = options;
+        tfjs_core_1.util.assert((file instanceof Uint8Array) ||
+            (tfjs_core_1.ENV.get('IS_BROWSER') ?
+                (file instanceof File || file instanceof Blob) :
+                false), 'FileChunkIterator only supports File, Blob and Uint8Array right now.');
+        _this.offset = options.offset || 0;
+        _this.chunkSize = options.chunkSize || 1024 * 1024;
+        return _this;
+    }
+    FileChunkIterator.prototype.summary = function () {
+        return "FileChunks " + this.file;
+    };
+    FileChunkIterator.prototype.next = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            var chunk, _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        if (this.offset >= ((this.file instanceof Uint8Array) ?
+                            this.file.byteLength :
+                            this.file.size)) {
+                            return [2, { value: null, done: true }];
+                        }
+                        chunk = new Promise(function (resolve, reject) {
+                            var end = _this.offset + _this.chunkSize;
+                            if (_this.file instanceof Uint8Array) {
+                                resolve(new Uint8Array(_this.file.slice(_this.offset, end)));
+                            }
+                            else {
+                                var fileReader_1 = new FileReader();
+                                fileReader_1.onload = function (event) {
+                                    var data = fileReader_1.result;
+                                    if (data instanceof ArrayBuffer) {
+                                        data = new Uint8Array(data);
+                                    }
+                                    if (!(data instanceof Uint8Array)) {
+                                        return reject(new TypeError('FileReader returned unknown type.'));
+                                    }
+                                    resolve(data);
+                                };
+                                fileReader_1.onabort = function (event) {
+                                    return reject(new Error('Aborted'));
+                                };
+                                fileReader_1.onerror = function (event) {
+                                    return reject(new Error(event.type));
+                                };
+                                var slice = _this.file.slice(_this.offset, end);
+                                fileReader_1.readAsArrayBuffer(slice);
+                            }
+                            _this.offset = end;
+                        });
+                        _a = {};
+                        return [4, chunk];
+                    case 1: return [2, (_a.value = (_b.sent()), _a.done = false, _a)];
+                }
+            });
+        });
+    };
+    return FileChunkIterator;
+}(byte_chunk_iterator_1.ByteChunkIterator));
+exports.FileChunkIterator = FileChunkIterator;
+
+},{"./byte_chunk_iterator":217,"@tensorflow/tfjs-core":59}],219:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var tf = require("@tensorflow/tfjs-core");
+var tensor_util_1 = require("@tensorflow/tfjs-core/dist/tensor_util");
+var seedrandom = require("seedrandom");
+var deep_map_1 = require("../util/deep_map");
+var growing_ring_buffer_1 = require("../util/growing_ring_buffer");
+var ring_buffer_1 = require("../util/ring_buffer");
+function iteratorFromItems(items) {
+    return new ArrayIterator(items);
+}
+exports.iteratorFromItems = iteratorFromItems;
+function iteratorFromIncrementing(start) {
+    var i = start;
+    return iteratorFromFunction(function () { return ({ value: i++, done: false }); });
+}
+exports.iteratorFromIncrementing = iteratorFromIncrementing;
+function iteratorFromFunction(func) {
+    return new FunctionCallIterator(func);
+}
+exports.iteratorFromFunction = iteratorFromFunction;
+function iteratorFromConcatenated(baseIterators, baseErrorHandler) {
+    return new ChainedIterator(baseIterators, baseErrorHandler);
+}
+exports.iteratorFromConcatenated = iteratorFromConcatenated;
+function iteratorFromConcatenatedFunction(iteratorFunc, count, baseErrorHandler) {
+    return iteratorFromConcatenated(iteratorFromFunction(iteratorFunc).take(count), baseErrorHandler);
+}
+exports.iteratorFromConcatenatedFunction = iteratorFromConcatenatedFunction;
+function iteratorFromZipped(iterators, mismatchMode) {
+    if (mismatchMode === void 0) { mismatchMode = ZipMismatchMode.FAIL; }
+    return new ZipIterator(iterators, mismatchMode);
+}
+exports.iteratorFromZipped = iteratorFromZipped;
+var LazyIterator = (function () {
+    function LazyIterator() {
+    }
+    LazyIterator.prototype.collect = function (maxItems, prefetch) {
+        if (maxItems === void 0) { maxItems = 1000; }
+        if (prefetch === void 0) { prefetch = 100; }
+        return __awaiter(this, void 0, void 0, function () {
+            var stream, result, count, x;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        stream = prefetch > 0 ? this.prefetch(prefetch) : this;
+                        result = [];
+                        count = 0;
+                        return [4, stream.next()];
+                    case 1:
+                        x = _a.sent();
+                        _a.label = 2;
+                    case 2:
+                        if (!!x.done) return [3, 4];
+                        result.push(x.value);
+                        count++;
+                        if (count >= maxItems) {
+                            return [2, result];
+                        }
+                        return [4, stream.next()];
+                    case 3:
+                        x = _a.sent();
+                        return [3, 2];
+                    case 4: return [2, result];
+                }
+            });
+        });
+    };
+    LazyIterator.prototype.resolveFully = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var x;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this.next()];
+                    case 1:
+                        x = _a.sent();
+                        _a.label = 2;
+                    case 2:
+                        if (!!x.done) return [3, 4];
+                        return [4, this.next()];
+                    case 3:
+                        x = _a.sent();
+                        return [3, 2];
+                    case 4: return [2];
+                }
+            });
+        });
+    };
+    LazyIterator.prototype.resolveWhile = function (predicate) {
+        return __awaiter(this, void 0, void 0, function () {
+            var x, shouldContinue;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this.next()];
+                    case 1:
+                        x = _a.sent();
+                        shouldContinue = predicate(x.value);
+                        _a.label = 2;
+                    case 2:
+                        if (!((!x.done) && shouldContinue)) return [3, 4];
+                        return [4, this.next()];
+                    case 3:
+                        x = _a.sent();
+                        shouldContinue = predicate(x.value);
+                        return [3, 2];
+                    case 4: return [2];
+                }
+            });
+        });
+    };
+    LazyIterator.prototype.handleErrors = function (handler) {
+        return new ErrorHandlingLazyIterator(this, handler);
+    };
+    LazyIterator.prototype.filter = function (predicate) {
+        return new FilterIterator(this, predicate);
+    };
+    LazyIterator.prototype.map = function (transform) {
+        return new MapIterator(this, transform);
+    };
+    LazyIterator.prototype.mapAsync = function (transform) {
+        return new AsyncMapIterator(this, transform);
+    };
+    LazyIterator.prototype.serialMapAsync = function (transform) {
+        return new AsyncMapIterator(this, transform).serial();
+    };
+    LazyIterator.prototype.flatmap = function (transform) {
+        return new FlatmapIterator(this, transform);
+    };
+    LazyIterator.prototype.forEach = function (f) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2, this.map(f).resolveFully()];
+            });
+        });
+    };
+    LazyIterator.prototype.serialForEach = function (f) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2, this.serialMapAsync(f).resolveWhile(function (x) { return (x === true); })];
+            });
+        });
+    };
+    LazyIterator.prototype.rowMajorBatch = function (batchSize, smallLastBatch) {
+        if (smallLastBatch === void 0) { smallLastBatch = true; }
+        return new RowMajorBatchIterator(this, batchSize, smallLastBatch);
+    };
+    LazyIterator.prototype.columnMajorBatch = function (batchSize, smallLastBatch, zipFn) {
+        if (smallLastBatch === void 0) { smallLastBatch = true; }
+        if (zipFn === void 0) { zipFn = deep_map_1.zipToList; }
+        var rowBatches = this.rowMajorBatch(batchSize, smallLastBatch);
+        return rowBatches.map(function (x) { return deep_map_1.deepZip(x, zipFn); });
+    };
+    LazyIterator.prototype.concatenate = function (iterator, baseErrorHandler) {
+        return new ChainedIterator(iteratorFromItems([this, iterator]), baseErrorHandler);
+    };
+    LazyIterator.prototype.take = function (count) {
+        if (count < 0 || count == null) {
+            return this;
+        }
+        return new TakeIterator(this, count);
+    };
+    LazyIterator.prototype.skip = function (count) {
+        if (count < 0 || count == null) {
+            return this;
+        }
+        return new SkipIterator(this, count);
+    };
+    LazyIterator.prototype.prefetch = function (bufferSize) {
+        return new PrefetchIterator(this, bufferSize);
+    };
+    LazyIterator.prototype.shuffle = function (windowSize, seed) {
+        return new ShuffleIterator(this, windowSize, seed);
+    };
+    LazyIterator.prototype.serial = function () {
+        return new SerialIterator(this);
+    };
+    return LazyIterator;
+}());
+exports.LazyIterator = LazyIterator;
+var ArrayIterator = (function (_super) {
+    __extends(ArrayIterator, _super);
+    function ArrayIterator(items) {
+        var _this = _super.call(this) || this;
+        _this.items = items;
+        _this.trav = 0;
+        return _this;
+    }
+    ArrayIterator.prototype.summary = function () {
+        return "Array of " + this.items.length + " items";
+    };
+    ArrayIterator.prototype.next = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var result;
+            return __generator(this, function (_a) {
+                if (this.trav >= this.items.length) {
+                    return [2, { value: null, done: true }];
+                }
+                result = this.items[this.trav];
+                this.trav++;
+                return [2, { value: result, done: false }];
+            });
+        });
+    };
+    return ArrayIterator;
+}(LazyIterator));
+var FunctionCallIterator = (function (_super) {
+    __extends(FunctionCallIterator, _super);
+    function FunctionCallIterator(nextFn) {
+        var _this = _super.call(this) || this;
+        _this.nextFn = nextFn;
+        return _this;
+    }
+    FunctionCallIterator.prototype.summary = function () {
+        return "Function call";
+    };
+    FunctionCallIterator.prototype.next = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                try {
+                    return [2, this.nextFn()];
+                }
+                catch (e) {
+                    e.message =
+                        "Error thrown while iterating through a dataset: " + e.message;
+                    throw e;
+                }
+                return [2];
+            });
+        });
+    };
+    return FunctionCallIterator;
+}(LazyIterator));
+var SerialIterator = (function (_super) {
+    __extends(SerialIterator, _super);
+    function SerialIterator(upstream) {
+        var _this = _super.call(this) || this;
+        _this.upstream = upstream;
+        _this.lastRead = Promise.resolve({ value: null, done: false });
+        return _this;
+    }
+    SerialIterator.prototype.summary = function () {
+        return this.upstream.summary() + " -> Serial";
+    };
+    SerialIterator.prototype.next = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                this.lastRead = this.lastRead.then(function () { return _this.serialNext(); });
+                return [2, this.lastRead];
+            });
+        });
+    };
+    SerialIterator.prototype.serialNext = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2, this.upstream.next()];
+            });
+        });
+    };
+    return SerialIterator;
+}(LazyIterator));
+var SkipIterator = (function (_super) {
+    __extends(SkipIterator, _super);
+    function SkipIterator(upstream, maxCount) {
+        var _this = _super.call(this) || this;
+        _this.upstream = upstream;
+        _this.maxCount = maxCount;
+        _this.count = 0;
+        _this.lastRead = Promise.resolve({ value: null, done: false });
+        return _this;
+    }
+    SkipIterator.prototype.summary = function () {
+        return this.upstream.summary() + " -> Skip";
+    };
+    SkipIterator.prototype.next = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                this.lastRead = this.lastRead.then(function () { return _this.serialNext(); });
+                return [2, this.lastRead];
+            });
+        });
+    };
+    SkipIterator.prototype.serialNext = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var skipped;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!(this.count++ < this.maxCount)) return [3, 2];
+                        return [4, this.upstream.next()];
+                    case 1:
+                        skipped = _a.sent();
+                        if (skipped.done) {
+                            return [2, skipped];
+                        }
+                        tf.dispose(skipped.value);
+                        return [3, 0];
+                    case 2: return [2, this.upstream.next()];
+                }
+            });
+        });
+    };
+    return SkipIterator;
+}(LazyIterator));
+var TakeIterator = (function (_super) {
+    __extends(TakeIterator, _super);
+    function TakeIterator(upstream, maxCount) {
+        var _this = _super.call(this) || this;
+        _this.upstream = upstream;
+        _this.maxCount = maxCount;
+        _this.count = 0;
+        return _this;
+    }
+    TakeIterator.prototype.summary = function () {
+        return this.upstream.summary() + " -> Take";
+    };
+    TakeIterator.prototype.next = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                if (this.count++ >= this.maxCount) {
+                    return [2, { value: null, done: true }];
+                }
+                return [2, this.upstream.next()];
+            });
+        });
+    };
+    return TakeIterator;
+}(LazyIterator));
+var RowMajorBatchIterator = (function (_super) {
+    __extends(RowMajorBatchIterator, _super);
+    function RowMajorBatchIterator(upstream, batchSize, enableSmallLastBatch) {
+        if (enableSmallLastBatch === void 0) { enableSmallLastBatch = true; }
+        var _this = _super.call(this) || this;
+        _this.upstream = upstream;
+        _this.batchSize = batchSize;
+        _this.enableSmallLastBatch = enableSmallLastBatch;
+        _this.lastRead = Promise.resolve({ value: null, done: false });
+        return _this;
+    }
+    RowMajorBatchIterator.prototype.summary = function () {
+        return this.upstream.summary() + " -> RowMajorBatch";
+    };
+    RowMajorBatchIterator.prototype.next = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                this.lastRead = this.lastRead.then(function () { return _this.serialNext(); });
+                return [2, this.lastRead];
+            });
+        });
+    };
+    RowMajorBatchIterator.prototype.serialNext = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var batch, item;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        batch = [];
+                        _a.label = 1;
+                    case 1:
+                        if (!(batch.length < this.batchSize)) return [3, 3];
+                        return [4, this.upstream.next()];
+                    case 2:
+                        item = _a.sent();
+                        if (item.done) {
+                            if (this.enableSmallLastBatch && batch.length > 0) {
+                                return [2, { value: batch, done: false }];
+                            }
+                            return [2, { value: null, done: true }];
+                        }
+                        batch.push(item.value);
+                        return [3, 1];
+                    case 3: return [2, { value: batch, done: false }];
+                }
+            });
+        });
+    };
+    return RowMajorBatchIterator;
+}(LazyIterator));
+var FilterIterator = (function (_super) {
+    __extends(FilterIterator, _super);
+    function FilterIterator(upstream, predicate) {
+        var _this = _super.call(this) || this;
+        _this.upstream = upstream;
+        _this.predicate = predicate;
+        _this.lastRead = Promise.resolve({ value: null, done: false });
+        return _this;
+    }
+    FilterIterator.prototype.summary = function () {
+        return this.upstream.summary() + " -> Filter";
+    };
+    FilterIterator.prototype.next = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                this.lastRead = this.lastRead.then(function () { return _this.serialNext(); });
+                return [2, this.lastRead];
+            });
+        });
+    };
+    FilterIterator.prototype.serialNext = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var item;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!true) return [3, 2];
+                        return [4, this.upstream.next()];
+                    case 1:
+                        item = _a.sent();
+                        if (item.done || this.predicate(item.value)) {
+                            return [2, item];
+                        }
+                        tf.dispose(item.value);
+                        return [3, 0];
+                    case 2: return [2];
+                }
+            });
+        });
+    };
+    return FilterIterator;
+}(LazyIterator));
+var MapIterator = (function (_super) {
+    __extends(MapIterator, _super);
+    function MapIterator(upstream, transform) {
+        var _this = _super.call(this) || this;
+        _this.upstream = upstream;
+        _this.transform = transform;
+        return _this;
+    }
+    MapIterator.prototype.summary = function () {
+        return this.upstream.summary() + " -> Map";
+    };
+    MapIterator.prototype.next = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var item, inputTensors, mapped, outputTensors, _i, inputTensors_1, t;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this.upstream.next()];
+                    case 1:
+                        item = _a.sent();
+                        if (item.done) {
+                            return [2, { value: null, done: true }];
+                        }
+                        inputTensors = tensor_util_1.getTensorsInContainer(item.value);
+                        mapped = this.transform(item.value);
+                        outputTensors = tensor_util_1.getTensorsInContainer(mapped);
+                        for (_i = 0, inputTensors_1 = inputTensors; _i < inputTensors_1.length; _i++) {
+                            t = inputTensors_1[_i];
+                            if (!tensor_util_1.isTensorInList(t, outputTensors)) {
+                                t.dispose();
+                            }
+                        }
+                        return [2, { value: mapped, done: false }];
+                }
+            });
+        });
+    };
+    return MapIterator;
+}(LazyIterator));
+var ErrorHandlingLazyIterator = (function (_super) {
+    __extends(ErrorHandlingLazyIterator, _super);
+    function ErrorHandlingLazyIterator(upstream, handler) {
+        var _this = _super.call(this) || this;
+        _this.upstream = upstream;
+        _this.handler = handler;
+        _this.count = 0;
+        _this.lastRead = Promise.resolve({ value: null, done: false });
+        return _this;
+    }
+    ErrorHandlingLazyIterator.prototype.summary = function () {
+        return this.upstream.summary() + " -> handleErrors";
+    };
+    ErrorHandlingLazyIterator.prototype.next = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                this.lastRead = this.lastRead.then(function () { return _this.serialNext(); });
+                return [2, this.lastRead];
+            });
+        });
+    };
+    ErrorHandlingLazyIterator.prototype.serialNext = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var e_1;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!true) return [3, 5];
+                        _a.label = 1;
+                    case 1:
+                        _a.trys.push([1, 3, , 4]);
+                        return [4, this.upstream.next()];
+                    case 2: return [2, _a.sent()];
+                    case 3:
+                        e_1 = _a.sent();
+                        if (!this.handler(e_1)) {
+                            return [2, { value: null, done: true }];
+                        }
+                        return [3, 4];
+                    case 4: return [3, 0];
+                    case 5: return [2];
+                }
+            });
+        });
+    };
+    return ErrorHandlingLazyIterator;
+}(LazyIterator));
+var AsyncMapIterator = (function (_super) {
+    __extends(AsyncMapIterator, _super);
+    function AsyncMapIterator(upstream, transform) {
+        var _this = _super.call(this) || this;
+        _this.upstream = upstream;
+        _this.transform = transform;
+        return _this;
+    }
+    AsyncMapIterator.prototype.summary = function () {
+        return this.upstream.summary() + " -> AsyncMap";
+    };
+    AsyncMapIterator.prototype.next = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var item, inputTensors, mapped, outputTensors, _i, inputTensors_2, t;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this.upstream.next()];
+                    case 1:
+                        item = _a.sent();
+                        if (item.done) {
+                            return [2, { value: null, done: true }];
+                        }
+                        inputTensors = tensor_util_1.getTensorsInContainer(item.value);
+                        return [4, this.transform(item.value)];
+                    case 2:
+                        mapped = _a.sent();
+                        outputTensors = tensor_util_1.getTensorsInContainer(mapped);
+                        for (_i = 0, inputTensors_2 = inputTensors; _i < inputTensors_2.length; _i++) {
+                            t = inputTensors_2[_i];
+                            if (!tensor_util_1.isTensorInList(t, outputTensors)) {
+                                t.dispose();
+                            }
+                        }
+                        return [2, { value: mapped, done: false }];
+                }
+            });
+        });
+    };
+    return AsyncMapIterator;
+}(LazyIterator));
+var OneToManyIterator = (function (_super) {
+    __extends(OneToManyIterator, _super);
+    function OneToManyIterator() {
+        var _this = _super.call(this) || this;
+        _this.outputQueue = new growing_ring_buffer_1.GrowingRingBuffer();
+        _this.lastRead = Promise.resolve({ value: null, done: false });
+        return _this;
+    }
+    OneToManyIterator.prototype.next = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                this.lastRead = this.lastRead.then(function () { return _this.serialNext(); });
+                return [2, this.lastRead];
+            });
+        });
+    };
+    OneToManyIterator.prototype.serialNext = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!(this.outputQueue.length() === 0)) return [3, 2];
+                        return [4, this.pump()];
+                    case 1:
+                        if (!(_a.sent())) {
+                            return [2, { value: null, done: true }];
+                        }
+                        return [3, 0];
+                    case 2: return [2, { value: this.outputQueue.shift(), done: false }];
+                }
+            });
+        });
+    };
+    return OneToManyIterator;
+}(LazyIterator));
+exports.OneToManyIterator = OneToManyIterator;
+var FlatmapIterator = (function (_super) {
+    __extends(FlatmapIterator, _super);
+    function FlatmapIterator(upstream, transform) {
+        var _this = _super.call(this) || this;
+        _this.upstream = upstream;
+        _this.transform = transform;
+        return _this;
+    }
+    FlatmapIterator.prototype.summary = function () {
+        return this.upstream.summary() + " -> Flatmap";
+    };
+    FlatmapIterator.prototype.pump = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var item, inputTensors, mappedArray, outputTensors, _i, inputTensors_3, t;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this.upstream.next()];
+                    case 1:
+                        item = _a.sent();
+                        if (item.done) {
+                            return [2, false];
+                        }
+                        inputTensors = tensor_util_1.getTensorsInContainer(item.value);
+                        mappedArray = this.transform(item.value);
+                        outputTensors = tensor_util_1.getTensorsInContainer(mappedArray);
+                        this.outputQueue.pushAll(mappedArray);
+                        for (_i = 0, inputTensors_3 = inputTensors; _i < inputTensors_3.length; _i++) {
+                            t = inputTensors_3[_i];
+                            if (!tensor_util_1.isTensorInList(t, outputTensors)) {
+                                t.dispose();
+                            }
+                        }
+                        return [2, true];
+                }
+            });
+        });
+    };
+    return FlatmapIterator;
+}(OneToManyIterator));
+var ChainedIterator = (function (_super) {
+    __extends(ChainedIterator, _super);
+    function ChainedIterator(iterators, baseErrorHandler) {
+        var _this = _super.call(this) || this;
+        _this.baseErrorHandler = baseErrorHandler;
+        _this.lastRead = null;
+        _this.iterator = null;
+        _this.moreIterators = iterators;
+        return _this;
+    }
+    ChainedIterator.prototype.summary = function () {
+        var upstreamSummaries = 'TODO: fill in upstream of chained summaries';
+        return upstreamSummaries + " -> Chained";
+    };
+    ChainedIterator.prototype.next = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                this.lastRead = this.readFromChain(this.lastRead);
+                return [2, this.lastRead];
+            });
+        });
+    };
+    ChainedIterator.prototype.readFromChain = function (lastRead) {
+        return __awaiter(this, void 0, void 0, function () {
+            var iteratorResult, itemResult;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, lastRead];
+                    case 1:
+                        _a.sent();
+                        if (!(this.iterator == null)) return [3, 3];
+                        return [4, this.moreIterators.next()];
+                    case 2:
+                        iteratorResult = _a.sent();
+                        if (iteratorResult.done) {
+                            return [2, { value: null, done: true }];
+                        }
+                        this.iterator = iteratorResult.value;
+                        if (this.baseErrorHandler != null) {
+                            this.iterator = this.iterator.handleErrors(this.baseErrorHandler);
+                        }
+                        _a.label = 3;
+                    case 3: return [4, this.iterator.next()];
+                    case 4:
+                        itemResult = _a.sent();
+                        if (itemResult.done) {
+                            this.iterator = null;
+                            return [2, this.readFromChain(lastRead)];
+                        }
+                        return [2, itemResult];
+                }
+            });
+        });
+    };
+    return ChainedIterator;
+}(LazyIterator));
+exports.ChainedIterator = ChainedIterator;
+var ZipMismatchMode;
+(function (ZipMismatchMode) {
+    ZipMismatchMode[ZipMismatchMode["FAIL"] = 0] = "FAIL";
+    ZipMismatchMode[ZipMismatchMode["SHORTEST"] = 1] = "SHORTEST";
+    ZipMismatchMode[ZipMismatchMode["LONGEST"] = 2] = "LONGEST";
+})(ZipMismatchMode = exports.ZipMismatchMode || (exports.ZipMismatchMode = {}));
+var ZipIterator = (function (_super) {
+    __extends(ZipIterator, _super);
+    function ZipIterator(iterators, mismatchMode) {
+        if (mismatchMode === void 0) { mismatchMode = ZipMismatchMode.FAIL; }
+        var _this = _super.call(this) || this;
+        _this.iterators = iterators;
+        _this.mismatchMode = mismatchMode;
+        _this.count = 0;
+        _this.currentPromise = null;
+        return _this;
+    }
+    ZipIterator.prototype.summary = function () {
+        var upstreamSummaries = 'TODO: fill in upstream of zip summaries';
+        return "{" + upstreamSummaries + "} -> Zip";
+    };
+    ZipIterator.prototype.nextState = function (afterState) {
+        return __awaiter(this, void 0, void 0, function () {
+            function getNext(container) {
+                if (container instanceof LazyIterator) {
+                    var result = container.next();
+                    return {
+                        value: result.then(function (x) {
+                            numIterators++;
+                            if (x.done) {
+                                iteratorsDone++;
+                            }
+                            return x.value;
+                        }),
+                        recurse: false
+                    };
+                }
+                else {
+                    return { value: null, recurse: true };
+                }
+            }
+            var numIterators, iteratorsDone, mapped;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, afterState];
+                    case 1:
+                        _a.sent();
+                        numIterators = 0;
+                        iteratorsDone = 0;
+                        return [4, deep_map_1.deepMapAndAwaitAll(this.iterators, getNext)];
+                    case 2:
+                        mapped = _a.sent();
+                        if (numIterators === iteratorsDone) {
+                            return [2, { value: null, done: true }];
+                        }
+                        if (iteratorsDone > 0) {
+                            switch (this.mismatchMode) {
+                                case ZipMismatchMode.FAIL:
+                                    throw new Error('Zipped streams should have the same length. ' +
+                                        ("Mismatched at element " + this.count + "."));
+                                case ZipMismatchMode.SHORTEST:
+                                    return [2, { value: null, done: true }];
+                                case ZipMismatchMode.LONGEST:
+                                default:
+                            }
+                        }
+                        this.count++;
+                        return [2, { value: mapped, done: false }];
+                }
+            });
+        });
+    };
+    ZipIterator.prototype.next = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        this.currentPromise = this.nextState(this.currentPromise);
+                        return [4, this.currentPromise];
+                    case 1: return [2, (_a.sent())];
+                }
+            });
+        });
+    };
+    return ZipIterator;
+}(LazyIterator));
+var PrefetchIterator = (function (_super) {
+    __extends(PrefetchIterator, _super);
+    function PrefetchIterator(upstream, bufferSize) {
+        var _this = _super.call(this) || this;
+        _this.upstream = upstream;
+        _this.bufferSize = bufferSize;
+        _this.buffer = new ring_buffer_1.RingBuffer(bufferSize);
+        return _this;
+    }
+    PrefetchIterator.prototype.summary = function () {
+        return this.upstream.summary() + " -> Prefetch";
+    };
+    PrefetchIterator.prototype.refill = function () {
+        while (!this.buffer.isFull()) {
+            var v = this.upstream.next();
+            this.buffer.push(v);
+        }
+    };
+    PrefetchIterator.prototype.next = function () {
+        this.refill();
+        return this.buffer.shift();
+    };
+    return PrefetchIterator;
+}(LazyIterator));
+exports.PrefetchIterator = PrefetchIterator;
+var ShuffleIterator = (function (_super) {
+    __extends(ShuffleIterator, _super);
+    function ShuffleIterator(upstream, windowSize, seed) {
+        var _this = _super.call(this, upstream, windowSize) || this;
+        _this.upstream = upstream;
+        _this.windowSize = windowSize;
+        _this.upstreamExhausted = false;
+        _this.random = seedrandom.alea(seed || tf.util.now().toString());
+        _this.lastRead = Promise.resolve({ value: null, done: false });
+        return _this;
+    }
+    ShuffleIterator.prototype.next = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                this.lastRead = this.lastRead.then(function () { return _this.serialNext(); });
+                return [2, this.lastRead];
+            });
+        });
+    };
+    ShuffleIterator.prototype.randomInt = function (max) {
+        return Math.floor(this.random() * max);
+    };
+    ShuffleIterator.prototype.chooseIndex = function () {
+        return this.randomInt(this.buffer.length());
+    };
+    ShuffleIterator.prototype.serialNext = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var chosenIndex, result;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!this.upstreamExhausted) {
+                            this.refill();
+                        }
+                        _a.label = 1;
+                    case 1:
+                        if (!!this.buffer.isEmpty()) return [3, 3];
+                        chosenIndex = this.chooseIndex();
+                        return [4, this.buffer.shuffleExcise(chosenIndex)];
+                    case 2:
+                        result = _a.sent();
+                        if (result.done) {
+                            this.upstreamExhausted = true;
+                        }
+                        else {
+                            this.refill();
+                            return [2, result];
+                        }
+                        return [3, 1];
+                    case 3: return [2, { value: null, done: true }];
+                }
+            });
+        });
+    };
+    return ShuffleIterator;
+}(PrefetchIterator));
+exports.ShuffleIterator = ShuffleIterator;
+
+},{"../util/deep_map":225,"../util/growing_ring_buffer":226,"../util/ring_buffer":227,"@tensorflow/tfjs-core":59,"@tensorflow/tfjs-core/dist/tensor_util":204,"seedrandom":229}],220:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var lazy_iterator_1 = require("./lazy_iterator");
+var StringIterator = (function (_super) {
+    __extends(StringIterator, _super);
+    function StringIterator() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    StringIterator.prototype.split = function (separator) {
+        return new SplitIterator(this, separator);
+    };
+    return StringIterator;
+}(lazy_iterator_1.LazyIterator));
+exports.StringIterator = StringIterator;
+var SplitIterator = (function (_super) {
+    __extends(SplitIterator, _super);
+    function SplitIterator(upstream, separator) {
+        var _this = _super.call(this) || this;
+        _this.upstream = upstream;
+        _this.impl = new SplitIteratorImpl(upstream, separator);
+        return _this;
+    }
+    SplitIterator.prototype.summary = function () {
+        return this.impl.summary();
+    };
+    SplitIterator.prototype.next = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2, this.impl.next()];
+            });
+        });
+    };
+    return SplitIterator;
+}(StringIterator));
+var SplitIteratorImpl = (function (_super) {
+    __extends(SplitIteratorImpl, _super);
+    function SplitIteratorImpl(upstream, separator) {
+        var _this = _super.call(this) || this;
+        _this.upstream = upstream;
+        _this.separator = separator;
+        _this.carryover = '';
+        return _this;
+    }
+    SplitIteratorImpl.prototype.summary = function () {
+        return this.upstream.summary() + " -> Split('" + this.separator + "')";
+    };
+    SplitIteratorImpl.prototype.pump = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var chunkResult, lines, _i, _a, line;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0: return [4, this.upstream.next()];
+                    case 1:
+                        chunkResult = _b.sent();
+                        if (chunkResult.done) {
+                            if (this.carryover === '') {
+                                return [2, false];
+                            }
+                            this.outputQueue.push(this.carryover);
+                            this.carryover = '';
+                            return [2, true];
+                        }
+                        lines = chunkResult.value.split(this.separator);
+                        lines[0] = this.carryover + lines[0];
+                        for (_i = 0, _a = lines.slice(0, -1); _i < _a.length; _i++) {
+                            line = _a[_i];
+                            this.outputQueue.push(line);
+                        }
+                        this.carryover = lines[lines.length - 1];
+                        return [2, true];
+                }
+            });
+        });
+    };
+    return SplitIteratorImpl;
+}(lazy_iterator_1.OneToManyIterator));
+
+},{"./lazy_iterator":219}],221:[function(require,module,exports){
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var tfjs_core_1 = require("@tensorflow/tfjs-core");
+var file_chunk_iterator_1 = require("./file_chunk_iterator");
+function urlChunkIterator(url, options) {
+    if (options === void 0) { options = {}; }
+    return __awaiter(this, void 0, void 0, function () {
+        var response, blob, nodeFetch, unitArray;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    if (!tfjs_core_1.ENV.get('IS_BROWSER')) return [3, 5];
+                    return [4, fetch(url)];
+                case 1:
+                    response = _a.sent();
+                    if (!response.ok) return [3, 3];
+                    return [4, response.blob()];
+                case 2:
+                    blob = _a.sent();
+                    return [2, new file_chunk_iterator_1.FileChunkIterator(blob, options)];
+                case 3: throw new Error(response.statusText);
+                case 4: return [3, 9];
+                case 5:
+                    nodeFetch = require('node-fetch');
+                    if (typeof url !== 'string') {
+                        throw new Error('URL must be a string. Request objects are not supported ' +
+                            'in the node.js environment yet.');
+                    }
+                    return [4, nodeFetch(url)];
+                case 6:
+                    response = _a.sent();
+                    if (!response.ok) return [3, 8];
+                    return [4, response.buffer()];
+                case 7:
+                    unitArray = _a.sent();
+                    return [2, new file_chunk_iterator_1.FileChunkIterator(unitArray, options)];
+                case 8: throw new Error(response.statusText);
+                case 9: return [2];
+            }
+        });
+    });
+}
+exports.urlChunkIterator = urlChunkIterator;
+
+},{"./file_chunk_iterator":218,"@tensorflow/tfjs-core":59,"node-fetch":295}],222:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var csv_dataset_1 = require("./datasets/csv_dataset");
+var url_data_source_1 = require("./sources/url_data_source");
+function csv(source, csvConfig) {
+    if (csvConfig === void 0) { csvConfig = {}; }
+    return new csv_dataset_1.CSVDataset(new url_data_source_1.URLDataSource(source), csvConfig);
+}
+exports.csv = csv;
+
+},{"./datasets/csv_dataset":213,"./sources/url_data_source":224}],223:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var datasource_1 = require("../datasource");
+var file_chunk_iterator_1 = require("../iterators/file_chunk_iterator");
+var FileDataSource = (function (_super) {
+    __extends(FileDataSource, _super);
+    function FileDataSource(input, options) {
+        if (options === void 0) { options = {}; }
+        var _this = _super.call(this) || this;
+        _this.input = input;
+        _this.options = options;
+        return _this;
+    }
+    FileDataSource.prototype.iterator = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2, new file_chunk_iterator_1.FileChunkIterator(this.input, this.options)];
+            });
+        });
+    };
+    return FileDataSource;
+}(datasource_1.DataSource));
+exports.FileDataSource = FileDataSource;
+
+},{"../datasource":215,"../iterators/file_chunk_iterator":218}],224:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var datasource_1 = require("../datasource");
+var url_chunk_iterator_1 = require("../iterators/url_chunk_iterator");
+var URLDataSource = (function (_super) {
+    __extends(URLDataSource, _super);
+    function URLDataSource(url, fileOptions) {
+        if (fileOptions === void 0) { fileOptions = {}; }
+        var _this = _super.call(this) || this;
+        _this.url = url;
+        _this.fileOptions = fileOptions;
+        return _this;
+    }
+    URLDataSource.prototype.iterator = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2, url_chunk_iterator_1.urlChunkIterator(this.url, this.fileOptions)];
+            });
+        });
+    };
+    return URLDataSource;
+}(datasource_1.DataSource));
+exports.URLDataSource = URLDataSource;
+
+},{"../datasource":215,"../iterators/url_chunk_iterator":221}],225:[function(require,module,exports){
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var tf = require("@tensorflow/tfjs-core");
+function deepMap(input, mapFn) {
+    return deepMapInternal(input, mapFn);
+}
+exports.deepMap = deepMap;
+function deepMapInternal(input, mapFn, seen, containedIn) {
+    if (seen === void 0) { seen = new Map(); }
+    if (containedIn === void 0) { containedIn = new Set(); }
+    if (input == null) {
+        return null;
+    }
+    if (containedIn.has(input)) {
+        throw new Error('Circular references are not supported.');
+    }
+    if (seen.has(input)) {
+        return seen.get(input);
+    }
+    var result = mapFn(input);
+    if (result.recurse && result.value !== null) {
+        throw new Error('A deep map function may not return both a value and recurse=true.');
+    }
+    if (!result.recurse) {
+        seen.set(input, result.value);
+        return result.value;
+    }
+    else if (isIterable(input)) {
+        var mappedIterable = Array.isArray(input) ? [] : {};
+        containedIn.add(input);
+        for (var k in input) {
+            var child = input[k];
+            var childResult = deepMapInternal(child, mapFn, seen, containedIn);
+            mappedIterable[k] = childResult;
+        }
+        containedIn.delete(input);
+        return mappedIterable;
+    }
+    else {
+        throw new Error("Can't recurse into non-iterable type: " + input);
+    }
+}
+function deepZip(inputs, zipFn) {
+    if (zipFn === void 0) { zipFn = zipToList; }
+    return deepZipInternal(inputs, zipFn);
+}
+exports.deepZip = deepZip;
+function deepZipInternal(inputs, zipFn, containedIn) {
+    if (containedIn === void 0) { containedIn = new Set(); }
+    var input = inputs[0];
+    if (containedIn.has(input)) {
+        throw new Error('Circular references are not supported.');
+    }
+    var result = zipFn(inputs);
+    if (result.recurse && result.value !== null) {
+        throw new Error('A deep zip function may not return both a value and recurse=true.');
+    }
+    if (!result.recurse) {
+        return result.value;
+    }
+    else if (isIterable(input)) {
+        var mappedIterable = Array.isArray(input) ? [] : {};
+        containedIn.add(input);
+        var _loop_1 = function (k) {
+            var children = inputs.map(function (x) { return x[k]; });
+            var childResult = deepZipInternal(children, zipFn, containedIn);
+            mappedIterable[k] = childResult;
+        };
+        for (var k in input) {
+            _loop_1(k);
+        }
+        containedIn.delete(input);
+        return mappedIterable;
+    }
+    else {
+        throw new Error("Can't recurse into non-iterable type: " + input);
+    }
+}
+function zipToList(x) {
+    if (x === null) {
+        return null;
+    }
+    if (isIterable(x[0])) {
+        return { value: null, recurse: true };
+    }
+    else {
+        return { value: x, recurse: false };
+    }
+}
+exports.zipToList = zipToList;
+function deepMapAndAwaitAll(input, mapFn) {
+    return __awaiter(this, void 0, void 0, function () {
+        var seen, _i, _a, key, value, mappedValue, result;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    seen = new Map();
+                    deepMapInternal(input, mapFn, seen);
+                    _i = 0, _a = Array.from(seen.keys());
+                    _b.label = 1;
+                case 1:
+                    if (!(_i < _a.length)) return [3, 4];
+                    key = _a[_i];
+                    value = seen.get(key);
+                    if (!(value instanceof Promise)) return [3, 3];
+                    return [4, value];
+                case 2:
+                    mappedValue = _b.sent();
+                    seen.set(key, mappedValue);
+                    _b.label = 3;
+                case 3:
+                    _i++;
+                    return [3, 1];
+                case 4:
+                    result = deepMapInternal(input, mapFn, seen);
+                    return [2, result];
+            }
+        });
+    });
+}
+exports.deepMapAndAwaitAll = deepMapAndAwaitAll;
+function isIterable(obj) {
+    return obj != null &&
+        (Array.isArray(obj) ||
+            (typeof obj === 'object' && !(obj instanceof tf.Tensor)));
+}
+exports.isIterable = isIterable;
+function isNumericArray(obj) {
+    if (obj == null) {
+        return false;
+    }
+    if (!Array.isArray(obj)) {
+        return false;
+    }
+    for (var k in obj) {
+        if (typeof obj[k] !== 'number') {
+            return false;
+        }
+    }
+    return true;
+}
+exports.isNumericArray = isNumericArray;
+
+},{"@tensorflow/tfjs-core":59}],226:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var ring_buffer_1 = require("./ring_buffer");
+var GrowingRingBuffer = (function (_super) {
+    __extends(GrowingRingBuffer, _super);
+    function GrowingRingBuffer() {
+        return _super.call(this, GrowingRingBuffer.INITIAL_CAPACITY) || this;
+    }
+    GrowingRingBuffer.prototype.isFull = function () {
+        return false;
+    };
+    GrowingRingBuffer.prototype.push = function (value) {
+        if (_super.prototype.isFull.call(this)) {
+            this.expand();
+        }
+        _super.prototype.push.call(this, value);
+    };
+    GrowingRingBuffer.prototype.unshift = function (value) {
+        if (_super.prototype.isFull.call(this)) {
+            this.expand();
+        }
+        _super.prototype.unshift.call(this, value);
+    };
+    GrowingRingBuffer.prototype.expand = function () {
+        var newCapacity = this.capacity * 2;
+        var newData = new Array(newCapacity);
+        var len = this.length();
+        for (var i = 0; i < len; i++) {
+            newData[i] = this.get(this.wrap(this.begin + i));
+        }
+        this.data = newData;
+        this.capacity = newCapacity;
+        this.doubledCapacity = 2 * this.capacity;
+        this.begin = 0;
+        this.end = len;
+    };
+    GrowingRingBuffer.INITIAL_CAPACITY = 32;
+    return GrowingRingBuffer;
+}(ring_buffer_1.RingBuffer));
+exports.GrowingRingBuffer = GrowingRingBuffer;
+
+},{"./ring_buffer":227}],227:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var RingBuffer = (function () {
+    function RingBuffer(capacity) {
+        this.capacity = capacity;
+        this.begin = 0;
+        this.end = 0;
+        if (capacity < 1) {
+            throw new RangeError('Can\'t create ring buffer of capacity < 1.');
+        }
+        this.data = new Array(capacity);
+        this.doubledCapacity = 2 * capacity;
+    }
+    RingBuffer.prototype.wrap = function (index) {
+        while (index < 0) {
+            index += this.doubledCapacity;
+        }
+        return index % this.doubledCapacity;
+    };
+    RingBuffer.prototype.get = function (index) {
+        if (index < 0) {
+            throw new RangeError('Can\'t get item at a negative index.');
+        }
+        return this.data[index % this.capacity];
+    };
+    RingBuffer.prototype.set = function (index, value) {
+        if (index < 0) {
+            throw new RangeError('Can\'t set item at a negative index.');
+        }
+        this.data[index % this.capacity] = value;
+    };
+    RingBuffer.prototype.length = function () {
+        var length = this.end - this.begin;
+        if (length < 0) {
+            length = this.doubledCapacity + length;
+        }
+        return length;
+    };
+    RingBuffer.prototype.isFull = function () {
+        return this.length() === this.capacity;
+    };
+    RingBuffer.prototype.isEmpty = function () {
+        return this.length() === 0;
+    };
+    RingBuffer.prototype.push = function (value) {
+        if (this.isFull()) {
+            throw new RangeError('Ring buffer is full.');
+        }
+        this.set(this.end, value);
+        this.end = this.wrap(this.end + 1);
+    };
+    RingBuffer.prototype.pushAll = function (values) {
+        for (var _i = 0, values_1 = values; _i < values_1.length; _i++) {
+            var value = values_1[_i];
+            this.push(value);
+        }
+    };
+    RingBuffer.prototype.pop = function () {
+        if (this.isEmpty()) {
+            throw new RangeError('Ring buffer is empty.');
+        }
+        this.end = this.wrap(this.end - 1);
+        var result = this.get(this.end);
+        this.set(this.end, undefined);
+        return result;
+    };
+    RingBuffer.prototype.unshift = function (value) {
+        if (this.isFull()) {
+            throw new RangeError('Ring buffer is full.');
+        }
+        this.begin = this.wrap(this.begin - 1);
+        this.set(this.begin, value);
+    };
+    RingBuffer.prototype.shift = function () {
+        if (this.isEmpty()) {
+            throw new RangeError('Ring buffer is empty.');
+        }
+        var result = this.get(this.begin);
+        this.set(this.begin, undefined);
+        this.begin = this.wrap(this.begin + 1);
+        return result;
+    };
+    RingBuffer.prototype.shuffleExcise = function (relativeIndex) {
+        if (this.isEmpty()) {
+            throw new RangeError('Ring buffer is empty.');
+        }
+        var index = this.wrap(this.begin + relativeIndex);
+        var result = this.get(index);
+        this.set(index, this.pop());
+        return result;
+    };
+    return RingBuffer;
+}());
+exports.RingBuffer = RingBuffer;
+
+},{}],228:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var version = '0.1.4';
+exports.version = version;
+
+},{}],229:[function(require,module,exports){
+// A library of seedable RNGs implemented in Javascript.
+//
+// Usage:
+//
+// var seedrandom = require('seedrandom');
+// var random = seedrandom(1); // or any seed.
+// var x = random();       // 0 <= x < 1.  Every bit is random.
+// var x = random.quick(); // 0 <= x < 1.  32 bits of randomness.
+
+// alea, a 53-bit multiply-with-carry generator by Johannes Baagøe.
+// Period: ~2^116
+// Reported to pass all BigCrush tests.
+var alea = require('./lib/alea');
+
+// xor128, a pure xor-shift generator by George Marsaglia.
+// Period: 2^128-1.
+// Reported to fail: MatrixRank and LinearComp.
+var xor128 = require('./lib/xor128');
+
+// xorwow, George Marsaglia's 160-bit xor-shift combined plus weyl.
+// Period: 2^192-2^32
+// Reported to fail: CollisionOver, SimpPoker, and LinearComp.
+var xorwow = require('./lib/xorwow');
+
+// xorshift7, by François Panneton and Pierre L'ecuyer, takes
+// a different approach: it adds robustness by allowing more shifts
+// than Marsaglia's original three.  It is a 7-shift generator
+// with 256 bits, that passes BigCrush with no systmatic failures.
+// Period 2^256-1.
+// No systematic BigCrush failures reported.
+var xorshift7 = require('./lib/xorshift7');
+
+// xor4096, by Richard Brent, is a 4096-bit xor-shift with a
+// very long period that also adds a Weyl generator. It also passes
+// BigCrush with no systematic failures.  Its long period may
+// be useful if you have many generators and need to avoid
+// collisions.
+// Period: 2^4128-2^32.
+// No systematic BigCrush failures reported.
+var xor4096 = require('./lib/xor4096');
+
+// Tyche-i, by Samuel Neves and Filipe Araujo, is a bit-shifting random
+// number generator derived from ChaCha, a modern stream cipher.
+// https://eden.dei.uc.pt/~sneves/pubs/2011-snfa2.pdf
+// Period: ~2^127
+// No systematic BigCrush failures reported.
+var tychei = require('./lib/tychei');
+
+// The original ARC4-based prng included in this library.
+// Period: ~2^1600
+var sr = require('./seedrandom');
+
+sr.alea = alea;
+sr.xor128 = xor128;
+sr.xorwow = xorwow;
+sr.xorshift7 = xorshift7;
+sr.xor4096 = xor4096;
+sr.tychei = tychei;
+
+module.exports = sr;
+
+},{"./lib/alea":230,"./lib/tychei":231,"./lib/xor128":232,"./lib/xor4096":233,"./lib/xorshift7":234,"./lib/xorwow":235,"./seedrandom":236}],230:[function(require,module,exports){
+// A port of an algorithm by Johannes Baagøe <baagoe@baagoe.com>, 2010
+// http://baagoe.com/en/RandomMusings/javascript/
+// https://github.com/nquinlan/better-random-numbers-for-javascript-mirror
+// Original work is under MIT license -
+
+// Copyright (C) 2010 by Johannes Baagøe <baagoe@baagoe.org>
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
+
+
+(function(global, module, define) {
+
+function Alea(seed) {
+  var me = this, mash = Mash();
+
+  me.next = function() {
+    var t = 2091639 * me.s0 + me.c * 2.3283064365386963e-10; // 2^-32
+    me.s0 = me.s1;
+    me.s1 = me.s2;
+    return me.s2 = t - (me.c = t | 0);
+  };
+
+  // Apply the seeding algorithm from Baagoe.
+  me.c = 1;
+  me.s0 = mash(' ');
+  me.s1 = mash(' ');
+  me.s2 = mash(' ');
+  me.s0 -= mash(seed);
+  if (me.s0 < 0) { me.s0 += 1; }
+  me.s1 -= mash(seed);
+  if (me.s1 < 0) { me.s1 += 1; }
+  me.s2 -= mash(seed);
+  if (me.s2 < 0) { me.s2 += 1; }
+  mash = null;
+}
+
+function copy(f, t) {
+  t.c = f.c;
+  t.s0 = f.s0;
+  t.s1 = f.s1;
+  t.s2 = f.s2;
+  return t;
+}
+
+function impl(seed, opts) {
+  var xg = new Alea(seed),
+      state = opts && opts.state,
+      prng = xg.next;
+  prng.int32 = function() { return (xg.next() * 0x100000000) | 0; }
+  prng.double = function() {
+    return prng() + (prng() * 0x200000 | 0) * 1.1102230246251565e-16; // 2^-53
+  };
+  prng.quick = prng;
+  if (state) {
+    if (typeof(state) == 'object') copy(state, xg);
+    prng.state = function() { return copy(xg, {}); }
+  }
+  return prng;
+}
+
+function Mash() {
+  var n = 0xefc8249d;
+
+  var mash = function(data) {
+    data = data.toString();
+    for (var i = 0; i < data.length; i++) {
+      n += data.charCodeAt(i);
+      var h = 0.02519603282416938 * n;
+      n = h >>> 0;
+      h -= n;
+      h *= n;
+      n = h >>> 0;
+      h -= n;
+      n += h * 0x100000000; // 2^32
+    }
+    return (n >>> 0) * 2.3283064365386963e-10; // 2^-32
+  };
+
+  return mash;
+}
+
+
+if (module && module.exports) {
+  module.exports = impl;
+} else if (define && define.amd) {
+  define(function() { return impl; });
+} else {
+  this.alea = impl;
+}
+
+})(
+  this,
+  (typeof module) == 'object' && module,    // present in node.js
+  (typeof define) == 'function' && define   // present with an AMD loader
+);
+
+
+
+},{}],231:[function(require,module,exports){
+// A Javascript implementaion of the "Tyche-i" prng algorithm by
+// Samuel Neves and Filipe Araujo.
+// See https://eden.dei.uc.pt/~sneves/pubs/2011-snfa2.pdf
+
+(function(global, module, define) {
+
+function XorGen(seed) {
+  var me = this, strseed = '';
+
+  // Set up generator function.
+  me.next = function() {
+    var b = me.b, c = me.c, d = me.d, a = me.a;
+    b = (b << 25) ^ (b >>> 7) ^ c;
+    c = (c - d) | 0;
+    d = (d << 24) ^ (d >>> 8) ^ a;
+    a = (a - b) | 0;
+    me.b = b = (b << 20) ^ (b >>> 12) ^ c;
+    me.c = c = (c - d) | 0;
+    me.d = (d << 16) ^ (c >>> 16) ^ a;
+    return me.a = (a - b) | 0;
+  };
+
+  /* The following is non-inverted tyche, which has better internal
+   * bit diffusion, but which is about 25% slower than tyche-i in JS.
+  me.next = function() {
+    var a = me.a, b = me.b, c = me.c, d = me.d;
+    a = (me.a + me.b | 0) >>> 0;
+    d = me.d ^ a; d = d << 16 ^ d >>> 16;
+    c = me.c + d | 0;
+    b = me.b ^ c; b = b << 12 ^ d >>> 20;
+    me.a = a = a + b | 0;
+    d = d ^ a; me.d = d = d << 8 ^ d >>> 24;
+    me.c = c = c + d | 0;
+    b = b ^ c;
+    return me.b = (b << 7 ^ b >>> 25);
+  }
+  */
+
+  me.a = 0;
+  me.b = 0;
+  me.c = 2654435769 | 0;
+  me.d = 1367130551;
+
+  if (seed === Math.floor(seed)) {
+    // Integer seed.
+    me.a = (seed / 0x100000000) | 0;
+    me.b = seed | 0;
+  } else {
+    // String seed.
+    strseed += seed;
+  }
+
+  // Mix in string seed, then discard an initial batch of 64 values.
+  for (var k = 0; k < strseed.length + 20; k++) {
+    me.b ^= strseed.charCodeAt(k) | 0;
+    me.next();
+  }
+}
+
+function copy(f, t) {
+  t.a = f.a;
+  t.b = f.b;
+  t.c = f.c;
+  t.d = f.d;
+  return t;
+};
+
+function impl(seed, opts) {
+  var xg = new XorGen(seed),
+      state = opts && opts.state,
+      prng = function() { return (xg.next() >>> 0) / 0x100000000; };
+  prng.double = function() {
+    do {
+      var top = xg.next() >>> 11,
+          bot = (xg.next() >>> 0) / 0x100000000,
+          result = (top + bot) / (1 << 21);
+    } while (result === 0);
+    return result;
+  };
+  prng.int32 = xg.next;
+  prng.quick = prng;
+  if (state) {
+    if (typeof(state) == 'object') copy(state, xg);
+    prng.state = function() { return copy(xg, {}); }
+  }
+  return prng;
+}
+
+if (module && module.exports) {
+  module.exports = impl;
+} else if (define && define.amd) {
+  define(function() { return impl; });
+} else {
+  this.tychei = impl;
+}
+
+})(
+  this,
+  (typeof module) == 'object' && module,    // present in node.js
+  (typeof define) == 'function' && define   // present with an AMD loader
+);
+
+
+
+},{}],232:[function(require,module,exports){
+// A Javascript implementaion of the "xor128" prng algorithm by
+// George Marsaglia.  See http://www.jstatsoft.org/v08/i14/paper
+
+(function(global, module, define) {
+
+function XorGen(seed) {
+  var me = this, strseed = '';
+
+  me.x = 0;
+  me.y = 0;
+  me.z = 0;
+  me.w = 0;
+
+  // Set up generator function.
+  me.next = function() {
+    var t = me.x ^ (me.x << 11);
+    me.x = me.y;
+    me.y = me.z;
+    me.z = me.w;
+    return me.w ^= (me.w >>> 19) ^ t ^ (t >>> 8);
+  };
+
+  if (seed === (seed | 0)) {
+    // Integer seed.
+    me.x = seed;
+  } else {
+    // String seed.
+    strseed += seed;
+  }
+
+  // Mix in string seed, then discard an initial batch of 64 values.
+  for (var k = 0; k < strseed.length + 64; k++) {
+    me.x ^= strseed.charCodeAt(k) | 0;
+    me.next();
+  }
+}
+
+function copy(f, t) {
+  t.x = f.x;
+  t.y = f.y;
+  t.z = f.z;
+  t.w = f.w;
+  return t;
+}
+
+function impl(seed, opts) {
+  var xg = new XorGen(seed),
+      state = opts && opts.state,
+      prng = function() { return (xg.next() >>> 0) / 0x100000000; };
+  prng.double = function() {
+    do {
+      var top = xg.next() >>> 11,
+          bot = (xg.next() >>> 0) / 0x100000000,
+          result = (top + bot) / (1 << 21);
+    } while (result === 0);
+    return result;
+  };
+  prng.int32 = xg.next;
+  prng.quick = prng;
+  if (state) {
+    if (typeof(state) == 'object') copy(state, xg);
+    prng.state = function() { return copy(xg, {}); }
+  }
+  return prng;
+}
+
+if (module && module.exports) {
+  module.exports = impl;
+} else if (define && define.amd) {
+  define(function() { return impl; });
+} else {
+  this.xor128 = impl;
+}
+
+})(
+  this,
+  (typeof module) == 'object' && module,    // present in node.js
+  (typeof define) == 'function' && define   // present with an AMD loader
+);
+
+
+
+},{}],233:[function(require,module,exports){
+// A Javascript implementaion of Richard Brent's Xorgens xor4096 algorithm.
+//
+// This fast non-cryptographic random number generator is designed for
+// use in Monte-Carlo algorithms. It combines a long-period xorshift
+// generator with a Weyl generator, and it passes all common batteries
+// of stasticial tests for randomness while consuming only a few nanoseconds
+// for each prng generated.  For background on the generator, see Brent's
+// paper: "Some long-period random number generators using shifts and xors."
+// http://arxiv.org/pdf/1004.3115v1.pdf
+//
+// Usage:
+//
+// var xor4096 = require('xor4096');
+// random = xor4096(1);                        // Seed with int32 or string.
+// assert.equal(random(), 0.1520436450538547); // (0, 1) range, 53 bits.
+// assert.equal(random.int32(), 1806534897);   // signed int32, 32 bits.
+//
+// For nonzero numeric keys, this impelementation provides a sequence
+// identical to that by Brent's xorgens 3 implementaion in C.  This
+// implementation also provides for initalizing the generator with
+// string seeds, or for saving and restoring the state of the generator.
+//
+// On Chrome, this prng benchmarks about 2.1 times slower than
+// Javascript's built-in Math.random().
+
+(function(global, module, define) {
+
+function XorGen(seed) {
+  var me = this;
+
+  // Set up generator function.
+  me.next = function() {
+    var w = me.w,
+        X = me.X, i = me.i, t, v;
+    // Update Weyl generator.
+    me.w = w = (w + 0x61c88647) | 0;
+    // Update xor generator.
+    v = X[(i + 34) & 127];
+    t = X[i = ((i + 1) & 127)];
+    v ^= v << 13;
+    t ^= t << 17;
+    v ^= v >>> 15;
+    t ^= t >>> 12;
+    // Update Xor generator array state.
+    v = X[i] = v ^ t;
+    me.i = i;
+    // Result is the combination.
+    return (v + (w ^ (w >>> 16))) | 0;
+  };
+
+  function init(me, seed) {
+    var t, v, i, j, w, X = [], limit = 128;
+    if (seed === (seed | 0)) {
+      // Numeric seeds initialize v, which is used to generates X.
+      v = seed;
+      seed = null;
+    } else {
+      // String seeds are mixed into v and X one character at a time.
+      seed = seed + '\0';
+      v = 0;
+      limit = Math.max(limit, seed.length);
+    }
+    // Initialize circular array and weyl value.
+    for (i = 0, j = -32; j < limit; ++j) {
+      // Put the unicode characters into the array, and shuffle them.
+      if (seed) v ^= seed.charCodeAt((j + 32) % seed.length);
+      // After 32 shuffles, take v as the starting w value.
+      if (j === 0) w = v;
+      v ^= v << 10;
+      v ^= v >>> 15;
+      v ^= v << 4;
+      v ^= v >>> 13;
+      if (j >= 0) {
+        w = (w + 0x61c88647) | 0;     // Weyl.
+        t = (X[j & 127] ^= (v + w));  // Combine xor and weyl to init array.
+        i = (0 == t) ? i + 1 : 0;     // Count zeroes.
+      }
+    }
+    // We have detected all zeroes; make the key nonzero.
+    if (i >= 128) {
+      X[(seed && seed.length || 0) & 127] = -1;
+    }
+    // Run the generator 512 times to further mix the state before using it.
+    // Factoring this as a function slows the main generator, so it is just
+    // unrolled here.  The weyl generator is not advanced while warming up.
+    i = 127;
+    for (j = 4 * 128; j > 0; --j) {
+      v = X[(i + 34) & 127];
+      t = X[i = ((i + 1) & 127)];
+      v ^= v << 13;
+      t ^= t << 17;
+      v ^= v >>> 15;
+      t ^= t >>> 12;
+      X[i] = v ^ t;
+    }
+    // Storing state as object members is faster than using closure variables.
+    me.w = w;
+    me.X = X;
+    me.i = i;
+  }
+
+  init(me, seed);
+}
+
+function copy(f, t) {
+  t.i = f.i;
+  t.w = f.w;
+  t.X = f.X.slice();
+  return t;
+};
+
+function impl(seed, opts) {
+  if (seed == null) seed = +(new Date);
+  var xg = new XorGen(seed),
+      state = opts && opts.state,
+      prng = function() { return (xg.next() >>> 0) / 0x100000000; };
+  prng.double = function() {
+    do {
+      var top = xg.next() >>> 11,
+          bot = (xg.next() >>> 0) / 0x100000000,
+          result = (top + bot) / (1 << 21);
+    } while (result === 0);
+    return result;
+  };
+  prng.int32 = xg.next;
+  prng.quick = prng;
+  if (state) {
+    if (state.X) copy(state, xg);
+    prng.state = function() { return copy(xg, {}); }
+  }
+  return prng;
+}
+
+if (module && module.exports) {
+  module.exports = impl;
+} else if (define && define.amd) {
+  define(function() { return impl; });
+} else {
+  this.xor4096 = impl;
+}
+
+})(
+  this,                                     // window object or global
+  (typeof module) == 'object' && module,    // present in node.js
+  (typeof define) == 'function' && define   // present with an AMD loader
+);
+
+},{}],234:[function(require,module,exports){
+// A Javascript implementaion of the "xorshift7" algorithm by
+// François Panneton and Pierre L'ecuyer:
+// "On the Xorgshift Random Number Generators"
+// http://saluc.engr.uconn.edu/refs/crypto/rng/panneton05onthexorshift.pdf
+
+(function(global, module, define) {
+
+function XorGen(seed) {
+  var me = this;
+
+  // Set up generator function.
+  me.next = function() {
+    // Update xor generator.
+    var X = me.x, i = me.i, t, v, w;
+    t = X[i]; t ^= (t >>> 7); v = t ^ (t << 24);
+    t = X[(i + 1) & 7]; v ^= t ^ (t >>> 10);
+    t = X[(i + 3) & 7]; v ^= t ^ (t >>> 3);
+    t = X[(i + 4) & 7]; v ^= t ^ (t << 7);
+    t = X[(i + 7) & 7]; t = t ^ (t << 13); v ^= t ^ (t << 9);
+    X[i] = v;
+    me.i = (i + 1) & 7;
+    return v;
+  };
+
+  function init(me, seed) {
+    var j, w, X = [];
+
+    if (seed === (seed | 0)) {
+      // Seed state array using a 32-bit integer.
+      w = X[0] = seed;
+    } else {
+      // Seed state using a string.
+      seed = '' + seed;
+      for (j = 0; j < seed.length; ++j) {
+        X[j & 7] = (X[j & 7] << 15) ^
+            (seed.charCodeAt(j) + X[(j + 1) & 7] << 13);
+      }
+    }
+    // Enforce an array length of 8, not all zeroes.
+    while (X.length < 8) X.push(0);
+    for (j = 0; j < 8 && X[j] === 0; ++j);
+    if (j == 8) w = X[7] = -1; else w = X[j];
+
+    me.x = X;
+    me.i = 0;
+
+    // Discard an initial 256 values.
+    for (j = 256; j > 0; --j) {
+      me.next();
+    }
+  }
+
+  init(me, seed);
+}
+
+function copy(f, t) {
+  t.x = f.x.slice();
+  t.i = f.i;
+  return t;
+}
+
+function impl(seed, opts) {
+  if (seed == null) seed = +(new Date);
+  var xg = new XorGen(seed),
+      state = opts && opts.state,
+      prng = function() { return (xg.next() >>> 0) / 0x100000000; };
+  prng.double = function() {
+    do {
+      var top = xg.next() >>> 11,
+          bot = (xg.next() >>> 0) / 0x100000000,
+          result = (top + bot) / (1 << 21);
+    } while (result === 0);
+    return result;
+  };
+  prng.int32 = xg.next;
+  prng.quick = prng;
+  if (state) {
+    if (state.x) copy(state, xg);
+    prng.state = function() { return copy(xg, {}); }
+  }
+  return prng;
+}
+
+if (module && module.exports) {
+  module.exports = impl;
+} else if (define && define.amd) {
+  define(function() { return impl; });
+} else {
+  this.xorshift7 = impl;
+}
+
+})(
+  this,
+  (typeof module) == 'object' && module,    // present in node.js
+  (typeof define) == 'function' && define   // present with an AMD loader
+);
+
+
+},{}],235:[function(require,module,exports){
+// A Javascript implementaion of the "xorwow" prng algorithm by
+// George Marsaglia.  See http://www.jstatsoft.org/v08/i14/paper
+
+(function(global, module, define) {
+
+function XorGen(seed) {
+  var me = this, strseed = '';
+
+  // Set up generator function.
+  me.next = function() {
+    var t = (me.x ^ (me.x >>> 2));
+    me.x = me.y; me.y = me.z; me.z = me.w; me.w = me.v;
+    return (me.d = (me.d + 362437 | 0)) +
+       (me.v = (me.v ^ (me.v << 4)) ^ (t ^ (t << 1))) | 0;
+  };
+
+  me.x = 0;
+  me.y = 0;
+  me.z = 0;
+  me.w = 0;
+  me.v = 0;
+
+  if (seed === (seed | 0)) {
+    // Integer seed.
+    me.x = seed;
+  } else {
+    // String seed.
+    strseed += seed;
+  }
+
+  // Mix in string seed, then discard an initial batch of 64 values.
+  for (var k = 0; k < strseed.length + 64; k++) {
+    me.x ^= strseed.charCodeAt(k) | 0;
+    if (k == strseed.length) {
+      me.d = me.x << 10 ^ me.x >>> 4;
+    }
+    me.next();
+  }
+}
+
+function copy(f, t) {
+  t.x = f.x;
+  t.y = f.y;
+  t.z = f.z;
+  t.w = f.w;
+  t.v = f.v;
+  t.d = f.d;
+  return t;
+}
+
+function impl(seed, opts) {
+  var xg = new XorGen(seed),
+      state = opts && opts.state,
+      prng = function() { return (xg.next() >>> 0) / 0x100000000; };
+  prng.double = function() {
+    do {
+      var top = xg.next() >>> 11,
+          bot = (xg.next() >>> 0) / 0x100000000,
+          result = (top + bot) / (1 << 21);
+    } while (result === 0);
+    return result;
+  };
+  prng.int32 = xg.next;
+  prng.quick = prng;
+  if (state) {
+    if (typeof(state) == 'object') copy(state, xg);
+    prng.state = function() { return copy(xg, {}); }
+  }
+  return prng;
+}
+
+if (module && module.exports) {
+  module.exports = impl;
+} else if (define && define.amd) {
+  define(function() { return impl; });
+} else {
+  this.xorwow = impl;
+}
+
+})(
+  this,
+  (typeof module) == 'object' && module,    // present in node.js
+  (typeof define) == 'function' && define   // present with an AMD loader
+);
+
+
+
+},{}],236:[function(require,module,exports){
+/*
+Copyright 2014 David Bau.
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+*/
+
+(function (pool, math) {
+//
+// The following constants are related to IEEE 754 limits.
+//
+
+// Detect the global object, even if operating in strict mode.
+// http://stackoverflow.com/a/14387057/265298
+var global = (0, eval)('this'),
+    width = 256,        // each RC4 output is 0 <= x < 256
+    chunks = 6,         // at least six RC4 outputs for each double
+    digits = 52,        // there are 52 significant digits in a double
+    rngname = 'random', // rngname: name for Math.random and Math.seedrandom
+    startdenom = math.pow(width, chunks),
+    significance = math.pow(2, digits),
+    overflow = significance * 2,
+    mask = width - 1,
+    nodecrypto;         // node.js crypto module, initialized at the bottom.
+
+//
+// seedrandom()
+// This is the seedrandom function described above.
+//
+function seedrandom(seed, options, callback) {
+  var key = [];
+  options = (options == true) ? { entropy: true } : (options || {});
+
+  // Flatten the seed string or build one from local entropy if needed.
+  var shortseed = mixkey(flatten(
+    options.entropy ? [seed, tostring(pool)] :
+    (seed == null) ? autoseed() : seed, 3), key);
+
+  // Use the seed to initialize an ARC4 generator.
+  var arc4 = new ARC4(key);
+
+  // This function returns a random double in [0, 1) that contains
+  // randomness in every bit of the mantissa of the IEEE 754 value.
+  var prng = function() {
+    var n = arc4.g(chunks),             // Start with a numerator n < 2 ^ 48
+        d = startdenom,                 //   and denominator d = 2 ^ 48.
+        x = 0;                          //   and no 'extra last byte'.
+    while (n < significance) {          // Fill up all significant digits by
+      n = (n + x) * width;              //   shifting numerator and
+      d *= width;                       //   denominator and generating a
+      x = arc4.g(1);                    //   new least-significant-byte.
+    }
+    while (n >= overflow) {             // To avoid rounding up, before adding
+      n /= 2;                           //   last byte, shift everything
+      d /= 2;                           //   right using integer math until
+      x >>>= 1;                         //   we have exactly the desired bits.
+    }
+    return (n + x) / d;                 // Form the number within [0, 1).
+  };
+
+  prng.int32 = function() { return arc4.g(4) | 0; }
+  prng.quick = function() { return arc4.g(4) / 0x100000000; }
+  prng.double = prng;
+
+  // Mix the randomness into accumulated entropy.
+  mixkey(tostring(arc4.S), pool);
+
+  // Calling convention: what to return as a function of prng, seed, is_math.
+  return (options.pass || callback ||
+      function(prng, seed, is_math_call, state) {
+        if (state) {
+          // Load the arc4 state from the given state if it has an S array.
+          if (state.S) { copy(state, arc4); }
+          // Only provide the .state method if requested via options.state.
+          prng.state = function() { return copy(arc4, {}); }
+        }
+
+        // If called as a method of Math (Math.seedrandom()), mutate
+        // Math.random because that is how seedrandom.js has worked since v1.0.
+        if (is_math_call) { math[rngname] = prng; return seed; }
+
+        // Otherwise, it is a newer calling convention, so return the
+        // prng directly.
+        else return prng;
+      })(
+  prng,
+  shortseed,
+  'global' in options ? options.global : (this == math),
+  options.state);
+}
+math['seed' + rngname] = seedrandom;
+
+//
+// ARC4
+//
+// An ARC4 implementation.  The constructor takes a key in the form of
+// an array of at most (width) integers that should be 0 <= x < (width).
+//
+// The g(count) method returns a pseudorandom integer that concatenates
+// the next (count) outputs from ARC4.  Its return value is a number x
+// that is in the range 0 <= x < (width ^ count).
+//
+function ARC4(key) {
+  var t, keylen = key.length,
+      me = this, i = 0, j = me.i = me.j = 0, s = me.S = [];
+
+  // The empty key [] is treated as [0].
+  if (!keylen) { key = [keylen++]; }
+
+  // Set up S using the standard key scheduling algorithm.
+  while (i < width) {
+    s[i] = i++;
+  }
+  for (i = 0; i < width; i++) {
+    s[i] = s[j = mask & (j + key[i % keylen] + (t = s[i]))];
+    s[j] = t;
+  }
+
+  // The "g" method returns the next (count) outputs as one number.
+  (me.g = function(count) {
+    // Using instance members instead of closure state nearly doubles speed.
+    var t, r = 0,
+        i = me.i, j = me.j, s = me.S;
+    while (count--) {
+      t = s[i = mask & (i + 1)];
+      r = r * width + s[mask & ((s[i] = s[j = mask & (j + t)]) + (s[j] = t))];
+    }
+    me.i = i; me.j = j;
+    return r;
+    // For robust unpredictability, the function call below automatically
+    // discards an initial batch of values.  This is called RC4-drop[256].
+    // See http://google.com/search?q=rsa+fluhrer+response&btnI
+  })(width);
+}
+
+//
+// copy()
+// Copies internal state of ARC4 to or from a plain object.
+//
+function copy(f, t) {
+  t.i = f.i;
+  t.j = f.j;
+  t.S = f.S.slice();
+  return t;
+};
+
+//
+// flatten()
+// Converts an object tree to nested arrays of strings.
+//
+function flatten(obj, depth) {
+  var result = [], typ = (typeof obj), prop;
+  if (depth && typ == 'object') {
+    for (prop in obj) {
+      try { result.push(flatten(obj[prop], depth - 1)); } catch (e) {}
+    }
+  }
+  return (result.length ? result : typ == 'string' ? obj : obj + '\0');
+}
+
+//
+// mixkey()
+// Mixes a string seed into a key that is an array of integers, and
+// returns a shortened string seed that is equivalent to the result key.
+//
+function mixkey(seed, key) {
+  var stringseed = seed + '', smear, j = 0;
+  while (j < stringseed.length) {
+    key[mask & j] =
+      mask & ((smear ^= key[mask & j] * 19) + stringseed.charCodeAt(j++));
+  }
+  return tostring(key);
+}
+
+//
+// autoseed()
+// Returns an object for autoseeding, using window.crypto and Node crypto
+// module if available.
+//
+function autoseed() {
+  try {
+    var out;
+    if (nodecrypto && (out = nodecrypto.randomBytes)) {
+      // The use of 'out' to remember randomBytes makes tight minified code.
+      out = out(width);
+    } else {
+      out = new Uint8Array(width);
+      (global.crypto || global.msCrypto).getRandomValues(out);
+    }
+    return tostring(out);
+  } catch (e) {
+    var browser = global.navigator,
+        plugins = browser && browser.plugins;
+    return [+new Date, global, plugins, global.screen, tostring(pool)];
+  }
+}
+
+//
+// tostring()
+// Converts an array of charcodes to a string
+//
+function tostring(a) {
+  return String.fromCharCode.apply(0, a);
+}
+
+//
+// When seedrandom.js is loaded, we immediately mix a few bits
+// from the built-in RNG into the entropy pool.  Because we do
+// not want to interfere with deterministic PRNG state later,
+// seedrandom will not call math.random on its own again after
+// initialization.
+//
+mixkey(math.random(), pool);
+
+//
+// Nodejs and AMD support: export the implementation as a module using
+// either convention.
+//
+if ((typeof module) == 'object' && module.exports) {
+  module.exports = seedrandom;
+  // When in node.js, try using crypto package for autoseeding.
+  try {
+    nodecrypto = require('crypto');
+  } catch (ex) {}
+} else if ((typeof define) == 'function' && define.amd) {
+  define(function() { return seedrandom; });
+}
+
+// End anonymous scope, and pass initial values.
+})(
+  [],     // pool: entropy pool starts empty
+  Math    // math: package containing random, pow, and seedrandom
+);
+
+},{"crypto":292}],237:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -26385,7 +30985,7 @@ function getActivation(identifier) {
 }
 exports.getActivation = getActivation;
 
-},{"./backend/state":210,"./backend/tfjs_backend":211,"./utils/generic_utils":252,"@tensorflow/tfjs-core":57}],209:[function(require,module,exports){
+},{"./backend/state":239,"./backend/tfjs_backend":240,"./utils/generic_utils":281,"@tensorflow/tfjs-core":59}],238:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfjs_core_1 = require("@tensorflow/tfjs-core");
@@ -26403,7 +31003,7 @@ function imageDataFormat() {
 }
 exports.imageDataFormat = imageDataFormat;
 
-},{"@tensorflow/tfjs-core":57}],210:[function(require,module,exports){
+},{"@tensorflow/tfjs-core":59}],239:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfjs_core_1 = require("@tensorflow/tfjs-core");
@@ -26448,7 +31048,7 @@ function disposeScalarCache() {
 }
 exports.disposeScalarCache = disposeScalarCache;
 
-},{"@tensorflow/tfjs-core":57}],211:[function(require,module,exports){
+},{"@tensorflow/tfjs-core":59}],240:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
@@ -26860,7 +31460,7 @@ function inTrainPhase(x, alt, training) {
 }
 exports.inTrainPhase = inTrainPhase;
 
-},{"../backend/state":210,"../common":214,"../errors":223,"../utils/math_utils":254,"./common":209,"@tensorflow/tfjs-core":57}],212:[function(require,module,exports){
+},{"../backend/state":239,"../common":243,"../errors":252,"../utils/math_utils":283,"./common":238,"@tensorflow/tfjs-core":59}],241:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -27633,7 +32233,7 @@ function configureCallbacks(callbacks, yieldEvery, verbose, epochs, initialEpoch
 }
 exports.configureCallbacks = configureCallbacks;
 
-},{"./backend/state":210,"./errors":223,"./logs":245,"./utils/generic_utils":252,"@tensorflow/tfjs-core":57}],213:[function(require,module,exports){
+},{"./backend/state":239,"./errors":252,"./logs":274,"./utils/generic_utils":281,"@tensorflow/tfjs-core":59}],242:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -27665,7 +32265,7 @@ var Callback = (function (_super) {
 }(base_callbacks_1.BaseCallback));
 exports.Callback = Callback;
 
-},{"./base_callbacks":212,"./engine/training":220}],214:[function(require,module,exports){
+},{"./base_callbacks":241,"./engine/training":249}],243:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var generic_utils_1 = require("./utils/generic_utils");
@@ -27740,7 +32340,7 @@ function isValidTensorName(name) {
 }
 exports.isValidTensorName = isValidTensorName;
 
-},{"./utils/generic_utils":252}],215:[function(require,module,exports){
+},{"./utils/generic_utils":281}],244:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -27904,7 +32504,7 @@ function getConstraint(identifier) {
 }
 exports.getConstraint = getConstraint;
 
-},{"./backend/common":209,"./backend/state":210,"./utils/generic_utils":252,"@tensorflow/tfjs-core":57}],216:[function(require,module,exports){
+},{"./backend/common":238,"./backend/state":239,"./utils/generic_utils":281,"@tensorflow/tfjs-core":59}],245:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -27926,6 +32526,7 @@ var serialization_utils_1 = require("../utils/serialization_utils");
 var types_utils = require("../utils/types_utils");
 var variables_1 = require("../variables");
 var version_1 = require("../version");
+var executor_1 = require("./executor");
 var input_layer_1 = require("./input_layer");
 var topology_1 = require("./topology");
 function preprocessWeightsForLoading(layer, weights, originalKerasVersion, originalBackend) {
@@ -28389,14 +32990,11 @@ var Container = (function (_super) {
         var _this = this;
         return tfjs_core_1.tidy(function () {
             inputs = generic_utils.toList(inputs);
-            var masks;
-            if ('mask' in kwargs) {
-                masks = generic_utils.toList(kwargs['mask']);
+            var feedDict = new executor_1.FeedDict();
+            for (var i = 0; i < _this.inputs.length; ++i) {
+                feedDict.add(_this.inputs[i], inputs[i]);
             }
-            else {
-                masks = generic_utils.pyListRepeat(null, inputs.length);
-            }
-            return _this.runInternalGraph(inputs, masks)[0];
+            return executor_1.execute(_this.outputs, feedDict, kwargs);
         });
     };
     Container.prototype.computeMask = function (inputs, mask) {
@@ -28838,25 +33436,15 @@ var Container = (function (_super) {
 }(topology_1.Layer));
 exports.Container = Container;
 
-},{"../backend/state":210,"../errors":223,"../layers/serialization":243,"../utils/generic_utils":252,"../utils/serialization_utils":255,"../utils/types_utils":256,"../variables":258,"../version":259,"./input_layer":218,"./topology":219,"@tensorflow/tfjs-core":57}],217:[function(require,module,exports){
+},{"../backend/state":239,"../errors":252,"../layers/serialization":272,"../utils/generic_utils":281,"../utils/serialization_utils":284,"../utils/types_utils":285,"../variables":287,"../version":288,"./executor":246,"./input_layer":247,"./topology":248,"@tensorflow/tfjs-core":59}],246:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfjs_core_1 = require("@tensorflow/tfjs-core");
 var errors_1 = require("../errors");
+var generic_utils_1 = require("../utils/generic_utils");
 var input_layer_1 = require("./input_layer");
+var topology_1 = require("./topology");
 function assertFeedCompatibility(key, val) {
-    if (key.shape != null) {
-        if (key.shape.length !== val.shape.length) {
-            throw new errors_1.ValueError("The rank of feed (" + val.shape.length + ") does not match the rank of " +
-                ("the key (" + key.shape.length + ")."));
-        }
-        for (var i = 0; i < key.shape.length; ++i) {
-            if (key.shape[i] != null && key.shape[i] !== val.shape[i]) {
-                throw new errors_1.ValueError("The " + i + "-th dimension of the feed (" + val.shape[i] + ") is " +
-                    ("incompatible with that of the key (" + key.shape[i] + ")."));
-            }
-        }
-    }
     if (key.dtype == null || key.dtype === val.dtype) {
         return val;
     }
@@ -28871,6 +33459,7 @@ function assertFeedCompatibility(key, val) {
 var FeedDict = (function () {
     function FeedDict(feeds) {
         this.id2Value = {};
+        this.name2Id = {};
         if (feeds instanceof FeedDict) {
             for (var id in feeds.id2Value) {
                 this.id2Value[id] = feeds.id2Value[id];
@@ -28889,6 +33478,7 @@ var FeedDict = (function () {
     FeedDict.prototype.add = function (key, value) {
         if (this.id2Value[key.id] == null) {
             this.id2Value[key.id] = assertFeedCompatibility(key, value);
+            this.name2Id[key.name] = key.id;
         }
         else {
             throw new errors_1.ValueError("Duplicate key: name=" + key.name + ", id=" + key.id);
@@ -28901,55 +33491,202 @@ var FeedDict = (function () {
     FeedDict.prototype.hasKey = function (key) {
         return this.id2Value[key.id] != null;
     };
+    FeedDict.prototype.names = function () {
+        return Object.keys(this.name2Id);
+    };
     FeedDict.prototype.getValue = function (key) {
-        if (this.id2Value[key.id] == null) {
-            throw new errors_1.ValueError("Nonexistent key: " + JSON.stringify(key));
+        if (key instanceof topology_1.SymbolicTensor) {
+            if (this.id2Value[key.id] == null) {
+                throw new errors_1.ValueError("Nonexistent key: " + key.name);
+            }
+            else {
+                return this.id2Value[key.id];
+            }
         }
         else {
-            return this.id2Value[key.id];
+            var id = this.name2Id[key];
+            if (id == null) {
+                throw new errors_1.ValueError("Feed dict has no SymbolicTensor name: " + key);
+            }
+            return this.id2Value[id];
         }
     };
     return FeedDict;
 }());
 exports.FeedDict = FeedDict;
-function execute(fetches, feedDict, kwargs) {
+var cachedSorted = {};
+var cachedRecipientCounts = {};
+function execute(fetches, feedDict, kwargs, probe) {
+    var training = kwargs == null ? false : kwargs['training'];
     var arrayFetches = Array.isArray(fetches);
     var fetchArray = arrayFetches ? fetches : [fetches];
-    var outputs = [];
-    var internalFeedDict = new FeedDict(feedDict);
-    for (var _i = 0, fetchArray_1 = fetchArray; _i < fetchArray_1.length; _i++) {
-        var fetch_1 = fetchArray_1[_i];
-        outputs.push(executeInternal(fetch_1, internalFeedDict, kwargs));
+    var outputNames = fetchArray.map(function (t) { return t.name; });
+    var finalOutputs = [];
+    var feedNames = feedDict.names();
+    for (var _i = 0, outputNames_1 = outputNames; _i < outputNames_1.length; _i++) {
+        var outputName = outputNames_1[_i];
+        if (feedNames.indexOf(outputName) !== -1) {
+            finalOutputs.push(feedDict.getValue(outputName));
+        }
+        else {
+            finalOutputs.push(null);
+        }
     }
-    return arrayFetches ? outputs : outputs[0];
+    if (probe != null) {
+        probe.maxNumTensors = -Infinity;
+        probe.minNumTensors = Infinity;
+    }
+    var fetchAndFeedKey = outputNames.join(',') + '|' + feedDict.names().join(',');
+    var sorted;
+    var recipientCounts;
+    if (cachedSorted[fetchAndFeedKey] == null) {
+        var out = getTopologicalSortAndRecipientCounts(fetchArray, feedDict);
+        sorted = out.sorted;
+        recipientCounts = out.recipientCounts;
+        cachedSorted[fetchAndFeedKey] = sorted;
+        cachedRecipientCounts[fetchAndFeedKey] = recipientCounts;
+    }
+    sorted = cachedSorted[fetchAndFeedKey];
+    recipientCounts = {};
+    if (!training) {
+        Object.assign(recipientCounts, cachedRecipientCounts[fetchAndFeedKey]);
+    }
+    var internalFeedDict = new FeedDict(feedDict);
+    for (var i = 0; i < sorted.length; ++i) {
+        if (probe != null) {
+            var numTensors = tfjs_core_1.memory().numTensors;
+            if (numTensors > probe.maxNumTensors) {
+                probe.maxNumTensors = numTensors;
+            }
+            if (numTensors < probe.minNumTensors) {
+                probe.minNumTensors = numTensors;
+            }
+        }
+        var symbolic = sorted[i];
+        if (symbolic.sourceLayer instanceof input_layer_1.InputLayer) {
+            continue;
+        }
+        var inputValues = [];
+        var tensorsToDispose = [];
+        for (var _a = 0, _b = symbolic.inputs; _a < _b.length; _a++) {
+            var input = _b[_a];
+            var value = internalFeedDict.getValue(input);
+            inputValues.push(value);
+            if (!training) {
+                recipientCounts[input.name]--;
+                if (recipientCounts[input.name] === 0 && !feedDict.hasKey(input) &&
+                    outputNames.indexOf(input.name) === -1 && !value.isDisposed) {
+                    tensorsToDispose.push(value);
+                }
+            }
+        }
+        var output = generic_utils_1.toList(symbolic.sourceLayer.apply(inputValues, kwargs));
+        var layerOutputs = getNodeOutputs(symbolic);
+        var outputSymbolicTensors = Array.isArray(layerOutputs) ? layerOutputs : [layerOutputs];
+        for (var i_1 = 0; i_1 < outputSymbolicTensors.length; ++i_1) {
+            if (!internalFeedDict.hasKey(outputSymbolicTensors[i_1])) {
+                internalFeedDict.add(outputSymbolicTensors[i_1], output[i_1]);
+            }
+            var index = outputNames.indexOf(outputSymbolicTensors[i_1].name);
+            if (index !== -1) {
+                finalOutputs[index] = output[i_1];
+            }
+        }
+        if (!training) {
+            tfjs_core_1.dispose(tensorsToDispose);
+        }
+    }
+    return arrayFetches ? finalOutputs : finalOutputs[0];
 }
 exports.execute = execute;
-function executeInternal(fetch, internalFeedDict, kwargs) {
-    if (internalFeedDict.hasKey(fetch)) {
-        return internalFeedDict.getValue(fetch);
+function getTopologicalSortAndRecipientCounts(fetches, feedDict) {
+    tfjs_core_1.util.assert(fetches != null && fetches.length > 0, "Exepcted at least one fetch, got none");
+    var finalSorted = [];
+    var finalRecipientMap = {};
+    if (fetches.length === 1) {
+        var out = getTopologicalSortAndRecipientCountsForOneFetch(fetches[0], feedDict);
+        finalSorted = out.sorted;
+        finalRecipientMap = out.recipientMap;
     }
-    if (fetch.sourceLayer instanceof input_layer_1.InputLayer) {
-        throw new errors_1.ValueError("Missing a feed value for SymbolicTensor from InputLayer " +
-            ("'" + input_layer_1.InputLayer.name + "'"));
+    else {
+        var visited = new Set();
+        for (var _i = 0, fetches_1 = fetches; _i < fetches_1.length; _i++) {
+            var fetch_1 = fetches_1[_i];
+            var _a = getTopologicalSortAndRecipientCountsForOneFetch(fetch_1, feedDict), sorted = _a.sorted, recipientMap = _a.recipientMap;
+            for (var _b = 0, sorted_1 = sorted; _b < sorted_1.length; _b++) {
+                var symbolicTensor = sorted_1[_b];
+                if (!visited.has(symbolicTensor.name)) {
+                    finalSorted.push(symbolicTensor);
+                    visited.add(symbolicTensor.name);
+                }
+            }
+            var _loop_1 = function (name_1) {
+                if (finalRecipientMap[name_1] == null) {
+                    finalRecipientMap[name_1] = new Set();
+                }
+                recipientMap[name_1].forEach(function (recipient) { return finalRecipientMap[name_1].add(recipient); });
+            };
+            for (var name_1 in recipientMap) {
+                _loop_1(name_1);
+            }
+        }
     }
-    var inputs = fetch.inputs;
-    var inputValues = [];
-    for (var _i = 0, inputs_1 = inputs; _i < inputs_1.length; _i++) {
-        var input = inputs_1[_i];
-        var inputVal = executeInternal(input, internalFeedDict, kwargs);
-        inputValues.push(inputVal);
-    }
-    var output = fetch.sourceLayer.apply(inputValues, kwargs);
-    if (!Array.isArray(output)) {
-        output = [output];
-    }
-    var layerOutputs = getNodeOutputs(fetch);
-    var outputSymbolicTensors = Array.isArray(layerOutputs) ? layerOutputs : [layerOutputs];
-    for (var i = 0; i < outputSymbolicTensors.length; ++i) {
-        internalFeedDict.add(outputSymbolicTensors[i], output[i]);
-    }
-    return output.length === 1 ? output[0] : output[fetch.outputTensorIndex];
+    return {
+        sorted: finalSorted,
+        recipientCounts: recipientMap2Counts(finalRecipientMap)
+    };
 }
+function recipientMap2Counts(recipientMap) {
+    var recipientCounts = {};
+    for (var name_2 in recipientMap) {
+        recipientCounts[name_2] = recipientMap[name_2].size;
+    }
+    return recipientCounts;
+}
+function getTopologicalSortAndRecipientCountsForOneFetch(fetch, feedDict) {
+    var visited = new Set();
+    var sorted = [];
+    var recipientMap = {};
+    for (var _i = 0, _a = feedDict.names(); _i < _a.length; _i++) {
+        var key = _a[_i];
+        visited.add(key);
+    }
+    var stack = [];
+    var marks = [];
+    stack.push(fetch);
+    while (stack.length > 0) {
+        var top_1 = stack[stack.length - 1];
+        if (visited.has(top_1.name)) {
+            stack.pop();
+            continue;
+        }
+        var topIsMarked = marks[marks.length - 1] === stack.length - 1;
+        if (top_1.inputs.length === 0 || topIsMarked) {
+            stack.pop();
+            sorted.push(top_1);
+            visited.add(top_1.name);
+            if (topIsMarked) {
+                marks.pop();
+            }
+        }
+        else {
+            marks.push(stack.length - 1);
+            for (var _b = 0, _c = top_1.inputs; _b < _c.length; _b++) {
+                var input = _c[_b];
+                if (recipientMap[input.name] == null) {
+                    recipientMap[input.name] = new Set();
+                }
+                recipientMap[input.name].add(top_1.name);
+                if (visited.has(input.name)) {
+                    continue;
+                }
+                stack.push(input);
+            }
+        }
+    }
+    return { sorted: sorted, recipientMap: recipientMap };
+}
+exports.getTopologicalSortAndRecipientCountsForOneFetch = getTopologicalSortAndRecipientCountsForOneFetch;
 function getNodeOutputs(fetch) {
     var layerOutputs;
     if (fetch.sourceLayer.inboundNodes.length === 1) {
@@ -28972,7 +33709,7 @@ function getNodeOutputs(fetch) {
     return layerOutputs;
 }
 
-},{"../errors":223,"./input_layer":218,"@tensorflow/tfjs-core":57}],218:[function(require,module,exports){
+},{"../errors":252,"../utils/generic_utils":281,"./input_layer":247,"./topology":248,"@tensorflow/tfjs-core":59}],247:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -29096,7 +33833,7 @@ function Input(config) {
 }
 exports.Input = Input;
 
-},{"../backend/state":210,"../errors":223,"./topology":219,"@tensorflow/tfjs-core":57}],219:[function(require,module,exports){
+},{"../backend/state":239,"../errors":252,"./topology":248,"@tensorflow/tfjs-core":59}],248:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -29835,7 +34572,7 @@ function getSourceInputs(tensor, layer, nodeIndex) {
 }
 exports.getSourceInputs = getSourceInputs;
 
-},{"../backend/state":210,"../common":214,"../errors":223,"../utils/generic_utils":252,"../utils/types_utils":256,"../utils/variable_utils":257,"../variables":258,"@tensorflow/tfjs-core":57}],220:[function(require,module,exports){
+},{"../backend/state":239,"../common":243,"../errors":252,"../utils/generic_utils":281,"../utils/types_utils":285,"../utils/variable_utils":286,"../variables":287,"@tensorflow/tfjs-core":59}],249:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -30680,6 +35417,38 @@ var Model = (function (_super) {
             });
         });
     };
+    Model.prototype.trainOnBatch = function (x, y) {
+        return __awaiter(this, void 0, void 0, function () {
+            var standardizeOut, inputs, targets, trainFunction, losses, lossValues, _i, losses_1, loss, _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        standardizeOut = this.standardizeUserData(x, y);
+                        inputs = standardizeOut[0];
+                        targets = standardizeOut[1];
+                        trainFunction = this.makeTrainFunction();
+                        losses = trainFunction(inputs.concat(targets));
+                        lossValues = [];
+                        _i = 0, losses_1 = losses;
+                        _c.label = 1;
+                    case 1:
+                        if (!(_i < losses_1.length)) return [3, 4];
+                        loss = losses_1[_i];
+                        _b = (_a = lossValues).push;
+                        return [4, loss.data()];
+                    case 2:
+                        _b.apply(_a, [(_c.sent())[0]]);
+                        _c.label = 3;
+                    case 3:
+                        _i++;
+                        return [3, 1];
+                    case 4:
+                        tfc.dispose(losses);
+                        return [2, generic_utils_1.singletonOrArray(lossValues)];
+                }
+            });
+        });
+    };
     Model.prototype.getNamedWeights = function (config) {
         var namedWeights = {};
         var trainableOnly = config != null && config.trainableOnly;
@@ -30742,7 +35511,7 @@ var Model = (function (_super) {
 exports.Model = Model;
 tfjs_core_1.serialization.registerClass(Model);
 
-},{"../backend/state":210,"../backend/tfjs_backend":211,"../common":214,"../errors":223,"../losses":246,"../metrics":247,"../optimizers":249,"../utils/generic_utils":252,"../utils/layer_utils":253,"../utils/math_utils":254,"./container":216,"./executor":217,"./training_dataset":221,"./training_tensors":222,"@tensorflow/tfjs-core":57}],221:[function(require,module,exports){
+},{"../backend/state":239,"../backend/tfjs_backend":240,"../common":243,"../errors":252,"../losses":275,"../metrics":276,"../optimizers":278,"../utils/generic_utils":281,"../utils/layer_utils":282,"../utils/math_utils":283,"./container":245,"./executor":246,"./training_dataset":250,"./training_tensors":251,"@tensorflow/tfjs-core":59}],250:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -30892,10 +35661,12 @@ function fitDataset(model, dataset, config) {
                     }
                     callbacks = base_callbacks_1.standardizeCallbacks(config.callbacks);
                     _a = base_callbacks_1.configureCallbacks(callbacks, config.yieldEvery, config.verbose, config.epochs, null, null, config.batchesPerEpoch, null, doValidation, callbackMetrics), callbackList = _a.callbackList, history_1 = _a.history;
+                    callbackList.setModel(model);
                     model.history = history_1;
                     return [4, callbackList.onTrainBegin()];
                 case 2:
                     _c.sent();
+                    model.stopTraining_ = false;
                     epoch = config.initialEpoch == null ? 0 : config.initialEpoch;
                     epochLogs = {};
                     return [4, dataset.iterator()];
@@ -31111,7 +35882,7 @@ function evaluateDataset(model, dataset, config) {
 }
 exports.evaluateDataset = evaluateDataset;
 
-},{"../backend/state":210,"../base_callbacks":212,"../errors":223,"../logs":245,"../utils/generic_utils":252,"@tensorflow/tfjs-core":57}],222:[function(require,module,exports){
+},{"../backend/state":239,"../base_callbacks":241,"../errors":252,"../logs":274,"../utils/generic_utils":281,"@tensorflow/tfjs-core":59}],251:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -31434,7 +36205,6 @@ function fitTensors(model, x, y, config) {
                     return [4, fitLoop(model, trainFunction, ins, outLabels, batchSize, config.epochs, config.verbose, callbacks, valFunction, valIns, config.shuffle, callbackMetrics, config.initialEpoch, null, null, config.yieldEvery)];
                 case 2:
                     out = _a.sent();
-                    model.isTraining = false;
                     return [2, out];
                 case 3:
                     model.isTraining = false;
@@ -31516,7 +36286,7 @@ function disposeNewTensors(tensors, refTensors) {
 }
 exports.disposeNewTensors = disposeNewTensors;
 
-},{"../backend/tfjs_backend":211,"../base_callbacks":212,"../errors":223,"../logs":245,"../utils/math_utils":254,"@tensorflow/tfjs-core":57}],223:[function(require,module,exports){
+},{"../backend/tfjs_backend":240,"../base_callbacks":241,"../errors":252,"../logs":274,"../utils/math_utils":283,"@tensorflow/tfjs-core":59}],252:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -31590,7 +36360,7 @@ var IndexError = (function (_super) {
 }(Error));
 exports.IndexError = IndexError;
 
-},{}],224:[function(require,module,exports){
+},{}],253:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var base_callbacks_1 = require("./base_callbacks");
@@ -31619,7 +36389,7 @@ function registerCallbackConstructor(verbosityLevel, callbackConstructor) {
 }
 exports.registerCallbackConstructor = registerCallbackConstructor;
 
-},{"./base_callbacks":212,"./engine/input_layer":218,"./engine/training":220,"./models":248}],225:[function(require,module,exports){
+},{"./base_callbacks":241,"./engine/input_layer":247,"./engine/training":249,"./models":277}],254:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var constraints_1 = require("./constraints");
@@ -31640,7 +36410,7 @@ function minMaxNorm(config) {
 }
 exports.minMaxNorm = minMaxNorm;
 
-},{"./constraints":215}],226:[function(require,module,exports){
+},{"./constraints":244}],255:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var initializers_1 = require("./initializers");
@@ -31697,7 +36467,7 @@ function orthogonal(config) {
 }
 exports.orthogonal = orthogonal;
 
-},{"./initializers":232}],227:[function(require,module,exports){
+},{"./initializers":261}],256:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var input_layer_1 = require("./engine/input_layer");
@@ -31931,7 +36701,7 @@ exports.globalMaxPool2d = globalMaxPooling2d;
 exports.maxPool1d = maxPooling1d;
 exports.maxPool2d = maxPooling2d;
 
-},{"./engine/input_layer":218,"./engine/topology":219,"./exports":224,"./layers/advanced_activations":233,"./layers/convolutional":234,"./layers/convolutional_depthwise":235,"./layers/core":236,"./layers/embeddings":237,"./layers/merge":238,"./layers/normalization":239,"./layers/padding":240,"./layers/pooling":241,"./layers/recurrent":242,"./layers/wrappers":244}],228:[function(require,module,exports){
+},{"./engine/input_layer":247,"./engine/topology":248,"./exports":253,"./layers/advanced_activations":262,"./layers/convolutional":263,"./layers/convolutional_depthwise":264,"./layers/core":265,"./layers/embeddings":266,"./layers/merge":267,"./layers/normalization":268,"./layers/padding":269,"./layers/pooling":270,"./layers/recurrent":271,"./layers/wrappers":273}],257:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var losses = require("./losses");
@@ -31944,6 +36714,10 @@ function binaryCrossentropy(yTrue, yPred) {
     return metrics.binaryCrossentropy(yTrue, yPred);
 }
 exports.binaryCrossentropy = binaryCrossentropy;
+function sparseCategoricalAccuracy(yTrue, yPred) {
+    return metrics.sparseCategoricalAccuracy(yTrue, yPred);
+}
+exports.sparseCategoricalAccuracy = sparseCategoricalAccuracy;
 function categoricalAccuracy(yTrue, yPred) {
     return metrics.categoricalAccuracy(yTrue, yPred);
 }
@@ -31993,13 +36767,13 @@ function mse(yTrue, yPred) {
 }
 exports.mse = mse;
 
-},{"./losses":246,"./metrics":247}],229:[function(require,module,exports){
+},{"./losses":275,"./metrics":276}],258:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var models_1 = require("./models");
 exports.modelFromJSON = models_1.modelFromJSON;
 
-},{"./models":248}],230:[function(require,module,exports){
+},{"./models":277}],259:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var regularizers = require("./regularizers");
@@ -32017,7 +36791,7 @@ function l2(config) {
 }
 exports.l2 = l2;
 
-},{"./regularizers":250}],231:[function(require,module,exports){
+},{"./regularizers":279}],260:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var constraints = require("./exports_constraints");
@@ -32058,7 +36832,7 @@ exports.LayerVariable = variables_1.LayerVariable;
 var version_1 = require("./version");
 exports.version_layers = version_1.version;
 
-},{"./base_callbacks":212,"./callbacks":213,"./engine/topology":219,"./engine/training":220,"./exports":224,"./exports_constraints":225,"./exports_initializers":226,"./exports_layers":227,"./exports_metrics":228,"./exports_models":229,"./exports_regularizers":230,"./layers/recurrent":242,"./models":248,"./variables":258,"./version":259}],232:[function(require,module,exports){
+},{"./base_callbacks":241,"./callbacks":242,"./engine/topology":248,"./engine/training":249,"./exports":253,"./exports_constraints":254,"./exports_initializers":255,"./exports_layers":256,"./exports_metrics":257,"./exports_models":258,"./exports_regularizers":259,"./layers/recurrent":271,"./models":277,"./variables":287,"./version":288}],261:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -32508,7 +37282,7 @@ function getInitializer(identifier) {
 }
 exports.getInitializer = getInitializer;
 
-},{"./backend/state":210,"./backend/tfjs_backend":211,"./common":214,"./errors":223,"./utils/generic_utils":252,"./utils/math_utils":254,"@tensorflow/tfjs-core":57}],233:[function(require,module,exports){
+},{"./backend/state":239,"./backend/tfjs_backend":240,"./common":243,"./errors":252,"./utils/generic_utils":281,"./utils/math_utils":283,"@tensorflow/tfjs-core":59}],262:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -32683,7 +37457,7 @@ var Softmax = (function (_super) {
 exports.Softmax = Softmax;
 tfjs_core_1.serialization.registerClass(Softmax);
 
-},{"../activations":208,"../backend/state":210,"../backend/tfjs_backend":211,"../engine/topology":219,"../errors":223,"../utils/types_utils":256,"@tensorflow/tfjs-core":57}],234:[function(require,module,exports){
+},{"../activations":237,"../backend/state":239,"../backend/tfjs_backend":240,"../engine/topology":248,"../errors":252,"../utils/types_utils":285,"@tensorflow/tfjs-core":59}],263:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -33382,7 +38156,7 @@ var UpSampling2D = (function (_super) {
 exports.UpSampling2D = UpSampling2D;
 tfjs_core_1.serialization.registerClass(UpSampling2D);
 
-},{"../activations":208,"../backend/common":209,"../backend/tfjs_backend":211,"../common":214,"../constraints":215,"../engine/topology":219,"../errors":223,"../initializers":232,"../regularizers":250,"../utils/conv_utils":251,"../utils/generic_utils":252,"../utils/types_utils":256,"@tensorflow/tfjs-core":57}],235:[function(require,module,exports){
+},{"../activations":237,"../backend/common":238,"../backend/tfjs_backend":240,"../common":243,"../constraints":244,"../engine/topology":248,"../errors":252,"../initializers":261,"../regularizers":279,"../utils/conv_utils":280,"../utils/generic_utils":281,"../utils/types_utils":285,"@tensorflow/tfjs-core":59}],264:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -33515,7 +38289,7 @@ var DepthwiseConv2D = (function (_super) {
 exports.DepthwiseConv2D = DepthwiseConv2D;
 tfjs_core_1.serialization.registerClass(DepthwiseConv2D);
 
-},{"../backend/common":209,"../backend/tfjs_backend":211,"../common":214,"../constraints":215,"../errors":223,"../initializers":232,"../regularizers":250,"../utils/conv_utils":251,"../utils/types_utils":256,"./convolutional":234,"@tensorflow/tfjs-core":57}],236:[function(require,module,exports){
+},{"../backend/common":238,"../backend/tfjs_backend":240,"../common":243,"../constraints":244,"../errors":252,"../initializers":261,"../regularizers":279,"../utils/conv_utils":280,"../utils/types_utils":285,"./convolutional":263,"@tensorflow/tfjs-core":59}],265:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -33910,7 +38684,7 @@ var Permute = (function (_super) {
 exports.Permute = Permute;
 tfjs_core_1.serialization.registerClass(Permute);
 
-},{"../activations":208,"../backend/state":210,"../backend/tfjs_backend":211,"../constraints":215,"../engine/topology":219,"../errors":223,"../initializers":232,"../regularizers":250,"../utils/math_utils":254,"../utils/types_utils":256,"@tensorflow/tfjs-core":57}],237:[function(require,module,exports){
+},{"../activations":237,"../backend/state":239,"../backend/tfjs_backend":240,"../constraints":244,"../engine/topology":248,"../errors":252,"../initializers":261,"../regularizers":279,"../utils/math_utils":283,"../utils/types_utils":285,"@tensorflow/tfjs-core":59}],266:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -33967,7 +38741,16 @@ var Embedding = (function (_super) {
     };
     Embedding.prototype.warnOnIncompatibleInputShape = function (inputShape) { };
     Embedding.prototype.computeMask = function (inputs, mask) {
-        throw new errors_1.NotImplementedError('computeMask has not been implemented for Embedding yet');
+        var _this = this;
+        return tfjs_core_1.tidy(function () {
+            if (!_this.maskZero) {
+                return null;
+            }
+            else {
+                inputs = types_utils_1.getExactlyOneTensor(inputs);
+                return tfjs_core_1.notEqual(inputs, tfjs_core_1.zerosLike(inputs));
+            }
+        });
     };
     Embedding.prototype.computeOutputShape = function (inputShape) {
         inputShape = types_utils_1.getExactlyOneShape(inputShape);
@@ -34029,7 +38812,7 @@ var Embedding = (function (_super) {
 exports.Embedding = Embedding;
 tfjs_core_1.serialization.registerClass(Embedding);
 
-},{"../backend/tfjs_backend":211,"../constraints":215,"../engine/topology":219,"../errors":223,"../initializers":232,"../regularizers":250,"../utils/generic_utils":252,"../utils/types_utils":256,"@tensorflow/tfjs-core":57}],238:[function(require,module,exports){
+},{"../backend/tfjs_backend":240,"../constraints":244,"../engine/topology":248,"../errors":252,"../initializers":261,"../regularizers":279,"../utils/generic_utils":281,"../utils/types_utils":285,"@tensorflow/tfjs-core":59}],267:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -34227,7 +39010,31 @@ var Merge = (function (_super) {
         return outputShape;
     };
     Merge.prototype.computeMask = function (inputs, mask) {
-        throw new errors_1.NotImplementedError('computeMask has not been implemented for Merge yet');
+        return tfc.tidy(function () {
+            if (mask == null) {
+                return null;
+            }
+            if (!Array.isArray(mask)) {
+                throw new errors_1.ValueError('`mask` should be an Array');
+            }
+            if (!Array.isArray(inputs)) {
+                throw new errors_1.ValueError('`inputs` should be an Array');
+            }
+            if (mask.length !== inputs.length) {
+                throw new errors_1.ValueError("The Array 'inputs' and 'mask' are expected to have the same " +
+                    "length, but have different lengths " +
+                    ("(" + inputs.length + " vs " + mask.length + ")"));
+            }
+            if (mask.every(function (m) { return m == null; })) {
+                return null;
+            }
+            mask = mask.map(function (m) { return m == null ? m : tfc.expandDims(m, 0); });
+            var output = mask[0];
+            for (var i = 1; i < mask.length - 1; ++i) {
+                output = tfc.logicalAnd(output, mask[i]);
+            }
+            return output;
+        });
     };
     return Merge;
 }(topology_1.Layer));
@@ -34656,7 +39463,7 @@ var Dot = (function (_super) {
 exports.Dot = Dot;
 tfjs_core_1.serialization.registerClass(Dot);
 
-},{"../backend/state":210,"../backend/tfjs_backend":211,"../engine/topology":219,"../errors":223,"../losses":246,"../utils/generic_utils":252,"../utils/math_utils":254,"../utils/types_utils":256,"@tensorflow/tfjs-core":57}],239:[function(require,module,exports){
+},{"../backend/state":239,"../backend/tfjs_backend":240,"../engine/topology":248,"../errors":252,"../losses":275,"../utils/generic_utils":281,"../utils/math_utils":283,"../utils/types_utils":285,"@tensorflow/tfjs-core":59}],268:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -34671,9 +39478,9 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
 var tfjs_core_1 = require("@tensorflow/tfjs-core");
+var state_1 = require("../backend/state");
 var constraints_1 = require("../constraints");
 var topology_1 = require("../engine/topology");
-var state_1 = require("../backend/state");
 var errors_1 = require("../errors");
 var initializers_1 = require("../initializers");
 var regularizers_1 = require("../regularizers");
@@ -34767,7 +39574,6 @@ var BatchNormalization = (function (_super) {
         _this.gammaConstraint = constraints_1.getConstraint(config.gammaConstraint);
         _this.betaRegularizer = regularizers_1.getRegularizer(config.betaRegularizer);
         _this.gammaRegularizer = regularizers_1.getRegularizer(config.gammaRegularizer);
-        _this.stepCount = 0;
         return _this;
     }
     BatchNormalization.prototype.build = function (inputShape) {
@@ -34824,14 +39630,17 @@ var BatchNormalization = (function (_super) {
                 return normalizeInference();
             }
             var _a = normalizeBatchInTraining(input, _this.gamma.read(), _this.beta.read(), reductionAxes, _this.epsilon), normedTraining = _a[0], mean = _a[1], variance = _a[2];
-            var sampleSize = math_utils.arrayProd(reductionAxes.map(function (axis) { return input.shape[axis]; }));
-            var varianceDebiased = variance.mul(state_1.getScalar(sampleSize / (sampleSize - (1 + _this.epsilon))));
+            var doMovingAverage = function (variable, value, momentum) {
+                tfc.tidy(function () {
+                    var decay = state_1.getScalar(1.0).sub(state_1.getScalar(momentum));
+                    var origValue = variable.read();
+                    var updateDelta = origValue.sub(value).mul(decay);
+                    variable.write(origValue.sub(updateDelta));
+                });
+            };
             var updateMovingMeanAndVariance = function () {
-                _this.stepCount++;
-                var newMovingMean = tfc.movingAverage(_this.movingMean.read(), mean, _this.momentum, _this.stepCount);
-                _this.movingMean.write(newMovingMean);
-                var newMovingVariance = tfc.movingAverage(_this.movingVariance.read(), varianceDebiased, _this.momentum, _this.stepCount);
-                _this.movingVariance.write(newMovingVariance);
+                doMovingAverage(_this.movingMean, mean, _this.momentum);
+                doMovingAverage(_this.movingVariance, variance, _this.momentum);
             };
             updateMovingMeanAndVariance();
             return normedTraining;
@@ -34863,7 +39672,7 @@ var BatchNormalization = (function (_super) {
 exports.BatchNormalization = BatchNormalization;
 tfjs_core_1.serialization.registerClass(BatchNormalization);
 
-},{"../backend/state":210,"../constraints":215,"../engine/topology":219,"../errors":223,"../initializers":232,"../regularizers":250,"../utils/generic_utils":252,"../utils/math_utils":254,"../utils/types_utils":256,"@tensorflow/tfjs-core":57}],240:[function(require,module,exports){
+},{"../backend/state":239,"../constraints":244,"../engine/topology":248,"../errors":252,"../initializers":261,"../regularizers":279,"../utils/generic_utils":281,"../utils/math_utils":283,"../utils/types_utils":285,"@tensorflow/tfjs-core":59}],269:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -35035,7 +39844,7 @@ var ZeroPadding2D = (function (_super) {
 exports.ZeroPadding2D = ZeroPadding2D;
 tfjs_core_1.serialization.registerClass(ZeroPadding2D);
 
-},{"../backend/common":209,"../engine/topology":219,"../errors":223,"../utils/types_utils":256,"@tensorflow/tfjs-core":57}],241:[function(require,module,exports){
+},{"../backend/common":238,"../engine/topology":248,"../errors":252,"../utils/types_utils":285,"@tensorflow/tfjs-core":59}],270:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -35416,7 +40225,7 @@ var GlobalMaxPooling2D = (function (_super) {
 exports.GlobalMaxPooling2D = GlobalMaxPooling2D;
 tfjs_core_1.serialization.registerClass(GlobalMaxPooling2D);
 
-},{"../backend/common":209,"../backend/tfjs_backend":211,"../common":214,"../engine/topology":219,"../errors":223,"../utils/conv_utils":251,"../utils/types_utils":256,"./convolutional":234,"@tensorflow/tfjs-core":57}],242:[function(require,module,exports){
+},{"../backend/common":238,"../backend/tfjs_backend":240,"../common":243,"../engine/topology":248,"../errors":252,"../utils/conv_utils":280,"../utils/types_utils":285,"./convolutional":263,"@tensorflow/tfjs-core":59}],271:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -35599,7 +40408,17 @@ var RNN = (function (_super) {
         }
     };
     RNN.prototype.computeMask = function (inputs, mask) {
-        throw new errors_1.NotImplementedError('computeMask has not been implemented for RNN yet');
+        if (Array.isArray(mask)) {
+            mask = mask[0];
+        }
+        var outputMask = this.returnSequences ? mask : null;
+        if (this.returnState) {
+            var stateMask = this.states.map(function (s) { return null; });
+            return [outputMask].concat(stateMask);
+        }
+        else {
+            return outputMask;
+        }
     };
     RNN.prototype.build = function (inputShape) {
         var constantShape = null;
@@ -36953,7 +41772,7 @@ function generateDropoutMask(ones, rate, training, count) {
     }
 }
 
-},{"../activations":208,"../backend/state":210,"../backend/tfjs_backend":211,"../constraints":215,"../engine/topology":219,"../errors":223,"../initializers":232,"../regularizers":250,"../utils/math_utils":254,"../utils/types_utils":256,"../variables":258,"./serialization":243,"@tensorflow/tfjs-core":57}],243:[function(require,module,exports){
+},{"../activations":237,"../backend/state":239,"../backend/tfjs_backend":240,"../constraints":244,"../engine/topology":248,"../errors":252,"../initializers":261,"../regularizers":279,"../utils/math_utils":283,"../utils/types_utils":285,"../variables":287,"./serialization":272,"@tensorflow/tfjs-core":59}],272:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfjs_core_1 = require("@tensorflow/tfjs-core");
@@ -36964,7 +41783,7 @@ function deserialize(config, customObjects) {
 }
 exports.deserialize = deserialize;
 
-},{"../utils/generic_utils":252,"@tensorflow/tfjs-core":57}],244:[function(require,module,exports){
+},{"../utils/generic_utils":281,"@tensorflow/tfjs-core":59}],273:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -37381,7 +42200,7 @@ var Bidirectional = (function (_super) {
 exports.Bidirectional = Bidirectional;
 tfjs_core_1.serialization.registerClass(Bidirectional);
 
-},{"../backend/state":210,"../backend/tfjs_backend":211,"../common":214,"../engine/topology":219,"../errors":223,"../utils/generic_utils":252,"../utils/types_utils":256,"./recurrent":242,"./serialization":243,"@tensorflow/tfjs-core":57}],245:[function(require,module,exports){
+},{"../backend/state":239,"../backend/tfjs_backend":240,"../common":243,"../engine/topology":248,"../errors":252,"../utils/generic_utils":281,"../utils/types_utils":285,"./recurrent":271,"./serialization":272,"@tensorflow/tfjs-core":59}],274:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -37467,7 +42286,7 @@ function disposeTensorsInLogs(logs) {
 }
 exports.disposeTensorsInLogs = disposeTensorsInLogs;
 
-},{"@tensorflow/tfjs-core":57}],246:[function(require,module,exports){
+},{"@tensorflow/tfjs-core":59}],275:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
@@ -37565,24 +42384,27 @@ function categoricalCrossentropy(target, output, fromLogits) {
     });
 }
 exports.categoricalCrossentropy = categoricalCrossentropy;
-function sparseCategoricalCrossentropy(target, output, fromLogits) {
-    if (fromLogits === void 0) { fromLogits = false; }
+function sparseCategoricalCrossentropy(target, output) {
     return tfjs_core_1.tidy(function () {
         var flatTarget = tfc.floor(K.flatten(target)).toInt();
+        output = tfc.clipByValue(output, common_1.epsilon(), 1 - common_1.epsilon());
         var outputShape = output.shape;
         var oneHotTarget = tfc.oneHot(flatTarget, outputShape[outputShape.length - 1])
             .reshape(outputShape);
+        var fromLogits = false;
         return categoricalCrossentropy(oneHotTarget, output, fromLogits);
     });
 }
 exports.sparseCategoricalCrossentropy = sparseCategoricalCrossentropy;
-function sigmoidCrossEntropyWithLogits(target, output) {
+function sigmoidCrossEntropyWithLogits(labels, logits) {
+    if (!tfjs_core_1.util.arraysEqual(labels.shape, logits.shape)) {
+        throw new errors_1.ValueError("logits and labels must have the same shape, but got shapes " +
+            (JSON.stringify(labels.shape) + " and " + JSON.stringify(logits.shape)));
+    }
     return tfjs_core_1.tidy(function () {
-        var maxOutput = tfc.maximum(output, tfc.zerosLike(output));
-        var outputXTarget = tfc.mul(output, target);
-        var sigmoidOutput = tfc.log(tfc.add(state_1.getScalar(1), tfc.exp(tfc.neg(tfc.abs(output)))));
-        var result = tfc.add(tfc.sub(maxOutput, outputXTarget), sigmoidOutput);
-        return result;
+        var reluLogits = logits.relu();
+        var negAbsLogits = logits.abs().neg();
+        return reluLogits.sub(logits.mul(labels)).add(negAbsLogits.exp().log1p());
     });
 }
 exports.sigmoidCrossEntropyWithLogits = sigmoidCrossEntropyWithLogits;
@@ -37590,7 +42412,7 @@ function binaryCrossentropy(yTrue, yPred) {
     return tfjs_core_1.tidy(function () {
         var y;
         y = tfc.clipByValue(yPred, common_1.epsilon(), 1 - common_1.epsilon());
-        y = tfc.log(tfc.div(y, tfc.sub(tfc.onesLike(y), y)));
+        y = tfc.log(tfc.div(y, tfc.sub(state_1.getScalar(1), y)));
         return tfc.mean(sigmoidCrossEntropyWithLogits(yTrue, y), -1);
     });
 }
@@ -37665,7 +42487,7 @@ function get(identifierOrFn) {
 }
 exports.get = get;
 
-},{"./backend/common":209,"./backend/state":210,"./backend/tfjs_backend":211,"./errors":223,"@tensorflow/tfjs-core":57}],247:[function(require,module,exports){
+},{"./backend/common":238,"./backend/state":239,"./backend/tfjs_backend":240,"./errors":252,"@tensorflow/tfjs-core":59}],276:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
@@ -37740,7 +42562,14 @@ function binaryCrossentropy(yTrue, yPred) {
 }
 exports.binaryCrossentropy = binaryCrossentropy;
 function sparseCategoricalAccuracy(yTrue, yPred) {
-    throw new errors_1.NotImplementedError();
+    if (yTrue.rank === yPred.rank) {
+        yTrue = yTrue.squeeze([yTrue.rank - 1]);
+    }
+    yPred = yPred.argMax(-1);
+    if (yPred.dtype !== yTrue.dtype) {
+        yPred = yPred.asType(yTrue.dtype);
+    }
+    return tfc.equal(yTrue, yPred).asType('float32');
 }
 exports.sparseCategoricalAccuracy = sparseCategoricalAccuracy;
 function topKCategoricalAccuracy(yTrue, yPred) {
@@ -37787,7 +42616,7 @@ function get(identifier) {
 }
 exports.get = get;
 
-},{"./backend/state":210,"./backend/tfjs_backend":211,"./errors":223,"./losses":246,"@tensorflow/tfjs-core":57}],248:[function(require,module,exports){
+},{"./backend/state":239,"./backend/tfjs_backend":240,"./errors":252,"./losses":275,"@tensorflow/tfjs-core":59}],277:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -38187,6 +43016,13 @@ var Sequential = (function (_super) {
             });
         });
     };
+    Sequential.prototype.trainOnBatch = function (x, y) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2, this.model.trainOnBatch(x, y)];
+            });
+        });
+    };
     Sequential.fromConfig = function (cls, config) {
         var configArray;
         var extraModelConfig = {};
@@ -38239,7 +43075,7 @@ var Sequential = (function (_super) {
 exports.Sequential = Sequential;
 tfjs_core_1.serialization.registerClass(Sequential);
 
-},{"./backend/state":210,"./engine/input_layer":218,"./engine/topology":219,"./engine/training":220,"./errors":223,"./layers/serialization":243,"./utils/generic_utils":252,"./utils/serialization_utils":255,"./utils/types_utils":256,"@tensorflow/tfjs-core":57}],249:[function(require,module,exports){
+},{"./backend/state":239,"./engine/input_layer":247,"./engine/topology":248,"./engine/training":249,"./errors":252,"./layers/serialization":272,"./utils/generic_utils":281,"./utils/serialization_utils":284,"./utils/types_utils":285,"@tensorflow/tfjs-core":59}],278:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfjs_core_1 = require("@tensorflow/tfjs-core");
@@ -38267,7 +43103,7 @@ function getOptimizer(identifier) {
 }
 exports.getOptimizer = getOptimizer;
 
-},{"./backend/common":209,"./errors":223,"@tensorflow/tfjs-core":57}],250:[function(require,module,exports){
+},{"./backend/common":238,"./errors":252,"@tensorflow/tfjs-core":59}],279:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -38370,7 +43206,7 @@ function getRegularizer(identifier) {
 }
 exports.getRegularizer = getRegularizer;
 
-},{"./backend/state":210,"./backend/tfjs_backend":211,"./utils/generic_utils":252,"@tensorflow/tfjs-core":57}],251:[function(require,module,exports){
+},{"./backend/state":239,"./backend/tfjs_backend":240,"./utils/generic_utils":281,"@tensorflow/tfjs-core":59}],280:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var errors_1 = require("../errors");
@@ -38430,7 +43266,7 @@ function deconvLength(dimSize, strideSize, kernelSize, padding) {
 }
 exports.deconvLength = deconvLength;
 
-},{"../errors":223,"./generic_utils":252,"./math_utils":254}],252:[function(require,module,exports){
+},{"../errors":252,"./generic_utils":281,"./math_utils":283}],281:[function(require,module,exports){
 "use strict";
 var __assign = (this && this.__assign) || Object.assign || function(t) {
     for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -38699,7 +43535,7 @@ function checkArrayTypeAndLength(x, expectedType, minLength, maxLength) {
 }
 exports.checkArrayTypeAndLength = checkArrayTypeAndLength;
 
-},{"../errors":223}],253:[function(require,module,exports){
+},{"../errors":252}],282:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var variable_utils_1 = require("./variable_utils");
@@ -38859,7 +43695,7 @@ function printLayerSummaryWithConnections(layer, positions, relevantNodes, print
     }
 }
 
-},{"./variable_utils":257}],254:[function(require,module,exports){
+},{"./variable_utils":286}],283:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
@@ -38931,7 +43767,7 @@ function range(begin, end) {
 }
 exports.range = range;
 
-},{"../errors":223,"@tensorflow/tfjs-core":57}],255:[function(require,module,exports){
+},{"../errors":252,"@tensorflow/tfjs-core":59}],284:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var generic_utils = require("../utils/generic_utils");
@@ -39025,7 +43861,7 @@ function convertTsToPythonic(tsConfig, key) {
 }
 exports.convertTsToPythonic = convertTsToPythonic;
 
-},{"../utils/generic_utils":252}],256:[function(require,module,exports){
+},{"../utils/generic_utils":281}],285:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var errors_1 = require("../errors");
@@ -39073,7 +43909,7 @@ function getExactlyOneShape(shapes) {
 }
 exports.getExactlyOneShape = getExactlyOneShape;
 
-},{"../errors":223}],257:[function(require,module,exports){
+},{"../errors":252}],286:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function countParamsInWeights(weights) {
@@ -39091,7 +43927,7 @@ function countParamsInWeights(weights) {
 }
 exports.countParamsInWeights = countParamsInWeights;
 
-},{}],258:[function(require,module,exports){
+},{}],287:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tfc = require("@tensorflow/tfjs-core");
@@ -39232,13 +44068,13 @@ function gradients(lossFn, variables) {
 }
 exports.gradients = gradients;
 
-},{"./backend/state":210,"./common":214,"./errors":223,"@tensorflow/tfjs-core":57}],259:[function(require,module,exports){
+},{"./backend/state":239,"./common":243,"./errors":252,"@tensorflow/tfjs-core":59}],288:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var version = '0.8.5';
+var version = '0.9.1';
 exports.version = version;
 
-},{}],260:[function(require,module,exports){
+},{}],289:[function(require,module,exports){
 "use strict";
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
@@ -39247,24 +44083,28 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __export(require("@tensorflow/tfjs-core"));
 __export(require("@tensorflow/tfjs-layers"));
 __export(require("@tensorflow/tfjs-converter"));
+var data = require("@tensorflow/tfjs-data");
+exports.data = data;
 var tfjs_core_1 = require("@tensorflow/tfjs-core");
+var tfjs_data_1 = require("@tensorflow/tfjs-data");
 var tfjs_layers_1 = require("@tensorflow/tfjs-layers");
 var tfjs_converter_1 = require("@tensorflow/tfjs-converter");
 var version_1 = require("./version");
 exports.version = {
     'tfjs-core': tfjs_core_1.version_core,
+    'tfjs-data': tfjs_data_1.version_data,
     'tfjs-layers': tfjs_layers_1.version_layers,
     'tfjs-converter': tfjs_converter_1.version_converter,
     'tfjs': version_1.version
 };
 
-},{"./version":261,"@tensorflow/tfjs-converter":14,"@tensorflow/tfjs-core":57,"@tensorflow/tfjs-layers":231}],261:[function(require,module,exports){
+},{"./version":290,"@tensorflow/tfjs-converter":14,"@tensorflow/tfjs-core":59,"@tensorflow/tfjs-data":216,"@tensorflow/tfjs-layers":260}],290:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var version = '0.13.5';
 exports.version = version;
 
-},{}],262:[function(require,module,exports){
+},{}],291:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -39417,9 +44257,9 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],263:[function(require,module,exports){
+},{}],292:[function(require,module,exports){
 
-},{}],264:[function(require,module,exports){
+},{}],293:[function(require,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -41198,7 +46038,7 @@ function numberIsNaN (obj) {
   return obj !== obj // eslint-disable-line no-self-compare
 }
 
-},{"base64-js":262,"ieee754":265}],265:[function(require,module,exports){
+},{"base64-js":291,"ieee754":294}],294:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = (nBytes * 8) - mLen - 1
@@ -41284,7 +46124,17 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],266:[function(require,module,exports){
+},{}],295:[function(require,module,exports){
+module.exports = exports = window.fetch;
+
+// Needed for TypeScript and Webpack.
+exports.default = window.fetch.bind(window);
+
+exports.Headers = window.Headers;
+exports.Request = window.Request;
+exports.Response = window.Response;
+
+},{}],296:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -41470,13 +46320,13 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],267:[function(require,module,exports){
+},{}],297:[function(require,module,exports){
 // minimal library entry point.
 
 "use strict";
 module.exports = require("./src/index-minimal");
 
-},{"./src/index-minimal":268}],268:[function(require,module,exports){
+},{"./src/index-minimal":298}],298:[function(require,module,exports){
 "use strict";
 var protobuf = exports;
 
@@ -41514,7 +46364,7 @@ function configure() {
 protobuf.Writer._configure(protobuf.BufferWriter);
 configure();
 
-},{"./reader":269,"./reader_buffer":270,"./roots":271,"./rpc":272,"./util/minimal":275,"./writer":276,"./writer_buffer":277}],269:[function(require,module,exports){
+},{"./reader":299,"./reader_buffer":300,"./roots":301,"./rpc":302,"./util/minimal":305,"./writer":306,"./writer_buffer":307}],299:[function(require,module,exports){
 "use strict";
 module.exports = Reader;
 
@@ -41921,7 +46771,7 @@ Reader._configure = function(BufferReader_) {
     });
 };
 
-},{"./util/minimal":275}],270:[function(require,module,exports){
+},{"./util/minimal":305}],300:[function(require,module,exports){
 "use strict";
 module.exports = BufferReader;
 
@@ -41967,7 +46817,7 @@ BufferReader.prototype.string = function read_string_buffer() {
  * @returns {Buffer} Value read
  */
 
-},{"./reader":269,"./util/minimal":275}],271:[function(require,module,exports){
+},{"./reader":299,"./util/minimal":305}],301:[function(require,module,exports){
 "use strict";
 module.exports = {};
 
@@ -41987,7 +46837,7 @@ module.exports = {};
  * var root = protobuf.roots["myroot"];
  */
 
-},{}],272:[function(require,module,exports){
+},{}],302:[function(require,module,exports){
 "use strict";
 
 /**
@@ -42025,7 +46875,7 @@ var rpc = exports;
 
 rpc.Service = require("./rpc/service");
 
-},{"./rpc/service":273}],273:[function(require,module,exports){
+},{"./rpc/service":303}],303:[function(require,module,exports){
 "use strict";
 module.exports = Service;
 
@@ -42169,7 +47019,7 @@ Service.prototype.end = function end(endedByRPC) {
     return this;
 };
 
-},{"../util/minimal":275}],274:[function(require,module,exports){
+},{"../util/minimal":305}],304:[function(require,module,exports){
 "use strict";
 module.exports = LongBits;
 
@@ -42371,7 +47221,7 @@ LongBits.prototype.length = function length() {
          : part2 < 128 ? 9 : 10;
 };
 
-},{"../util/minimal":275}],275:[function(require,module,exports){
+},{"../util/minimal":305}],305:[function(require,module,exports){
 (function (global){
 "use strict";
 var util = exports;
@@ -42789,7 +47639,7 @@ util._configure = function() {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./longbits":274,"@protobufjs/aspromise":2,"@protobufjs/base64":3,"@protobufjs/eventemitter":4,"@protobufjs/float":5,"@protobufjs/inquire":6,"@protobufjs/pool":7,"@protobufjs/utf8":8}],276:[function(require,module,exports){
+},{"./longbits":304,"@protobufjs/aspromise":2,"@protobufjs/base64":3,"@protobufjs/eventemitter":4,"@protobufjs/float":5,"@protobufjs/inquire":6,"@protobufjs/pool":7,"@protobufjs/utf8":8}],306:[function(require,module,exports){
 "use strict";
 module.exports = Writer;
 
@@ -43250,7 +48100,7 @@ Writer._configure = function(BufferWriter_) {
     BufferWriter = BufferWriter_;
 };
 
-},{"./util/minimal":275}],277:[function(require,module,exports){
+},{"./util/minimal":305}],307:[function(require,module,exports){
 "use strict";
 module.exports = BufferWriter;
 
@@ -43333,708 +48183,21 @@ BufferWriter.prototype.string = function write_string_buffer(value) {
  * @returns {Buffer} Finished buffer
  */
 
-},{"./util/minimal":275,"./writer":276}],278:[function(require,module,exports){
-// A library of seedable RNGs implemented in Javascript.
-//
-// Usage:
-//
-// var seedrandom = require('seedrandom');
-// var random = seedrandom(1); // or any seed.
-// var x = random();       // 0 <= x < 1.  Every bit is random.
-// var x = random.quick(); // 0 <= x < 1.  32 bits of randomness.
-
-// alea, a 53-bit multiply-with-carry generator by Johannes Baagøe.
-// Period: ~2^116
-// Reported to pass all BigCrush tests.
-var alea = require('./lib/alea');
-
-// xor128, a pure xor-shift generator by George Marsaglia.
-// Period: 2^128-1.
-// Reported to fail: MatrixRank and LinearComp.
-var xor128 = require('./lib/xor128');
-
-// xorwow, George Marsaglia's 160-bit xor-shift combined plus weyl.
-// Period: 2^192-2^32
-// Reported to fail: CollisionOver, SimpPoker, and LinearComp.
-var xorwow = require('./lib/xorwow');
-
-// xorshift7, by François Panneton and Pierre L'ecuyer, takes
-// a different approach: it adds robustness by allowing more shifts
-// than Marsaglia's original three.  It is a 7-shift generator
-// with 256 bits, that passes BigCrush with no systmatic failures.
-// Period 2^256-1.
-// No systematic BigCrush failures reported.
-var xorshift7 = require('./lib/xorshift7');
-
-// xor4096, by Richard Brent, is a 4096-bit xor-shift with a
-// very long period that also adds a Weyl generator. It also passes
-// BigCrush with no systematic failures.  Its long period may
-// be useful if you have many generators and need to avoid
-// collisions.
-// Period: 2^4128-2^32.
-// No systematic BigCrush failures reported.
-var xor4096 = require('./lib/xor4096');
-
-// Tyche-i, by Samuel Neves and Filipe Araujo, is a bit-shifting random
-// number generator derived from ChaCha, a modern stream cipher.
-// https://eden.dei.uc.pt/~sneves/pubs/2011-snfa2.pdf
-// Period: ~2^127
-// No systematic BigCrush failures reported.
-var tychei = require('./lib/tychei');
-
-// The original ARC4-based prng included in this library.
-// Period: ~2^1600
-var sr = require('./seedrandom');
-
-sr.alea = alea;
-sr.xor128 = xor128;
-sr.xorwow = xorwow;
-sr.xorshift7 = xorshift7;
-sr.xor4096 = xor4096;
-sr.tychei = tychei;
-
-module.exports = sr;
-
-},{"./lib/alea":279,"./lib/tychei":280,"./lib/xor128":281,"./lib/xor4096":282,"./lib/xorshift7":283,"./lib/xorwow":284,"./seedrandom":285}],279:[function(require,module,exports){
-// A port of an algorithm by Johannes Baagøe <baagoe@baagoe.com>, 2010
-// http://baagoe.com/en/RandomMusings/javascript/
-// https://github.com/nquinlan/better-random-numbers-for-javascript-mirror
-// Original work is under MIT license -
-
-// Copyright (C) 2010 by Johannes Baagøe <baagoe@baagoe.org>
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
-
-
-(function(global, module, define) {
-
-function Alea(seed) {
-  var me = this, mash = Mash();
-
-  me.next = function() {
-    var t = 2091639 * me.s0 + me.c * 2.3283064365386963e-10; // 2^-32
-    me.s0 = me.s1;
-    me.s1 = me.s2;
-    return me.s2 = t - (me.c = t | 0);
-  };
-
-  // Apply the seeding algorithm from Baagoe.
-  me.c = 1;
-  me.s0 = mash(' ');
-  me.s1 = mash(' ');
-  me.s2 = mash(' ');
-  me.s0 -= mash(seed);
-  if (me.s0 < 0) { me.s0 += 1; }
-  me.s1 -= mash(seed);
-  if (me.s1 < 0) { me.s1 += 1; }
-  me.s2 -= mash(seed);
-  if (me.s2 < 0) { me.s2 += 1; }
-  mash = null;
-}
-
-function copy(f, t) {
-  t.c = f.c;
-  t.s0 = f.s0;
-  t.s1 = f.s1;
-  t.s2 = f.s2;
-  return t;
-}
-
-function impl(seed, opts) {
-  var xg = new Alea(seed),
-      state = opts && opts.state,
-      prng = xg.next;
-  prng.int32 = function() { return (xg.next() * 0x100000000) | 0; }
-  prng.double = function() {
-    return prng() + (prng() * 0x200000 | 0) * 1.1102230246251565e-16; // 2^-53
-  };
-  prng.quick = prng;
-  if (state) {
-    if (typeof(state) == 'object') copy(state, xg);
-    prng.state = function() { return copy(xg, {}); }
-  }
-  return prng;
-}
-
-function Mash() {
-  var n = 0xefc8249d;
-
-  var mash = function(data) {
-    data = data.toString();
-    for (var i = 0; i < data.length; i++) {
-      n += data.charCodeAt(i);
-      var h = 0.02519603282416938 * n;
-      n = h >>> 0;
-      h -= n;
-      h *= n;
-      n = h >>> 0;
-      h -= n;
-      n += h * 0x100000000; // 2^32
-    }
-    return (n >>> 0) * 2.3283064365386963e-10; // 2^-32
-  };
-
-  return mash;
-}
-
-
-if (module && module.exports) {
-  module.exports = impl;
-} else if (define && define.amd) {
-  define(function() { return impl; });
-} else {
-  this.alea = impl;
-}
-
-})(
-  this,
-  (typeof module) == 'object' && module,    // present in node.js
-  (typeof define) == 'function' && define   // present with an AMD loader
-);
-
-
-
-},{}],280:[function(require,module,exports){
-// A Javascript implementaion of the "Tyche-i" prng algorithm by
-// Samuel Neves and Filipe Araujo.
-// See https://eden.dei.uc.pt/~sneves/pubs/2011-snfa2.pdf
-
-(function(global, module, define) {
-
-function XorGen(seed) {
-  var me = this, strseed = '';
-
-  // Set up generator function.
-  me.next = function() {
-    var b = me.b, c = me.c, d = me.d, a = me.a;
-    b = (b << 25) ^ (b >>> 7) ^ c;
-    c = (c - d) | 0;
-    d = (d << 24) ^ (d >>> 8) ^ a;
-    a = (a - b) | 0;
-    me.b = b = (b << 20) ^ (b >>> 12) ^ c;
-    me.c = c = (c - d) | 0;
-    me.d = (d << 16) ^ (c >>> 16) ^ a;
-    return me.a = (a - b) | 0;
-  };
-
-  /* The following is non-inverted tyche, which has better internal
-   * bit diffusion, but which is about 25% slower than tyche-i in JS.
-  me.next = function() {
-    var a = me.a, b = me.b, c = me.c, d = me.d;
-    a = (me.a + me.b | 0) >>> 0;
-    d = me.d ^ a; d = d << 16 ^ d >>> 16;
-    c = me.c + d | 0;
-    b = me.b ^ c; b = b << 12 ^ d >>> 20;
-    me.a = a = a + b | 0;
-    d = d ^ a; me.d = d = d << 8 ^ d >>> 24;
-    me.c = c = c + d | 0;
-    b = b ^ c;
-    return me.b = (b << 7 ^ b >>> 25);
-  }
-  */
-
-  me.a = 0;
-  me.b = 0;
-  me.c = 2654435769 | 0;
-  me.d = 1367130551;
-
-  if (seed === Math.floor(seed)) {
-    // Integer seed.
-    me.a = (seed / 0x100000000) | 0;
-    me.b = seed | 0;
-  } else {
-    // String seed.
-    strseed += seed;
-  }
-
-  // Mix in string seed, then discard an initial batch of 64 values.
-  for (var k = 0; k < strseed.length + 20; k++) {
-    me.b ^= strseed.charCodeAt(k) | 0;
-    me.next();
-  }
-}
-
-function copy(f, t) {
-  t.a = f.a;
-  t.b = f.b;
-  t.c = f.c;
-  t.d = f.d;
-  return t;
-};
-
-function impl(seed, opts) {
-  var xg = new XorGen(seed),
-      state = opts && opts.state,
-      prng = function() { return (xg.next() >>> 0) / 0x100000000; };
-  prng.double = function() {
-    do {
-      var top = xg.next() >>> 11,
-          bot = (xg.next() >>> 0) / 0x100000000,
-          result = (top + bot) / (1 << 21);
-    } while (result === 0);
-    return result;
-  };
-  prng.int32 = xg.next;
-  prng.quick = prng;
-  if (state) {
-    if (typeof(state) == 'object') copy(state, xg);
-    prng.state = function() { return copy(xg, {}); }
-  }
-  return prng;
-}
-
-if (module && module.exports) {
-  module.exports = impl;
-} else if (define && define.amd) {
-  define(function() { return impl; });
-} else {
-  this.tychei = impl;
-}
-
-})(
-  this,
-  (typeof module) == 'object' && module,    // present in node.js
-  (typeof define) == 'function' && define   // present with an AMD loader
-);
-
-
-
-},{}],281:[function(require,module,exports){
-// A Javascript implementaion of the "xor128" prng algorithm by
-// George Marsaglia.  See http://www.jstatsoft.org/v08/i14/paper
-
-(function(global, module, define) {
-
-function XorGen(seed) {
-  var me = this, strseed = '';
-
-  me.x = 0;
-  me.y = 0;
-  me.z = 0;
-  me.w = 0;
-
-  // Set up generator function.
-  me.next = function() {
-    var t = me.x ^ (me.x << 11);
-    me.x = me.y;
-    me.y = me.z;
-    me.z = me.w;
-    return me.w ^= (me.w >>> 19) ^ t ^ (t >>> 8);
-  };
-
-  if (seed === (seed | 0)) {
-    // Integer seed.
-    me.x = seed;
-  } else {
-    // String seed.
-    strseed += seed;
-  }
-
-  // Mix in string seed, then discard an initial batch of 64 values.
-  for (var k = 0; k < strseed.length + 64; k++) {
-    me.x ^= strseed.charCodeAt(k) | 0;
-    me.next();
-  }
-}
-
-function copy(f, t) {
-  t.x = f.x;
-  t.y = f.y;
-  t.z = f.z;
-  t.w = f.w;
-  return t;
-}
-
-function impl(seed, opts) {
-  var xg = new XorGen(seed),
-      state = opts && opts.state,
-      prng = function() { return (xg.next() >>> 0) / 0x100000000; };
-  prng.double = function() {
-    do {
-      var top = xg.next() >>> 11,
-          bot = (xg.next() >>> 0) / 0x100000000,
-          result = (top + bot) / (1 << 21);
-    } while (result === 0);
-    return result;
-  };
-  prng.int32 = xg.next;
-  prng.quick = prng;
-  if (state) {
-    if (typeof(state) == 'object') copy(state, xg);
-    prng.state = function() { return copy(xg, {}); }
-  }
-  return prng;
-}
-
-if (module && module.exports) {
-  module.exports = impl;
-} else if (define && define.amd) {
-  define(function() { return impl; });
-} else {
-  this.xor128 = impl;
-}
-
-})(
-  this,
-  (typeof module) == 'object' && module,    // present in node.js
-  (typeof define) == 'function' && define   // present with an AMD loader
-);
-
-
-
-},{}],282:[function(require,module,exports){
-// A Javascript implementaion of Richard Brent's Xorgens xor4096 algorithm.
-//
-// This fast non-cryptographic random number generator is designed for
-// use in Monte-Carlo algorithms. It combines a long-period xorshift
-// generator with a Weyl generator, and it passes all common batteries
-// of stasticial tests for randomness while consuming only a few nanoseconds
-// for each prng generated.  For background on the generator, see Brent's
-// paper: "Some long-period random number generators using shifts and xors."
-// http://arxiv.org/pdf/1004.3115v1.pdf
-//
-// Usage:
-//
-// var xor4096 = require('xor4096');
-// random = xor4096(1);                        // Seed with int32 or string.
-// assert.equal(random(), 0.1520436450538547); // (0, 1) range, 53 bits.
-// assert.equal(random.int32(), 1806534897);   // signed int32, 32 bits.
-//
-// For nonzero numeric keys, this impelementation provides a sequence
-// identical to that by Brent's xorgens 3 implementaion in C.  This
-// implementation also provides for initalizing the generator with
-// string seeds, or for saving and restoring the state of the generator.
-//
-// On Chrome, this prng benchmarks about 2.1 times slower than
-// Javascript's built-in Math.random().
-
-(function(global, module, define) {
-
-function XorGen(seed) {
-  var me = this;
-
-  // Set up generator function.
-  me.next = function() {
-    var w = me.w,
-        X = me.X, i = me.i, t, v;
-    // Update Weyl generator.
-    me.w = w = (w + 0x61c88647) | 0;
-    // Update xor generator.
-    v = X[(i + 34) & 127];
-    t = X[i = ((i + 1) & 127)];
-    v ^= v << 13;
-    t ^= t << 17;
-    v ^= v >>> 15;
-    t ^= t >>> 12;
-    // Update Xor generator array state.
-    v = X[i] = v ^ t;
-    me.i = i;
-    // Result is the combination.
-    return (v + (w ^ (w >>> 16))) | 0;
-  };
-
-  function init(me, seed) {
-    var t, v, i, j, w, X = [], limit = 128;
-    if (seed === (seed | 0)) {
-      // Numeric seeds initialize v, which is used to generates X.
-      v = seed;
-      seed = null;
-    } else {
-      // String seeds are mixed into v and X one character at a time.
-      seed = seed + '\0';
-      v = 0;
-      limit = Math.max(limit, seed.length);
-    }
-    // Initialize circular array and weyl value.
-    for (i = 0, j = -32; j < limit; ++j) {
-      // Put the unicode characters into the array, and shuffle them.
-      if (seed) v ^= seed.charCodeAt((j + 32) % seed.length);
-      // After 32 shuffles, take v as the starting w value.
-      if (j === 0) w = v;
-      v ^= v << 10;
-      v ^= v >>> 15;
-      v ^= v << 4;
-      v ^= v >>> 13;
-      if (j >= 0) {
-        w = (w + 0x61c88647) | 0;     // Weyl.
-        t = (X[j & 127] ^= (v + w));  // Combine xor and weyl to init array.
-        i = (0 == t) ? i + 1 : 0;     // Count zeroes.
-      }
-    }
-    // We have detected all zeroes; make the key nonzero.
-    if (i >= 128) {
-      X[(seed && seed.length || 0) & 127] = -1;
-    }
-    // Run the generator 512 times to further mix the state before using it.
-    // Factoring this as a function slows the main generator, so it is just
-    // unrolled here.  The weyl generator is not advanced while warming up.
-    i = 127;
-    for (j = 4 * 128; j > 0; --j) {
-      v = X[(i + 34) & 127];
-      t = X[i = ((i + 1) & 127)];
-      v ^= v << 13;
-      t ^= t << 17;
-      v ^= v >>> 15;
-      t ^= t >>> 12;
-      X[i] = v ^ t;
-    }
-    // Storing state as object members is faster than using closure variables.
-    me.w = w;
-    me.X = X;
-    me.i = i;
-  }
-
-  init(me, seed);
-}
-
-function copy(f, t) {
-  t.i = f.i;
-  t.w = f.w;
-  t.X = f.X.slice();
-  return t;
-};
-
-function impl(seed, opts) {
-  if (seed == null) seed = +(new Date);
-  var xg = new XorGen(seed),
-      state = opts && opts.state,
-      prng = function() { return (xg.next() >>> 0) / 0x100000000; };
-  prng.double = function() {
-    do {
-      var top = xg.next() >>> 11,
-          bot = (xg.next() >>> 0) / 0x100000000,
-          result = (top + bot) / (1 << 21);
-    } while (result === 0);
-    return result;
-  };
-  prng.int32 = xg.next;
-  prng.quick = prng;
-  if (state) {
-    if (state.X) copy(state, xg);
-    prng.state = function() { return copy(xg, {}); }
-  }
-  return prng;
-}
-
-if (module && module.exports) {
-  module.exports = impl;
-} else if (define && define.amd) {
-  define(function() { return impl; });
-} else {
-  this.xor4096 = impl;
-}
-
-})(
-  this,                                     // window object or global
-  (typeof module) == 'object' && module,    // present in node.js
-  (typeof define) == 'function' && define   // present with an AMD loader
-);
-
-},{}],283:[function(require,module,exports){
-// A Javascript implementaion of the "xorshift7" algorithm by
-// François Panneton and Pierre L'ecuyer:
-// "On the Xorgshift Random Number Generators"
-// http://saluc.engr.uconn.edu/refs/crypto/rng/panneton05onthexorshift.pdf
-
-(function(global, module, define) {
-
-function XorGen(seed) {
-  var me = this;
-
-  // Set up generator function.
-  me.next = function() {
-    // Update xor generator.
-    var X = me.x, i = me.i, t, v, w;
-    t = X[i]; t ^= (t >>> 7); v = t ^ (t << 24);
-    t = X[(i + 1) & 7]; v ^= t ^ (t >>> 10);
-    t = X[(i + 3) & 7]; v ^= t ^ (t >>> 3);
-    t = X[(i + 4) & 7]; v ^= t ^ (t << 7);
-    t = X[(i + 7) & 7]; t = t ^ (t << 13); v ^= t ^ (t << 9);
-    X[i] = v;
-    me.i = (i + 1) & 7;
-    return v;
-  };
-
-  function init(me, seed) {
-    var j, w, X = [];
-
-    if (seed === (seed | 0)) {
-      // Seed state array using a 32-bit integer.
-      w = X[0] = seed;
-    } else {
-      // Seed state using a string.
-      seed = '' + seed;
-      for (j = 0; j < seed.length; ++j) {
-        X[j & 7] = (X[j & 7] << 15) ^
-            (seed.charCodeAt(j) + X[(j + 1) & 7] << 13);
-      }
-    }
-    // Enforce an array length of 8, not all zeroes.
-    while (X.length < 8) X.push(0);
-    for (j = 0; j < 8 && X[j] === 0; ++j);
-    if (j == 8) w = X[7] = -1; else w = X[j];
-
-    me.x = X;
-    me.i = 0;
-
-    // Discard an initial 256 values.
-    for (j = 256; j > 0; --j) {
-      me.next();
-    }
-  }
-
-  init(me, seed);
-}
-
-function copy(f, t) {
-  t.x = f.x.slice();
-  t.i = f.i;
-  return t;
-}
-
-function impl(seed, opts) {
-  if (seed == null) seed = +(new Date);
-  var xg = new XorGen(seed),
-      state = opts && opts.state,
-      prng = function() { return (xg.next() >>> 0) / 0x100000000; };
-  prng.double = function() {
-    do {
-      var top = xg.next() >>> 11,
-          bot = (xg.next() >>> 0) / 0x100000000,
-          result = (top + bot) / (1 << 21);
-    } while (result === 0);
-    return result;
-  };
-  prng.int32 = xg.next;
-  prng.quick = prng;
-  if (state) {
-    if (state.x) copy(state, xg);
-    prng.state = function() { return copy(xg, {}); }
-  }
-  return prng;
-}
-
-if (module && module.exports) {
-  module.exports = impl;
-} else if (define && define.amd) {
-  define(function() { return impl; });
-} else {
-  this.xorshift7 = impl;
-}
-
-})(
-  this,
-  (typeof module) == 'object' && module,    // present in node.js
-  (typeof define) == 'function' && define   // present with an AMD loader
-);
-
-
-},{}],284:[function(require,module,exports){
-// A Javascript implementaion of the "xorwow" prng algorithm by
-// George Marsaglia.  See http://www.jstatsoft.org/v08/i14/paper
-
-(function(global, module, define) {
-
-function XorGen(seed) {
-  var me = this, strseed = '';
-
-  // Set up generator function.
-  me.next = function() {
-    var t = (me.x ^ (me.x >>> 2));
-    me.x = me.y; me.y = me.z; me.z = me.w; me.w = me.v;
-    return (me.d = (me.d + 362437 | 0)) +
-       (me.v = (me.v ^ (me.v << 4)) ^ (t ^ (t << 1))) | 0;
-  };
-
-  me.x = 0;
-  me.y = 0;
-  me.z = 0;
-  me.w = 0;
-  me.v = 0;
-
-  if (seed === (seed | 0)) {
-    // Integer seed.
-    me.x = seed;
-  } else {
-    // String seed.
-    strseed += seed;
-  }
-
-  // Mix in string seed, then discard an initial batch of 64 values.
-  for (var k = 0; k < strseed.length + 64; k++) {
-    me.x ^= strseed.charCodeAt(k) | 0;
-    if (k == strseed.length) {
-      me.d = me.x << 10 ^ me.x >>> 4;
-    }
-    me.next();
-  }
-}
-
-function copy(f, t) {
-  t.x = f.x;
-  t.y = f.y;
-  t.z = f.z;
-  t.w = f.w;
-  t.v = f.v;
-  t.d = f.d;
-  return t;
-}
-
-function impl(seed, opts) {
-  var xg = new XorGen(seed),
-      state = opts && opts.state,
-      prng = function() { return (xg.next() >>> 0) / 0x100000000; };
-  prng.double = function() {
-    do {
-      var top = xg.next() >>> 11,
-          bot = (xg.next() >>> 0) / 0x100000000,
-          result = (top + bot) / (1 << 21);
-    } while (result === 0);
-    return result;
-  };
-  prng.int32 = xg.next;
-  prng.quick = prng;
-  if (state) {
-    if (typeof(state) == 'object') copy(state, xg);
-    prng.state = function() { return copy(xg, {}); }
-  }
-  return prng;
-}
-
-if (module && module.exports) {
-  module.exports = impl;
-} else if (define && define.amd) {
-  define(function() { return impl; });
-} else {
-  this.xorwow = impl;
-}
-
-})(
-  this,
-  (typeof module) == 'object' && module,    // present in node.js
-  (typeof define) == 'function' && define   // present with an AMD loader
-);
-
-
-
-},{}],285:[function(require,module,exports){
+},{"./util/minimal":305,"./writer":306}],308:[function(require,module,exports){
+arguments[4][229][0].apply(exports,arguments)
+},{"./lib/alea":309,"./lib/tychei":310,"./lib/xor128":311,"./lib/xor4096":312,"./lib/xorshift7":313,"./lib/xorwow":314,"./seedrandom":315,"dup":229}],309:[function(require,module,exports){
+arguments[4][230][0].apply(exports,arguments)
+},{"dup":230}],310:[function(require,module,exports){
+arguments[4][231][0].apply(exports,arguments)
+},{"dup":231}],311:[function(require,module,exports){
+arguments[4][232][0].apply(exports,arguments)
+},{"dup":232}],312:[function(require,module,exports){
+arguments[4][233][0].apply(exports,arguments)
+},{"dup":233}],313:[function(require,module,exports){
+arguments[4][234][0].apply(exports,arguments)
+},{"dup":234}],314:[function(require,module,exports){
+arguments[4][235][0].apply(exports,arguments)
+},{"dup":235}],315:[function(require,module,exports){
 /*
 Copyright 2014 David Bau.
 
@@ -44283,7 +48446,7 @@ if ((typeof module) == 'object' && module.exports) {
   Math    // math: package containing random, pow, and seedrandom
 );
 
-},{"crypto":263}],286:[function(require,module,exports){
+},{"crypto":292}],316:[function(require,module,exports){
 (function (setImmediate,clearImmediate){
 var nextTick = require('process/browser.js').nextTick;
 var apply = Function.prototype.apply;
@@ -44362,13 +48525,261 @@ exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate :
   delete immediateIds[id];
 };
 }).call(this,require("timers").setImmediate,require("timers").clearImmediate)
-},{"process/browser.js":266,"timers":286}],287:[function(require,module,exports){
+},{"process/browser.js":296,"timers":316}],317:[function(require,module,exports){
+(function (global){
+/*! https://mths.be/utf8js v2.1.2 by @mathias */
+;(function(root) {
+
+	// Detect free variables `exports`
+	var freeExports = typeof exports == 'object' && exports;
+
+	// Detect free variable `module`
+	var freeModule = typeof module == 'object' && module &&
+		module.exports == freeExports && module;
+
+	// Detect free variable `global`, from Node.js or Browserified code,
+	// and use it as `root`
+	var freeGlobal = typeof global == 'object' && global;
+	if (freeGlobal.global === freeGlobal || freeGlobal.window === freeGlobal) {
+		root = freeGlobal;
+	}
+
+	/*--------------------------------------------------------------------------*/
+
+	var stringFromCharCode = String.fromCharCode;
+
+	// Taken from https://mths.be/punycode
+	function ucs2decode(string) {
+		var output = [];
+		var counter = 0;
+		var length = string.length;
+		var value;
+		var extra;
+		while (counter < length) {
+			value = string.charCodeAt(counter++);
+			if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
+				// high surrogate, and there is a next character
+				extra = string.charCodeAt(counter++);
+				if ((extra & 0xFC00) == 0xDC00) { // low surrogate
+					output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
+				} else {
+					// unmatched surrogate; only append this code unit, in case the next
+					// code unit is the high surrogate of a surrogate pair
+					output.push(value);
+					counter--;
+				}
+			} else {
+				output.push(value);
+			}
+		}
+		return output;
+	}
+
+	// Taken from https://mths.be/punycode
+	function ucs2encode(array) {
+		var length = array.length;
+		var index = -1;
+		var value;
+		var output = '';
+		while (++index < length) {
+			value = array[index];
+			if (value > 0xFFFF) {
+				value -= 0x10000;
+				output += stringFromCharCode(value >>> 10 & 0x3FF | 0xD800);
+				value = 0xDC00 | value & 0x3FF;
+			}
+			output += stringFromCharCode(value);
+		}
+		return output;
+	}
+
+	function checkScalarValue(codePoint) {
+		if (codePoint >= 0xD800 && codePoint <= 0xDFFF) {
+			throw Error(
+				'Lone surrogate U+' + codePoint.toString(16).toUpperCase() +
+				' is not a scalar value'
+			);
+		}
+	}
+	/*--------------------------------------------------------------------------*/
+
+	function createByte(codePoint, shift) {
+		return stringFromCharCode(((codePoint >> shift) & 0x3F) | 0x80);
+	}
+
+	function encodeCodePoint(codePoint) {
+		if ((codePoint & 0xFFFFFF80) == 0) { // 1-byte sequence
+			return stringFromCharCode(codePoint);
+		}
+		var symbol = '';
+		if ((codePoint & 0xFFFFF800) == 0) { // 2-byte sequence
+			symbol = stringFromCharCode(((codePoint >> 6) & 0x1F) | 0xC0);
+		}
+		else if ((codePoint & 0xFFFF0000) == 0) { // 3-byte sequence
+			checkScalarValue(codePoint);
+			symbol = stringFromCharCode(((codePoint >> 12) & 0x0F) | 0xE0);
+			symbol += createByte(codePoint, 6);
+		}
+		else if ((codePoint & 0xFFE00000) == 0) { // 4-byte sequence
+			symbol = stringFromCharCode(((codePoint >> 18) & 0x07) | 0xF0);
+			symbol += createByte(codePoint, 12);
+			symbol += createByte(codePoint, 6);
+		}
+		symbol += stringFromCharCode((codePoint & 0x3F) | 0x80);
+		return symbol;
+	}
+
+	function utf8encode(string) {
+		var codePoints = ucs2decode(string);
+		var length = codePoints.length;
+		var index = -1;
+		var codePoint;
+		var byteString = '';
+		while (++index < length) {
+			codePoint = codePoints[index];
+			byteString += encodeCodePoint(codePoint);
+		}
+		return byteString;
+	}
+
+	/*--------------------------------------------------------------------------*/
+
+	function readContinuationByte() {
+		if (byteIndex >= byteCount) {
+			throw Error('Invalid byte index');
+		}
+
+		var continuationByte = byteArray[byteIndex] & 0xFF;
+		byteIndex++;
+
+		if ((continuationByte & 0xC0) == 0x80) {
+			return continuationByte & 0x3F;
+		}
+
+		// If we end up here, it’s not a continuation byte
+		throw Error('Invalid continuation byte');
+	}
+
+	function decodeSymbol() {
+		var byte1;
+		var byte2;
+		var byte3;
+		var byte4;
+		var codePoint;
+
+		if (byteIndex > byteCount) {
+			throw Error('Invalid byte index');
+		}
+
+		if (byteIndex == byteCount) {
+			return false;
+		}
+
+		// Read first byte
+		byte1 = byteArray[byteIndex] & 0xFF;
+		byteIndex++;
+
+		// 1-byte sequence (no continuation bytes)
+		if ((byte1 & 0x80) == 0) {
+			return byte1;
+		}
+
+		// 2-byte sequence
+		if ((byte1 & 0xE0) == 0xC0) {
+			byte2 = readContinuationByte();
+			codePoint = ((byte1 & 0x1F) << 6) | byte2;
+			if (codePoint >= 0x80) {
+				return codePoint;
+			} else {
+				throw Error('Invalid continuation byte');
+			}
+		}
+
+		// 3-byte sequence (may include unpaired surrogates)
+		if ((byte1 & 0xF0) == 0xE0) {
+			byte2 = readContinuationByte();
+			byte3 = readContinuationByte();
+			codePoint = ((byte1 & 0x0F) << 12) | (byte2 << 6) | byte3;
+			if (codePoint >= 0x0800) {
+				checkScalarValue(codePoint);
+				return codePoint;
+			} else {
+				throw Error('Invalid continuation byte');
+			}
+		}
+
+		// 4-byte sequence
+		if ((byte1 & 0xF8) == 0xF0) {
+			byte2 = readContinuationByte();
+			byte3 = readContinuationByte();
+			byte4 = readContinuationByte();
+			codePoint = ((byte1 & 0x07) << 0x12) | (byte2 << 0x0C) |
+				(byte3 << 0x06) | byte4;
+			if (codePoint >= 0x010000 && codePoint <= 0x10FFFF) {
+				return codePoint;
+			}
+		}
+
+		throw Error('Invalid UTF-8 detected');
+	}
+
+	var byteArray;
+	var byteCount;
+	var byteIndex;
+	function utf8decode(byteString) {
+		byteArray = ucs2decode(byteString);
+		byteCount = byteArray.length;
+		byteIndex = 0;
+		var codePoints = [];
+		var tmp;
+		while ((tmp = decodeSymbol()) !== false) {
+			codePoints.push(tmp);
+		}
+		return ucs2encode(codePoints);
+	}
+
+	/*--------------------------------------------------------------------------*/
+
+	var utf8 = {
+		'version': '2.1.2',
+		'encode': utf8encode,
+		'decode': utf8decode
+	};
+
+	// Some AMD build optimizers, like r.js, check for specific condition patterns
+	// like the following:
+	if (
+		typeof define == 'function' &&
+		typeof define.amd == 'object' &&
+		define.amd
+	) {
+		define(function() {
+			return utf8;
+		});
+	}	else if (freeExports && !freeExports.nodeType) {
+		if (freeModule) { // in Node.js or RingoJS v0.8.0+
+			freeModule.exports = utf8;
+		} else { // in Narwhal or RingoJS v0.7.0-
+			var object = {};
+			var hasOwnProperty = object.hasOwnProperty;
+			for (var key in utf8) {
+				hasOwnProperty.call(utf8, key) && (freeExports[key] = utf8[key]);
+			}
+		}
+	} else { // in Rhino or a web browser
+		root.utf8 = utf8;
+	}
+
+}(this));
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],318:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var model_1 = require("./model");
 exports.ArbitraryStyleTransferNetwork = model_1.ArbitraryStyleTransferNetwork;
 
-},{"./model":288}],288:[function(require,module,exports){
+},{"./model":319}],319:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -44486,7 +48897,7 @@ var ArbitraryStyleTransferNetwork = (function () {
 }());
 exports.ArbitraryStyleTransferNetwork = ArbitraryStyleTransferNetwork;
 
-},{"@tensorflow/tfjs":260}],289:[function(require,module,exports){
+},{"@tensorflow/tfjs":289}],320:[function(require,module,exports){
 "use strict";
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
@@ -44496,4 +48907,4 @@ var tf = require("@tensorflow/tfjs");
 exports.tf = tf;
 __export(require("./arbitrary_stylization"));
 
-},{"./arbitrary_stylization":287,"@tensorflow/tfjs":260}]},{},[1]);
+},{"./arbitrary_stylization":318,"@tensorflow/tfjs":289}]},{},[1]);
