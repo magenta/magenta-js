@@ -88,25 +88,19 @@
     <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdn.jsdelivr.net/npm/@magenta/image@^0.1.2"</span>&gt;</span><span class="undefined"></span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
   <span class="hljs-tag">&lt;/<span class="hljs-name">head</span>&gt;</span>
   <span class="hljs-tag">&lt;<span class="hljs-name">body</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">img</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"content"</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"content.jpg"</span>/&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">img</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"style"</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"style.jpg"</span>/&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">canvas</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"stylized"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">canvas</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">img</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"content"</span> <span class="hljs-attr">height</span>=<span class="hljs-string">"256"</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"content.jpg"</span>/&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">img</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"style"</span> <span class="hljs-attr">height</span>=<span class="hljs-string">"256"</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"style.jpg"</span>/&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">canvas</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"stylized"</span> <span class="hljs-attr">height</span>=<span class="hljs-string">"256"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">canvas</span>&gt;</span>
       <span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="javascript">
         <span class="hljs-keyword">const</span> model = <span class="hljs-keyword">new</span> mi.ArbitraryStyleTransferNetwork();
         <span class="hljs-keyword">const</span> contentImg = <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'content'</span>);
         <span class="hljs-keyword">const</span> styleImg = <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'style'</span>);
         <span class="hljs-keyword">const</span> stylizedCanvas = <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'stylized'</span>);
 
-        <span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">stylize</span>(<span class="hljs-params"></span>) </span>{
-          <span class="hljs-keyword">const</span> bottleneck = <span class="hljs-keyword">await</span> mi.tf.tidy(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
-            <span class="hljs-keyword">return</span> model.predictStyleParameters(styleImg);
+        <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">stylize</span>(<span class="hljs-params"></span>) </span>{
+          model.stylize(contentImg, styleImg).then(<span class="hljs-function">(<span class="hljs-params">imageData</span>) =&gt;</span> {
+            stylizedCanvas.getContext(<span class="hljs-string">'2d'</span>).putImageData(imageData, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
           });
-          <span class="hljs-keyword">const</span> stylized = <span class="hljs-keyword">await</span> mi.tf.tidy(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
-            <span class="hljs-keyword">return</span> model.stylize(contentImg, bottleneck);
-          });
-          <span class="hljs-keyword">await</span> mi.tf.toPixels(stylized, stylizedCanvas);
-          bottleneck.dispose();
-          stylized.dispose();
         }
 
         model.initialize().then(stylize);
@@ -125,16 +119,10 @@
 <span class="hljs-keyword">const</span> styleImg = <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'style'</span>) <span class="hljs-keyword">as</span> HTMLImageElement;
 <span class="hljs-keyword">const</span> stylizedCanvas = <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'stylized'</span>) <span class="hljs-keyword">as</span> HTMLCanvasElement;
 
-<span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">stylize</span>(<span class="hljs-params"></span>) </span>{
-  <span class="hljs-keyword">const</span> bottleneck = <span class="hljs-keyword">await</span> mi.tf.tidy(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
-    <span class="hljs-keyword">return</span> model.predictStyleParameters(styleImg);
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">stylize</span>(<span class="hljs-params"></span>) </span>{
+  model.stylize(contentImg, styleImg).then(<span class="hljs-function">(<span class="hljs-params">imageData</span>) =&gt;</span> {
+    stylizedCanvas.getContext(<span class="hljs-string">'2d'</span>).putImageData(imageData, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
   });
-  <span class="hljs-keyword">const</span> stylized = <span class="hljs-keyword">await</span> mi.tf.tidy(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
-    <span class="hljs-keyword">return</span> model.stylize(contentImg, bottleneck);
-  });
-  <span class="hljs-keyword">await</span> mi.tf.toPixels(stylized, stylizedCanvas);
-  bottleneck.dispose();
-  stylized.dispose();
 }
 
 model.initialize().then(stylize);</code></pre>
