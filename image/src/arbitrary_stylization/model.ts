@@ -149,14 +149,16 @@ export class ArbitraryStyleTransferNetwork {
     strength?: number): Promise<ImageData> {
     return new Promise((resolve, reject) => {
       let styleRepresentation = this.predictStyleParameters(style);
-      if (strength != undefined) {
+      if (strength !== undefined) {
         styleRepresentation = styleRepresentation.mul(tf.scalar(strength)).add(
           this.predictStyleParameters(content).mul(tf.scalar(1.0 - strength))
         );
       }
       const stylized = this.produceStylized(content, styleRepresentation);
       return tf.toPixels(stylized).then((bytes) => {
-        const imageData = new ImageData(bytes, stylized.shape[1], stylized.shape[0]);
+        const imageData = new ImageData(
+          bytes, stylized.shape[1], stylized.shape[0]
+        );
         styleRepresentation.dispose();
         stylized.dispose();
         resolve(imageData);
