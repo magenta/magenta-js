@@ -44452,20 +44452,14 @@ var ArbitraryStyleTransferNetwork = (function () {
     ArbitraryStyleTransferNetwork.prototype.predictStyleParameters = function (style) {
         var _this = this;
         return tf.tidy(function () {
-            return _this.styleNet.predict(tf.fromPixels(style)
-                .toFloat()
-                .div(tf.scalar(255))
-                .expandDims());
+            return _this.styleNet.predict(tf.fromPixels(style).toFloat().div(tf.scalar(255)).expandDims());
         });
     };
     ArbitraryStyleTransferNetwork.prototype.produceStylized = function (content, bottleneck) {
         var _this = this;
         return tf.tidy(function () {
             var image = _this.transformNet.predict([
-                tf.fromPixels(content)
-                    .toFloat()
-                    .div(tf.scalar(255))
-                    .expandDims(),
+                tf.fromPixels(content).toFloat().div(tf.scalar(255)).expandDims(),
                 bottleneck
             ]);
             return image.squeeze();
@@ -44476,7 +44470,8 @@ var ArbitraryStyleTransferNetwork = (function () {
         return new Promise(function (resolve, reject) {
             var styleRepresentation = _this.predictStyleParameters(style);
             if (strength !== undefined) {
-                styleRepresentation = styleRepresentation.mul(tf.scalar(strength)).add(_this.predictStyleParameters(content).mul(tf.scalar(1.0 - strength)));
+                styleRepresentation = styleRepresentation.mul(tf.scalar(strength))
+                    .add(_this.predictStyleParameters(content).mul(tf.scalar(1.0 - strength)));
             }
             var stylized = _this.produceStylized(content, styleRepresentation);
             return tf.toPixels(stylized).then(function (bytes) {
