@@ -21,12 +21,12 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
-// tslint:disable-next-line:max-line-length
+// tslint:disable:max-line-length
 const DEFAULT_STYLE_CHECKPOINT =
     'https://storage.googleapis.com/magentadata/js/checkpoints/style/arbitrary/predictor';
-// tslint:disable-next-line:max-line-length
 const DEFAULT_TRANSFORM_CHECKPOINT =
     'https://storage.googleapis.com/magentadata/js/checkpoints/style/arbitrary/transformer';
+// tslint:enable:max-line-length
 
 /**
  * Main ArbitraryStyleTransferNetwork class
