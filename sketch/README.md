@@ -1,5 +1,7 @@
 # @magenta/sketch
 
+[![npm version](https://badge.fury.io/js/%40magenta%2Fsketch.svg)](https://badge.fury.io/js/%40magenta%2Fsketch)
+
 Link to Documentation: [tensorflow.github.io/magenta-js/sketch](https://tensorflow.github.io/magenta-js/sketch/)
 
 This JavaScript implementation of Magenta's sketch-rnn model uses [TensorFlow.js](https://js.tensorflow.org) for GPU-accelerated inference. `sketch-rnn` is a recurrent neural network model described in [Teaching Machines to Draw](https://research.googleblog.com/2017/04/teaching-machines-to-draw.html) and [A Neural Representation of Sketch Drawings](https://arxiv.org/abs/1704.03477).
