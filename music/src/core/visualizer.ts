@@ -152,7 +152,7 @@ export class Visualizer {
       this.ctx.fillStyle =
           `rgba(${isActive ? this.config.activeNoteRGB : this.config.noteRGB},
           ${opacity})`;
-      // Round all values to the nearest integer to avoid partially colored pixels.
+      // Round values to the nearest integer to avoid partially filled pixels.
       this.ctx.fillRect(Math.round(x), Math.round(y), Math.round(w),
         Math.round(this.config.noteHeight));
       if (isActive) {
