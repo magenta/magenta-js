@@ -127,6 +127,7 @@ export class Visualizer {
     // active notes instead.
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     let activeNotePosition;
+    const noteRenderHeight = Math.round(this.config.noteHeight);
 
     for (let i = 0; i < this.noteSequence.notes.length; i++) {
       const note = this.noteSequence.notes[i];
@@ -154,7 +155,7 @@ export class Visualizer {
           ${opacity})`;
       // Round values to the nearest integer to avoid partially filled pixels.
       this.ctx.fillRect(Math.round(x), Math.round(y), Math.round(w),
-        Math.round(this.config.noteHeight));
+          noteRenderHeight);
       if (isActive) {
         activeNotePosition = x;
       }
