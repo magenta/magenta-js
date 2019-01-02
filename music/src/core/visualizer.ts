@@ -66,7 +66,7 @@ export class Visualizer {
    */
   constructor(
       sequence: INoteSequence, canvas: HTMLCanvasElement,
-      config = {} as VisualizerConfig) {
+      config: VisualizerConfig = {}) {
     this.config = {
       noteHeight: config.noteHeight || 6,
       noteSpacing: config.noteSpacing || 1,
@@ -127,6 +127,7 @@ export class Visualizer {
     // active notes instead.
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     let activeNotePosition;
+    const noteRenderHeight = Math.round(this.config.noteHeight);
 
     for (let i = 0; i < this.noteSequence.notes.length; i++) {
       const note = this.noteSequence.notes[i];
@@ -152,7 +153,9 @@ export class Visualizer {
       this.ctx.fillStyle =
           `rgba(${isActive ? this.config.activeNoteRGB : this.config.noteRGB},
           ${opacity})`;
-      this.ctx.fillRect(x, y, w, this.config.noteHeight);
+      // Round values to the nearest integer to avoid partially filled pixels.
+      this.ctx.fillRect(Math.round(x), Math.round(y), Math.round(w),
+          noteRenderHeight);
       if (isActive) {
         activeNotePosition = x;
       }
