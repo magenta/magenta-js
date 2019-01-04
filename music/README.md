@@ -126,7 +126,9 @@ See our [demos](./demos) for example usage.
 
 `yarn bundle` to produce a bundled version in `dist/`.
 
-`yarn run-demos` to build and run the demo.
+`yarn run-demos` to build and serve the demos, with live reload.
+
+*(Note: the default behavior is to build/watch all demos - specific demos can be built by passing a comma-separated list of specific demo names as follows: `yarn run-demos --demos=transcription,visualizer`)*
 
 ## Model Checkpoints
 
