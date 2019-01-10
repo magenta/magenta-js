@@ -121,7 +121,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/visualizer.ts#L57">core/visualizer.ts:57</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/visualizer.ts#L58">core/visualizer.ts:58</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -141,7 +141,7 @@
 									<h5>canvas: <span class="tsd-signature-type">HTMLCanvasElement</span></h5>
 								</li>
 								<li>
-									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> config: <a href="../interfaces/_core_visualizer_.visualizerconfig.html" class="tsd-signature-type">VisualizerConfig</a><span class="tsd-signature-symbol"> =&nbsp;{} as VisualizerConfig</span></h5>
+									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> config: <a href="../interfaces/_core_visualizer_.visualizerconfig.html" class="tsd-signature-type">VisualizerConfig</a><span class="tsd-signature-symbol"> =&nbsp;{}</span></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="_core_visualizer_.visualizer.html" class="tsd-signature-type">Visualizer</a></h4>
@@ -168,13 +168,13 @@
 					<a name="redraw" class="tsd-anchor"></a>
 					<h3>redraw</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">redraw<span class="tsd-signature-symbol">(</span>activeNote<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">INote</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+						<li class="tsd-signature tsd-kind-icon">redraw<span class="tsd-signature-symbol">(</span>activeNote<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">INote</span>, scrollIntoView<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/visualizer.ts#L118">core/visualizer.ts:118</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/visualizer.ts#L123">core/visualizer.ts:123</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -190,6 +190,14 @@
 									<div class="tsd-comment tsd-typography">
 										<p>(Optional) If specified, this <code>Note</code> will be painted
 										in the active color.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> scrollIntoView: <span class="tsd-signature-type">boolean</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>(Optional) If specified and the note being painted is
+											offscreen, the parent container will be scrolled so that the note is
+										in view.</p>
 									</div>
 								</li>
 							</ul>
@@ -243,6 +251,9 @@
 					</li>
 					<li class="current tsd-kind-external-module">
 						<a href="../modules/_core_visualizer_.html">"core/visualizer"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_lib_.html">"lib"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_music_rnn_attention_.html">"music_<wbr>rnn/attention"</a>

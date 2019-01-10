@@ -99,8 +99,11 @@
 						<section class="tsd-index-section ">
 							<h3>Functions</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_midi_io_.html#blobtonotesequence" class="tsd-kind-icon">blob<wbr>ToNote<wbr>Sequence</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_midi_io_.html#miditosequenceproto" class="tsd-kind-icon">midi<wbr>ToSequence<wbr>Proto</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_midi_io_.html#sequenceprototomidi" class="tsd-kind-icon">sequence<wbr>Proto<wbr>ToMidi</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_midi_io_.html#urltoblob" class="tsd-kind-icon">url<wbr>ToBlob</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_midi_io_.html#urltonotesequence" class="tsd-kind-icon">url<wbr>ToNote<wbr>Sequence</a></li>
 							</ul>
 						</section>
 					</div>
@@ -108,6 +111,38 @@
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Functions</h2>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
+					<a name="blobtonotesequence" class="tsd-anchor"></a>
+					<h3>blob<wbr>ToNote<wbr>Sequence</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
+						<li class="tsd-signature tsd-kind-icon">blob<wbr>ToNote<wbr>Sequence<span class="tsd-signature-symbol">(</span>blob<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Blob</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">NoteSequence</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/midi_io.ts#L219">core/midi_io.ts:219</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Converts a Blob containing MIDI to a <code>NoteSequence</code>.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>blob: <span class="tsd-signature-type">Blob</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The Blob containing MIDI</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">NoteSequence</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>a new <code>NoteSequence</code></p>
+						</li>
+					</ul>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
 					<a name="miditosequenceproto" class="tsd-anchor"></a>
 					<h3>midi<wbr>ToSequence<wbr>Proto</h3>
@@ -164,6 +199,70 @@
 						</li>
 					</ul>
 				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
+					<a name="urltoblob" class="tsd-anchor"></a>
+					<h3>url<wbr>ToBlob</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
+						<li class="tsd-signature tsd-kind-icon">url<wbr>ToBlob<span class="tsd-signature-symbol">(</span>url<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Blob</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/midi_io.ts#L200">core/midi_io.ts:200</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Fetches a MIDI file from a url and returns a Blob with its contents.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>url: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The url for the MIDI file.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Blob</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>a Blob containing the MIDI.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
+					<a name="urltonotesequence" class="tsd-anchor"></a>
+					<h3>url<wbr>ToNote<wbr>Sequence</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
+						<li class="tsd-signature tsd-kind-icon">url<wbr>ToNote<wbr>Sequence<span class="tsd-signature-symbol">(</span>url<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">NoteSequence</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/midi_io.ts#L236">core/midi_io.ts:236</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Fetches a MIDI file from a url and converts it to a <code>NoteSequence</code>.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>url: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The URL for the MIDI file.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">NoteSequence</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>a new <code>NoteSequence</code></p>
+						</li>
+					</ul>
+				</section>
 			</section>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
@@ -209,6 +308,9 @@
 						<a href="_core_visualizer_.html">"core/visualizer"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="_lib_.html">"lib"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="_music_rnn_attention_.html">"music_<wbr>rnn/attention"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -240,10 +342,19 @@
 						<a href="../classes/_core_midi_io_.midiconversionerror.html" class="tsd-kind-icon">Midi<wbr>Conversion<wbr>Error</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="_core_midi_io_.html#blobtonotesequence" class="tsd-kind-icon">blob<wbr>ToNote<wbr>Sequence</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
 						<a href="_core_midi_io_.html#miditosequenceproto" class="tsd-kind-icon">midi<wbr>ToSequence<wbr>Proto</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
 						<a href="_core_midi_io_.html#sequenceprototomidi" class="tsd-kind-icon">sequence<wbr>Proto<wbr>ToMidi</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="_core_midi_io_.html#urltoblob" class="tsd-kind-icon">url<wbr>ToBlob</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="_core_midi_io_.html#urltonotesequence" class="tsd-kind-icon">url<wbr>ToNote<wbr>Sequence</a>
 					</li>
 				</ul>
 			</nav>
