@@ -19,7 +19,7 @@
 # To run, execute 'yarn doc'.
 
 # Generate the docs.
-npx typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/music/src/' --out ../docs/music src --mode modules --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals
+npx typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/music/src/' --out ../docs/music src --mode modules --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals
 
 # Fix any leaked local paths in the music docs
 # See https://github.com/TypeStrong/typedoc/issues/800.
