@@ -164,9 +164,6 @@ try {
   setupPlayerControlsDemo();
   setupAttackReleaseDemo();
   setupMIDIPlayerDemo();
-  console.log(setupPlayerControlsDemo, setupAttackReleaseDemo,
-    setupMIDIPlayerDemo,generatePlayers, generateTempoPlayer,
-    generateVelocityPlayers);
   Promise.all(
       [generatePlayers(), generateTempoPlayer(), generateVelocityPlayers()]);
 } catch (err) {
