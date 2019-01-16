@@ -309,6 +309,15 @@ test('Test GrooveConverter', (t: test.Test) => {
   t.end();
 });
 
+test('Test GrooveConverter TooLong', (t: test.Test) => {
+  const grooveConverter = new data.GrooveConverter({numSteps: 32});
+
+  const longNs = sequences.clone(GROOVE_NS);
+  longNs.notes[0].startTime = 8.1;
+  t.throws(() => grooveConverter.toTensor(longNs));
+  t.end();
+});
+
 test('Test GrooveConverter Split', (t: test.Test) => {
   const grooveConverter =
       new data.GrooveConverter({numSteps: 32, splitInstruments: true});

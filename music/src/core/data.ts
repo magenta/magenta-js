@@ -888,6 +888,10 @@ export class GrooveConverter extends DataConverter {
         return;
       }
       const s = n.quantizedStartStep;
+      if (s >= stepNotes.length) {
+        throw Error(`Model does not support sequences with more than ${
+            numSteps} steps (${numSteps * stepLength} seconds at qpm ${qpm}).`)
+      }
       const d =
           this.tapify ? this.TAPIFY_CHANNEL : this.pitchToClass.get(n.pitch);
       if (!stepNotes[s].has(d) || stepNotes[s].get(d).velocity < n.velocity) {
