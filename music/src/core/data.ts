@@ -223,8 +223,7 @@ export class DrumsConverter extends DataConverter {
   }
 
   async toNoteSequence(
-      oh: tf.Tensor2D,
-      stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER) {
+      oh: tf.Tensor2D, stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER) {
     const noteSequence = NoteSequence.create();
     noteSequence.quantizationInfo =
         NoteSequence.QuantizationInfo.create({stepsPerQuarter});
@@ -411,8 +410,7 @@ export class MelodyConverter extends DataConverter {
   }
 
   async toNoteSequence(
-      oh: tf.Tensor2D,
-      stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER) {
+      oh: tf.Tensor2D, stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER) {
     const noteSequence = NoteSequence.create();
     noteSequence.quantizationInfo =
         NoteSequence.QuantizationInfo.create({stepsPerQuarter});
@@ -506,8 +504,7 @@ export class TrioConverter extends DataConverter {
   }
 
   async toNoteSequence(
-      th: tf.Tensor2D,
-      stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER) {
+      th: tf.Tensor2D, stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER) {
     const ohs = tf.split(
         th,
         [
@@ -869,7 +866,6 @@ export class GrooveConverter extends DataConverter {
   }
 
   toTensor(ns: INoteSequence) {
-    // TODO(adarob): Check length.
     const qns = sequences.isRelativeQuantizedSequence(ns) ?
         ns :
         sequences.quantizeNoteSequence(ns, this.stepsPerQuarter);
@@ -887,12 +883,18 @@ export class GrooveConverter extends DataConverter {
       stepNotes.push(new Map<number, NoteSequence.INote>());
     }
     qns.notes.forEach(n => {
-      if (this.pitchToClass.has(n.pitch)) {
-        const s = n.quantizedStartStep;
-        const d = this.pitchToClass.get(n.pitch);
-        if (!stepNotes[s].has(d) || stepNotes[s].get(d).velocity < n.velocity) {
-          stepNotes[s].set(d, n);
-        }
+      if (!(this.tapify || this.pitchToClass.has(n.pitch))) {
+        return;
+      }
+      const s = n.quantizedStartStep;
+      if (s >= stepNotes.length) {
+        throw Error(`Model does not support sequences with more than ${
+            numSteps} steps (${numSteps * stepLength} seconds at qpm ${qpm}).`);
+      }
+      const d =
+          this.tapify ? this.TAPIFY_CHANNEL : this.pitchToClass.get(n.pitch);
+      if (!stepNotes[s].has(d) || stepNotes[s].get(d).velocity < n.velocity) {
+        stepNotes[s].set(d, n);
       }
     });
 
@@ -913,29 +915,20 @@ export class GrooveConverter extends DataConverter {
       const qOnset = n.quantizedStartStep * stepLength;
       return 2 * (qOnset - tOnset) / stepLength;
     }
+
     // Loop through each step.
     for (let s = 0; s < numSteps; ++s) {
-      if (this.tapify) {
-        // Loop through each drum instrument to find the max velocity hit.
-        let maxVelNote: NoteSequence.INote = null;
-        stepNotes[s].forEach(
-            n => maxVelNote = (maxVelNote && maxVelNote.velocity > n.velocity) ?
-                maxVelNote :
-                n);
-        if (maxVelNote) {
-          hitVectors.set(1, s, this.TAPIFY_CHANNEL);
-          offsetVectors.set(getOffset(maxVelNote), s, this.TAPIFY_CHANNEL);
+      // Loop through each drum instrument and set the hit, velocity, and
+      // offset.
+      for (let d = 0; d < numDrums; ++d) {
+        const note = stepNotes[s].get(d);
+        hitVectors.set(note ? 1 : 0, s, d);
+        if (!this.humanize && !this.tapify) {
+          velocityVectors.set(
+              note ? note.velocity / constants.MAX_MIDI_VELOCITY : 0, s, d);
         }
-      } else {
-        // Loop through each drum instrument and set the hit, velocity, and
-        // offset.
-        for (let d = 0; d < numDrums; ++d) {
-          const note = stepNotes[s].get(d);
-          hitVectors.set(note ? 1 : 0, s, d);
-          if (!this.humanize) {
-            velocityVectors.set(note ? note.velocity / 127 : 0, s, d);
-            offsetVectors.set(note ? getOffset(note) : 0, s, d);
-          }
+        if (!this.humanize) {
+          offsetVectors.set(note ? getOffset(note) : 0, s, d);
         }
       }
     }
@@ -995,7 +988,9 @@ export class GrooveConverter extends DataConverter {
         // If hit output is above threshold, add note.
         if (hitOutput > 0.5) {
           // Convert output to velocity, clipping to be in the valid range.
-          const velocity = clip(Math.round(velOutput * 127), 0, 127);
+          const velocity = clip(
+              Math.round(velOutput * constants.MAX_MIDI_VELOCITY),
+              constants.MIN_MIDI_VELOCITY, constants.MAX_MIDI_VELOCITY);
           // Convert output to time offset, clipping to be in the valid range.
           const offset = clip(offsetOutput / 2, -0.5, 0.5);
           ns.notes.push(NoteSequence.Note.create({

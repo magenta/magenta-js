@@ -309,6 +309,15 @@ test('Test GrooveConverter', (t: test.Test) => {
   t.end();
 });
 
+test('Test GrooveConverter TooLong', (t: test.Test) => {
+  const grooveConverter = new data.GrooveConverter({numSteps: 32});
+
+  const longNs = sequences.clone(GROOVE_NS);
+  longNs.notes[0].startTime = 8.1;
+  t.throws(() => grooveConverter.toTensor(longNs));
+  t.end();
+});
+
 test('Test GrooveConverter Split', (t: test.Test) => {
   const grooveConverter =
       new data.GrooveConverter({numSteps: 32, splitInstruments: true});
@@ -355,7 +364,15 @@ test('Test GrooveConverterTapify', (t: test.Test) => {
     tapify: true,
   });
 
-  const grooveTensor = grooveConverter.toTensor(GROOVE_NS);
+  const inputNs = sequences.clone(GROOVE_NS);
+
+  // Set arbitrary pitches and drum states. They should be ignored.
+  inputNs.notes.forEach((n, i) => {
+    n.pitch = i + 21;
+    n.isDrum = Boolean(i % 2);
+  });
+
+  const grooveTensor = grooveConverter.toTensor(inputNs);
   t.deepEqual(grooveTensor.shape, [16, 9 * 3]);
 
   // Tapify removes velocities and only keeps the highest velocity hit at each
