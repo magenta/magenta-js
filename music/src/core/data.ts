@@ -924,7 +924,8 @@ export class GrooveConverter extends DataConverter {
         const note = stepNotes[s].get(d);
         hitVectors.set(note ? 1 : 0, s, d);
         if (!this.humanize && !this.tapify) {
-          velocityVectors.set(note ? note.velocity / 127 : 0, s, d);
+          velocityVectors.set(
+              note ? note.velocity / constants.MAX_MIDI_VELOCITY : 0, s, d);
         }
         if (!this.humanize) {
           offsetVectors.set(note ? getOffset(note) : 0, s, d);
@@ -987,7 +988,9 @@ export class GrooveConverter extends DataConverter {
         // If hit output is above threshold, add note.
         if (hitOutput > 0.5) {
           // Convert output to velocity, clipping to be in the valid range.
-          const velocity = clip(Math.round(velOutput * 127), 0, 127);
+          const velocity = clip(
+              Math.round(velOutput * constants.MAX_MIDI_VELOCITY),
+              constants.MIN_MIDI_VELOCITY, constants.MAX_MIDI_VELOCITY);
           // Convert output to time offset, clipping to be in the valid range.
           const offset = clip(offsetOutput / 2, -0.5, 0.5);
           ns.notes.push(NoteSequence.Note.create({
