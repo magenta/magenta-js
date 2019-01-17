@@ -866,7 +866,6 @@ export class GrooveConverter extends DataConverter {
   }
 
   toTensor(ns: INoteSequence) {
-    // TODO(adarob): Check length.
     const qns = sequences.isRelativeQuantizedSequence(ns) ?
         ns :
         sequences.quantizeNoteSequence(ns, this.stepsPerQuarter);
