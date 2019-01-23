@@ -49,6 +49,22 @@ export abstract class BaseRecorderCallback {
    * @param seq The note sequence up to this point.
    */
   abstract run(seq: NoteSequence): void;
+  /**
+   * Will be called for each time a note on event is observed.
+   *
+   * @param pitch The pitch of the midi event received.
+   * @param velocity The velocity of the midi event received.
+   * @param device The device the midi event was received from.
+   */
+  abstract noteOn(pitch: Number, velocity: Number, device: any): void;
+  /**
+   * Will be called for each time a note off event is observed.
+   *
+   * @param pitch The pitch of the midi event received.
+   * @param velocity The velocity of the midi event received.
+   * @param device The device the midi event was received from.
+   */
+  abstract noteOff(pitch: Number, velocity: Number, device: any): void;
 }
 
 /**
@@ -313,14 +329,21 @@ export class Recorder {
     const cmd = event.data[0] >> 4;
     const pitch = event.data[1];
     const velocity = (event.data.length > 2) ? event.data[2] : 1;
+    const device = event.srcElement;
 
     // Some MIDI controllers don't send a separate NOTE_OFF command.
     if (cmd === NOTE_OFF || (cmd === NOTE_ON && velocity === 0)) {
+      if (this.callbackObject) {
+        this.callbackObject.noteOff(pitch, velocity, device);
+      }
       this.noteOff(pitch, timeStamp);
       if (this.callbackObject) {
         this.callbackObject.run(this.getNoteSequence());
       }
     } else if (cmd === NOTE_ON) {
+      if (this.callbackObject) {
+        this.callbackObject.noteOn(pitch, velocity, device);
+      }
       this.noteOn(pitch, velocity, timeStamp);
     }
   }
