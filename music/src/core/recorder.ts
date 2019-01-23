@@ -56,7 +56,8 @@ export abstract class BaseRecorderCallback {
    * @param velocity The velocity of the midi event received.
    * @param device The device the midi event was received from.
    */
-  abstract noteOn(pitch: Number, velocity: Number, device: any): void;
+  // tslint:disable-next-line:no-any
+  abstract noteOn(pitch: number, velocity: number, device: any): void;
   /**
    * Will be called for each time a note off event is observed.
    *
@@ -64,7 +65,8 @@ export abstract class BaseRecorderCallback {
    * @param velocity The velocity of the midi event received.
    * @param device The device the midi event was received from.
    */
-  abstract noteOff(pitch: Number, velocity: Number, device: any): void;
+  // tslint:disable-next-line:no-any
+  abstract noteOff(pitch: number, velocity: number, device: any): void;
 }
 
 /**
