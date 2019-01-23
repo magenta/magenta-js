@@ -463,29 +463,29 @@ export class SoundFontPlayer extends BasePlayer {
 
   /**
    * Loads the audio samples for all valid midi pitches, for a specific program.
-   * **Note**: this method is rather slow: only use it if you're sure
+   * **Note**: this method is rather slow; only use it if you're sure
    * that you need to load _all_ possible samples (for example, you're
    * playing a stream of live notes from the user) -- otherwise, if you already
    * have the NoteSequence you have to play, use `loadSamples` instead.
    *
    * If you do end up using `loadAllSamples`, make sure you're calling it
    * asynchronously, as to not block other main thread work (like UI
-   * interactions) while waiting for it to finish:
+   * interactions) while waiting for it to finish.
    *
-   * @param program (optional) The program to be used for the audio samples.
+   * @param program (optional) Program number to use for instrument lookup.
    * Default is 0.
-   * @param isDrum (optional) True if drum audio samples should be loaded.
-   * Default is false
+   * @param isDrum (optional) True if the drum status should be used for
+   * instrument lookup. Default is false.
    */
-  async loadAllSamples(program=0, isDrum=false): Promise<void> {
+  async loadAllSamples(program = 0, isDrum = false): Promise<void> {
     // Create a NoteSequence that has all the possible pitches and all the
     // possible velocities for the given program.
     const ns = NoteSequence.create();
     const min = isDrum ? constants.MIN_DRUM_PITCH : constants.MIN_PIANO_PITCH;
     const max = isDrum ? constants.MAX_DRUM_PITCH : constants.MAX_PIANO_PITCH;
     for (let i = min; i <= max; i++) {
-      for (let j = constants.MIN_MIDI_VELOCITY;
-          j < constants.MAX_MIDI_VELOCITY; j++) {
+      for (let j = constants.MIN_MIDI_VELOCITY; j < constants.MAX_MIDI_VELOCITY;
+           j++) {
         ns.notes.push({pitch: i, velocity: j, program, isDrum});
       }
     }
