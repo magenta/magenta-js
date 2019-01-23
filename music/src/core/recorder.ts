@@ -292,8 +292,14 @@ export class Recorder {
 
     // event.timeStamp doesn't seem to work reliably across all
     // apps and controllers (sometimes it isn't set, sometimes it doesn't
-    // change between notes). Use the actual message time for now.
-    const timeStamp: number = Date.now();
+    // change between notes). Use the performance now timing, unless it exists.
+    let timeStampOffset;
+    if (event.timeStamp !== undefined && event.timeStamp !== 0) {
+      timeStampOffset = event.timeStamp;
+    } else {
+      timeStampOffset = performance.now();
+    }
+    const timeStamp = timeStampOffset + performance.timing.navigationStart;
 
     // Save the first note.
     if (this.firstNoteTimestamp === undefined) {
