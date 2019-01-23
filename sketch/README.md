@@ -1,6 +1,7 @@
 # @magenta/sketch
 
-[![npm version](https://badge.fury.io/js/%40magenta%2Fsketch.svg)](https://badge.fury.io/js/%40magenta%2Fsketch)
+[![npm version](https://badge.fury.io/js/%40magenta%2Fsketch.svg)](https://badge.fury.io/js/%40magenta%2Fsketch) [![](https://data.jsdelivr.com/v1/package/npm/@magenta/sketch/badge?style=rounded)](https://www.jsdelivr.com/package/npm/@magenta/sketch)
+
 
 Link to Documentation: [tensorflow.github.io/magenta-js/sketch](https://tensorflow.github.io/magenta-js/sketch/)
 
