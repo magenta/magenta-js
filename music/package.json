@@ -31,6 +31,7 @@
     "fs": "^0.0.1-security",
     "http-server": "^0.11.1",
     "in-publish": "^2.0.0",
+    "minimist": "^1.2.0",
     "tape": "^4.9.0",
     "ts-loader": "^5.3.0",
     "ts-node": "^5.0.1",
@@ -40,7 +41,8 @@
     "typedoc-plugin-sourcefile-url": "^1.0.3",
     "typescript": "^2.7.2",
     "webpack": "^4.24.0",
-    "webpack-cli": "^3.1.2"
+    "webpack-cli": "^3.1.2",
+    "webpack-dev-server": "^3.1.14"
   },
   "scripts": {
     "prepublish": "in-publish && yarn lint && yarn test && yarn build && yarn docs && yarn bundle || not-in-publish",
@@ -50,7 +52,7 @@
     "test": "ts-node node_modules/tape/bin/tape src/**/*_test.ts",
     "build-demos": "webpack --config ./webpack/demo.config.ts",
     "publish-demos": "yarn build-demos && mkdir -p ../docs/music/demos && cp demos/*.{js,html,mid,css} ../docs/music/demos",
-    "run-demos": "yarn build-demos && yarn serve-demos",
+    "run-demos": "webpack-dev-server --config ./webpack/demo.config.ts",
     "serve-demos": "http-server demos/",
     "serve-dist": "http-server dist/",
     "proto": "sh ./scripts/compile-proto.sh",
