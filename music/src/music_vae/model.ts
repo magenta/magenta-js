@@ -26,7 +26,7 @@ import * as chords from '../core/chords';
 import * as constants from '../core/constants';
 import * as data from '../core/data';
 import * as logging from '../core/logging';
-import {INoteSequence} from '../protobuf/index';
+import {INoteSequence} from '../protobuf';
 
 /**
  * A class for keeping track of the parameters of an affine transformation.
@@ -73,14 +73,14 @@ abstract class Encoder {
 /**
  * A single-layer bidirectional LSTM encoder.
  */
-class BidirectonalLstmEncoder extends Encoder {
+class BidirectionalLstmEncoder extends Encoder {
   private lstmFwVars: LayerVars;
   private lstmBwVars: LayerVars;
   private muVars: LayerVars;
   readonly zDims: number;
 
   /**
-   * `BidirectonalLstmEncoder` contructor.
+   * `BidirectionalLstmEncoder` contructor.
    *
    * @param lstmFwVars The forward LSTM `LayerVars`.
    * @param lstmBwVars The backward LSTM `LayerVars`.
@@ -715,8 +715,8 @@ class MusicVAE {
             `Got ${fwLayers.length} forward and ${bwLayers.length} ` +
             'backward.');
       }
-      const baseEncoders: BidirectonalLstmEncoder[] = [0, 1].map(
-          l => new BidirectonalLstmEncoder(fwLayers[l], bwLayers[l]));
+      const baseEncoders: BidirectionalLstmEncoder[] = [0, 1].map(
+          l => new BidirectionalLstmEncoder(fwLayers[l], bwLayers[l]));
       this.encoder = new HierarchicalEncoder(
           baseEncoders, [this.dataConverter.numSegments, 1], encMu);
     } else {
@@ -731,7 +731,7 @@ class MusicVAE {
             'backward.');
       }
       this.encoder =
-          new BidirectonalLstmEncoder(fwLayers[0], bwLayers[0], encMu);
+          new BidirectionalLstmEncoder(fwLayers[0], bwLayers[0], encMu);
     }
 
     // BaseDecoder variables.
