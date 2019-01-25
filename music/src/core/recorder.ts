@@ -337,15 +337,15 @@ export class Recorder {
 
     // Some MIDI controllers don't send a separate NOTE_OFF command.
     if (cmd === NOTE_OFF || (cmd === NOTE_ON && velocity === 0)) {
-      if (this.callbackObject) {
+      if (this.callbackObject && this.callbackObject.noteOff) {
         this.callbackObject.noteOff(pitch, velocity, device);
       }
       this.noteOff(pitch, timeStamp);
-      if (this.callbackObject) {
+      if (this.callbackObject && this.callbackObject.run) {
         this.callbackObject.run(this.getNoteSequence());
       }
     } else if (cmd === NOTE_ON) {
-      if (this.callbackObject) {
+      if (this.callbackObject && this.callbackObject.noteOn) {
         this.callbackObject.noteOn(pitch, velocity, device);
       }
       this.noteOn(pitch, velocity, timeStamp);
