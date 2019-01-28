@@ -333,7 +333,7 @@ export class Recorder {
     const cmd = event.data[0] >> 4;
     const pitch = event.data[1];
     const velocity = (event.data.length > 2) ? event.data[2] : 1;
-    const device = event.srcElement;
+    const device = event.srcElement as WebMidi.MIDIInput;
 
     // Some MIDI controllers don't send a separate NOTE_OFF command.
     if (cmd === NOTE_OFF || (cmd === NOTE_ON && velocity === 0)) {
