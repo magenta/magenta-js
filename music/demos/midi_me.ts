@@ -13,7 +13,7 @@ const mvae = new mm.MusicVAE(MEL_CKPT);
 mvae.initialize().then(
     () => document.getElementById('fileBtn').removeAttribute('disabled'));
 
-const model = new mm.MidiMe({epochs: 40});
+const model = new mm.MidiMe({epochs: 60});
 model.initialize();
 
 function loadFile(e: Event) {
@@ -26,7 +26,7 @@ async function doTheThing(mel: NoteSequence) {
 
   // 1. Encode the input into MusicVAE, get back a z.
   const quantizedMel = quantizeNoteSequence(mel, 4);
-
+  debugger
   // Split this sequence into 2 bar chunks:
   // 4 steps/quarter, 4 quarters/bar => 16 steps / bar => 32 steps in 2 bars.
   const chunks = splitNoteSequence(quantizedMel);
