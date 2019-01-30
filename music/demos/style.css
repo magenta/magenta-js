@@ -13,6 +13,11 @@ body {
   max-width: 1000px;
 }
 
+[disabled] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 section {
   background: #F2F2F2;
   padding: 14px;
@@ -48,9 +53,6 @@ button, .button {
 button:hover {
   background: #6FC9C6;
   color: white;
-}
-button[disabled] {
-  opacity: 0.5;
 }
 
 .player-container {

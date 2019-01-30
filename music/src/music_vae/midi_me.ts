@@ -1,6 +1,15 @@
 import * as tf from '@tensorflow/tfjs';
-
+import * as logging from '../core/logging';
 export {MidiMe};
+
+function klDivergence(yTrue: tf.Tensor, yPred: tf.Tensor): tf.Tensor {
+  const epsilon = 0.00001;
+  return tf.tidy(() => {
+    const clippedTrue = tf.clipByValue(yTrue, epsilon, 1);
+    const clippedPred = tf.clipByValue(yPred, epsilon, 1);
+    return tf.sum(tf.mul(yTrue, tf.log(tf.div(clippedTrue, clippedPred))), -1);
+  });
+}
 
 class SamplingLayer extends tf.layers.Layer {
   constructor() {
@@ -35,74 +44,178 @@ class AffineLayer extends tf.layers.Layer {
     // output = (1 - gates) * z + gates * dz
     return tf.tidy(() => {
       const [gates, z, dz] = inputs;
-      return tf.add(
-          tf.mul(tf.sub(tf.onesLike(gates), gates), z), tf.mul(gates, dz));
+      return tf.add(tf.mul(tf.sub(1, gates), z), tf.mul(gates, dz));
     });
   }
 
   getClassName() {
-    return 'SamplingLayer';
+    return 'AffineLayer';
   }
 }
 
-class MidiMe {
-  // tslint:disable-next-line:no-any
-  public config: any;
-  // tslint:disable-next-line:no-any
-  private encoder: any;
-  // tslint:disable-next-line:no-any
-  private decoder: any;
-  // tslint:disable-next-line:no-any
-  private vae: any;
-  public trainingDone = false;
+/**
+ * An interface for providing configurable properties to a Visualizer.
+ * @param encoder_layers The shape of the layers in the Encoder network.
+ * @param decoder_layers The shape of the layers in the Decoder network.
+ * @param input_size The shape of the VAE input. Since the inputs to this
+ * VAE are actually latent vectors from MusicVAE, then this number should be
+ * equal to the number of latent variables used by MusicVAE (`zDims`).
+ * @param output_size The size of the output.
+ * @param beta Weight of the latent loss in the VAE loss.
+ * @param input_sigma The standard deviation of the inputs. This shouldn't
+ * change across samples, and is basically the standard deviation of the
+ * MusicVAE latent variables.
+ * @param batch_size The batch size used in training.
+ * @param epochs Number of epochs to train for
+ */
+interface MidiMeConfig {
+  encoder_layers?: number[];
+  decoder_layers?: number[];
+  input_size?: number;
+  output_size?: number;
+  beta?: number;
+  input_sigma?: tf.Tensor;
+  // For training:
+  batch_size?: number;
+  epochs?: number;
+}
 
-  constructor() {
+class MidiMe {
+  public config: MidiMeConfig;
+  private encoder: tf.Model;
+  private decoder: tf.Model;
+  public vae: tf.Model;
+  trained = false;
+  initialized = false;
+
+  constructor(config: MidiMeConfig = {}) {
     this.config = {
-      encoder_layers: [1024, 256, 64],
-      decoder_layers: [64, 256, 1024],
-      n_latents_x: 512,
-      n_latents_z: 4,
-      batch_size: 1,
-      beta: 1,
-      p_x_sigma: 1,
+      encoder_layers: config.encoder_layers || [1024, 256, 64],
+      decoder_layers: config.decoder_layers || [64, 256, 1024],
+      input_size: config.input_size || 256,
+      output_size: config.output_size || 4,
+      beta: config.beta || 1,
+      input_sigma: config.input_sigma || tf.ones([1]),
+      batch_size: config.batch_size || 32,
+      epochs: config.epochs || 10,
+
     };
   }
 
   async initialize() {
-    this.encoder = this.getEncoder();
-    this.decoder = this.getDecoder();
-    debugger;
-    const z = tf.input({shape: this.config['n_latents_x']});
-    const qzSample = this.encoder.apply(z);
-    const pxMu = this.decoder.apply(qzSample);
+    this.initialized = false;
+    const startTime = performance.now();
 
-    this.vae = tf.model({inputs: z, outputs: [qzSample, pxMu], name: 'vae'});
-    // this.vae = new tf.Sequential();
-    // // const qzSample = this.encoder.apply(input);
-    // // const pxMu = this.decoder.apply(qzSample);
-    // this.vae.add(this.encoder);
-    // this.vae.add(this.decoder);
+    const z = tf.input({shape: [this.config['input_size']]});
+
+    // Encoder model, goes from the original input, returns an output.
+    this.encoder = this.getEncoder(z);
+    const sampleZ = this.encoder.apply(z) as tf.SymbolicTensor;
+
+    // Decoder moel, goes from the output of the encoder, to the final output.
+    this.decoder = this.getDecoder(sampleZ.shape.slice(1));
+    const y = this.decoder.apply(sampleZ) as tf.SymbolicTensor;
+
+    this.vae = tf.model({inputs: z, outputs: [sampleZ, y], name: 'vae'});
+    this.vae.compile({optimizer: 'adam', loss: this.vaeLoss.bind(this)});
+
+    this.initialized = true;
+    logging.logWithDuration('Initialized model', startTime, 'MidiMe');
   }
 
-  vaeLoss(yTrue: tf.Tensor2D[], yPred: tf.Tensor2D[]): tf.Scalar {
-    debugger
-    const [qzSample, pxMu] = yPred;
-    const reconLoss = this.reconstructionLoss(yTrue[0], pxMu) as tf.Scalar;
-    const pz = tf.randomNormal(this.config['n_latents_z']);  // prior.
-    const klLoss = this.klLoss(qzSample, pz) as tf.Scalar;
+  async train(data: tf.Tensor) {
+    this.trained = false;
+    const xTrain = data;
 
-    const totalLoss =
-        tf.add(reconLoss, tf.mul(klLoss, this.config['beta'])) as tf.Scalar;
-    return totalLoss;
+    // The model predicts [sampleZ, pxMu], but the yTrue values are ignored for
+    // sampleZ, so fill them with zeroes of the right size.
+    const yTrain =
+        [tf.zeros([xTrain.shape[0], this.config['output_size']]), xTrain];
+    const h = await this.vae.fit(xTrain, yTrain, {
+      batchSize: this.config['batch_size'],
+      epochs: this.config['epochs'],
+      callbacks: {
+        onEpochEnd: async (epoch, logs) => {
+          console.log(epoch, logs.loss);
+        }
+      }
+    });
+    const finalLoss = h.history.loss[h.history.loss.length - 1];
+    logging.log('Final training error ' + finalLoss, 'MidiMe');
+    this.trained = true;
   }
 
-  reconstructionLoss(yTrue: tf.Tensor, yPred: tf.Tensor) {
+  private getEncoder(input: tf.SymbolicTensor) {
+    let x = input;
+
+    for (let i = 0; i < this.config['encoder_layers'].length; i++) {
+      x = tf.layers
+              .dense(
+                  {units: this.config['encoder_layers'][i], activation: 'relu'})
+              .apply(x) as tf.SymbolicTensor;
+    }
+    const mu =
+        this.getAffineLayers(x, this.config['output_size'], input, false) as
+        tf.SymbolicTensor;
+
+    const sigma =
+        this.getAffineLayers(x, this.config['output_size'], input, true) as
+        tf.SymbolicTensor;
+
+    const z = new SamplingLayer().apply([sigma, mu]) as tf.SymbolicTensor;
+
+    return tf.model({inputs: input, outputs: z, name: 'encoder'});
+  }
+
+  private getDecoder(shape: tf.Shape) {
+    const z = tf.input({shape});
+    let x = z;
+
+    for (let i = 0; i < this.config['decoder_layers'].length; i++) {
+      x = tf.layers
+              .dense(
+                  {units: this.config['decoder_layers'][i], activation: 'relu'})
+              .apply(x) as tf.SymbolicTensor;
+    }
+    const mu = this.getAffineLayers(x, this.config['input_size'], z, false) as
+        tf.SymbolicTensor;
+
+    return tf.model({inputs: z, outputs: mu, name: 'decoder'});
+  }
+
+  // This function is actually called for each of the outputs of the vae model,
+  // so once for sampleZ, and once for pxMu. Then tfjs sums the two losses up
+  // before it uses them.
+  vaeLoss(yTrue: tf.Tensor2D, yPred: tf.Tensor2D): tf.Scalar {
+    if (yTrue.shape[1] === this.config['output_size']) {  // 4
+      // This is the sampleZ.
+      // The latent loss represents how closely the z matches a unit gaussian.
+      const pz = tf.randomNormal(yTrue.shape);  // unit gaussian.
+      const latentLoss = this.klLoss(yTrue, pz) as tf.Scalar;
+      return tf.mul(latentLoss, this.config['beta']);
+    } else if (yTrue.shape[1] === this.config['input_size']) {  // 512
+      // This is the pxMu.
+      // THe reconstruction loss represents how well we regenerated yTrue.
+      const reconLoss =
+          this.reconstructionLoss(yTrue, yPred, this.config['input_sigma']) as
+          tf.Scalar;
+      return reconLoss;
+    } else {
+      return tf.zeros([1]);
+    }
+  }
+
+  reconstructionLoss(
+      yTrue: tf.Tensor, yPred: tf.Tensor, inputSigma: tf.Tensor) {
     return tf.tidy(() => {
+      // TODO: I removed the - here, verify that makes sense.
+
       // -tf.sum(pX.log_prob(x));
-      // = - mse(x,p_x_mu) / 2 'p_x_sigma ^2
-      const nll = -tf.div(
+      // = - mse(x,p_x_mu) / 2 'input_sigma ^2
+      const nll = tf.div(
           tf.losses.meanSquaredError(yTrue, yPred),
-          tf.mul(2, tf.pow(this.config['p_x_sigma'], 2)));
+          tf.mul(2, tf.pow(inputSigma, 2)));
+
       return tf.mean(nll);  //
     });
   }
@@ -115,105 +228,7 @@ class MidiMe {
     });
   }
 
-  // async train(dataArr: number[]) {
-  //   const data = tf.tensor(dataArr);
-  //   this.trainingDone = false;
-  //   const epochs = 2;
-  //   const batchSize = 27;
-  //   const testBatchSize = 10;
-  //   const numBatch = 1;
-  //   const lr = 3e-4;
-  //   const optimizer = tf.train.adam(lr);
-
-  //   for (let i = 0; i < epochs; i++) {
-  //     console.log(`[Epoch ${i}]`);
-  //     let epochLoss = 0;
-
-  //     for (let j = 0; j < numBatch; j++) {
-  //       const batchInput = data.nextTrainBatch(batchSize).xs.reshape(
-  //           [batchSize, this.config['n_latents_z']]);
-
-  //       const trainLoss = await optimizer.minimize(() => {
-  //         const batchResult = this.runVAE(batchInput);
-  //         const loss = this.vaeLoss(batchInput, batchResult);
-  //         return loss;
-  //       }, true);
-
-  //       epochLoss += Number(trainLoss.dataSync());
-  //       console.log('Batch training loss: ', trainLoss);
-  //       await tf.nextFrame();
-  //     }
-  //     epochLoss = epochLoss / numBatch;
-  //     console.log('Average training loss', epochLoss);
-
-  //     const testBatchInput = data.nextTrainBatch(testBatchSize).xs.reshape([
-  //       testBatchSize, this.config['n_latents_z']
-  //     ]);
-  //     const testBatchResult = this.runVAE(testBatchInput);
-  //     const testLoss = this.vaeLoss(testBatchInput, testBatchResult);
-  //     console.log('Test batch loss', testLoss.dataSync());
-  //   }
-
-  //   this.trainingDone = true;
-  // }
-
-  async train(data: number[]) {
-    this.vae.compile({optimizer: 'adam', loss: this.vaeLoss});
-    const t = tf.tensor(data).reshape([-1, this.config['n_latents_x']]);
-    debugger;
-    this.vae.fit(t, [t, t], {batchSize: 1, epochs: 1});
-  }
-
-  getEncoder() {
-    const z = tf.input({shape: this.config['n_latents_x']});
-    debugger
-    let x = z;
-
-    for (let i = 0; i < this.config['encoder_layers'].length; i++) {
-      x = tf.layers
-              .dense(
-                  {units: this.config['encoder_layers'][i], activation: 'relu'})
-              .apply(x) as tf.SymbolicTensor;
-    }
-    debugger
-    const mu = this.getAffineLayers(x, this.config['n_latents_z'], z, false) as
-        tf.SymbolicTensor;
-
-    const sigma =
-        this.getAffineLayers(x, this.config['n_latents_z'], z, true) as
-        tf.SymbolicTensor;
-
-    const qz = new SamplingLayer().apply([sigma, mu]) as tf.SymbolicTensor;
-
-    return tf.model({inputs: z, outputs: qz, name: 'encoder'});
-  }
-
-  getDecoder() {
-    const z = tf.input({shape: this.config['n_latents_z']});
-    let x = z;
-
-    for (let i = 0; i < this.config['decoder_layers'].length; i++) {
-      x = tf.layers
-              .dense(
-                  {units: this.config['decoder_layers'][i], activation: 'relu'})
-              .apply(x) as tf.SymbolicTensor;
-    }
-    const mu = this.getAffineLayers(x, this.config['n_latents_x'], z, false) as
-        tf.SymbolicTensor;
-
-    return tf.model({inputs: z, outputs: mu, name: 'decoder'});
-  }
-
-  // runVAE(input: tf.Tensor2D) {
-  //   return tf.tidy(() => {
-  //     const qzSample = this.encoder.apply(input);
-  //     const pxMu = this.decoder.apply(qzSample);
-  //     tf.model({inputs: , outputs: mu, name: 'decoder'});
-  //     return [qzSample, pxMu];
-  //   });
-  // }
-
-  getAffineLayers(
+  private getAffineLayers(
       x: tf.SymbolicTensor, outputSize: number, z_: tf.SymbolicTensor,
       softplus: boolean) {
     const dzLayer = tf.layers.dense({units: outputSize});
@@ -232,16 +247,4 @@ class MidiMe {
       return output;
     }
   }
-}
-
-function epsilon() {
-  return 0.00001;
-}
-
-function klDivergence(yTrue: tf.Tensor, yPred: tf.Tensor): tf.Tensor {
-  return tf.tidy(() => {
-    const clippedTrue = tf.clipByValue(yTrue, epsilon(), 1);
-    const clippedPred = tf.clipByValue(yPred, epsilon(), 1);
-    return tf.sum(tf.mul(yTrue, tf.log(tf.div(clippedTrue, clippedPred))), -1);
-  });
 }

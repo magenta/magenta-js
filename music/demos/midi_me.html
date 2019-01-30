@@ -17,10 +17,40 @@ limitations under the License.
   <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
   <link rel="stylesheet" href="./style.css">
   <title>MidiME</title>
+  <style>
+    input[type="file"] {
+      width: 0;
+      height: 0;
+      opacity: 0;
+      cursor: pointer;
+      display: none;
+    }
+  </style>
 </head>
 <body>
   <h1>MidiME</h1>
-  <p>Everything is terrible</p>
+
+  <h2>Input</h2>
+  <section>
+    <label class="button" id="fileBtn" disabled>
+      Load midi file
+      <input type="file" id="fileInput">
+    </label>
+    <p><code id="input"></code>
+  </section>
+
+  <h2>Input reconstruction</h2>
+  <section>
+    <p><b>Before training:</b> <code id="pre-training"></code></p>
+    <p><b>After training:</b> <code id="post-training"></code></p>
+    <p><b>It took:</b> <code id="training-time"></code></p>
+  </section>
+
+  <h2>Random sample from MusicVAE</h2>
+  <section>
+    <p><b>Without MidiMe</b> <code id="sample"></code></p>
+    <p><b>With trained MidiMe</b> <code id="post-training-sample"></code></p>
+  </section>
   <script src="midi_me_bundle.js"></script>
 </body>
 </html>

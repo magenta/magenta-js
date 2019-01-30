@@ -358,6 +358,22 @@ export function writeNoteSeqs(
   });
 }
 
+export function visualizeNoteSeqs(
+    elementId: string, seqs: mm.INoteSequence[], useSoundFontPlayer = false) {
+  const element = document.getElementById(elementId);
+  while (element.firstChild) {
+    element.removeChild(element.firstChild);
+  }
+  seqs.forEach(seq => {
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = 'View NoteSequence';
+    details.appendChild(summary);
+    details.appendChild(createPlayer(seq, useSoundFontPlayer));
+    element.appendChild(details);
+  });
+}
+
 export function writeMemory(bytes: number, name = 'leaked-memory') {
   document.getElementById(name).innerHTML = bytes.toString() + ' bytes';
 }
