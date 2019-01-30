@@ -72,7 +72,7 @@ export class Visualizer {
 
     // Quantized sequences appear "longer" because there's usually more
     // quantized per note (vs seconds), so pick a better default.
-    const defaultPixelsPerTimeStep = this.sequenceIsQuantized ? 8 : 30;
+    const defaultPixelsPerTimeStep = this.sequenceIsQuantized ? 7 : 30;
     this.config = {
       noteHeight: config.noteHeight || 6,
       noteSpacing: config.noteSpacing || 1,
