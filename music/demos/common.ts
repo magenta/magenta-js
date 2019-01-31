@@ -16,8 +16,8 @@
  */
 
 import {saveAs} from 'file-saver';
-import * as mm from '../src/index';
-import {sequences} from '../src/index';
+import * as mm from '../src';
+import {sequences} from '../src';
 
 export const CHECKPOINTS_DIR =
     // tslint:disable-next-line:max-line-length

@@ -25,6 +25,12 @@ limitations under the License.
       cursor: pointer;
       display: none;
     }
+    /* d3 chart styles */
+    .line {
+      fill: none;
+      stroke: blue;
+      stroke-width: 2;
+    }
   </style>
 </head>
 <body>
@@ -39,6 +45,11 @@ limitations under the License.
     <p><code id="input"></code>
   </section>
 
+  <h2>Training</h2>
+  <section>
+    <svg id="svg"></svg>
+  </section>
+
   <h2>Input reconstruction</h2>
   <section>
     <p><b>Before training:</b> <code id="pre-training"></code></p>
@@ -46,10 +57,9 @@ limitations under the License.
     <p><b>It took:</b> <code id="training-time"></code></p>
   </section>
 
-  <h2>Random sample from MusicVAE</h2>
+  <h2>Random sample from MidiMe</h2>
   <section>
-    <p><b>Without MidiMe</b> <code id="sample"></code></p>
-    <p><b>With trained MidiMe</b> <code id="post-training-sample"></code></p>
+    <p><b>With trained MidiMe</b> <code id="sample"></code></p>
   </section>
   <script src="midi_me_bundle.js"></script>
 </body>

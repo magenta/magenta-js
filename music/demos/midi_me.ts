@@ -1,10 +1,12 @@
+import * as mm from '../src';
+import {blobToNoteSequence, INoteSequence, NoteSequence} from '../src';
 import {quantizeNoteSequence} from '../src/core/sequences';
-import * as mm from '../src/index';
-import {blobToNoteSequence, INoteSequence, NoteSequence} from '../src/index';
-
 import {CHECKPOINTS_DIR, visualizeNoteSeqs, writeTimer} from './common';
+import {updateGraph} from './common_graph';
 
-const MEL_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_2bar_small`;
+const MEL_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_4bar_med_q2`;
+const BARS = 4;
+
 const fileInput = document.getElementById('fileInput') as HTMLInputElement;
 fileInput.addEventListener('change', loadFile);
 
@@ -26,12 +28,11 @@ async function doTheThing(mel: NoteSequence) {
 
   // 1. Encode the input into MusicVAE, get back a z.
   const quantizedMel = quantizeNoteSequence(mel, 4);
-  debugger
-  // Split this sequence into 2 bar chunks:
-  // 4 steps/quarter, 4 quarters/bar => 16 steps / bar => 32 steps in 2 bars.
-  const chunks = splitNoteSequence(quantizedMel);
 
-  const z = await mvae.encode(chunks);  // [1, 256]
+  // 1b. Split this sequence into bar chunks:
+  // 4 steps/quarter, 4 quarters/bar => 16 steps / bar
+  const chunks = splitNoteSequence(quantizedMel, 16 * BARS);
+  const z = await mvae.encode(chunks);  // shape of z is [chunks, 256]
 
   // 2. Use that z as input to train MidiMe.
   // Reconstruction before training.
@@ -40,38 +41,40 @@ async function doTheThing(mel: NoteSequence) {
   visualizeNoteSeqs('pre-training', [concatenate(ns1)]);
 
   // 3. Train!
-  await model.train(z);
+  const losses: number[] = [];
+  // tslint:disable-next-line:no-any
+  await model.train(z, (epoch: number, logs: any) => {
+    losses.push(logs.loss);
+    updateGraph(losses, 'svg');
+  });
 
   // 4. Check reconstruction after training.
   const z2 = model.vae.predict(z) as mm.tf.Tensor2D[];
   const ns2 = await mvae.decode(z2[1] as mm.tf.Tensor2D);
-  const nn = concatenate(ns2);
-
-  visualizeNoteSeqs('post-training', [nn]);
+  visualizeNoteSeqs('post-training', [concatenate(ns2)]);
 
   writeTimer('training-time', start);
 
-  // Random MusicVAE sample.
-  const sample = await mvae.sample(4);
-  visualizeNoteSeqs('sample', [concatenate(sample)]);
+  // 5. Sample from MidiMe
+  const sample = await model.sample(4);
+  const ns3 = await mvae.decode(sample as mm.tf.Tensor2D);
+  const concatenated = concatenate(ns3);
 
-  // Random MusicVAE sample piped through MidiMe.
-  const zSample = await mvae.encode(sample);
-  const z3 = model.vae.predict(zSample) as mm.tf.Tensor2D[];
-  const ns3 = await mvae.decode(z3[1] as mm.tf.Tensor2D);
-  visualizeNoteSeqs('post-training-sample', [concatenate(ns3)]);
+  // Halp.
+  // concatenated.tempos = quantizedMel.tempos;
+  // concatenated.ticksPerQuarter = quantizedMel.ticksPerQuarter;
+
+  visualizeNoteSeqs('sample', [concatenated]);
 }
-
 /*
  * Helpers
  */
-function splitNoteSequence(ns: INoteSequence) {
+function splitNoteSequence(ns: INoteSequence, chunkSize = 32) {
   const notesBystartStep =
       ns.notes.sort((a, b) => a.quantizedStartStep - b.quantizedStartStep);
 
   const chunks = [];
   let startStep = 0;
-  const CHUNK_SIZE = 32;
   let currentNotes = [];
 
   for (const note of notesBystartStep) {
@@ -79,21 +82,21 @@ function splitNoteSequence(ns: INoteSequence) {
     note.quantizedStartStep -= startStep;
     note.quantizedEndStep -= startStep;
 
-    if (note.quantizedStartStep >= 0 && note.quantizedEndStep <= CHUNK_SIZE) {
+    if (note.quantizedStartStep >= 0 && note.quantizedEndStep <= chunkSize) {
       // If this note spills over, truncate it
-      note.quantizedEndStep = Math.min(note.quantizedEndStep, CHUNK_SIZE);
+      note.quantizedEndStep = Math.min(note.quantizedEndStep, chunkSize);
       currentNotes.push(note);
     } else {
-      startStep += CHUNK_SIZE;
+      startStep += chunkSize;
 
       note.quantizedStartStep = 0;
-      note.quantizedEndStep = Math.max(0, note.quantizedEndStep - CHUNK_SIZE);
+      note.quantizedEndStep = Math.max(0, note.quantizedEndStep - chunkSize);
 
       // Save this bar and start a new one.
       chunks.push(NoteSequence.create({
         notes: currentNotes,
         quantizationInfo: {stepsPerQuarter: 4},
-        totalQuantizedSteps: CHUNK_SIZE
+        totalQuantizedSteps: chunkSize
       }));
       currentNotes = [];
       currentNotes.push(note);
