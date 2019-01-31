@@ -434,7 +434,7 @@ export function mergeInstruments(ns: INoteSequence) {
  * @returns A new sequence that is the result of concatenating the input
  * sequences.
  */
-export function concatenate(args: INoteSequence[]): INoteSequence {
+export function concatenate(args: INoteSequence[]): NoteSequence {
   return isQuantizedSequence(args[0]) ?
       concatenateQuantizedNoteSequence(args) :
       concatenateUnquantizedNoteSequence(args);
@@ -463,8 +463,7 @@ export function trim(
       trimUnquantizedNoteSequence(ns, start, end, truncateEndNotes);
 }
 
-function concatenateQuantizedNoteSequence(args: INoteSequence[]):
-    INoteSequence {
+function concatenateQuantizedNoteSequence(args: INoteSequence[]): NoteSequence {
   function calculateTotalTimeIfNeeded(seq: INoteSequence) {
     if (!seq.totalQuantizedSteps) {
       seq.totalQuantizedSteps =
@@ -498,12 +497,12 @@ function concatenateQuantizedNoteSequence(args: INoteSequence[]):
         [first, concatenateQuantizedNoteSequence(args)]);
   } else {
     // If there's only one NoteSequence, there's nothing to concat.
-    return args[0];
+    return clone(args[0]);
   }
 }
 
 function concatenateUnquantizedNoteSequence(args: INoteSequence[]):
-    INoteSequence {
+    NoteSequence {
   function calculateTotalTimeIfNeeded(seq: INoteSequence) {
     if (!seq.totalTime) {
       seq.totalTime = seq.notes[seq.notes.length - 1].endTime;
@@ -535,7 +534,7 @@ function concatenateUnquantizedNoteSequence(args: INoteSequence[]):
         [first, concatenateUnquantizedNoteSequence(args)]);
   } else {
     // If there's only one NoteSequence, there's nothing to concat.
-    return args[0];
+    return clone(args[0]);
   }
 }
 

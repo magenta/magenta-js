@@ -505,7 +505,7 @@ test('Merge Instruments', (t: test.Test) => {
   t.end();
 });
 
-test('Concatenate 1 NoteSequence', (t: test.Test) => {
+test('Concatenate 1 NoteSequence (unquantized)', (t: test.Test) => {
   const ns1 = createTestNS();
   const expected = createTestNS();
 
@@ -518,7 +518,7 @@ test('Concatenate 1 NoteSequence', (t: test.Test) => {
   t.end();
 });
 
-test('Concatenate 2 NoteSequences', (t: test.Test) => {
+test('Concatenate 2 NoteSequences (unquantized)', (t: test.Test) => {
   const ns1 = createTestNS();
   const ns2 = createTestNS();
   const expected = createTestNS();
@@ -537,7 +537,7 @@ test('Concatenate 2 NoteSequences', (t: test.Test) => {
   t.end();
 });
 
-test('Concatenate 3 NoteSequences', (t: test.Test) => {
+test('Concatenate 3 NoteSequences (unquantized)', (t: test.Test) => {
   const ns1 = createTestNS();
   const ns2 = createTestNS();
   const ns3 = createTestNS();
@@ -559,7 +559,60 @@ test('Concatenate 3 NoteSequences', (t: test.Test) => {
   t.end();
 });
 
-test('Trim an Unquantized NoteSequence', (t: test.Test) => {
+test('Concatenate 1 NoteSequence (quantized)', (t: test.Test) => {
+  const ns1 = createTestNS();
+  const expected = createTestNS();
+
+  addTrackToSequence(ns1, 0, [[60, 100, 0, 2], [72, 100, 2, 3]]);
+  addTrackToSequence(expected, 0, [[60, 100, 0, 2], [72, 100, 2, 3]]);
+
+  t.deepEqual(
+      NoteSequence.toObject(sequences.concatenate([ns1])),
+      NoteSequence.toObject(expected));
+  t.end();
+});
+
+test('Concatenate 2 NoteSequences (quantized)', (t: test.Test) => {
+  const ns1 = createTestNS();
+  const ns2 = createTestNS();
+  const expected = createTestNS();
+
+  addTrackToSequence(ns1, 0, [[60, 100, 0, 4], [72, 100, 2, 6]]);
+  addTrackToSequence(ns2, 0, [[59, 100, 0, 4], [71, 100, 1, 6]]);
+
+  addTrackToSequence(
+      expected, 0,
+      [[60, 100, 0, 4], [72, 100, 2, 6], [59, 100, 6, 10], [71, 100, 7, 12]]);
+
+  t.deepEqual(
+      NoteSequence.toObject(sequences.concatenate([ns1, ns2])),
+      NoteSequence.toObject(expected));
+  t.end();
+});
+
+test('Concatenate 3 NoteSequences (quantized)', (t: test.Test) => {
+  const ns1 = createTestNS();
+  const ns2 = createTestNS();
+  const ns3 = createTestNS();
+
+  const expected = createTestNS();
+
+  addTrackToSequence(ns1, 0, [[60, 100, 0, 2], [72, 100, 1, 3]]);
+  addTrackToSequence(ns2, 0, [[59, 100, 0, 2], [71, 100, 1, 3]]);
+  addTrackToSequence(ns3, 0, [[58, 100, 2, 3], [70, 100, 4, 6]]);
+
+  addTrackToSequence(expected, 0, [
+    [60, 100, 0, 2], [72, 100, 1, 3], [59, 100, 3, 5], [71, 100, 4, 6],
+    [58, 100, 8, 9], [70, 100, 10, 12]
+  ]);
+
+  t.deepEqual(
+      NoteSequence.toObject(sequences.concatenate([ns1, ns2, ns3])),
+      NoteSequence.toObject(expected));
+  t.end();
+});
+
+test('Trim NoteSequence (unquantized)', (t: test.Test) => {
   const ns1 = createTestNS();
   const expected = createTestNS();
 
@@ -576,7 +629,7 @@ test('Trim an Unquantized NoteSequence', (t: test.Test) => {
   t.end();
 });
 
-test('Trim and truncate a Unquantized NoteSequence', (t: test.Test) => {
+test('Trim and truncate NoteSequence (unquantized)', (t: test.Test) => {
   const ns1 = createTestNS();
   const expected = createTestNS();
 
@@ -594,7 +647,7 @@ test('Trim and truncate a Unquantized NoteSequence', (t: test.Test) => {
   t.end();
 });
 
-test('Trim a Quantized NoteSequence', (t: test.Test) => {
+test('Trim NoteSequence (quantized)', (t: test.Test) => {
   const ns1 = createTestNS();
   ns1.quantizationInfo = NoteSequence.QuantizationInfo.create(
       {stepsPerQuarter: STEPS_PER_QUARTER});
@@ -619,7 +672,7 @@ test('Trim a Quantized NoteSequence', (t: test.Test) => {
   t.end();
 });
 
-test('Trim and truncate a Quantized NoteSequence', (t: test.Test) => {
+test('Trim and truncate NoteSequence (quantized)', (t: test.Test) => {
   const ns1 = createTestNS();
   ns1.quantizationInfo = NoteSequence.QuantizationInfo.create(
       {stepsPerQuarter: STEPS_PER_QUARTER});
