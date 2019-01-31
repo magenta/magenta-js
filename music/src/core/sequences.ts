@@ -434,28 +434,10 @@ export function mergeInstruments(ns: INoteSequence) {
  * @returns A new sequence that is the result of concatenating the input
  * sequences.
  */
-export function concatenate(args: NoteSequence[]): NoteSequence {
-  // Base case: if there are only two NoteSequences, glue them together.
-  if (args.length === 2) {
-    const [seqA, seqB] = args;
-    const outputSequence = clone(seqA);
-    seqB.notes.forEach(note => {
-      const clonedNote = Object.assign({}, note);
-      clonedNote.startTime += seqA.totalTime;
-      clonedNote.endTime += seqA.totalTime;
-      outputSequence.notes.push(clonedNote);
-    });
-    outputSequence.totalTime = seqA.totalTime + seqB.totalTime;
-    return outputSequence;
-  } else if (args.length > 2) {
-    // If there are more than two NoteSequences, concat the last two,
-    // and then recursively concatenate that sequences with the remaining ones.
-    const first = args.shift();
-    return concatenate([first, concatenate(args)]);
-  } else {
-    // If there's only one NoteSequence, there's nothing to concat.
-    return args[0];
-  }
+export function concatenate(args: INoteSequence[]): INoteSequence {
+  return isQuantizedSequence(args[0]) ?
+      concatenateQuantizedNoteSequence(args) :
+      concatenateUnquantizedNoteSequence(args);
 }
 
 /**
@@ -475,14 +457,90 @@ export function concatenate(args: NoteSequence[]): NoteSequence {
  * and `end`, and time-shifted to begin at 0.
  */
 export function trim(
-    ns: NoteSequence, start: number, end: number, truncateEndNotes?: boolean) {
+    ns: INoteSequence, start: number, end: number, truncateEndNotes?: boolean) {
   return isQuantizedSequence(ns) ?
       trimQuantizedNoteSequence(ns, start, end, truncateEndNotes) :
       trimUnquantizedNoteSequence(ns, start, end, truncateEndNotes);
 }
 
+function concatenateQuantizedNoteSequence(args: INoteSequence[]):
+    INoteSequence {
+  function calculateTotalTimeIfNeeded(seq: INoteSequence) {
+    if (!seq.totalQuantizedSteps) {
+      seq.totalQuantizedSteps =
+          seq.notes[seq.notes.length - 1].quantizedEndStep;
+    }
+  }
+
+  // Base case: if there are only two NoteSequences, glue them together.
+  if (args.length === 2) {
+    const [seqA, seqB] = args;
+
+    calculateTotalTimeIfNeeded(seqA);
+    calculateTotalTimeIfNeeded(seqB);
+    const outputSequence = clone(seqA);
+
+    // Shift each note forward.
+    seqB.notes.forEach(note => {
+      const clonedNote = Object.assign({}, note);
+      clonedNote.quantizedStartStep += seqA.totalQuantizedSteps;
+      clonedNote.quantizedEndStep += seqA.totalQuantizedSteps;
+      outputSequence.notes.push(clonedNote);
+    });
+    outputSequence.totalQuantizedSteps =
+        seqA.totalQuantizedSteps + seqB.totalQuantizedSteps;
+    return outputSequence;
+  } else if (args.length > 2) {
+    // If there are more than two NoteSequences, concat the last two,
+    // and then recursively concatenate that sequences with the remaining ones.
+    const first = args.shift();
+    return concatenateQuantizedNoteSequence(
+        [first, concatenateQuantizedNoteSequence(args)]);
+  } else {
+    // If there's only one NoteSequence, there's nothing to concat.
+    return args[0];
+  }
+}
+
+function concatenateUnquantizedNoteSequence(args: INoteSequence[]):
+    INoteSequence {
+  function calculateTotalTimeIfNeeded(seq: INoteSequence) {
+    if (!seq.totalTime) {
+      seq.totalTime = seq.notes[seq.notes.length - 1].endTime;
+    }
+  }
+
+  // Base case: if there are only two NoteSequences, glue them together.
+  if (args.length === 2) {
+    const [seqA, seqB] = args;
+
+    calculateTotalTimeIfNeeded(seqA);
+    calculateTotalTimeIfNeeded(seqB);
+    const outputSequence = clone(seqA);
+
+    // Shift each note forward.
+    seqB.notes.forEach(note => {
+      const clonedNote = Object.assign({}, note);
+      clonedNote.startTime += seqA.totalTime;
+      clonedNote.endTime += seqA.totalTime;
+      outputSequence.notes.push(clonedNote);
+    });
+    outputSequence.totalTime = seqA.totalTime + seqB.totalTime;
+    return outputSequence;
+  } else if (args.length > 2) {
+    // If there are more than two NoteSequences, concat the last two,
+    // and then recursively concatenate that sequences with the remaining ones.
+    const first = args.shift();
+    return concatenateUnquantizedNoteSequence(
+        [first, concatenateUnquantizedNoteSequence(args)]);
+  } else {
+    // If there's only one NoteSequence, there's nothing to concat.
+    return args[0];
+  }
+}
+
 function trimUnquantizedNoteSequence(
-    ns: NoteSequence, start: number, end: number, truncateEndNotes?: boolean) {
+    ns: INoteSequence, start: number, end: number, truncateEndNotes?: boolean) {
   const result = clone(ns);
   result.totalTime = end;
   result.notes = result.notes.filter(
@@ -503,7 +561,7 @@ function trimUnquantizedNoteSequence(
 }
 
 function trimQuantizedNoteSequence(
-    ns: NoteSequence, start: number, end: number, truncateEndNotes?: boolean) {
+    ns: INoteSequence, start: number, end: number, truncateEndNotes?: boolean) {
   const result = clone(ns);
   result.totalQuantizedSteps = end;
   result.notes = result.notes.filter(
