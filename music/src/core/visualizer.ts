@@ -111,7 +111,7 @@ export abstract class BasePianoRollVisualizer {
     this.clear();
 
     let activeNotePosition;
-    const noteRenderHeight = Math.round(this.config.noteHeight);
+    const noteRenderHeight = this.config.noteHeight;
 
     for (let i = 0; i < this.noteSequence.notes.length; i++) {
       const note = this.noteSequence.notes[i];
@@ -254,7 +254,8 @@ export class Visualizer extends BasePianoRollVisualizer {
     this.ctx.fillStyle = fill;
 
     // Round values to the nearest integer to avoid partially filled pixels.
-    this.ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), h);
+    this.ctx.fillRect(
+        Math.round(x), Math.round(y), Math.round(w), Math.round(h));
   }
 
   protected clear() {
@@ -302,10 +303,10 @@ export class SVGVisualizer extends BasePianoRollVisualizer {
     rect.setAttribute('fill', fill);
 
     // Round values to the nearest integer to avoid partially filled pixels.
-    rect.setAttribute('x', Math.round(x) + '');
-    rect.setAttribute('y', Math.round(y) + '');
-    rect.setAttribute('width', Math.round(w) + '');
-    rect.setAttribute('height', h + '');
+    rect.setAttribute('x', `${Math.round(x)}`);
+    rect.setAttribute('y', `${Math.round(y)}`);
+    rect.setAttribute('width', `${Math.round(w)}`);
+    rect.setAttribute('height', `${Math.round(h)}`);
     this.svg.appendChild(rect);
   }
 
