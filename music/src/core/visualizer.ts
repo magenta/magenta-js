@@ -34,7 +34,7 @@ import {MAX_MIDI_PITCH, MIN_MIDI_PITCH} from './constants';
  * @param maxPitch The biggest pitch to be included in the visualization. If
  * undefined, this will be computed from the NoteSequence being visualized.
  */
-export interface VisualizerConfig {
+interface VisualizerConfig {
   noteHeight?: number;
   noteSpacing?: number;
   pixelsPerTimeStep?: number;
@@ -215,12 +215,17 @@ export abstract class BasePianoRollVisualizer {
 }
 
 /**
- * Displays a pianoroll on a canvas, with pitches on the vertical axis and time
- * on the horizontal. When connected to a player, the visualizer can also
- * highlight the notes being currently played.
+ * Displays a pianoroll on a canvas.
  */
 export class Visualizer extends BasePianoRollVisualizer {
   protected ctx: CanvasRenderingContext2D;
+  /**
+   *   `Visualizer` constructor.
+   *
+   *   @param sequence The `NoteSequence` to be visualized.
+   *   @param canvas The element where the visualization should be displayed.
+   *   @param config Visualization configuration options.
+   */
   constructor(
       sequence: INoteSequence, canvas: HTMLCanvasElement,
       config: VisualizerConfig = {}) {
@@ -264,9 +269,7 @@ export class Visualizer extends BasePianoRollVisualizer {
 }
 
 /**
- * Displays a pianoroll as an SVG with pitches on the vertical axis and time on
- * the horizontal. When connected to a player, the visualizer can also highlight
- * the notes being currently played.
+ * Displays a pianoroll as an SVG.
  */
 export class SVGVisualizer extends BasePianoRollVisualizer {
   private svg: SVGSVGElement;
@@ -275,7 +278,7 @@ export class SVGVisualizer extends BasePianoRollVisualizer {
    *   `Visualizer` constructor.
    *
    *   @param sequence The `NoteSequence` to be visualized.
-   *   @param canvas The element where the visualization should be displayed.
+   *   @param svg The element where the visualization should be displayed.
    *   @param config Visualization configuration options.
    */
   constructor(
