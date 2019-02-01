@@ -16,8 +16,6 @@
  */
 
 import * as test from 'tape';
-
-import {exp} from '../../node_modules/@tensorflow/tfjs';
 import {NoteSequence} from '../protobuf/index';
 
 import * as sequences from './sequences';
@@ -540,12 +538,8 @@ test('Split sequence in 2 steps', (t: test.Test) => {
   const expected2 = [
     new NoteSequence.Note(
         {pitch: 60, velocity: 100, quantizedStartStep: 0, quantizedEndStep: 1}),
-    new NoteSequence.Note({
-      pitch: 72,
-      velocity: 100,
-      quantizedStartStep: 0,
-      quantizedEndStep: 2
-    })
+    new NoteSequence.Note(
+        {pitch: 72, velocity: 100, quantizedStartStep: 0, quantizedEndStep: 2})
   ];
   // [80, 100, 6, 9] is basically [80, 100, 0, 3], so it's split in 2 sequences
   const expected3 = [new NoteSequence.Note(
@@ -601,12 +595,8 @@ test('Split sequence in 64 steps', (t: test.Test) => {
   const expected2 = [
     new NoteSequence.Note(
         {pitch: 10, velocity: 100, quantizedStartStep: 0, quantizedEndStep: 4}),
-    new NoteSequence.Note({
-      pitch: 20,
-      velocity: 100,
-      quantizedStartStep: 6,
-      quantizedEndStep: 10
-    })
+    new NoteSequence.Note(
+        {pitch: 20, velocity: 100, quantizedStartStep: 6, quantizedEndStep: 10})
   ];
 
   const split = sequences.split(ns1, 64);
