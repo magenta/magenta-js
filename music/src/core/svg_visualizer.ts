@@ -40,6 +40,7 @@ export class SVGVisualizer extends Visualizer {
     super(sequence, null, config);
 
     this.svg = svg;
+    this.parentElement = svg.parentElement;
 
     // Make sure that if we've used this svg element before, it's now emptied.
     this.svg.innerHTML = '';
