@@ -19,7 +19,7 @@ import * as d3 from 'd3';
 
 export function updateGraph(data: number[], elementId: string) {
   const margin = {top: 50, right: 50, bottom: 50, left: 50};
-  const width = 600;
+  const width = Math.min(600, window.innerWidth - 100);
   const height = 150;
 
   // Create a d3 dataset out of the data.
@@ -30,7 +30,7 @@ export function updateGraph(data: number[], elementId: string) {
       d3.scaleLinear().domain([0, Math.max(...data)]).range([height, 0]);
 
   // Setup.
-  const svg = d3.select(elementId);
+  const svg = d3.select('#' + elementId);
   svg.selectAll('*').remove();
 
   svg.attr('width', width + margin.left + margin.right)
