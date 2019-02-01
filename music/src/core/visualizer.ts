@@ -34,7 +34,7 @@ import {MAX_MIDI_PITCH, MIN_MIDI_PITCH} from './constants';
  * @param maxPitch The biggest pitch to be included in the visualization. If
  * undefined, this will be computed from the NoteSequence being visualized.
  */
-interface VisualizerConfig {
+export interface VisualizerConfig {
   noteHeight?: number;
   noteSpacing?: number;
   pixelsPerTimeStep?: number;
@@ -50,12 +50,12 @@ interface VisualizerConfig {
  * notes being currently played.
  */
 export class Visualizer {
-  private config: VisualizerConfig;
-  private ctx: CanvasRenderingContext2D;
-  private height: number;
+  protected config: VisualizerConfig;
+  protected ctx: CanvasRenderingContext2D;
+  protected height: number;
   public noteSequence: INoteSequence;
-  private sequenceIsQuantized: boolean;
-  private parentElement: HTMLElement;
+  protected sequenceIsQuantized: boolean;
+  protected parentElement: HTMLElement;
 
   /**
    *   `Visualizer` constructor.
@@ -67,22 +67,36 @@ export class Visualizer {
   constructor(
       sequence: INoteSequence, canvas: HTMLCanvasElement,
       config: VisualizerConfig = {}) {
+    this.noteSequence = sequence;
+    this.sequenceIsQuantized = sequences.isQuantizedSequence(this.noteSequence);
+
+    console.log(
+        'visualizing sequence with ' + sequence.notes.length + ' notes');
+    console.log('quantized?', this.sequenceIsQuantized);
+
+    // Quantized sequences appear "longer" because there's usually more
+    // quantized per note (vs seconds), so pick a better default by using
+    // the steps per quarter.
+    let defaultPixelsPerTimeStep = 30;
+    if (this.sequenceIsQuantized) {
+      const spq = sequence.quantizationInfo.stepsPerQuarter;
+      console.log(spq);
+      defaultPixelsPerTimeStep = spq ? defaultPixelsPerTimeStep / spq : 7;
+      console.log(defaultPixelsPerTimeStep);
+    }
     this.config = {
       noteHeight: config.noteHeight || 6,
       noteSpacing: config.noteSpacing || 1,
-      pixelsPerTimeStep: config.pixelsPerTimeStep || 30,
+      pixelsPerTimeStep: config.pixelsPerTimeStep || defaultPixelsPerTimeStep,
       noteRGB: config.noteRGB || '8, 41, 64',
       activeNoteRGB: config.activeNoteRGB || '240, 84, 119',
       minPitch: config.minPitch,
       maxPitch: config.maxPitch,
     };
 
-    this.noteSequence = sequence;
-    this.sequenceIsQuantized = sequences.isQuantizedSequence(this.noteSequence);
-
     // Initialize the canvas.
-    this.ctx = canvas.getContext('2d');
-    this.parentElement = canvas.parentElement;
+    this.ctx = canvas ? canvas.getContext('2d') : null;
+    this.parentElement = canvas ? canvas.parentElement : null;
 
     // Resize the canvas to fit the range of pitches in the note sequence.
     // NOTE: In the future this could be changed to fit all pitches, whether
@@ -95,15 +109,17 @@ export class Visualizer {
     // on retina screens. See:
     // https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio
     const dpr = window.devicePixelRatio || 1;
-    this.ctx.canvas.width = dpr * size.width;
-    this.ctx.canvas.height = dpr * size.height;
+    if (this.ctx) {
+      this.ctx.canvas.width = dpr * size.width;
+      this.ctx.canvas.height = dpr * size.height;
 
-    // If we don't do this, then the canvas will look 2x bigger than we
-    // want to.
-    canvas.style.width = `${size.width}px`;
-    canvas.style.height = `${size.height}px`;
+      // If we don't do this, then the canvas will look 2x bigger than we
+      // want to.
+      canvas.style.width = `${size.width}px`;
+      canvas.style.height = `${size.height}px`;
 
-    this.ctx.scale(dpr, dpr);
+      this.ctx.scale(dpr, dpr);
+    }
 
     this.redraw();
   }
@@ -125,7 +141,9 @@ export class Visualizer {
     // larger sequences. Instead, we should figure out a way to store the
     // "last painted active notes" and repaint those, as well as the new
     // active notes instead.
-    this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    if (this.ctx) {
+      this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    }
     let activeNotePosition;
     const noteRenderHeight = Math.round(this.config.noteHeight);
 
@@ -150,12 +168,12 @@ export class Visualizer {
 
       const isActive =
           activeNote && this.isPaintingActiveNote(note, activeNote);
-      this.ctx.fillStyle =
+      const fill =
           `rgba(${isActive ? this.config.activeNoteRGB : this.config.noteRGB},
-          ${opacity})`;
-      // Round values to the nearest integer to avoid partially filled pixels.
-      this.ctx.fillRect(Math.round(x), Math.round(y), Math.round(w),
-          noteRenderHeight);
+  ${opacity})`;
+
+      this.redrawNote(x, y, w, noteRenderHeight, fill);
+
       if (isActive) {
         activeNotePosition = x;
       }
@@ -173,7 +191,7 @@ export class Visualizer {
     return activeNotePosition;
   }
 
-  private getCanvasSize(): {width: number; height: number} {
+  protected getCanvasSize(): {width: number; height: number} {
     // If the pitches haven't been specified already, figure them out
     // from the NoteSequence.
     if (this.config.minPitch === undefined ||
@@ -205,7 +223,16 @@ export class Visualizer {
     const width = (numNotes * this.config.noteSpacing) +
         (endTime * this.config.pixelsPerTimeStep);
 
+    console.log(width, height);
     return {width, height};
+  }
+
+  protected redrawNote(
+      x: number, y: number, w: number, h: number, fill: string) {
+    this.ctx.fillStyle = fill;
+
+    // Round values to the nearest integer to avoid partially filled pixels.
+    this.ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), h);
   }
 
   private getNoteStartTime(note: NoteSequence.INote) {

@@ -22,10 +22,13 @@ import {FULL_TWINKLE_UNQUANTIZED} from './common';
 
 const MIDI_URL = './melody.mid';
 
-let visualizer: mm.Visualizer;
+let canvasVisualizer: mm.Visualizer;
+let svgVisualizer: mm.SVGVisualizer;
+
 const player = new mm.Player(false, {
   run: (note: mm.NoteSequence.Note) => {
-    visualizer.redraw(note, true);
+    canvasVisualizer.redraw(note, true);
+    svgVisualizer.redraw(note, true);
   },
   stop: () => {}
 });
@@ -38,6 +41,7 @@ const tempoInput = document.getElementById('tempoInput') as HTMLInputElement;
 const tempoValue = document.getElementById('tempoValue') as HTMLDivElement;
 const fileInput = document.getElementById('fileInput') as HTMLInputElement;
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+const svg = document.getElementsByTagName('svg')[0] as SVGSVGElement;
 
 // Set up some event listeners
 urlBtn.addEventListener('click', () => fetchMidi(MIDI_URL));
@@ -66,7 +70,8 @@ function initPlayerAndVisualizer(seq: mm.INoteSequence) {
   playBtn.disabled = false;
   playBtn.textContent = 'Loading';
 
-  visualizer = new mm.Visualizer(seq, canvas);
+  canvasVisualizer = new mm.Visualizer(seq, canvas);
+  svgVisualizer = new mm.SVGVisualizer(seq, svg);
 
   const tempo = seq.tempos[0].qpm;
   player.setTempo(tempo);
@@ -82,7 +87,7 @@ function startOrStop() {
     player.stop();
     playBtn.textContent = 'Play';
   } else {
-    player.start(visualizer.noteSequence);
+    player.start(canvasVisualizer.noteSequence);
     playBtn.textContent = 'Stop';
   }
 }
