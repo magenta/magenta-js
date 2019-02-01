@@ -529,7 +529,8 @@ test('Split sequence in 2 steps', (t: test.Test) => {
 
   let ns1 = createTestNS();
   addTrackToSequence(
-      ns1, 0, [[60, 100, 0, 3], [72, 100, 2, 4], [80, 100, 6, 9]]);
+      ns1, 0,
+      [[60, 100, 0, 3], [72, 100, 2, 4], [80, 100, 6, 9], [20, 100, 40, 42]]);
   ns1 = sequences.quantizeNoteSequence(ns1, 1);
 
   // The first [60, 100, 0, 3] is split in 2 sequences.
@@ -551,8 +552,10 @@ test('Split sequence in 2 steps', (t: test.Test) => {
       {pitch: 80, velocity: 100, quantizedStartStep: 0, quantizedEndStep: 2})];
   const expected4 = [new NoteSequence.Note(
       {pitch: 80, velocity: 100, quantizedStartStep: 0, quantizedEndStep: 1})];
-
+  const expected5 = [new NoteSequence.Note(
+      {pitch: 20, velocity: 100, quantizedStartStep: 0, quantizedEndStep: 2})];
   const split = sequences.split(ns1, 2);
+  console.log(split[4].notes);
 
   // The objects aren't exactly equal since the returned sequences' notes
   // have more fields (instruments, drums), so loosely compare notes.
@@ -560,5 +563,6 @@ test('Split sequence in 2 steps', (t: test.Test) => {
   t.is(true, compareNotesArray(split[1].notes, expected2), '2 ok');
   t.is(true, compareNotesArray(split[2].notes, expected3), '3 ok');
   t.is(true, compareNotesArray(split[3].notes, expected4), '4 ok');
+  t.is(true, compareNotesArray(split[4].notes, expected5), '5 ok');
   t.end();
 });

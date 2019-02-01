@@ -450,10 +450,12 @@ export function split(ns: INoteSequence, chunkSize = 32): NoteSequence[] {
   for (let i = 0; i < notesBystartStep.length; i++) {
     const note = notesBystartStep[i];
 
+    const s = note.quantizedStartStep;
+    const e = note.quantizedEndStep;
+
     // Rebase this note on the current chunk.
     note.quantizedStartStep -= startStep;
     note.quantizedEndStep -= startStep;
-
     if (note.quantizedStartStep < 0) {
       continue;
     }
@@ -472,10 +474,14 @@ export function split(ns: INoteSequence, chunkSize = 32): NoteSequence[] {
           quantizedStartStep: note.quantizedStartStep,
           quantizedEndStep: chunkSize
         }));
-
         // Keep the rest of this note, and make sure that next loop still deals
-        // with it.
-        note.quantizedStartStep = chunkSize;
+        // with it, and reset it for the next loop.
+        note.quantizedStartStep = s + chunkSize;
+        note.quantizedEndStep = e;
+      } else {
+        // We didn't truncate this note at all, so reset it for the next loop.
+        note.quantizedStartStep = s;
+        note.quantizedEndStep = e;
       }
 
       // Do we need to look at this note again?
@@ -483,7 +489,6 @@ export function split(ns: INoteSequence, chunkSize = 32): NoteSequence[] {
           note.quantizedStartStep > chunkSize) {
         i = i - 1;
       }
-
       // Save this bar if it isn't empty.
       if (currentNotes.length !== 0) {
         const newSequence = clone(ns);
@@ -494,7 +499,7 @@ export function split(ns: INoteSequence, chunkSize = 32): NoteSequence[] {
 
       // Start a new bar.
       currentNotes = [];
-      startStep = chunkSize;
+      startStep += chunkSize;
     }
   }
 
