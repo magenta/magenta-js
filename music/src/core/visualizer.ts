@@ -67,32 +67,18 @@ export class Visualizer {
   constructor(
       sequence: INoteSequence, canvas: HTMLCanvasElement,
       config: VisualizerConfig = {}) {
-    this.noteSequence = sequence;
-    this.sequenceIsQuantized = sequences.isQuantizedSequence(this.noteSequence);
-
-    console.log(
-        'visualizing sequence with ' + sequence.notes.length + ' notes');
-    console.log('quantized?', this.sequenceIsQuantized);
-
-    // Quantized sequences appear "longer" because there's usually more
-    // quantized per note (vs seconds), so pick a better default by using
-    // the steps per quarter.
-    let defaultPixelsPerTimeStep = 30;
-    if (this.sequenceIsQuantized) {
-      const spq = sequence.quantizationInfo.stepsPerQuarter;
-      console.log(spq);
-      defaultPixelsPerTimeStep = spq ? defaultPixelsPerTimeStep / spq : 7;
-      console.log(defaultPixelsPerTimeStep);
-    }
     this.config = {
       noteHeight: config.noteHeight || 6,
       noteSpacing: config.noteSpacing || 1,
-      pixelsPerTimeStep: config.pixelsPerTimeStep || defaultPixelsPerTimeStep,
+      pixelsPerTimeStep: config.pixelsPerTimeStep || 30,
       noteRGB: config.noteRGB || '8, 41, 64',
       activeNoteRGB: config.activeNoteRGB || '240, 84, 119',
       minPitch: config.minPitch,
       maxPitch: config.maxPitch,
     };
+
+    this.noteSequence = sequence;
+    this.sequenceIsQuantized = sequences.isQuantizedSequence(this.noteSequence);
 
     // Initialize the canvas.
     this.ctx = canvas ? canvas.getContext('2d') : null;
@@ -223,7 +209,6 @@ export class Visualizer {
     const width = (numNotes * this.config.noteSpacing) +
         (endTime * this.config.pixelsPerTimeStep);
 
-    console.log(width, height);
     return {width, height};
   }
 
