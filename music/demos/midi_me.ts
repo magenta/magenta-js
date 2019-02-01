@@ -1,7 +1,9 @@
 import * as mm from '../src';
 import {blobToNoteSequence, INoteSequence, NoteSequence} from '../src';
 import {quantizeNoteSequence} from '../src/core/sequences';
-import {CHECKPOINTS_DIR, visualizeNoteSeqs, writeTimer} from './common';
+
+// tslint:disable-next-line:max-line-length
+import {CHECKPOINTS_DIR, visualizeNoteSeqs, writeMemory, writeTimer} from './common';
 import {updateGraph} from './common_graph';
 
 const MEL_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_4bar_med_q2`;
@@ -56,15 +58,24 @@ async function doTheThing(mel: NoteSequence) {
   writeTimer('training-time', start);
 
   // 5. Sample from MidiMe
-  const sample = await model.sample(4);
-  const ns3 = await mvae.decode(sample as mm.tf.Tensor2D);
-  const concatenated = concatenate(ns3);
+  const sample1 = await model.sample(4);
+  const ns3 = await mvae.decode(sample1 as mm.tf.Tensor2D);
+  visualizeNoteSeqs('sample-midime', [concatenate(ns3)]);
 
+  // 5. Sample from MusicVAE.
+  const sample2 = await mvae.sample(4);
+  visualizeNoteSeqs('sample-musicvae', [concatenate(sample2)]);
+
+  dispose();
   // Halp.
   // concatenated.tempos = quantizedMel.tempos;
   // concatenated.ticksPerQuarter = quantizedMel.ticksPerQuarter;
+}
 
-  visualizeNoteSeqs('sample', [concatenated]);
+function dispose() {
+  mvae.dispose();
+  model.dispose();
+  writeMemory(mm.tf.memory().numBytes);
 }
 /*
  * Helpers
