@@ -450,12 +450,13 @@ export function split(ns: INoteSequence, chunkSize = 32): NoteSequence[] {
   for (let i = 0; i < notesBystartStep.length; i++) {
     const note = notesBystartStep[i];
 
-    const s = note.quantizedStartStep;
-    const e = note.quantizedEndStep;
+    const originalStartStep = note.quantizedStartStep;
+    const originalEndStep = note.quantizedEndStep;
 
     // Rebase this note on the current chunk.
     note.quantizedStartStep -= startStep;
     note.quantizedEndStep -= startStep;
+
     if (note.quantizedStartStep < 0) {
       continue;
     }
@@ -476,12 +477,12 @@ export function split(ns: INoteSequence, chunkSize = 32): NoteSequence[] {
         }));
         // Keep the rest of this note, and make sure that next loop still deals
         // with it, and reset it for the next loop.
-        note.quantizedStartStep = s + chunkSize;
-        note.quantizedEndStep = e;
+        note.quantizedStartStep = startStep + chunkSize;
+        note.quantizedEndStep = originalEndStep;
       } else {
         // We didn't truncate this note at all, so reset it for the next loop.
-        note.quantizedStartStep = s;
-        note.quantizedEndStep = e;
+        note.quantizedStartStep = originalStartStep;
+        note.quantizedEndStep = originalEndStep;
       }
 
       // Do we need to look at this note again?
