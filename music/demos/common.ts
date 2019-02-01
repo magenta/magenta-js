@@ -383,7 +383,7 @@ export function writeMemory(bytes: number, name = 'leaked-memory') {
 function createPlayerButton(
     seq: mm.INoteSequence, withClick: boolean, useSoundFontPlayer: boolean,
     el: HTMLElement|SVGSVGElement, useSVGVisualizer = false) {
-  let visualizer: mm.Visualizer;
+  let visualizer: mm.BasePianoRollVisualizer;
   if (useSVGVisualizer) {
     visualizer = new mm.SVGVisualizer(seq, el as SVGSVGElement);
   } else {

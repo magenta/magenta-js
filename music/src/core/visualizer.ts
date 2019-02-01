@@ -45,17 +45,30 @@ export interface VisualizerConfig {
 }
 
 /**
- * Displays a pianoroll with pitches on the vertical axis and time on the
- * horizontal. When connected to a player, the visualizer can also highlight the
- * notes being currently played.
+ * Abstract base class for a `NoteSequence` visualizer.
  */
-export class Visualizer {
+export abstract class BasePianoRollVisualizer {
   protected config: VisualizerConfig;
-  protected ctx: CanvasRenderingContext2D;
   protected height: number;
+  protected width: number;
   public noteSequence: INoteSequence;
   protected sequenceIsQuantized: boolean;
   protected parentElement: HTMLElement;
+
+  /**
+   * Will be called for each note that is being redrawn.
+   *
+   * @param x The x position of the note.
+   * @param y The y position of the note.
+   * @param w The width of the note.
+   * @param h The height of the note.
+   * @param fill The fill color of the note.
+   */
+  protected abstract redrawNote(
+      x: number, y: number, w: number, h: number, fill: string): void;
+
+  // Clears the current visualization.
+  protected abstract clear(): void;
 
   /**
    *   `Visualizer` constructor.
@@ -64,9 +77,7 @@ export class Visualizer {
    *   @param canvas The element where the visualization should be displayed.
    *   @param config Visualization configuration options.
    */
-  constructor(
-      sequence: INoteSequence, canvas: HTMLCanvasElement,
-      config: VisualizerConfig = {}) {
+  constructor(sequence: INoteSequence, config: VisualizerConfig = {}) {
     this.config = {
       noteHeight: config.noteHeight || 6,
       noteSpacing: config.noteSpacing || 1,
@@ -79,35 +90,9 @@ export class Visualizer {
 
     this.noteSequence = sequence;
     this.sequenceIsQuantized = sequences.isQuantizedSequence(this.noteSequence);
-
-    // Initialize the canvas.
-    this.ctx = canvas ? canvas.getContext('2d') : null;
-    this.parentElement = canvas ? canvas.parentElement : null;
-
-    // Resize the canvas to fit the range of pitches in the note sequence.
-    // NOTE: In the future this could be changed to fit all pitches, whether
-    // they are in the note sequence or note.
-    const size = this.getCanvasSize();
-
+    const size = this.getSize();
+    this.width = size.width;
     this.height = size.height;
-
-    // Use the correct device pixel ratio so that the canvas isn't blurry
-    // on retina screens. See:
-    // https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio
-    const dpr = window.devicePixelRatio || 1;
-    if (this.ctx) {
-      this.ctx.canvas.width = dpr * size.width;
-      this.ctx.canvas.height = dpr * size.height;
-
-      // If we don't do this, then the canvas will look 2x bigger than we
-      // want to.
-      canvas.style.width = `${size.width}px`;
-      canvas.style.height = `${size.height}px`;
-
-      this.ctx.scale(dpr, dpr);
-    }
-
-    this.redraw();
   }
 
   /**
@@ -123,13 +108,8 @@ export class Visualizer {
    * of the screen.
    */
   redraw(activeNote?: NoteSequence.INote, scrollIntoView?: boolean): number {
-    // TODO: this is not super optimal, and might start being too slow for
-    // larger sequences. Instead, we should figure out a way to store the
-    // "last painted active notes" and repaint those, as well as the new
-    // active notes instead.
-    if (this.ctx) {
-      this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-    }
+    this.clear();
+
     let activeNotePosition;
     const noteRenderHeight = Math.round(this.config.noteHeight);
 
@@ -165,7 +145,7 @@ export class Visualizer {
       }
     }
 
-    if (scrollIntoView) {
+    if (scrollIntoView && this.parentElement) {
       // See if we need to scroll the container.
       const containerWidth = this.parentElement.getBoundingClientRect().width;
       if (activeNotePosition >
@@ -177,7 +157,7 @@ export class Visualizer {
     return activeNotePosition;
   }
 
-  protected getCanvasSize(): {width: number; height: number} {
+  protected getSize(): {width: number; height: number} {
     // If the pitches haven't been specified already, figure them out
     // from the NoteSequence.
     if (this.config.minPitch === undefined ||
@@ -212,14 +192,6 @@ export class Visualizer {
     return {width, height};
   }
 
-  protected redrawNote(
-      x: number, y: number, w: number, h: number, fill: string) {
-    this.ctx.fillStyle = fill;
-
-    // Round values to the nearest integer to avoid partially filled pixels.
-    this.ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), h);
-  }
-
   private getNoteStartTime(note: NoteSequence.INote) {
     return this.sequenceIsQuantized ? note.quantizedStartStep : note.startTime;
   }
@@ -239,5 +211,105 @@ export class Visualizer {
         this.getNoteEndTime(note) >= this.getNoteEndTime(playedNote);
 
     return isPlayedNote || heldDownDuringPlayedNote;
+  }
+}
+
+/**
+ * Displays a pianoroll on a canvas, with pitches on the vertical axis and time
+ * on the horizontal. When connected to a player, the visualizer can also
+ * highlight the notes being currently played.
+ */
+export class Visualizer extends BasePianoRollVisualizer {
+  protected ctx: CanvasRenderingContext2D;
+  constructor(
+      sequence: INoteSequence, canvas: HTMLCanvasElement,
+      config: VisualizerConfig = {}) {
+    super(sequence, config);
+
+    // Initialize the canvas.
+    this.ctx = canvas.getContext('2d');
+    this.parentElement = canvas.parentElement;
+
+    // Use the correct device pixel ratio so that the canvas isn't blurry
+    // on retina screens. See:
+    // https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio
+    const dpr = window.devicePixelRatio || 1;
+    if (this.ctx) {
+      this.ctx.canvas.width = dpr * this.width;
+      this.ctx.canvas.height = dpr * this.height;
+
+      // If we don't do this, then the canvas will look 2x bigger than we
+      // want to.
+      canvas.style.width = `${this.width}px`;
+      canvas.style.height = `${this.height}px`;
+
+      this.ctx.scale(dpr, dpr);
+    }
+
+    this.redraw();
+  }
+
+  protected redrawNote(
+      x: number, y: number, w: number, h: number, fill: string) {
+    this.ctx.fillStyle = fill;
+
+    // Round values to the nearest integer to avoid partially filled pixels.
+    this.ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), h);
+  }
+
+  protected clear() {
+    this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+  }
+}
+
+/**
+ * Displays a pianoroll as an SVG with pitches on the vertical axis and time on
+ * the horizontal. When connected to a player, the visualizer can also highlight
+ * the notes being currently played.
+ */
+export class SVGVisualizer extends BasePianoRollVisualizer {
+  private svg: SVGSVGElement;
+
+  /**
+   *   `Visualizer` constructor.
+   *
+   *   @param sequence The `NoteSequence` to be visualized.
+   *   @param canvas The element where the visualization should be displayed.
+   *   @param config Visualization configuration options.
+   */
+  constructor(
+      sequence: INoteSequence, svg: SVGSVGElement,
+      config: VisualizerConfig = {}) {
+    super(sequence, config);
+
+    this.svg = svg;
+    this.parentElement = svg.parentElement;
+
+    // Make sure that if we've used this svg element before, it's now emptied.
+    this.svg.style.width = `${this.width}px`;
+    this.svg.style.height = `${this.height}px`;
+
+    this.redraw();
+  }
+
+  protected redrawNote(
+      x: number, y: number, w: number, h: number, fill: string) {
+    if (!this.svg) {
+      return;
+    }
+    const rect: SVGRectElement =
+        document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('fill', fill);
+
+    // Round values to the nearest integer to avoid partially filled pixels.
+    rect.setAttribute('x', Math.round(x) + '');
+    rect.setAttribute('y', Math.round(y) + '');
+    rect.setAttribute('width', Math.round(w) + '');
+    rect.setAttribute('height', h + '');
+    this.svg.appendChild(rect);
+  }
+
+  protected clear() {
+    this.svg.innerHTML = '';
   }
 }
