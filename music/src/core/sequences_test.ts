@@ -17,6 +17,7 @@
 
 import * as test from 'tape';
 
+import {exp} from '../../node_modules/@tensorflow/tfjs';
 import {NoteSequence} from '../protobuf/index';
 
 import * as sequences from './sequences';
@@ -504,5 +505,60 @@ test('Merge Instruments', (t: test.Test) => {
       NoteSequence.toObject(sequences.mergeInstruments(ns)),
       NoteSequence.toObject(expected));
 
+  t.end();
+});
+
+test('Split sequence in 2 steps', (t: test.Test) => {
+  function compareNotes(note1: NoteSequence.INote, note2: NoteSequence.INote) {
+    return note1.pitch === note2.pitch && note1.velocity === note2.velocity &&
+        note1.quantizedStartStep === note2.quantizedStartStep &&
+        note1.quantizedEndStep === note2.quantizedEndStep;
+  }
+
+  function compareNotesArray(a: NoteSequence.INote[], b: NoteSequence.INote[]) {
+    if (a.length !== b.length) {
+      return false;
+    }
+    for (let i = 0; i < a.length; i++) {
+      if (!compareNotes(a[i], b[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  let ns1 = createTestNS();
+  addTrackToSequence(
+      ns1, 0, [[60, 100, 0, 3], [72, 100, 2, 4], [80, 100, 6, 9]]);
+  ns1 = sequences.quantizeNoteSequence(ns1, 1);
+
+  // The first [60, 100, 0, 3] is split in 2 sequences.
+  const expected1 = [new NoteSequence.Note(
+      {pitch: 60, velocity: 100, quantizedStartStep: 0, quantizedEndStep: 2})];
+  // This contains the leftover from the first note, and [72, 100, 2, 4].
+  const expected2 = [
+    new NoteSequence.Note(
+        {pitch: 60, velocity: 100, quantizedStartStep: 0, quantizedEndStep: 1}),
+    new NoteSequence.Note({
+      pitch: 72,
+      velocity: 100,
+      quantizedStartStep: 0,
+      quantizedEndStep: 2
+    })
+  ];
+  // [80, 100, 6, 9] is basically [80, 100, 0, 3], so it's split in 2 sequences
+  const expected3 = [new NoteSequence.Note(
+      {pitch: 80, velocity: 100, quantizedStartStep: 0, quantizedEndStep: 2})];
+  const expected4 = [new NoteSequence.Note(
+      {pitch: 80, velocity: 100, quantizedStartStep: 0, quantizedEndStep: 1})];
+
+  const split = sequences.split(ns1, 2);
+
+  // The objects aren't exactly equal since the returned sequences' notes
+  // have more fields (instruments, drums), so loosely compare notes.
+  t.is(true, compareNotesArray(split[0].notes, expected1), '1 ok');
+  t.is(true, compareNotesArray(split[1].notes, expected2), '2 ok');
+  t.is(true, compareNotesArray(split[2].notes, expected3), '3 ok');
+  t.is(true, compareNotesArray(split[3].notes, expected4), '4 ok');
   t.end();
 });
