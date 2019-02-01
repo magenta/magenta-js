@@ -436,8 +436,11 @@ export function mergeInstruments(ns: INoteSequence) {
  * @returns An array of `NoteSequences` each of which are at most `chunkSize`
  * steps.
  */
-export function split(ns: INoteSequence, chunkSize = 32): NoteSequence[] {
-  assertIsQuantizedSequence(ns);
+export function split(seq: INoteSequence, chunkSize = 32): NoteSequence[] {
+  assertIsQuantizedSequence(seq);
+
+  // Make a clone so that we don't destroy the input.
+  const ns = clone(seq);
 
   // Sort notes first.
   const notesBystartStep =
