@@ -31,7 +31,7 @@ async function doTheThing(mel: NoteSequence) {
 
   // 1b. Split this sequence into bar chunks:
   // 4 steps/quarter, 4 quarters/bar => 16 steps / bar
-  const chunks = splitNoteSequence(quantizedMel, 16 * BARS);
+  const chunks = splitNoteSequence(mm.sequences.clone(quantizedMel), 16 * BARS);
   const z = await mvae.encode(chunks);  // shape of z is [chunks, 256]
 
   // 2. Use that z as input to train MidiMe.
@@ -69,7 +69,9 @@ async function doTheThing(mel: NoteSequence) {
 /*
  * Helpers
  */
-function splitNoteSequence(ns: INoteSequence, chunkSize = 32) {
+
+function splitNoteSequence(ns: INoteSequence, chunkSize = 32): NoteSequence[] {
+  // Sort notes first.
   const notesBystartStep =
       ns.notes.sort((a, b) => a.quantizedStartStep - b.quantizedStartStep);
 
@@ -77,30 +79,69 @@ function splitNoteSequence(ns: INoteSequence, chunkSize = 32) {
   let startStep = 0;
   let currentNotes = [];
 
-  for (const note of notesBystartStep) {
+  for (let i = 0; i < notesBystartStep.length; i++) {
+    const note = notesBystartStep[i];
+
+    const originalStartStep = note.quantizedStartStep;
+    const originalEndStep = note.quantizedEndStep;
+
     // Rebase this note on the current chunk.
     note.quantizedStartStep -= startStep;
     note.quantizedEndStep -= startStep;
 
-    if (note.quantizedStartStep >= 0 && note.quantizedEndStep <= chunkSize) {
-      // If this note spills over, truncate it
-      note.quantizedEndStep = Math.min(note.quantizedEndStep, chunkSize);
+    if (note.quantizedStartStep < 0) {
+      continue;
+    }
+    // If this note fits in the chunk, add it to the current sequence.
+    if (note.quantizedEndStep <= chunkSize) {
       currentNotes.push(note);
     } else {
-      startStep += chunkSize;
+      // If this note spills over, truncate it and add it to this sequence.
+      if (note.quantizedStartStep < chunkSize) {
+        currentNotes.push(new NoteSequence.Note({
+          pitch: note.pitch,
+          velocity: note.velocity,
+          instrument: note.instrument,
+          program: note.program,
+          isDrum: note.isDrum,
+          quantizedStartStep: note.quantizedStartStep,
+          quantizedEndStep: chunkSize
+        }));
+        // Keep the rest of this note, and make sure that next loop still deals
+        // with it, and reset it for the next loop.
+        note.quantizedStartStep = startStep + chunkSize;
+        note.quantizedEndStep = originalEndStep;
+      } else {
+        // We didn't truncate this note at all, so reset it for the next loop.
+        note.quantizedStartStep = originalStartStep;
+        note.quantizedEndStep = originalEndStep;
+      }
 
-      note.quantizedStartStep = 0;
-      note.quantizedEndStep = Math.max(0, note.quantizedEndStep - chunkSize);
+      // Do we need to look at this note again?
+      if (note.quantizedEndStep > chunkSize ||
+          note.quantizedStartStep > chunkSize) {
+        i = i - 1;
+      }
+      // Save this bar if it isn't empty.
+      if (currentNotes.length !== 0) {
+        const newSequence = mm.sequences.clone(ns);
+        newSequence.notes = currentNotes;
+        newSequence.totalQuantizedSteps = chunkSize;
+        chunks.push(newSequence);
+      }
 
-      // Save this bar and start a new one.
-      chunks.push(NoteSequence.create({
-        notes: currentNotes,
-        quantizationInfo: {stepsPerQuarter: 4},
-        totalQuantizedSteps: chunkSize
-      }));
+      // Start a new bar.
       currentNotes = [];
-      currentNotes.push(note);
+      startStep += chunkSize;
     }
+  }
+
+  // Deal with the leftover notes we have in the last bar.
+  if (currentNotes.length !== 0) {
+    const newSequence = mm.sequences.clone(ns);
+    newSequence.notes = currentNotes;
+    newSequence.totalQuantizedSteps = chunkSize;
+    chunks.push(newSequence);
   }
   return chunks;
 }
