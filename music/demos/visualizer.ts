@@ -22,8 +22,8 @@ import {FULL_TWINKLE_UNQUANTIZED} from './common';
 
 const MIDI_URL = './melody.mid';
 
-let canvasVisualizer: mm.Visualizer;
-let svgVisualizer: mm.SVGVisualizer;
+let canvasVisualizer: mm.PianoRollCanvasVisualizer;
+let svgVisualizer: mm.PianoRollSVGVisualizer;
 
 const player = new mm.Player(false, {
   run: (note: mm.NoteSequence.Note) => {
@@ -70,8 +70,8 @@ function initPlayerAndVisualizer(seq: mm.INoteSequence) {
   playBtn.disabled = false;
   playBtn.textContent = 'Loading';
 
-  canvasVisualizer = new mm.Visualizer(seq, canvas);
-  svgVisualizer = new mm.SVGVisualizer(seq, svg);
+  canvasVisualizer = new mm.PianoRollCanvasVisualizer(seq, canvas);
+  svgVisualizer = new mm.PianoRollSVGVisualizer(seq, svg);
 
   const tempo = seq.tempos[0].qpm;
   player.setTempo(tempo);

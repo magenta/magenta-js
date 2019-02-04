@@ -53,8 +53,9 @@ startStreamBtn.addEventListener('click', () => {
   recorder.callbackObject = {
     run: (seq: mm.NoteSequence) => {
       if (seq) {
-        new mm.Visualizer(
-            seq, document.getElementById('canvas') as HTMLCanvasElement);
+        // tslint:disable-next-line:no-unused-expression
+        new mm.PianoRollSVGVisualizer(
+            seq, document.getElementsByClassName('svg')[0] as SVGSVGElement);
       }
     }
   };

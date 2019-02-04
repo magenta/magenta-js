@@ -16,7 +16,7 @@ limitations under the License.
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
   <link rel="stylesheet" href="./style.css">
-  <title>mm.Visualizer</title>
+  <title>Visualizer</title>
   <style>
     input[type="file"] {
       width: 0;
@@ -28,13 +28,11 @@ limitations under the License.
   </style>
 </head>
 <body>
-  <h1>mm.Visualizer</h1>
+  <h1>Visualizers</h1>
   <p>
-    <code>mm.Visualizer</code> is a midi or <code>NoteSequence</code> visualizer.
+    There are several MIDI or <code>NoteSequence</code> visualizers available.
     You can connect it to an <code>mm.Player</code> to update the visualization
-    in sync with the audio. Every time the <code>mm.Visualizer</code> redraws,
-    it will return the position of the active note being played, so that you
-    can implement an auto-scrolling visualizer, if you want.
+    in sync with the audio.
   </p>
 
   <section>
@@ -54,14 +52,14 @@ limitations under the License.
     </span>
   </section>
 
-  <h2>mm.Visualizer (using <code>canvas</code>)</h2>
+  <h2>mm.PianoRollCanvasVisualizer</h2>
   <section>
     <div class="visualizer-container" id="container">
       <canvas id="canvas"></canvas>
     </div>
   </section>
 
-  <h2>mm.SVGVisualizer (using <code>svg</code>)</h2>
+  <h2>mm.PianoRollSVGVisualizer</h2>
   <section>
     <div class="visualizer-container" id="container2">
       <svg id="svg"></svg>

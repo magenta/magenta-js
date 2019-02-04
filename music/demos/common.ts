@@ -359,8 +359,7 @@ export function writeNoteSeqs(
 }
 
 export function visualizeNoteSeqs(
-    elementId: string, seqs: mm.INoteSequence[], useSoundFontPlayer = false,
-    useSVGVisualizer = true) {
+    elementId: string, seqs: mm.INoteSequence[], useSoundFontPlayer = false) {
   const element = document.getElementById(elementId);
   while (element.firstChild) {
     element.removeChild(element.firstChild);
@@ -370,8 +369,7 @@ export function visualizeNoteSeqs(
     const summary = document.createElement('summary');
     summary.textContent = 'View NoteSequence';
     details.appendChild(summary);
-    details.appendChild(
-        createPlayer(seq, useSoundFontPlayer, useSVGVisualizer));
+    details.appendChild(createPlayer(seq, useSoundFontPlayer));
     element.appendChild(details);
   });
 }
@@ -382,13 +380,8 @@ export function writeMemory(bytes: number, name = 'leaked-memory') {
 
 function createPlayerButton(
     seq: mm.INoteSequence, withClick: boolean, useSoundFontPlayer: boolean,
-    el: HTMLElement|SVGSVGElement, useSVGVisualizer = false) {
-  let visualizer: mm.BasePianoRollVisualizer;
-  if (useSVGVisualizer) {
-    visualizer = new mm.SVGVisualizer(seq, el as SVGSVGElement);
-  } else {
-    visualizer = new mm.Visualizer(seq, el as HTMLCanvasElement);
-  }
+    el: SVGSVGElement) {
+  const visualizer = new mm.PianoRollSVGVisualizer(seq, el as SVGSVGElement);
   const container = el.parentElement as HTMLDivElement;
 
   const callbackObject = {
@@ -440,31 +433,23 @@ function createDownloadButton(seq: mm.INoteSequence) {
   return button;
 }
 
-function createPlayer(
-    seq: mm.INoteSequence, useSoundFontPlayer = false,
-    useSVGVisualizer = false) {
+function createPlayer(seq: mm.INoteSequence, useSoundFontPlayer = false) {
   // Visualizer
   const div = document.createElement('div');
   div.classList.add('player-container');
   const containerDiv = document.createElement('div');
   containerDiv.classList.add('visualizer-container');
-  let el;
-  if (useSVGVisualizer) {
-    el = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  } else {
-    el = document.createElement('canvas');
-  }
+  const el = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   containerDiv.appendChild(el);
 
   const buttonsDiv = document.createElement('div');
   // Regular player.
   buttonsDiv.appendChild(
-      createPlayerButton(seq, false, useSoundFontPlayer, el, useSVGVisualizer));
+      createPlayerButton(seq, false, useSoundFontPlayer, el));
 
   // Player with click. Only works for quantized sequences.
   if (!useSoundFontPlayer && sequences.isQuantizedSequence(seq)) {
-    buttonsDiv.appendChild(
-        createPlayerButton(seq, true, false, el, useSVGVisualizer));
+    buttonsDiv.appendChild(createPlayerButton(seq, true, false, el));
   }
 
   // Download midi.
