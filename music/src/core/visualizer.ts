@@ -17,7 +17,8 @@
  */
 
 import {INoteSequence, NoteSequence} from '../protobuf';
-import {sequences} from '.';
+
+import {logging, sequences} from '.';
 import {MAX_MIDI_PITCH, MIN_MIDI_PITCH} from './constants';
 
 /**
@@ -47,31 +48,34 @@ interface VisualizerConfig {
 /**
  * Abstract base class for a `NoteSequence` visualizer.
  */
-export abstract class BasePianoRollVisualizer {
+export abstract class BaseVisualizer {
+  public noteSequence: INoteSequence;
   protected config: VisualizerConfig;
   protected height: number;
   protected width: number;
-  public noteSequence: INoteSequence;
   protected sequenceIsQuantized: boolean;
   protected parentElement: HTMLElement;
 
   /**
-   * Will be called for each note that is being redrawn.
-   *
-   * @param x The x position of the note.
-   * @param y The y position of the note.
-   * @param w The width of the note.
-   * @param h The height of the note.
-   * @param fill The fill color of the note.
+   * Redraws the entire note sequence, optionally painting a note as
+   * active
+   * @param activeNote (Optional) If specified, this `Note` will be painted
+   * in the active color.
+   * @param scrollIntoView (Optional) If specified and the note being painted is
+   * offscreen, the parent container will be scrolled so that the note is
+   * in view.
+   * @returns The x position of the painted active note. Useful for
+   * automatically advancing the visualization if the note was painted outside
+   * of the screen.
    */
-  protected abstract redrawNote(
-      x: number, y: number, w: number, h: number, fill: string): void;
+  public abstract redraw(
+      activeNote?: NoteSequence.INote, scrollIntoView?: boolean): number;
 
   // Clears the current visualization.
   protected abstract clear(): void;
 
   /**
-   *   `Visualizer` constructor.
+   *   `BaseVisualizer` constructor.
    *
    *   @param sequence The `NoteSequence` to be visualized.
    *   @param canvas The element where the visualization should be displayed.
@@ -90,71 +94,10 @@ export abstract class BasePianoRollVisualizer {
 
     this.noteSequence = sequence;
     this.sequenceIsQuantized = sequences.isQuantizedSequence(this.noteSequence);
+
     const size = this.getSize();
     this.width = size.width;
     this.height = size.height;
-  }
-
-  /**
-   * Redraws the entire note sequence, optionally painting a note as
-   * active
-   * @param activeNote (Optional) If specified, this `Note` will be painted
-   * in the active color.
-   * @param scrollIntoView (Optional) If specified and the note being painted is
-   * offscreen, the parent container will be scrolled so that the note is
-   * in view.
-   * @returns The x position of the painted active note. Useful for
-   * automatically advancing the visualization if the note was painted outside
-   * of the screen.
-   */
-  redraw(activeNote?: NoteSequence.INote, scrollIntoView?: boolean): number {
-    this.clear();
-
-    let activeNotePosition;
-    const noteRenderHeight = this.config.noteHeight;
-
-    for (let i = 0; i < this.noteSequence.notes.length; i++) {
-      const note = this.noteSequence.notes[i];
-
-      // Size of this note.
-      const offset = this.config.noteSpacing * (i + 1);
-      const x = (this.getNoteStartTime(note) * this.config.pixelsPerTimeStep) +
-          offset;
-      const w = (this.getNoteEndTime(note) - this.getNoteStartTime(note)) *
-          this.config.pixelsPerTimeStep;
-
-      // The canvas' y=0 is at the top, but a smaller pitch is actually
-      // lower, so we're kind of painting backwards.
-      const y = this.height -
-          ((note.pitch - this.config.minPitch) * this.config.noteHeight);
-
-      // Color of this note.
-      const opacityBaseline = 0.2;  // Shift all the opacities up a little.
-      const opacity = note.velocity ? note.velocity / 100 + opacityBaseline : 1;
-
-      const isActive =
-          activeNote && this.isPaintingActiveNote(note, activeNote);
-      const fill =
-          `rgba(${isActive ? this.config.activeNoteRGB : this.config.noteRGB},
-  ${opacity})`;
-
-      this.redrawNote(x, y, w, noteRenderHeight, fill);
-
-      if (isActive) {
-        activeNotePosition = x;
-      }
-    }
-
-    if (scrollIntoView && this.parentElement) {
-      // See if we need to scroll the container.
-      const containerWidth = this.parentElement.getBoundingClientRect().width;
-      if (activeNotePosition >
-          (this.parentElement.scrollLeft + containerWidth)) {
-        this.parentElement.scrollLeft = activeNotePosition - 20;
-      }
-    }
-
-    return activeNotePosition;
   }
 
   protected getSize(): {width: number; height: number} {
@@ -180,7 +123,8 @@ export abstract class BasePianoRollVisualizer {
     const height =
         (this.config.maxPitch - this.config.minPitch) * this.config.noteHeight;
 
-    // Calculate a nice width based on the length of the sequence we're playing.
+    // Calculate a nice width based on the length of the sequence we're
+    // playing.
     const numNotes = this.noteSequence.notes.length;
     const endTime = this.sequenceIsQuantized ?
         this.noteSequence.totalQuantizedSteps :
@@ -192,15 +136,44 @@ export abstract class BasePianoRollVisualizer {
     return {width, height};
   }
 
-  private getNoteStartTime(note: NoteSequence.INote) {
+  protected getNotePosition(note: NoteSequence.INote, noteIndex: number):
+      {x: number; y: number, w: number, h: number} {
+    // Size of this note.
+    const offset = this.config.noteSpacing * (noteIndex + 1);
+    const x =
+        (this.getNoteStartTime(note) * this.config.pixelsPerTimeStep) + offset;
+    const w = (this.getNoteEndTime(note) - this.getNoteStartTime(note)) *
+        this.config.pixelsPerTimeStep;
+
+    // The canvas' y=0 is at the top, but a smaller pitch is actually
+    // lower, so we're kind of painting backwards.
+    const y = this.height -
+        ((note.pitch - this.config.minPitch) * this.config.noteHeight);
+
+    return {x, y, w, h: this.config.noteHeight};
+  }
+
+  protected scrollIntoViewIfNeeded(
+      scrollIntoView: boolean, activeNotePosition: number) {
+    if (scrollIntoView && this.parentElement) {
+      // See if we need to scroll the container.
+      const containerWidth = this.parentElement.getBoundingClientRect().width;
+      if (activeNotePosition >
+          (this.parentElement.scrollLeft + containerWidth)) {
+        this.parentElement.scrollLeft = activeNotePosition - 20;
+      }
+    }
+  }
+
+  protected getNoteStartTime(note: NoteSequence.INote) {
     return this.sequenceIsQuantized ? note.quantizedStartStep : note.startTime;
   }
 
-  private getNoteEndTime(note: NoteSequence.INote) {
+  protected getNoteEndTime(note: NoteSequence.INote) {
     return this.sequenceIsQuantized ? note.quantizedEndStep : note.endTime;
   }
 
-  private isPaintingActiveNote(
+  protected isPaintingActiveNote(
       note: NoteSequence.INote, playedNote: NoteSequence.INote): boolean {
     // A note is active if it's literally the same as the note we are
     // playing (aka activeNote), or if it overlaps because it's a held note.
@@ -215,12 +188,14 @@ export abstract class BasePianoRollVisualizer {
 }
 
 /**
- * Displays a pianoroll on a canvas.
+ * Displays a pianoroll on a canvas. Pitches are the vertical axis and time is
+ * the horizontal. When connected to a player, the visualizer can also highlight
+ * the notes being currently played.
  */
-export class Visualizer extends BasePianoRollVisualizer {
+export class PianoRollCanvasVisualizer extends BaseVisualizer {
   protected ctx: CanvasRenderingContext2D;
   /**
-   *   `Visualizer` constructor.
+   *   `PianoRollCanvasVisualizer` constructor.
    *
    *   @param sequence The `NoteSequence` to be visualized.
    *   @param canvas The element where the visualization should be displayed.
@@ -254,28 +229,91 @@ export class Visualizer extends BasePianoRollVisualizer {
     this.redraw();
   }
 
-  protected redrawNote(
-      x: number, y: number, w: number, h: number, fill: string) {
+  /**
+   * Redraws the entire note sequence, optionally painting a note as
+   * active
+   * @param activeNote (Optional) If specified, this `Note` will be painted
+   * in the active color.
+   * @param scrollIntoView (Optional) If specified and the note being painted
+   *     is
+   * offscreen, the parent container will be scrolled so that the note is
+   * in view.
+   * @returns The x position of the painted active note. Useful for
+   * automatically advancing the visualization if the note was painted outside
+   * of the screen.
+   */
+  redraw(activeNote?: NoteSequence.INote, scrollIntoView?: boolean): number {
+    this.clear();
+
+    let activeNotePosition;
+    for (let i = 0; i < this.noteSequence.notes.length; i++) {
+      const note = this.noteSequence.notes[i];
+
+      const size = this.getNotePosition(note, i);
+
+      // Color of this note.
+      const opacityBaseline = 0.2;  // Shift all the opacities up a little.
+      const opacity = note.velocity ? note.velocity / 100 + opacityBaseline : 1;
+
+      const isActive =
+          activeNote && this.isPaintingActiveNote(note, activeNote);
+      const fill =
+          `rgba(${isActive ? this.config.activeNoteRGB : this.config.noteRGB},
+  ${opacity})`;
+
+      this.redrawNote(size.x, size.y, size.w, size.h, fill);
+
+      if (isActive) {
+        activeNotePosition = size.x;
+      }
+    }
+    this.scrollIntoViewIfNeeded(scrollIntoView, activeNotePosition);
+    return activeNotePosition;
+  }
+
+  protected clear() {
+    this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+  }
+
+  private redrawNote(x: number, y: number, w: number, h: number, fill: string) {
     this.ctx.fillStyle = fill;
 
     // Round values to the nearest integer to avoid partially filled pixels.
     this.ctx.fillRect(
         Math.round(x), Math.round(y), Math.round(w), Math.round(h));
   }
-
-  protected clear() {
-    this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-  }
 }
 
 /**
- * Displays a pianoroll as an SVG.
+ * @deprecated
+ * Alias for PianoRollCanvasVisualizer to maintain backwards compatibility.
  */
-export class SVGVisualizer extends BasePianoRollVisualizer {
+export class Visualizer extends PianoRollCanvasVisualizer {
+  constructor(
+      sequence: INoteSequence, canvas: HTMLCanvasElement,
+      config: VisualizerConfig = {}) {
+    super(sequence, canvas, config);
+
+    logging.log(
+        'mm.Visualizer is deprecated, and will be removed in a future \
+         version. Please use mm.PianoRollCanvasVisualizer instead',
+        'mm.Visualizer', logging.Level.WARN);
+  }
+}
+/**
+ * Displays a pianoroll as an SVG. Pitches are the vertical axis and time is
+ * the horizontal. When connected to a player, the visualizer can also highlight
+ * the notes being currently played.
+ *
+ * Unlike PianoRollCanvasVisualizer which looks similar, PianoRollSVGVisualizer
+ * does not redraw the entire sequence when activating a note.
+ */
+export class PianoRollSVGVisualizer extends BaseVisualizer {
   private svg: SVGSVGElement;
+  private drawn: boolean;
 
   /**
-   *   `Visualizer` constructor.
+   *   `PianoRollSVGVisualizer` constructor.
    *
    *   @param sequence The `NoteSequence` to be visualized.
    *   @param svg The element where the visualization should be displayed.
@@ -288,16 +326,90 @@ export class SVGVisualizer extends BasePianoRollVisualizer {
 
     this.svg = svg;
     this.parentElement = svg.parentElement;
-
+    this.drawn = false;
     // Make sure that if we've used this svg element before, it's now emptied.
     this.svg.style.width = `${this.width}px`;
     this.svg.style.height = `${this.height}px`;
 
-    this.redraw();
+    this.clear();
+    this.draw();
   }
 
-  protected redrawNote(
-      x: number, y: number, w: number, h: number, fill: string) {
+  /**
+   * Redraws the entire note sequence if it hasn't been drawn before, optionally
+   * painting a note as active
+   * @param activeNote (Optional) If specified, this `Note` will be painted
+   * in the active color.
+   * @param scrollIntoView (Optional) If specified and the note being painted
+   *     is
+   * offscreen, the parent container will be scrolled so that the note is
+   * in view.
+   * @returns The x position of the painted active note. Useful for
+   * automatically advancing the visualization if the note was painted outside
+   * of the screen.
+   */
+  redraw(activeNote?: NoteSequence.INote, scrollIntoView?: boolean): number {
+    if (!this.drawn) {
+      this.draw();
+    }
+
+    if (!activeNote) {
+      return null;
+    }
+
+    // Remove the current active note, if one exists.
+    const el = this.svg.querySelector('rect.active');
+    if (el) {
+      const fill = this.getNoteFillColor(
+          this.noteSequence.notes[parseInt(el.getAttribute('data-index'), 10)],
+          false);
+      el.setAttribute('fill', fill);
+      el.removeAttribute('class');
+    }
+
+    let activeNotePosition;
+    for (let i = 0; i < this.noteSequence.notes.length; i++) {
+      const note = this.noteSequence.notes[i];
+      const isActive =
+          activeNote && this.isPaintingActiveNote(note, activeNote);
+
+      // We're only looking to re-paint the active notes.
+      if (!isActive) {
+        continue;
+      }
+      const el = this.svg.querySelector(`rect[data-index="${i}"]`);
+      const fill = this.getNoteFillColor(note, true);
+      el.setAttribute('fill', fill);
+      el.setAttribute('class', 'active');
+      activeNotePosition = parseFloat(el.getAttribute('x'));
+    }
+
+    this.scrollIntoViewIfNeeded(scrollIntoView, activeNotePosition);
+    return activeNotePosition;
+  }
+
+  private draw() {
+    for (let i = 0; i < this.noteSequence.notes.length; i++) {
+      const note = this.noteSequence.notes[i];
+      const size = this.getNotePosition(note, i);
+      const fill = this.getNoteFillColor(note, false);
+
+      this.drawNote(size.x, size.y, size.w, size.h, fill, i);
+    }
+    this.drawn = true;
+  }
+
+  private getNoteFillColor(note: NoteSequence.INote, isActive: boolean) {
+    const opacityBaseline = 0.2;  // Shift all the opacities up a little.
+    const opacity = note.velocity ? note.velocity / 100 + opacityBaseline : 1;
+    const fill =
+        `rgba(${isActive ? this.config.activeNoteRGB : this.config.noteRGB},
+  ${opacity})`;
+    return fill;
+  }
+
+  private drawNote(
+      x: number, y: number, w: number, h: number, fill: string, index: number) {
     if (!this.svg) {
       return;
     }
@@ -310,10 +422,12 @@ export class SVGVisualizer extends BasePianoRollVisualizer {
     rect.setAttribute('y', `${Math.round(y)}`);
     rect.setAttribute('width', `${Math.round(w)}`);
     rect.setAttribute('height', `${Math.round(h)}`);
+    rect.setAttribute('data-index', `${index}`);
     this.svg.appendChild(rect);
   }
 
   protected clear() {
     this.svg.innerHTML = '';
+    this.drawn = false;
   }
 }
