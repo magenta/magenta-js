@@ -19,6 +19,16 @@ import * as mm from '../src/index';
 // tslint:disable-next-line:max-line-length
 import {DRUM_SEQ_WITH_VELOCITIES, DRUM_SEQS, FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED, MEL_TWINKLE_WITH_VELOCITIES, SOUNDFONT_URL, writeNoteSeqs} from './common';
 
+async function testLoadAllSamples() {
+  const p = new mm.SoundFontPlayer(SOUNDFONT_URL);
+  let start = performance.now();
+  await p.loadAllSamples();
+  console.log('load all piano samples: ', performance.now() - start);
+  start = performance.now();
+  await p.loadAllSamples(0, true);
+  console.log('load all drum samples: ', performance.now() - start);
+}
+
 function setupPlayerControlsDemo() {
   const playBtn = document.getElementById('play') as HTMLButtonElement;
   const stopBtn = document.getElementById('stop') as HTMLButtonElement;
@@ -150,6 +160,7 @@ function generateVelocityPlayers() {
 }
 
 try {
+  testLoadAllSamples();
   setupPlayerControlsDemo();
   setupAttackReleaseDemo();
   setupMIDIPlayerDemo();
