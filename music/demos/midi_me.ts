@@ -6,7 +6,7 @@ import {quantizeNoteSequence} from '../src/core/sequences';
 import {CHECKPOINTS_DIR, visualizeNoteSeqs, writeMemory, writeTimer} from './common';
 import {updateGraph} from './common_graph';
 
-const MEL_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_2bar_small`;
+const MEL_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_2bar_big_q1`;
 const BARS = 2;
 
 const fileInput = document.getElementById('fileInput') as HTMLInputElement;

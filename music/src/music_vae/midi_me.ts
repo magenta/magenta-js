@@ -116,9 +116,9 @@ class MidiMe {
     this.config = {
       encoder_layers: config.encoder_layers || [1024, 256, 64],
       decoder_layers: config.decoder_layers || [64, 256, 1024],
-      input_size: config.input_size || 256,
+      input_size: config.input_size || 512,
       output_size: config.output_size || 4,
-      beta: config.beta || 0.2,
+      beta: config.beta || 0.0001,
       input_sigma: config.input_sigma || tf.ones([1]),
       batch_size: config.batch_size || 32,
       epochs: config.epochs || 10,
@@ -129,8 +129,6 @@ class MidiMe {
    * Disposes of any untracked `Tensors` to avoid GPU memory leaks.
    */
   dispose() {
-    console.log(
-        '🔧  before dispose', (tf.memory().numBytes / 1000000).toFixed(2));
     if (this.encoder) {
       this.encoder.dispose();
     }
@@ -144,17 +142,13 @@ class MidiMe {
     }
     this.vae = undefined;
     this.initialized = false;
-    console.log(
-        '🔧  after dispose', (tf.memory().numBytes / 1000000).toFixed(2));
   }
 
   /**
    * Instantiates the `Encoder`, `Decoder` and the main `VAE`.
    */
   initialize() {
-    console.log(
-        '🔧  before initialize', (tf.memory().numBytes / 1000000).toFixed(2));
-    // this.dispose();
+    this.dispose();
     const startTime = performance.now();
 
     const z = tf.input({shape: [this.config['input_size']]});
@@ -173,8 +167,6 @@ class MidiMe {
 
     this.initialized = true;
     logging.logWithDuration('Initialized model', startTime, 'MidiMe');
-    console.log(
-        '🔧  after initialize', (tf.memory().numBytes / 1000000).toFixed(2));
   }
 
   /**
@@ -187,8 +179,6 @@ class MidiMe {
    * @returns The final training error.
    */
   async train(data: tf.Tensor, callback: Function) {
-    console.log(
-        '🚂   before train', (tf.memory().numBytes / 1000000).toFixed(2));
     const startTime = performance.now();
     this.trained = false;
     const xTrain = data;
@@ -198,26 +188,18 @@ class MidiMe {
     const yTrain =
         [tf.zeros([xTrain.shape[0], this.config['output_size']]), xTrain];
 
-    console.log(
-        '🚂   allocced yTrain', (tf.memory().numBytes / 1000000).toFixed(2));
     const h = await this.vae.fit(xTrain, yTrain, {
       batchSize: this.config['batch_size'],
       epochs: this.config['epochs'],
       callbacks: {onEpochEnd: async (epoch, logs) => callback(epoch, logs)}
     });
 
-    console.log(
-        '🚂   training done', (tf.memory().numBytes / 1000000).toFixed(2));
     const finalLoss = h.history.loss[h.history.loss.length - 1];
     logging.logWithDuration(
         'Final training error ' + finalLoss, startTime, 'MidiMe');
     this.trained = true;
 
     yTrain[0].dispose();
-
-    console.log(
-        '🚂   after dispose yTrain',
-        (tf.memory().numBytes / 1000000).toFixed(2));
     return finalLoss;
   }
 
@@ -279,8 +261,6 @@ class MidiMe {
   // so once for sampleZ, and once for pxMu. Then tfjs sums the two losses up
   // before it uses them.
   vaeLoss(yTrue: tf.Tensor2D, yPred: tf.Tensor2D): tf.Scalar {
-    console.log(
-        '🚂   start vaeloss', (tf.memory().numBytes / 1000000).toFixed(2));
     return tf.tidy(() => {
       if (yTrue.shape[1] === this.config['output_size']) {  // 4
         // This is the sampleZ.
@@ -289,8 +269,6 @@ class MidiMe {
         const latentLoss = this.klLoss(yPred, pz) as tf.Scalar;
         pz.dispose();
         const result = tf.mul(latentLoss, this.config['beta']) as tf.Scalar;
-        console.log(
-            '🚂       klloss', (tf.memory().numBytes / 1000000).toFixed(2));
         console.log('KL', result.get());
         return result;
       } else if (yTrue.shape[1] === this.config['input_size']) {  // 512
@@ -299,8 +277,6 @@ class MidiMe {
         const reconLoss =
             this.reconstructionLoss(yTrue, yPred, this.config['input_sigma']) as
             tf.Scalar;
-        console.log(
-            '🚂       reconLoss', (tf.memory().numBytes / 1000000).toFixed(2));
         console.log('RECON', reconLoss.get());
         return reconLoss;
       } else {
