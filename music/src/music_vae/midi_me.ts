@@ -118,7 +118,7 @@ class MidiMe {
       decoder_layers: config.decoder_layers || [64, 256, 1024],
       input_size: config.input_size || 256,
       output_size: config.output_size || 4,
-      beta: config.beta || 1,
+      beta: config.beta || 0.2,
       input_sigma: config.input_sigma || tf.ones([1]),
       batch_size: config.batch_size || 32,
       epochs: config.epochs || 10,
@@ -286,11 +286,12 @@ class MidiMe {
         // This is the sampleZ.
         // The latent loss represents how closely the z matches a unit gaussian.
         const pz = tf.randomNormal(yTrue.shape);  // unit gaussian.
-        const latentLoss = this.klLoss(yTrue, pz) as tf.Scalar;
+        const latentLoss = this.klLoss(yPred, pz) as tf.Scalar;
         pz.dispose();
         const result = tf.mul(latentLoss, this.config['beta']) as tf.Scalar;
         console.log(
             '🚂       klloss', (tf.memory().numBytes / 1000000).toFixed(2));
+        console.log('KL', result.get());
         return result;
       } else if (yTrue.shape[1] === this.config['input_size']) {  // 512
         // This is the pxMu.
@@ -300,6 +301,7 @@ class MidiMe {
             tf.Scalar;
         console.log(
             '🚂       reconLoss', (tf.memory().numBytes / 1000000).toFixed(2));
+        console.log('RECON', reconLoss.get());
         return reconLoss;
       } else {
         return tf.zeros([1]);

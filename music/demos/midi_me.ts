@@ -18,7 +18,7 @@ mvae.initialize().then(() => {
   document.getElementById('fileBtn').removeAttribute('disabled');
 });
 
-const model = new mm.MidiMe({epochs: 60});
+const model = new mm.MidiMe({epochs: 150});
 model.initialize();
 
 function loadFile(e: Event) {
