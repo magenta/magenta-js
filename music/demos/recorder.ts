@@ -56,7 +56,9 @@ startStreamBtn.addEventListener('click', () => {
         new mm.Visualizer(
             seq, document.getElementById('canvas') as HTMLCanvasElement);
       }
-    }
+    },
+    noteOn: (pitch, velocity, device) => {console.log('We have received a noteOn event!')},
+    noteOff: (pitch, velocity, device) => {console.log('We have received a noteOff event!')}
   };
   startStreamBtn.textContent = '...';
   recorder.start();

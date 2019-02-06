@@ -57,7 +57,7 @@ export abstract class BaseRecorderCallback {
    * @param device The device the midi event was received from.
    */
   abstract noteOn(pitch: number, velocity: number, 
-                  device: WebMidi.MIDIInput): void;
+                  device: Element): void;
   /**
    * Will be called for each time a note off event is observed.
    *
@@ -66,7 +66,7 @@ export abstract class BaseRecorderCallback {
    * @param device The device the midi event was received from.
    */
   abstract noteOff(pitch: number, velocity: number,
-                   device: WebMidi.MIDIInput): void;
+                   device: Element): void;
 }
 
 /**
@@ -333,7 +333,7 @@ export class Recorder {
     const cmd = event.data[0] >> 4;
     const pitch = event.data[1];
     const velocity = (event.data.length > 2) ? event.data[2] : 1;
-    const device = event.srcElement as WebMidi.MIDIInput;
+    const device = event.srcElement;
 
     // Some MIDI controllers don't send a separate NOTE_OFF command.
     if (cmd === NOTE_OFF || (cmd === NOTE_ON && velocity === 0)) {
