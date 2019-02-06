@@ -6,16 +6,17 @@ import {quantizeNoteSequence} from '../src/core/sequences';
 import {CHECKPOINTS_DIR, visualizeNoteSeqs, writeMemory, writeTimer} from './common';
 import {updateGraph} from './common_graph';
 
-const MEL_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_4bar_med_q2`;
-const BARS = 4;
+const MEL_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_2bar_small`;
+const BARS = 2;
 
 const fileInput = document.getElementById('fileInput') as HTMLInputElement;
 fileInput.addEventListener('change', loadFile);
 
 // Initialize models.
 const mvae = new mm.MusicVAE(MEL_CKPT);
-mvae.initialize().then(
-    () => document.getElementById('fileBtn').removeAttribute('disabled'));
+mvae.initialize().then(() => {
+  document.getElementById('fileBtn').removeAttribute('disabled');
+});
 
 const model = new mm.MidiMe({epochs: 60});
 model.initialize();
@@ -41,6 +42,8 @@ async function doTheThing(mel: NoteSequence) {
   const z1 = model.vae.predict(z) as mm.tf.Tensor2D[];
   const ns1 = await mvae.decode(z1[1] as mm.tf.Tensor2D);
   visualizeNoteSeqs('pre-training', [concatenate(ns1)]);
+  z1[0].dispose();
+  z1[1].dispose();
 
   // 3. Train!
   const losses: number[] = [];
@@ -54,22 +57,23 @@ async function doTheThing(mel: NoteSequence) {
   const z2 = model.vae.predict(z) as mm.tf.Tensor2D[];
   const ns2 = await mvae.decode(z2[1] as mm.tf.Tensor2D);
   visualizeNoteSeqs('post-training', [concatenate(ns2)]);
+  z2[0].dispose();
+  z2[1].dispose();
 
   writeTimer('training-time', start);
 
   // 5. Sample from MidiMe
-  const sample1 = await model.sample(4);
-  const ns3 = await mvae.decode(sample1 as mm.tf.Tensor2D);
+  const sample1 = await model.sample(4) as mm.tf.Tensor2D;
+  const ns3 = await mvae.decode(sample1);
   visualizeNoteSeqs('sample-midime', [concatenate(ns3)]);
+  sample1.dispose();
 
   // 5. Sample from MusicVAE.
   const sample2 = await mvae.sample(4);
   visualizeNoteSeqs('sample-musicvae', [concatenate(sample2)]);
 
+  z.dispose();
   dispose();
-  // Halp.
-  // concatenated.tempos = quantizedMel.tempos;
-  // concatenated.ticksPerQuarter = quantizedMel.ticksPerQuarter;
 }
 
 function dispose() {

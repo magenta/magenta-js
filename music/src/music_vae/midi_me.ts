@@ -129,17 +129,32 @@ class MidiMe {
    * Disposes of any untracked `Tensors` to avoid GPU memory leaks.
    */
   dispose() {
+    console.log(
+        '🔧  before dispose', (tf.memory().numBytes / 1000000).toFixed(2));
+    if (this.encoder) {
+      this.encoder.dispose();
+    }
     this.encoder = undefined;
+    if (this.decoder) {
+      this.decoder.dispose();
+    }
     this.decoder = undefined;
+    if (this.vae) {
+      this.vae.dispose();
+    }
     this.vae = undefined;
     this.initialized = false;
+    console.log(
+        '🔧  after dispose', (tf.memory().numBytes / 1000000).toFixed(2));
   }
 
   /**
    * Instantiates the `Encoder`, `Decoder` and the main `VAE`.
    */
   initialize() {
-    this.dispose();
+    console.log(
+        '🔧  before initialize', (tf.memory().numBytes / 1000000).toFixed(2));
+    // this.dispose();
     const startTime = performance.now();
 
     const z = tf.input({shape: [this.config['input_size']]});
@@ -158,6 +173,8 @@ class MidiMe {
 
     this.initialized = true;
     logging.logWithDuration('Initialized model', startTime, 'MidiMe');
+    console.log(
+        '🔧  after initialize', (tf.memory().numBytes / 1000000).toFixed(2));
   }
 
   /**
@@ -170,6 +187,8 @@ class MidiMe {
    * @returns The final training error.
    */
   async train(data: tf.Tensor, callback: Function) {
+    console.log(
+        '🚂   before train', (tf.memory().numBytes / 1000000).toFixed(2));
     const startTime = performance.now();
     this.trained = false;
     const xTrain = data;
@@ -178,15 +197,27 @@ class MidiMe {
     // sampleZ, so fill them with zeroes of the right size.
     const yTrain =
         [tf.zeros([xTrain.shape[0], this.config['output_size']]), xTrain];
+
+    console.log(
+        '🚂   allocced yTrain', (tf.memory().numBytes / 1000000).toFixed(2));
     const h = await this.vae.fit(xTrain, yTrain, {
       batchSize: this.config['batch_size'],
       epochs: this.config['epochs'],
       callbacks: {onEpochEnd: async (epoch, logs) => callback(epoch, logs)}
     });
+
+    console.log(
+        '🚂   training done', (tf.memory().numBytes / 1000000).toFixed(2));
     const finalLoss = h.history.loss[h.history.loss.length - 1];
     logging.logWithDuration(
         'Final training error ' + finalLoss, startTime, 'MidiMe');
     this.trained = true;
+
+    yTrain[0].dispose();
+
+    console.log(
+        '🚂   after dispose yTrain',
+        (tf.memory().numBytes / 1000000).toFixed(2));
     return finalLoss;
   }
 
@@ -226,7 +257,6 @@ class MidiMe {
         tf.SymbolicTensor;
 
     const z = new SamplingLayer().apply([sigma, mu]) as tf.SymbolicTensor;
-
     return tf.model({inputs: input, outputs: z, name: 'encoder'});
   }
 
@@ -242,7 +272,6 @@ class MidiMe {
     }
     const mu = this.getAffineLayers(x, this.config['input_size'], z, false) as
         tf.SymbolicTensor;
-
     return tf.model({inputs: z, outputs: mu, name: 'decoder'});
   }
 
@@ -250,36 +279,42 @@ class MidiMe {
   // so once for sampleZ, and once for pxMu. Then tfjs sums the two losses up
   // before it uses them.
   vaeLoss(yTrue: tf.Tensor2D, yPred: tf.Tensor2D): tf.Scalar {
-    if (yTrue.shape[1] === this.config['output_size']) {  // 4
-      // This is the sampleZ.
-      // The latent loss represents how closely the z matches a unit gaussian.
-      const pz = tf.randomNormal(yTrue.shape);  // unit gaussian.
-      const latentLoss = this.klLoss(yTrue, pz) as tf.Scalar;
-      return tf.mul(latentLoss, this.config['beta']);
-    } else if (yTrue.shape[1] === this.config['input_size']) {  // 512
-      // This is the pxMu.
-      // THe reconstruction loss represents how well we regenerated yTrue.
-      const reconLoss =
-          this.reconstructionLoss(yTrue, yPred, this.config['input_sigma']) as
-          tf.Scalar;
-      return reconLoss;
-    } else {
-      return tf.zeros([1]);
-    }
+    console.log(
+        '🚂   start vaeloss', (tf.memory().numBytes / 1000000).toFixed(2));
+    return tf.tidy(() => {
+      if (yTrue.shape[1] === this.config['output_size']) {  // 4
+        // This is the sampleZ.
+        // The latent loss represents how closely the z matches a unit gaussian.
+        const pz = tf.randomNormal(yTrue.shape);  // unit gaussian.
+        const latentLoss = this.klLoss(yTrue, pz) as tf.Scalar;
+        pz.dispose();
+        const result = tf.mul(latentLoss, this.config['beta']) as tf.Scalar;
+        console.log(
+            '🚂       klloss', (tf.memory().numBytes / 1000000).toFixed(2));
+        return result;
+      } else if (yTrue.shape[1] === this.config['input_size']) {  // 512
+        // This is the pxMu.
+        // THe reconstruction loss represents how well we regenerated yTrue.
+        const reconLoss =
+            this.reconstructionLoss(yTrue, yPred, this.config['input_sigma']) as
+            tf.Scalar;
+        console.log(
+            '🚂       reconLoss', (tf.memory().numBytes / 1000000).toFixed(2));
+        return reconLoss;
+      } else {
+        return tf.zeros([1]);
+      }
+    });
   }
 
   reconstructionLoss(
       yTrue: tf.Tensor, yPred: tf.Tensor, inputSigma: tf.Tensor) {
     return tf.tidy(() => {
-      // TODO: I removed the - here, verify that makes sense.
-
-      // -tf.sum(pX.log_prob(x));
-      // = - mse(x,p_x_mu) / 2 'input_sigma ^2
+      // = mse(x,p_x_mu) / 2 'input_sigma ^2
       const nll = tf.div(
           tf.losses.meanSquaredError(yTrue, yPred),
           tf.mul(2, tf.pow(inputSigma, 2)));
-
-      return tf.mean(nll);  //
+      return tf.mean(nll);
     });
   }
 
