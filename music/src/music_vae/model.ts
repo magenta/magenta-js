@@ -1004,12 +1004,14 @@ class MusicVAE {
    * conditioning.
    * @param stepsPerQuarter The step resolution of the resulting
    * `NoteSequence`.
+   * @param qpm The tempo of the resulting `NoteSequence`s.
    *
    * @returns The decoded `NoteSequence`s.
    */
   async decode(
       z: tf.Tensor2D, temperature?: number, chordProgression?: string[],
-      stepsPerQuarter = 4) {
+      stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER,
+      qpm = constants.DEFAULT_QUARTERS_PER_MINUTE) {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
     }
@@ -1041,7 +1043,7 @@ class MusicVAE {
     const outputSequences: INoteSequence[] = [];
     for (const oh of ohSeqs) {
       outputSequences.push(
-          await this.dataConverter.toNoteSequence(oh, stepsPerQuarter));
+          await this.dataConverter.toNoteSequence(oh, stepsPerQuarter, qpm));
       oh.dispose();
     }
 
@@ -1111,12 +1113,14 @@ class MusicVAE {
    * conditioning.
    * @param stepsPerQuarter The step resolution of the resulting
    * `NoteSequence`s.
+   * @param qpm The tempo of the resulting `NoteSequence`s.
    *
    * @returns An array of sampled `NoteSequence` objects.
    */
   async sample(
       numSamples: number, temperature = 0.5, chordProgression?: string[],
-      stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER) {
+      stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER,
+      qpm = constants.DEFAULT_QUARTERS_PER_MINUTE) {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
     }
