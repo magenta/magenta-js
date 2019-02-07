@@ -192,13 +192,13 @@
 					<a name="decode" class="tsd-anchor"></a>
 					<h3>decode</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-not-exported">
-						<li class="tsd-signature tsd-kind-icon">decode<span class="tsd-signature-symbol">(</span>z<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">tf.Tensor2D</span>, temperature<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, chordProgression<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span>, stepsPerQuarter<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">decode<span class="tsd-signature-symbol">(</span>z<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">tf.Tensor2D</span>, temperature<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, chordProgression<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span>, stepsPerQuarter<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, qpm<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1010">music_vae/model.ts:1010</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1011">music_vae/model.ts:1011</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -229,10 +229,16 @@
 									</div>
 								</li>
 								<li>
-									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> stepsPerQuarter: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;4</span></h5>
+									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> stepsPerQuarter: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;constants.DEFAULT_STEPS_PER_QUARTER</span></h5>
 									<div class="tsd-comment tsd-typography">
 										<p>The step resolution of the resulting
 										<code>NoteSequence</code>.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> qpm: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;constants.DEFAULT_QUARTERS_PER_MINUTE</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The tempo of the resulting <code>NoteSequence</code>s.</p>
 									</div>
 								</li>
 							</ul>
@@ -422,13 +428,13 @@
 					<a name="sample" class="tsd-anchor"></a>
 					<h3>sample</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-not-exported">
-						<li class="tsd-signature tsd-kind-icon">sample<span class="tsd-signature-symbol">(</span>numSamples<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, temperature<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, chordProgression<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span>, stepsPerQuarter<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">sample<span class="tsd-signature-symbol">(</span>numSamples<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, temperature<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, chordProgression<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span>, stepsPerQuarter<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, qpm<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1117">music_vae/model.ts:1117</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1120">music_vae/model.ts:1120</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -462,6 +468,12 @@
 									<div class="tsd-comment tsd-typography">
 										<p>The step resolution of the resulting
 										<code>NoteSequence</code>s.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> qpm: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;constants.DEFAULT_QUARTERS_PER_MINUTE</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The tempo of the resulting <code>NoteSequence</code>s.</p>
 									</div>
 								</li>
 							</ul>
@@ -546,7 +558,7 @@
 						<a href="_music_vae_model_.basedecoder.html" class="tsd-kind-icon">Base<wbr>Decoder</a>
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_music_vae_model_.bidirectonallstmencoder.html" class="tsd-kind-icon">Bidirectonal<wbr>Lstm<wbr>Encoder</a>
+						<a href="_music_vae_model_.bidirectionallstmencoder.html" class="tsd-kind-icon">Bidirectional<wbr>Lstm<wbr>Encoder</a>
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_music_vae_model_.categoricaldecoder.html" class="tsd-kind-icon">Categorical<wbr>Decoder</a>

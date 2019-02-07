@@ -126,6 +126,7 @@
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_player_.soundfontplayer.html#getaudionodeoutput" class="tsd-kind-icon">get<wbr>Audio<wbr>Node<wbr>Output</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_core_player_.soundfontplayer.html#getplaystate" class="tsd-kind-icon">get<wbr>Play<wbr>State</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_core_player_.soundfontplayer.html#isplaying" class="tsd-kind-icon">is<wbr>Playing</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_player_.soundfontplayer.html#loadallsamples" class="tsd-kind-icon">load<wbr>All<wbr>Samples</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_core_player_.soundfontplayer.html#loadsamples" class="tsd-kind-icon">load<wbr>Samples</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_core_player_.soundfontplayer.html#pause" class="tsd-kind-icon">pause</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-protected"><a href="_core_player_.soundfontplayer.html#playnote" class="tsd-kind-icon">play<wbr>Note</a></li>
@@ -250,7 +251,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L509">core/player.ts:509</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L544">core/player.ts:544</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -313,6 +314,52 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="loadallsamples" class="tsd-anchor"></a>
+					<h3>load<wbr>All<wbr>Samples</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">load<wbr>All<wbr>Samples<span class="tsd-signature-symbol">(</span>program<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, isDrum<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L480">core/player.ts:480</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Loads the audio samples for all valid midi pitches, for a specific program.
+										<strong>Note</strong>: this method is rather slow; only use it if you&#39;re sure
+										that you need to load <em>all</em> possible samples (for example, you&#39;re
+										playing a stream of live notes from the user) -- otherwise, if you already
+									have the NoteSequence you have to play, use <code>loadSamples</code> instead.</p>
+								</div>
+								<p>If you do end up using <code>loadAllSamples</code>, make sure you&#39;re calling it
+									asynchronously, as to not block other main thread work (like UI
+								interactions) while waiting for it to finish.</p>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> program: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;0</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>(optional) Program number to use for instrument lookup.
+										Default is 0.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> isDrum: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> =&nbsp;false</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>(optional) True if the drum status should be used for
+										instrument lookup. Default is false.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 					<a name="loadsamples" class="tsd-anchor"></a>
 					<h3>load<wbr>Samples</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -322,13 +369,21 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L450">core/player.ts:450</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L454">core/player.ts:454</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Loads the audio samples required to play a NoteSequence.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>seq: <span class="tsd-signature-type">INoteSequence</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The NoteSequence to be played.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
@@ -370,7 +425,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#playnote">playNote</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L476">core/player.ts:476</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L511">core/player.ts:511</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -396,7 +451,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L489">core/player.ts:489</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L524">core/player.ts:524</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -419,7 +474,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L503">core/player.ts:503</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L538">core/player.ts:538</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -467,7 +522,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#resumecontext">resumeContext</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L467">core/player.ts:467</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L502">core/player.ts:502</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -526,7 +581,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#start">start</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L471">core/player.ts:471</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L506">core/player.ts:506</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -686,6 +741,9 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 								<a href="_core_player_.soundfontplayer.html#isplaying" class="tsd-kind-icon">is<wbr>Playing</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_core_player_.soundfontplayer.html#loadallsamples" class="tsd-kind-icon">load<wbr>All<wbr>Samples</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_core_player_.soundfontplayer.html#loadsamples" class="tsd-kind-icon">load<wbr>Samples</a>
