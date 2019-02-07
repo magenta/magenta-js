@@ -864,7 +864,7 @@ export class GrooveConverter extends DataConverter {
     const qns = sequences.isRelativeQuantizedSequence(ns) ?
         ns :
         sequences.quantizeNoteSequence(ns, this.stepsPerQuarter);
-    const numSteps = this.numSteps || qns.totalQuantizedSteps;
+    const numSteps = this.numSteps;
     const qpm = (qns.tempos && qns.tempos.length) ?
         qns.tempos[0].qpm :
         constants.DEFAULT_QUARTERS_PER_MINUTE;
@@ -945,7 +945,9 @@ export class GrooveConverter extends DataConverter {
     });
   }
 
-  async toNoteSequence(t: tf.Tensor2D, stepsPerQuarter?: number, qpm?: number) {
+  async toNoteSequence(
+      t: tf.Tensor2D, stepsPerQuarter?: number,
+      qpm = constants.DEFAULT_QUARTERS_PER_MINUTE) {
     if (stepsPerQuarter && stepsPerQuarter !== this.stepsPerQuarter) {
       throw Error('`stepsPerQuarter` is set by the model.');
     }

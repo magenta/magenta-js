@@ -20,6 +20,7 @@ import * as test from 'tape';
 
 import {NoteSequence} from '../protobuf/index';
 
+import * as constants from './constants';
 import * as data from './data';
 import * as sequences from './sequences';
 
@@ -398,11 +399,27 @@ test('Test GrooveConverterTapify', (t: test.Test) => {
     n.isDrum = true;
   });
 
-  grooveConverter.toNoteSequence(grooveTensor, undefined, 60).then(ns => {
-    roundNoteTimes(ns.notes);
-    t.deepEqual(ns, expectedNs);
-  });
-
-  grooveTensor.dispose();
-  t.end();
+  grooveConverter.toNoteSequence(grooveTensor, undefined, 60)
+      .then(ns => {
+        roundNoteTimes(ns.notes);
+        t.deepEqual(ns, expectedNs);
+      })
+      .then(() => {
+        // Now try with default qpm.
+        return grooveConverter.toNoteSequence(grooveTensor);
+      })
+      .then(ns => {
+        expectedNs.tempos[0].qpm = constants.DEFAULT_QUARTERS_PER_MINUTE;
+        expectedNs.totalTime /= 2;
+        expectedNs.notes.forEach(n => {
+          n.startTime /= 2;
+          n.endTime /= 2;
+        });
+        roundNoteTimes(ns.notes);
+        t.deepEqual(ns, expectedNs);
+      })
+      .then(() => {
+        grooveTensor.dispose();
+        t.end();
+      });
 });
