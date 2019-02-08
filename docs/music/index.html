@@ -151,7 +151,8 @@ model
 				<p><code>yarn install</code> to install dependencies.</p>
 				<p><code>yarn test</code> to run tests.</p>
 				<p><code>yarn bundle</code> to produce a bundled version in <code>dist/</code>.</p>
-				<p><code>yarn run-demos</code> to build and run the demo.</p>
+				<p><code>yarn run-demos</code> to build and serve the demos, with live reload.</p>
+				<p><em>(Note: the default behavior is to build/watch all demos - specific demos can be built by passing a comma-separated list of specific demo names as follows: <code>yarn run-demos --demos=transcription,visualizer</code>)</em></p>
 				<h2 id="model-checkpoints">Model Checkpoints</h2>
 				<p>Since MagentaMusic.js does not support training models, you must use weights from a model trained with the Python-based <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models">Magenta models</a>. We are also making available our own hosted pre-trained checkpoints.</p>
 				<h3 id="magenta-hosted-checkpoints">Magenta-Hosted Checkpoints</h3>
