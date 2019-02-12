@@ -273,7 +273,8 @@ class Coconet {
       const thisNote = newNotes[i];
       const previousNote = output.notes[o];
       // Compare next note's start time with previous note's end time.
-      if (previousNote.instrument === thisNote.instrument &&
+      if (previousNote.instrument !== 0 &&
+          previousNote.instrument === thisNote.instrument &&
           previousNote.pitch === thisNote.pitch &&
           thisNote.quantizedStartStep === previousNote.quantizedEndStep &&
           // Doesn't start on the measure boundary.
