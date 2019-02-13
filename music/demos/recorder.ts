@@ -57,7 +57,9 @@ startStreamBtn.addEventListener('click', () => {
         new mm.PianoRollSVGVisualizer(
             seq, document.getElementsByClassName('svg')[0] as SVGSVGElement);
       }
-    }
+    },
+    noteOn: (pitch, velocity, device) => {console.log('We have received a noteOn event!')},
+    noteOff: (pitch, velocity, device) => {console.log('We have received a noteOff event!')}
   };
   startStreamBtn.textContent = '...';
   recorder.start();

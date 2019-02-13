@@ -82,18 +82,27 @@ export abstract class BaseVisualizer {
    *   @param config Visualization configuration options.
    */
   constructor(sequence: INoteSequence, config: VisualizerConfig = {}) {
+    this.noteSequence = sequence;
+    this.sequenceIsQuantized = sequences.isQuantizedSequence(this.noteSequence);
+
+    // Quantized sequences appear "longer" because there's usually more
+    // quantized per note (vs seconds), so pick a better default by using
+    // the steps per quarter.
+    let defaultPixelsPerTimeStep = 30;
+    if (this.sequenceIsQuantized) {
+      const spq = sequence.quantizationInfo.stepsPerQuarter;
+      defaultPixelsPerTimeStep = spq ? defaultPixelsPerTimeStep / spq : 7;
+    }
+
     this.config = {
       noteHeight: config.noteHeight || 6,
       noteSpacing: config.noteSpacing || 1,
-      pixelsPerTimeStep: config.pixelsPerTimeStep || 30,
+      pixelsPerTimeStep: config.pixelsPerTimeStep || defaultPixelsPerTimeStep,
       noteRGB: config.noteRGB || '8, 41, 64',
       activeNoteRGB: config.activeNoteRGB || '240, 84, 119',
       minPitch: config.minPitch,
       maxPitch: config.maxPitch,
     };
-
-    this.noteSequence = sequence;
-    this.sequenceIsQuantized = sequences.isQuantizedSequence(this.noteSequence);
 
     const size = this.getSize();
     this.width = size.width;
