@@ -148,11 +148,10 @@ export abstract class BaseVisualizer {
   protected getNotePosition(note: NoteSequence.INote, noteIndex: number):
       {x: number; y: number, w: number, h: number} {
     // Size of this note.
-    const offset = this.config.noteSpacing * (noteIndex + 1);
-    const x =
-        (this.getNoteStartTime(note) * this.config.pixelsPerTimeStep) + offset;
-    const w = (this.getNoteEndTime(note) - this.getNoteStartTime(note)) *
-        this.config.pixelsPerTimeStep;
+    const x = (this.getNoteStartTime(note) * this.config.pixelsPerTimeStep);
+    const w = this.config.pixelsPerTimeStep *
+            (this.getNoteEndTime(note) - this.getNoteStartTime(note)) -
+        this.config.noteSpacing;
 
     // The canvas' y=0 is at the top, but a smaller pitch is actually
     // lower, so we're kind of painting backwards.
