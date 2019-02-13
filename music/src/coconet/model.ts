@@ -202,7 +202,7 @@ class Coconet {
   /**
    * Runs sampling on pianorolls.
    */
-  private async run(pianorolls: tf.Tensor4D, numSteps: number = undefined):
+  private async run(pianorolls: tf.Tensor4D, numSteps: number):
       Promise<tf.Tensor4D> {
     const masks = this.getCompletionMask(pianorolls);
     const samples = await this.gibbs(pianorolls, masks, numSteps);
