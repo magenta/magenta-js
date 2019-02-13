@@ -29,7 +29,10 @@ async function infill() {
 
   const start = performance.now();
   const output = await model.infill(MEL_TWINKLE);
-  writeNoteSeqs('output', [output], true);
+  // Optionally, merge the held notes and restore the original melody timing
+  // since the model chunks up the moelody in 16ths.
+  const fixedOutput = model.mergeHeldNotes(output, MEL_TWINKLE);
+  writeNoteSeqs('output', [fixedOutput], true);
   writeTimer('time', start);
 
   writeMemory(tf.memory().numBytes);
