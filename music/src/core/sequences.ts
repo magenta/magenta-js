@@ -429,14 +429,14 @@ export function mergeInstruments(ns: INoteSequence) {
  * Splits an unquantized `NoteSequence` into chunks.
  *
  * @param ns The `NoteSequence` to split.
- * @param chunkSize The number of steps to split the note sequence in.
- * For example, if you want to split the sequence into 2 bar chunks, then
- * if the sequence has 4 steps/quarter, that will be 32 steps for each 2 bars.
+ * @param chunkSize The number of steps per chunk. For example, if you want to
+ * split the sequence into 2 bar chunks, then if the sequence has 4
+ * steps/quarter, that will be 32 steps for each 2 bars (so a chunkSize of 32).
  *
  * @returns An array of `NoteSequences` each of which are at most `chunkSize`
  * steps.
  */
-export function split(seq: INoteSequence, chunkSize = 32): NoteSequence[] {
+export function split(seq: INoteSequence, chunkSize: number): NoteSequence[] {
   assertIsQuantizedSequence(seq);
 
   // Make a clone so that we don't destroy the input.
