@@ -142,8 +142,8 @@ export class Visualizer {
 
       // Size of this note.
       const x = (this.getNoteStartTime(note) * this.config.pixelsPerTimeStep);
-      const w = (this.getNoteEndTime(note) - this.getNoteStartTime(note)) *
-              this.config.pixelsPerTimeStep -
+      const w = this.config.pixelsPerTimeStep *
+              (this.getNoteEndTime(note) - this.getNoteStartTime(note)) -
           this.config.noteSpacing;
 
       // The canvas' y=0 is at the top, but a smaller pitch is actually
