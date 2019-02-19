@@ -272,7 +272,10 @@ class Coconet {
         for (let i = 0; i < originalVoice.notes.length; i++) {
           const note = new NoteSequence.Note();
           note.pitch = originalVoice.notes[i].pitch;
+          note.velocity = originalVoice.notes[i].velocity;
           note.instrument = originalVoice.notes[i].instrument;
+          note.program = originalVoice.notes[i].program;
+          note.isDrum = originalVoice.notes[i].isDrum;
           note.quantizedStartStep = originalVoice.notes[i].quantizedStartStep;
           note.quantizedEndStep = originalVoice.notes[i].quantizedEndStep;
           newNotes.push(note);
