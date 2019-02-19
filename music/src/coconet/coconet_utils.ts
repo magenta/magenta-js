@@ -1,6 +1,6 @@
 
 /**
- * Utility functions for the [Coconet]{@link } model.
+ * Utility functions for the [Coconet]{@link} model.
  *
  * @license
  * Copyright 2019 Google Inc. All Rights Reserved.
@@ -24,10 +24,9 @@ import {INoteSequence, NoteSequence} from '../protobuf';
 
 export const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 export const DURATION_STEPS = 32;
-// The length of the pitch array in Pianoroll;
+// The length of the pitch array in Pianoroll.
 export const NUM_PITCHES = 46;
-// The pitch array in Pianoroll is shifted so that
-// index 0 is MIN_PITCH.
+// The pitch array in Pianoroll is shifted so that index 0 is MIN_PITCH.
 export const MIN_PITCH = 36;
 
 /**
@@ -109,6 +108,12 @@ export function flatArrayToPianoroll(
   return pianoroll;
 }
 
+/**
+ * Creates an empty 3D pianoroll of shape `[numberOfSteps][NUM_PITCHES][4]`.
+ * @param numberOfSteps The size of the first dimension, representing the number
+ * of steps in the melody.
+ * @returns The initialized pianoroll.
+ */
 function buildEmptyPianoroll(numberOfSteps: number) {
   const pianoroll = [];
   for (let stepIndex = 0; stepIndex < numberOfSteps; stepIndex++) {

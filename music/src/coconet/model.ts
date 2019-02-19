@@ -51,6 +51,8 @@ interface ModelSpec {
 
 /**
  * Coconet model implementation in TensorflowJS.
+ * Thanks to [James Wexler](https://github.com/jameswex) for the original
+ * implementation.
  */
 class Coconet {
   private checkpointURL: string;
@@ -211,7 +213,7 @@ class Coconet {
 
   private getCompletionMask(pianorolls: tf.Tensor4D): tf.Tensor4D {
     const isEmpty = pianorolls.sum(2, true).equal(tf.scalar(0, 'float32'));
-    // Explicit broadcasting
+    // Explicit broadcasting.
     return tf.cast(isEmpty, 'float32').add(tf.zerosLike(pianorolls));
   }
 
@@ -495,7 +497,6 @@ class Coconet {
   }
 
   private applyBatchnorm_(x: tf.Tensor, i: number): tf.Tensor {
-    // const outputDim = x.shape[x.shape.length - 1];
     const gammas = this.getVar_('gamma', i);
     const betas = this.getVar_('beta', i);
     const mean = this.getVar_('popmean', i);
