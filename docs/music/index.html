@@ -156,11 +156,11 @@ model
 				<h2 id="model-checkpoints">Model Checkpoints</h2>
 				<p>Since MagentaMusic.js does not support training models, you must use weights from a model trained with the Python-based <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models">Magenta models</a>. We are also making available our own hosted pre-trained checkpoints.</p>
 				<h3 id="magenta-hosted-checkpoints">Magenta-Hosted Checkpoints</h3>
-				<p>Several pre-trained MusicRNN and MusicVAE checkpoints are hosted on GCS. The full list can is available in <a href="checkpoints/README.md#table">this table</a> and can be accessed programmatically via a JSON index at <a href="https://goo.gl/magenta/js-checkpoints-json">https://goo.gl/magenta/js-checkpoints-json</a>.</p>
+				<p>Several pre-trained MusicRNN and MusicVAE checkpoints are hosted on GCS. The full list can is available in <a href="https://github.com/tensorflow/magenta-js/blob/master/music/checkpoints/README.md#table">this table</a> and can be accessed programmatically via a JSON index at <a href="https://goo.gl/magenta/js-checkpoints-json">https://goo.gl/magenta/js-checkpoints-json</a>.</p>
 				<p>More information is available at <a href="https://goo.gl/magenta/js-checkpoints">https://goo.gl/magenta/js-checkpoints</a>.</p>
 				<h3 id="your-own-checkpoints">Your Own Checkpoints</h3>
 				<h4 id="dumping-your-weights">Dumping Your Weights</h4>
-				<p>To use your own checkpoints with one of our models, you must first convert the weights to the appropriate format using the provided <a href="../scripts/checkpoint_converter.py">checkpoint_converter</a> script.</p>
+				<p>To use your own checkpoints with one of our models, you must first convert the weights to the appropriate format using the provided <a href="https://github.com/tensorflow/magenta-js/blob/master/scripts/checkpoint_converter.py">checkpoint_converter</a> script.</p>
 				<p>This tool is dependent on <a href="https://github.com/tensorflow/tfjs-converter">tfjs-converter</a>, which you must first install using <code>pip install tensorflowjs</code>. Once installed, you can execute the script as follows:</p>
 				<pre><code class="lang-bash">../scripts/checkpoint_converter.py /path/to/model.ckpt /path/to/output_dir
 </code></pre>
