@@ -40,18 +40,17 @@ export const MIN_PITCH = 36;
  */
 export function pianorollToSequence(pianoroll: number[][][]): NoteSequence {
   const sequence = NoteSequence.create();
-  // tslint:disable-next-line:no-any
-  const notes: any = [];
+  const notes: NoteSequence.Note[] = [];
   pianoroll.forEach((step: number[][], stepIndex) => {
     step.forEach((pitch, pitchIndex) => {
       pitch.forEach((voice: number, voiceIndex: number) => {
         if (voice === 1.0) {
-          notes.push({
-            pitch: pitchIndex + MIN_PITCH,
-            instrument: voiceIndex,
-            quantizedStartStep: stepIndex,
-            quantizedEndStep: stepIndex + 1
-          });
+          const note = new NoteSequence.Note();
+          note.pitch = pitchIndex + MIN_PITCH;
+          note.instrument = voiceIndex;
+          note.quantizedStartStep = stepIndex;
+          note.quantizedEndStep = stepIndex + 1;
+          notes.push(note);
         }
       });
     });
@@ -77,10 +76,14 @@ export function sequenceToPianoroll(
     const pitchIndex = note.pitch - MIN_PITCH;
     const stepIndex = note.quantizedStartStep;
     const duration = note.quantizedEndStep - note.quantizedStartStep;
-    // Assume that input sequences are always on the first voice.
-    const voiceIndex = 0;
-    for (let i = stepIndex; i < stepIndex + duration; i++) {
-      pianoroll[i][pitchIndex][voiceIndex] = 1;
+    const voice = note.instrument;
+
+    if (voice < 0 || voice > 3) {
+      throw new Error(`Found invalid voice ${voice}. Skipping.`);
+    } else {
+      for (let i = stepIndex; i < stepIndex + duration; i++) {
+        pianoroll[i][pitchIndex][voice] = 1;
+      }
     }
   });
   return pianoroll;

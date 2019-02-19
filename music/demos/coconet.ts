@@ -20,21 +20,47 @@ import * as mm from '../src/index';
 
 // tslint:disable-next-line:max-line-length
 import {CHECKPOINTS_DIR, MEL_TWINKLE, writeMemory, writeNoteSeqs, writeTimer} from './common';
-infill();
 
-async function infill() {
+async function infillFirstVoice() {
   const model = new mm.Coconet(`${CHECKPOINTS_DIR}/coconet/bach`);
   await model.initialize();
-  writeNoteSeqs('input', [MEL_TWINKLE], true);
+  writeNoteSeqs('input-1', [MEL_TWINKLE], true);
 
   const start = performance.now();
   const output = await model.infill(MEL_TWINKLE);
   // Optionally, merge the held notes and restore the original melody timing
   // since the model chunks up the moelody in 16ths.
-  const fixedOutput = model.mergeHeldNotes(output, MEL_TWINKLE);
-  writeNoteSeqs('output', [fixedOutput], true);
-  writeTimer('time', start);
-
-  writeMemory(tf.memory().numBytes);
+  const fixedOutput = model.replaceVoice(output, MEL_TWINKLE);
+  writeNoteSeqs('output-1', [fixedOutput], true);
+  writeTimer('time-1', start);
   model.dispose();
+}
+
+async function infillSecondVoice() {
+  const model = new mm.Coconet(`${CHECKPOINTS_DIR}/coconet/bach`);
+  await model.initialize();
+  const ns = mm.sequences.clone(MEL_TWINKLE);
+  writeNoteSeqs('input-2', [ns], true);
+
+  for (let i = 0; i < ns.notes.length; i++ ) {
+    ns.notes[i].instrument = 2;
+  }
+  const start = performance.now();
+  const output = await model.infill(ns);
+  // Optionally, merge the held notes and restore the original melody timing
+  // since the model chunks up the moelody in 16ths.
+  const fixedOutput = model.replaceVoice(output, ns);
+  writeNoteSeqs('output-2', [fixedOutput], true);
+  writeTimer('time-2', start);
+  model.dispose();
+}
+
+try {
+  Promise
+      .all([
+        infillFirstVoice(), infillSecondVoice()
+      ])
+      .then(() => writeMemory(tf.memory().numBytes));
+} catch (err) {
+  console.error(err);
 }
