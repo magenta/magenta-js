@@ -116,7 +116,7 @@ async function infillSection() {
   const start = performance.now();
   const output = await model.infill(ns2);
 
-  // Optionally, merge the held notes.
+  // Optionally, treat any consecutive notes as merged.
   const fixedOutput = model.mergeHeldNotes(output);
   writeNoteSeqs('output-3', [fixedOutput], true);
   writeTimer('time-3', start);

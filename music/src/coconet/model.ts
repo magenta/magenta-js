@@ -253,13 +253,13 @@ class Coconet {
 
   /**
    * Replace a voice in a NoteSequence sequence with a different voice.
-   * @param sequence The NoteSequence to be merged.
+   * @param sequence The NoteSequence to be changed.
    * @param originalVoice The NoteSequence that will replace the notes in
    * `sequence` with the same instrument.
    * @return a new NoteSequence with sustained notes merged, and a voice
    * replaced.
    */
-  public replaceVoice(sequence: INoteSequence, originalVoice?: INoteSequence)
+  public replaceVoice(sequence: INoteSequence, originalVoice: INoteSequence)
       : NoteSequence {
     const output = this.mergeHeldNotes(sequence);
     const newNotes = [];
