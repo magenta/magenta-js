@@ -136,7 +136,7 @@ Since MagentaMusic.js does not support training models, you must use weights fro
 
 ### Magenta-Hosted Checkpoints
 
-Several pre-trained MusicRNN and MusicVAE checkpoints are hosted on GCS. The full list can is available in [this table](checkpoints/README.md#table) and can be accessed programmatically via a JSON index at https://goo.gl/magenta/js-checkpoints-json.
+Several pre-trained MusicRNN and MusicVAE checkpoints are hosted on GCS. The full list can is available in [this table](https://github.com/tensorflow/magenta-js/blob/master/music/checkpoints/README.md#table) and can be accessed programmatically via a JSON index at https://goo.gl/magenta/js-checkpoints-json.
 
 More information is available at https://goo.gl/magenta/js-checkpoints.
 
@@ -144,7 +144,7 @@ More information is available at https://goo.gl/magenta/js-checkpoints.
 
 #### Dumping Your Weights
 
-To use your own checkpoints with one of our models, you must first convert the weights to the appropriate format using the provided [checkpoint_converter](../scripts/checkpoint_converter.py) script.
+To use your own checkpoints with one of our models, you must first convert the weights to the appropriate format using the provided [checkpoint_converter](https://github.com/tensorflow/magenta-js/blob/master/scripts/checkpoint_converter.py) script.
 
 This tool is dependent on [tfjs-converter](https://github.com/tensorflow/tfjs-converter), which you must first install using `pip install tensorflowjs`. Once installed, you can execute the script as follows:
 
