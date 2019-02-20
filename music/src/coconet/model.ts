@@ -434,6 +434,8 @@ class Coconet {
         const updatedPianorolls =
             tf.where(tf.cast(innerMasks, 'bool'), samples, pianoroll);
         pianoroll.dispose();
+        predictions.dispose();
+        innerMasks.dispose();
         return updatedPianorolls;
       });
       await tf.nextFrame();
