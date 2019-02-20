@@ -155,19 +155,19 @@ class ConvNet {
   }
 
   private getVar(name: string, layerNum: number) : tf.Tensor4D {
-    const varname = 'model/conv' + layerNum + '/' + name;
+    const varname = `model/conv${layerNum}/${name}`;
     return this.rawVars[varname] as tf.Tensor4D;
   }
 
   private getSepConvVar(name: string, layerNum: number): tf.Tensor4D {
-    const varname = 'model/conv' + layerNum + '/SeparableConv2d/' + name;
+    const varname = `model/conv${layerNum}/SeparableConv2d/${name}`;
     return this.rawVars[varname] as tf.Tensor4D;
   }
 
   private getPointwiseSplitVar(
       name: string, layerNum: number, splitNum: number) {
-    const varname = 'model/conv' + layerNum + '/split_' + layerNum + '_' +
-        splitNum + '/' + name;
+    // tslint:disable-next-line:max-line-length
+    const varname = `model/conv${layerNum}/split_${layerNum}_${splitNum}/${name}`;
     return this.rawVars[varname];
   }
 
