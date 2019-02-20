@@ -12,7 +12,6 @@
     "midiconvert": "^0.4.7",
     "ndarray-resample": "^1.0.1",
     "protobufjs": "^6.8.6",
-    "tfjs": "^0.6.0",
     "tonal": "^2.0.0",
     "tone": "^0.12.80"
   },
