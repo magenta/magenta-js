@@ -20,7 +20,7 @@ import {logging, sequences} from '..';
 import {INoteSequence, NoteSequence} from '../protobuf';
 
 // tslint:disable-next-line:max-line-length
-import {DURATION_STEPS, flatArrayToPianoroll, IS_IOS, pianorollToSequence, sequenceToPianoroll} from './coconet_utils';
+import {DURATION_STEPS, IS_IOS, pianorollToSequence, sequenceToPianoroll} from './coconet_utils';
 
 interface LayerSpec {
   pooling?: number[];
@@ -383,18 +383,18 @@ class Coconet {
     const pianoroll = sequenceToPianoroll(sequence, DURATION_STEPS);
 
     // Run sampling on the pianoroll.
-    const inputTensor = tf.tensor([pianoroll]) as tf.Tensor4D;
-    const samples = await this.run(inputTensor, this.spec.numSteps);
+    const samples = await this.run(pianoroll, this.spec.numSteps);
 
     // Convert the resulting pianoroll to a noteSequence.
-    const outputPianoroll =
-        flatArrayToPianoroll(Array.from(samples.dataSync()), DURATION_STEPS);
-    const outputSequence = pianorollToSequence(outputPianoroll);
+
+    // const outputPianoroll =
+    //     flatArrayToPianoroll(Array.from(samples.dataSync()), DURATION_STEPS);
+    const outputSequence = pianorollToSequence(samples, DURATION_STEPS);
     outputSequence.quantizationInfo = {stepsPerQuarter: 4};
     outputSequence.totalQuantizedSteps =
         outputSequence.notes[outputSequence.notes.length - 1].quantizedEndStep;
 
-    inputTensor.dispose();
+    pianoroll.dispose();
     samples.dispose();
     return outputSequence;
   }

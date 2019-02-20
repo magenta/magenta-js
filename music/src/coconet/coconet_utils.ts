@@ -1,4 +1,3 @@
-
 /**
  * Utility functions for the [Coconet]{@link} model.
  *
@@ -21,6 +20,7 @@
  * Imports
  */
 import {INoteSequence, NoteSequence} from '../protobuf';
+import * as tf from '@tensorflow/tfjs-core';
 
 export const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 export const DURATION_STEPS = 32;
@@ -28,51 +28,65 @@ export const DURATION_STEPS = 32;
 export const NUM_PITCHES = 46;
 // The pitch array in Pianoroll is shifted so that index 0 is MIN_PITCH.
 export const MIN_PITCH = 36;
+// Number of voices used in the model. 0 represents Soprano, 1 Alto,
+// 2 Tenor and 3 is Bass.
+export const NUM_VOICES = 4;
 
 /**
- * Converts a pianoroll representation to a `NoteSequence`.
+ * Converts a pianoroll representation to a `NoteSequence`. Note that since
+ * the pianoroll representation can't distinguish between multiple eighth notes
+ *  and held notes, the resulting `NoteSequence` won't either.
  *
- * @param pianoroll Array of shape `[steps][NUM_PITCHES][4]`, where each entry
- * represents an instrument being played at a particular step and for
- * a particular pitch. For example, `pianoroll[0][64] =[0, 0, 1, 0]` means
- * that the third instrument plays pitch 64 at time 0. Note: this representation
- * can't distinguish between multiple eight notes and held notes.
+ * @param pianoroll Array of shape `[steps][NUM_PITCHES][NUM_VOICES]`,
+ * where each entry represents an instrument being played at a particular step
+ * and for a particular pitch. For example, `pianoroll[0][64] =[0, 0, 1, 0]`
+ * means that the third instrument plays pitch 64 at time 0.
  * @returns A `NoteSequence` containing the melody.
  */
-export function pianorollToSequence(pianoroll: number[][][]): NoteSequence {
+export function pianorollToSequence(pianoroll: tf.Tensor4D,
+    numberOfSteps: number): NoteSequence {
+  // First reshape the flat tensor so that it's shaped [steps][NUM_PITCHES][4].
+  const reshaped = tf.reshape(pianoroll,
+      [numberOfSteps, NUM_PITCHES, NUM_VOICES]);
   const sequence = NoteSequence.create();
   const notes: NoteSequence.Note[] = [];
-  pianoroll.forEach((step: number[][], stepIndex) => {
-    step.forEach((pitch, pitchIndex) => {
-      pitch.forEach((value: number, voiceIndex: number) => {
+
+  for (let s = 0; s < numberOfSteps; s++) {
+    for (let p = 0; p < NUM_PITCHES; p++) {
+      for (let v = 0; v < NUM_VOICES; v++) {
+        const value = reshaped.get(s, p, v);
+        // If this note is on, then it's being played by a voice and
+        // it should be added to the note sequence.
         if (value === 1.0) {
           const note = new NoteSequence.Note();
-          note.pitch = pitchIndex + MIN_PITCH;
-          note.instrument = voiceIndex;
-          note.quantizedStartStep = stepIndex;
-          note.quantizedEndStep = stepIndex + 1;
+          note.pitch = p + MIN_PITCH;
+          note.instrument = v;
+          note.quantizedStartStep = s;
+          note.quantizedEndStep = s + 1;
           notes.push(note);
         }
-      });
-    });
-  });
+      }
+    }
+  }
   sequence.notes = notes;
   sequence.totalQuantizedSteps = notes[notes.length - 1].quantizedEndStep;
   return sequence;
 }
 
 /**
- * Converts a `NoteSequence` to a pianoroll representation.
+ * Converts a `NoteSequence` to a pianoroll representation. Note that
+ * this pianoroll representation can't distinguish between
+ * multiple eighth notes and held notes, so that information will be lost.
  *
  * @param ns A `NoteSequence` containing a melody.
- * @returns An array of shape `[numberOfSteps][NUM_PITCHES][4]` where each entry
- * represents an instrument being played at a particular step and for
- * a particular pitch. For example, `pianoroll[0][64] =[0, 0, 1, 0]` means
- * that the third instrument plays pitch 64 at time 0. Note: this representation
- * can't distinguish between multiple eight notes and held notes.
+ * @returns A Tensor of shape `[numberOfSteps][NUM_PITCHES][NUM_VOICES]`
+ * where each entry represents an instrument being played at a particular
+ * step and for a particular pitch. For example,
+ * `pianoroll[0][64] = [0, 0, 1, 0]` means that the third instrument plays
+ * pitch 64 at time 0.
  */
 export function sequenceToPianoroll(
-    ns: INoteSequence, numberOfSteps: number): number[][][] {
+    ns: INoteSequence, numberOfSteps: number): tf.Tensor4D {
   const pianoroll = buildEmptyPianoroll(numberOfSteps);
   const notes = ns.notes;
   notes.forEach(note => {
@@ -89,29 +103,7 @@ export function sequenceToPianoroll(
       }
     }
   });
-  return pianoroll;
-}
-
-/**
- * Reshapes a 1D array of size `[numberOfSteps * NUM_PITCHES * 4]` into a
- * 3D pianoroll of shape `[numberOfSteps][NUM_PITCHES][4]`.
- * @param flatArray The 1D input array.
- * @param numberOfSteps The size of the first dimension, representing the number
- * of steps in the sequence.
- * @returns A reshaped array with shape `[steps][pitches][4]`.
- */
-export function flatArrayToPianoroll(
-    flatArray: number[], numberOfSteps: number): number[][][] {
-  const pianoroll = [];
-  for (let stepIndex = 0; stepIndex < numberOfSteps; stepIndex++) {
-    const step = [];
-    for (let pitchIndex = 0; pitchIndex < NUM_PITCHES; pitchIndex++) {
-      const index = stepIndex * NUM_PITCHES * 4 + pitchIndex * 4;
-      step.push(flatArray.slice(index, index + 4));
-    }
-    pianoroll.push(step);
-  }
-  return pianoroll;
+  return tf.tensor([pianoroll]);
 }
 
 /**
