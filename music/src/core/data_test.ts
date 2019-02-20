@@ -16,6 +16,9 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
+
+// To remove the warning that tf.get() is deprecated.
+tf.disableDeprecationWarnings();
 import * as test from 'tape';
 
 import {NoteSequence} from '../protobuf/index';
