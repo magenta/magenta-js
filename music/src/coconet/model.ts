@@ -49,6 +49,26 @@ interface ModelSpec {
   numPointwiseSplits?: number;
 }
 
+const DEFAULT_SPEC: ModelSpec = {
+  useSoftmaxLoss: true,
+  batchNormVarianceEpsilon: 1.0e-07,
+  numInstruments: 4,
+  numFilters: 128,
+  numLayers: 33,
+  numRegularConvLayers: 0,
+  numSteps: 96,
+  dilation: [
+    [1, 1], [2, 2], [4, 4], [8, 8], [16, 16], [16, 32],
+    [1, 1], [2, 2], [4, 4], [8, 8], [16, 16], [16, 32],
+    [1, 1], [2, 2], [4, 4], [8, 8], [16, 16], [16, 32],
+    [1, 1], [2, 2], [4, 4], [8, 8], [16, 16], [16, 32],
+    [1, 1], [2, 2], [4, 4], [8, 8], [16, 16], [16, 32]
+  ],
+  layers: null,
+  interleaveSplitEveryNLayers: 16,
+  numPointwiseSplits: 4,
+};
+
 /**
  * Coconet model implementation in TensorflowJS.
  * Thanks to [James Wexler](https://github.com/jameswex) for the original
@@ -61,8 +81,7 @@ class Coconet {
   private outputForResidual_: tf.Tensor = null;
   private residualCounter_ = -1;
 
-  // tslint:disable-next-line:no-any
-  private rawVars: any = null;  // Store for disposal.
+  private rawVars: {[varName: string]: tf.Tensor} = null;
   private initialized = false;
 
   /**
@@ -72,24 +91,7 @@ class Coconet {
    */
   constructor(checkpointURL: string) {
     this.checkpointURL = checkpointURL;
-
-    this.spec = {} as ModelSpec;
-    this.spec.useSoftmaxLoss = true;
-    this.spec.batchNormVarianceEpsilon = 1.0e-07;
-    this.spec.numInstruments = 4;
-    this.spec.numFilters = 128;
-    this.spec.numLayers = 33;
-    this.spec.numRegularConvLayers = 0;
-    this.spec.numSteps = 96;
-    this.spec.dilation = [
-      [1, 1], [2, 2], [4, 4], [8, 8], [16, 16], [16, 32],
-      [1, 1], [2, 2], [4, 4], [8, 8], [16, 16], [16, 32],
-      [1, 1], [2, 2], [4, 4], [8, 8], [16, 16], [16, 32],
-      [1, 1], [2, 2], [4, 4], [8, 8], [16, 16], [16, 32],
-      [1, 1], [2, 2], [4, 4], [8, 8], [16, 16], [16, 32]
-    ];
-    this.spec.interleaveSplitEveryNLayers = 16;
-    this.spec.numPointwiseSplits = 4;
+    this.spec = DEFAULT_SPEC;
   }
 
   /**
@@ -105,7 +107,6 @@ class Coconet {
                          (manifest: tf.io.WeightsManifestConfig) =>
                              tf.io.loadWeights(manifest, this.checkpointURL));
     this.rawVars = vars;  // Save for disposal.
-
     this.initialized = true;
     logging.logWithDuration('Initialized model', startTime, 'Coconet');
   }
@@ -168,8 +169,7 @@ class Coconet {
 
   /**
    * Use the model to generate a new sequence, conditioned on the input
-   * sequence. The result will include the input sequence as instrument 0,
-   * as well as 3 new instruments that accompany the original melody.
+   * sequence.
    * **Note**: regardless of the length of the notes in the original sequence,
    * all the notes in the generated sequence will be 1 step long. If you want
    * to clean up the sequence to consider consecutive notes for the same
@@ -227,28 +227,28 @@ class Coconet {
     } else {
       numStepsTensor = tf.scalar(numSteps, 'float32');
     }
-    let proll = pianorolls.clone();
+    let pianoroll = pianorolls.clone();
     for (let s = 0; s < numSteps; s++) {
       const innerMasks = tf.tidy(() => {
         const pm = this.yaoSchedule(s, numStepsTensor);
-        return this.bernoulliMask(proll.shape, pm, outerMasks);
+        return this.bernoulliMask(pianoroll.shape, pm, outerMasks);
       });
       await tf.nextFrame();
       const predictions = tf.tidy(() => {
-        return this.predictFromPianoroll(proll, innerMasks);
+        return this.predictFromPianoroll(pianoroll, innerMasks);
       }) as tf.Tensor4D;
       await tf.nextFrame();
-      proll = tf.tidy(() => {
+      pianoroll = tf.tidy(() => {
         const samples = this.samplePredictions(predictions) as tf.Tensor4D;
         const updatedPianorolls =
-            tf.where(tf.cast(innerMasks, 'bool'), samples, proll);
-        proll.dispose();
+            tf.where(tf.cast(innerMasks, 'bool'), samples, pianoroll);
+        pianoroll.dispose();
         return updatedPianorolls;
       });
       await tf.nextFrame();
     }
 
-    return proll;
+    return pianoroll;
   }
 
   /**
@@ -289,7 +289,7 @@ class Coconet {
   }
 
   /**
-   * Any touching notes of the same pitch are merged into a sustained note.
+   * Any consecutive notes of the same pitch are merged into a sustained note.
    * Does not merge notes that connect on a measure boundary. This process
    * also rearranges the order of the notes - notes are grouped by instrument,
    * then ordered by timestamp.
@@ -400,9 +400,9 @@ class Coconet {
     });
   }
 
-  private samplePredictions(predictions: tf.Tensor4D): tf.Tensor {
+  private samplePredictions(predictions: tf.Tensor4D, temperature = 0.99)
+      : tf.Tensor {
     return tf.tidy(() => {
-      const temperature = 0.99;
       predictions = tf.pow(predictions, tf.scalar(1 / temperature, 'float32'));
       const cmf = tf.cumsum(predictions, 2, false, false);
       const totalMasses = cmf.slice(
@@ -421,8 +421,6 @@ class Coconet {
 
   private computePredictions_(logits: tf.Tensor): tf.Tensor {
     if (this.spec.useSoftmaxLoss) {
-      // tf.js does not yet allow softmax on non-last dimension
-      // return logits.softmax(2);
       return logits.transpose([0, 1, 3, 2]).softmax().transpose([0, 1, 3, 2]);
     }
     return logits.sigmoid();
@@ -459,14 +457,14 @@ class Coconet {
     return x;
   }
 
-  private getVar_(name: string, layerNum: number) {
+  private getVar_(name: string, layerNum: number) : tf.Tensor4D {
     const varname = 'model/conv' + layerNum + '/' + name;
-    return this.rawVars[varname];
+    return this.rawVars[varname] as tf.Tensor4D;
   }
 
-  private getSepConvVar_(name: string, layerNum: number) {
+  private getSepConvVar_(name: string, layerNum: number): tf.Tensor4D {
     const varname = 'model/conv' + layerNum + '/SeparableConv2d/' + name;
-    return this.rawVars[varname];
+    return this.rawVars[varname] as tf.Tensor4D;
   }
 
   private getPointwiseSplitVar_(
@@ -490,7 +488,6 @@ class Coconet {
     let conv = null;
     if (depthwise) {
       const dWeights = this.getSepConvVar_('depthwise_weights', i);
-
       if (!numPointwiseSplits) {
         const pWeights = this.getSepConvVar_('pointwise_weights', i);
         const biases = this.getSepConvVar_('biases', i);
@@ -530,7 +527,7 @@ class Coconet {
     return this.applyBatchnorm_(conv, i) as tf.Tensor4D;
   }
 
-  private applyBatchnorm_(x: tf.Tensor, i: number): tf.Tensor {
+  private applyBatchnorm_(x: tf.Tensor4D, i: number): tf.Tensor {
     const gammas = this.getVar_('gamma', i);
     const betas = this.getVar_('beta', i);
     const mean = this.getVar_('popmean', i);
@@ -538,9 +535,8 @@ class Coconet {
     if (IS_IOS) {
       // iOS WebGL floats are 16-bit, and the variance is outside this range.
       // This loads the variance to 32-bit floats in JS to compute batchnorm.
-      const stdevs = tf.tensor(variance.dataSync().map(
-          (v: number) => Math.sqrt(v + this.spec.batchNormVarianceEpsilon)));
-      return x.sub(mean).mul(gammas.div(stdevs)).add(betas);
+      const v = tf.sqrt(tf.add(variance, this.spec.batchNormVarianceEpsilon));
+      return x.sub(mean).mul(gammas.div(v)).add(betas);
     }
     return tf.batchNormalization(
         x, tf.squeeze(mean), tf.squeeze(variance),

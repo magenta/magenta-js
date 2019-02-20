@@ -35,7 +35,8 @@ export const MIN_PITCH = 36;
  * @param pianoroll Array of shape `[steps][NUM_PITCHES][4]`, where each entry
  * represents an instrument being played at a particular step and for
  * a particular pitch. For example, `pianoroll[0][64] =[0, 0, 1, 0]` means
- * that the third instrument plays pitch 64 at time 0.
+ * that the third instrument plays pitch 64 at time 0. Note: this representation
+ * can't distinguish between multiple eight notes and held notes.
  * @returns A `NoteSequence` containing the melody.
  */
 export function pianorollToSequence(pianoroll: number[][][]): NoteSequence {
@@ -43,8 +44,8 @@ export function pianorollToSequence(pianoroll: number[][][]): NoteSequence {
   const notes: NoteSequence.Note[] = [];
   pianoroll.forEach((step: number[][], stepIndex) => {
     step.forEach((pitch, pitchIndex) => {
-      pitch.forEach((voice: number, voiceIndex: number) => {
-        if (voice === 1.0) {
+      pitch.forEach((value: number, voiceIndex: number) => {
+        if (value === 1.0) {
           const note = new NoteSequence.Note();
           note.pitch = pitchIndex + MIN_PITCH;
           note.instrument = voiceIndex;
@@ -56,6 +57,7 @@ export function pianorollToSequence(pianoroll: number[][][]): NoteSequence {
     });
   });
   sequence.notes = notes;
+  sequence.totalQuantizedSteps = notes[notes.length - 1].quantizedEndStep;
   return sequence;
 }
 
@@ -66,7 +68,8 @@ export function pianorollToSequence(pianoroll: number[][][]): NoteSequence {
  * @returns An array of shape `[numberOfSteps][NUM_PITCHES][4]` where each entry
  * represents an instrument being played at a particular step and for
  * a particular pitch. For example, `pianoroll[0][64] =[0, 0, 1, 0]` means
- * that the third instrument plays pitch 64 at time 0.
+ * that the third instrument plays pitch 64 at time 0. Note: this representation
+ * can't distinguish between multiple eight notes and held notes.
  */
 export function sequenceToPianoroll(
     ns: INoteSequence, numberOfSteps: number): number[][][] {
@@ -94,7 +97,7 @@ export function sequenceToPianoroll(
  * 3D pianoroll of shape `[numberOfSteps][NUM_PITCHES][4]`.
  * @param flatArray The 1D input array.
  * @param numberOfSteps The size of the first dimension, representing the number
- * of steps in the melody.
+ * of steps in the sequence.
  * @returns A reshaped array with shape `[steps][pitches][4]`.
  */
 export function flatArrayToPianoroll(
@@ -114,7 +117,7 @@ export function flatArrayToPianoroll(
 /**
  * Creates an empty 3D pianoroll of shape `[numberOfSteps][NUM_PITCHES][4]`.
  * @param numberOfSteps The size of the first dimension, representing the number
- * of steps in the melody.
+ * of steps in the sequence.
  * @returns The initialized pianoroll.
  */
 function buildEmptyPianoroll(numberOfSteps: number) {
