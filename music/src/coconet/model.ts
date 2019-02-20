@@ -450,11 +450,11 @@ class Coconet {
   }
 
   /**
-   * Replace a voice in a NoteSequence sequence with a different voice.
-   * @param sequence The NoteSequence to be changed.
-   * @param originalVoice The NoteSequence that will replace the notes in
+   * Replace a voice in a `NoteSequence` sequence with a different voice.
+   * @param sequence The `NoteSequence` to be changed.
+   * @param originalVoice The `NoteSequence` that will replace the notes in
    * `sequence` with the same instrument.
-   * @return a new NoteSequence with sustained notes merged, and a voice
+   * @return a new `NoteSequence` with sustained notes merged, and a voice
    * replaced.
    */
   public replaceVoice(sequence: INoteSequence, originalVoice: INoteSequence)
@@ -492,8 +492,8 @@ class Coconet {
    * also rearranges the order of the notes - notes are grouped by instrument,
    * then ordered by timestamp.
    *
-   * @param sequence The NoteSequence to be merged.
-   * @return a new NoteSequence with sustained notes merged.
+   * @param sequence The `NoteSequence` to be merged.
+   * @return a new `NoteSequence` with sustained notes merged.
    */
   public mergeHeldNotes(sequence: INoteSequence) {
     const output = sequences.clone(sequence);
