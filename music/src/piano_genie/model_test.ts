@@ -6,7 +6,7 @@
  * https://storage.googleapis.com/magentadata/js/checkpoints/piano_genie/testdata.zip
  * And unzip them to src/piano_genie/testdata/*.json.
  * Then run yarn test from magenta-js/musis directory.
- * 
+ *
  * @license
  * Copyright 2018 Google Inc. All Rights Reserved.
  *
@@ -26,7 +26,7 @@
 
 import * as fs from 'fs';
 import * as test from 'tape';
-import * as tf from '@tensorflow/tfjs-core';
+import * as tf from '@tensorflow/tfjs';
 
 import {PianoGenie} from './model';
 
