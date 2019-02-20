@@ -386,13 +386,7 @@ class Coconet {
     const samples = await this.run(pianoroll, this.spec.numSteps);
 
     // Convert the resulting pianoroll to a noteSequence.
-
-    // const outputPianoroll =
-    //     flatArrayToPianoroll(Array.from(samples.dataSync()), DURATION_STEPS);
     const outputSequence = pianorollToSequence(samples, DURATION_STEPS);
-    outputSequence.quantizationInfo = {stepsPerQuarter: 4};
-    outputSequence.totalQuantizedSteps =
-        outputSequence.notes[outputSequence.notes.length - 1].quantizedEndStep;
 
     pianoroll.dispose();
     samples.dispose();
@@ -405,8 +399,7 @@ class Coconet {
   private async run(pianorolls: tf.Tensor4D, numSteps: number):
       Promise<tf.Tensor4D> {
     const masks = this.getCompletionMask(pianorolls);
-    const samples = await this.gibbs(pianorolls, masks, numSteps);
-    return samples;
+    return await this.gibbs(pianorolls, masks, numSteps);
   }
 
   private getCompletionMask(pianorolls: tf.Tensor4D): tf.Tensor4D {

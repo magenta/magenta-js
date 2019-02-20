@@ -70,6 +70,7 @@ export function pianorollToSequence(pianoroll: tf.Tensor4D,
   }
   sequence.notes = notes;
   sequence.totalQuantizedSteps = notes[notes.length - 1].quantizedEndStep;
+  sequence.quantizationInfo = {stepsPerQuarter: 4};
   return sequence;
 }
 
