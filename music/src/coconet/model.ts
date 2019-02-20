@@ -69,6 +69,207 @@ const DEFAULT_SPEC: ModelSpec = {
   numPointwiseSplits: 4,
 };
 
+class ConvNet {
+  private residualPeriod = 2;
+  private outputForResidual: tf.Tensor = null;
+  private residualCounter = -1;
+  private spec: ModelSpec;
+
+  // Save for disposal.
+  private rawVars: {[varName: string]: tf.Tensor} = null;
+
+  constructor(spec: ModelSpec, vars: {[varName: string]: tf.Tensor}) {
+    this.spec = spec;
+    this.rawVars = vars;
+  }
+
+  dispose() {
+    if (this.rawVars !== null) {
+      Object.keys(this.rawVars).forEach(name => this.rawVars[name].dispose());
+    }
+  }
+
+  public predictFromPianoroll(pianoroll: tf.Tensor4D, masks: tf.Tensor4D):
+      tf.Tensor {
+    return tf.tidy(() => {
+      let featuremaps = this.getConvnetInput(pianoroll, masks);
+
+      const n = this.spec.layers.length;
+      for (let i = 0; i < n; i++) {
+        this.residualCounter += 1;
+        this.residualSave(featuremaps);
+        let numPointwiseSplits = null;
+        if (this.spec.interleaveSplitEveryNLayers && i > 0 && i < n - 2 &&
+            i % (this.spec.interleaveSplitEveryNLayers + 1) === 0) {
+          numPointwiseSplits = this.spec.numPointwiseSplits;
+        }
+        featuremaps = this.applyConvolution(
+            featuremaps, this.spec.layers[i], i,
+            i >= this.spec.numRegularConvLayers, numPointwiseSplits);
+        featuremaps = this.applyResidual(featuremaps, i === 0, i === n - 1, i);
+        featuremaps =
+            this.applyActivation(featuremaps, this.spec.layers[i], i);
+        featuremaps = this.applyPooling(featuremaps, this.spec.layers[i], i);
+      }
+      const predictions = this.computePredictions(featuremaps);
+      return predictions;
+    });
+  }
+
+  private computePredictions(logits: tf.Tensor): tf.Tensor {
+    if (this.spec.useSoftmaxLoss) {
+      return logits.transpose([0, 1, 3, 2]).softmax().transpose([0, 1, 3, 2]);
+    }
+    return logits.sigmoid();
+  }
+
+  private residualReset() {
+    this.outputForResidual = null;
+    this.residualCounter = 0;
+  }
+
+  private residualSave(x: tf.Tensor) {
+    if (this.residualCounter % this.residualPeriod === 1) {
+      this.outputForResidual = x;
+    }
+  }
+
+  private applyResidual(
+      x: tf.Tensor4D, isFirst: boolean, isLast: boolean,
+      i: number): tf.Tensor4D {
+    if (this.outputForResidual == null) {
+      return x;
+    }
+    if (this.outputForResidual
+            .shape[this.outputForResidual.shape.length - 1] !==
+        x.shape[x.shape.length - 1]) {
+      this.residualReset();
+      return x;
+    }
+    if (this.residualCounter % this.residualPeriod === 0) {
+      if (!isFirst && !isLast) {
+        x = x.add(this.outputForResidual);
+      }
+    }
+    return x;
+  }
+
+  private getVar(name: string, layerNum: number) : tf.Tensor4D {
+    const varname = 'model/conv' + layerNum + '/' + name;
+    return this.rawVars[varname] as tf.Tensor4D;
+  }
+
+  private getSepConvVar(name: string, layerNum: number): tf.Tensor4D {
+    const varname = 'model/conv' + layerNum + '/SeparableConv2d/' + name;
+    return this.rawVars[varname] as tf.Tensor4D;
+  }
+
+  private getPointwiseSplitVar(
+      name: string, layerNum: number, splitNum: number) {
+    const varname = 'model/conv' + layerNum + '/split_' + layerNum + '_' +
+        splitNum + '/' + name;
+    return this.rawVars[varname];
+  }
+
+  private applyConvolution(
+      x: tf.Tensor4D, layer: LayerSpec, i: number, depthwise: boolean,
+      numPointwiseSplits?: number): tf.Tensor4D {
+    if (layer.filters == null) {
+      return x;
+    }
+    const filterShape = layer.filters;
+    const stride = layer.convStride || 1;
+    const padding = layer.convPad ?
+        layer.convPad.toLowerCase() as 'same' | 'valid' :
+        'same';
+    let conv = null;
+    if (depthwise) {
+      const dWeights = this.getSepConvVar('depthwise_weights', i);
+      if (!numPointwiseSplits) {
+        const pWeights = this.getSepConvVar('pointwise_weights', i);
+        const biases = this.getSepConvVar('biases', i);
+        const sepConv = tf.separableConv2d(
+            x, dWeights, pWeights, [stride, stride], padding,
+            (layer.dilation as [number, number]), 'NHWC');
+        conv = sepConv.add(biases);
+      } else {
+        conv = tf.depthwiseConv2d(
+            x, dWeights, [stride, stride], padding, 'NHWC',
+            (layer.dilation as [number, number]));
+        const splits = tf.split(conv, numPointwiseSplits, conv.rank - 1);
+        const pointwiseSplits = [];
+        for (let splitIdx = 0; splitIdx < numPointwiseSplits; splitIdx++) {
+          const outputShape = filterShape[3] / numPointwiseSplits;
+          const weights = this.getPointwiseSplitVar('kernel', i, splitIdx);
+          const biases = this.getPointwiseSplitVar('bias', i, splitIdx);
+          const dot = tf.matMul(
+              splits[splitIdx].reshape([-1, outputShape]), weights, false,
+              false);
+          const bias = tf.add(dot, biases);
+          pointwiseSplits.push(bias.reshape([
+            splits[splitIdx].shape[0], splits[splitIdx].shape[1],
+            splits[splitIdx].shape[2], outputShape
+          ]));
+        }
+        conv = tf.concat(pointwiseSplits, conv.rank - 1);
+      }
+    } else {
+      const weights = this.getVar('weights', i);
+      const stride = layer.convStride || 1;
+      const padding = layer.convPad ?
+          layer.convPad.toLowerCase() as 'same' | 'valid' :
+          'same';
+      conv = tf.conv2d(x, weights, [stride, stride], padding, 'NHWC', [1, 1]);
+    }
+    return this.applyBatchnorm(conv, i) as tf.Tensor4D;
+  }
+
+  private applyBatchnorm(x: tf.Tensor4D, i: number): tf.Tensor {
+    const gammas = this.getVar('gamma', i);
+    const betas = this.getVar('beta', i);
+    const mean = this.getVar('popmean', i);
+    const variance = this.getVar('popvariance', i);
+    if (IS_IOS) {
+      // iOS WebGL floats are 16-bit, and the variance is outside this range.
+      // This loads the variance to 32-bit floats in JS to compute batchnorm.
+      const v = tf.sqrt(tf.add(variance, this.spec.batchNormVarianceEpsilon));
+      return x.sub(mean).mul(gammas.div(v)).add(betas);
+    }
+    return tf.batchNormalization(
+        x, tf.squeeze(mean), tf.squeeze(variance),
+        this.spec.batchNormVarianceEpsilon, tf.squeeze(gammas),
+        tf.squeeze(betas));
+  }
+
+  private applyActivation(x: tf.Tensor4D, layer: LayerSpec, i: number):
+      tf.Tensor4D {
+    if (layer.activation === 'identity') {
+      return x;
+    }
+    return x.relu();
+  }
+
+  private applyPooling(x: tf.Tensor4D, layer: LayerSpec, i: number):
+      tf.Tensor4D {
+    if (layer.pooling == null) {
+      return x;
+    }
+    const pooling = layer.pooling;
+    const padding = layer.poolPad ?
+        layer.poolPad.toLowerCase() as 'same' | 'valid' :
+        'same';
+    return tf.maxPool(
+        x, [pooling[0], pooling[1]], [pooling[0], pooling[1]], padding);
+  }
+
+  private getConvnetInput(pianoroll: tf.Tensor4D, masks: tf.Tensor4D):
+      tf.Tensor4D {
+    pianoroll = tf.scalar(1, 'float32').sub(masks).mul(pianoroll);
+    masks = tf.scalar(1, 'float32').sub(masks);
+    return pianoroll.concat(masks, 3);
+  }
+}
+
 /**
  * Coconet model implementation in TensorflowJS.
  * Thanks to [James Wexler](https://github.com/jameswex) for the original
@@ -77,11 +278,7 @@ const DEFAULT_SPEC: ModelSpec = {
 class Coconet {
   private checkpointURL: string;
   private spec: ModelSpec = null;
-  private residualPeriod_ = 2;
-  private outputForResidual_: tf.Tensor = null;
-  private residualCounter_ = -1;
-
-  private rawVars: {[varName: string]: tf.Tensor} = null;
+  private convnet: ConvNet;
   private initialized = false;
 
   /**
@@ -99,6 +296,7 @@ class Coconet {
    */
   async initialize() {
     this.dispose();
+
     const startTime = performance.now();
     this.instantiateFromSpec();
     const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
@@ -106,14 +304,14 @@ class Coconet {
                      .then(
                          (manifest: tf.io.WeightsManifestConfig) =>
                              tf.io.loadWeights(manifest, this.checkpointURL));
-    this.rawVars = vars;  // Save for disposal.
+    this.convnet = new ConvNet(this.spec, vars);
     this.initialized = true;
     logging.logWithDuration('Initialized model', startTime, 'Coconet');
   }
 
   dispose() {
-    if (this.rawVars !== null) {
-      Object.keys(this.rawVars).forEach(name => this.rawVars[name].dispose());
+    if (this.convnet) {
+      this.convnet.dispose();
     }
     this.initialized = false;
   }
@@ -235,7 +433,7 @@ class Coconet {
       });
       await tf.nextFrame();
       const predictions = tf.tidy(() => {
-        return this.predictFromPianoroll(pianoroll, innerMasks);
+        return this.convnet.predictFromPianoroll(pianoroll, innerMasks);
       }) as tf.Tensor4D;
       await tf.nextFrame();
       pianoroll = tf.tidy(() => {
@@ -373,33 +571,6 @@ class Coconet {
     });
   }
 
-  private predictFromPianoroll(pianoroll: tf.Tensor4D, masks: tf.Tensor4D):
-      tf.Tensor {
-    return tf.tidy(() => {
-      let featuremaps = this.getConvnetInput_(pianoroll, masks);
-
-      const n = this.spec.layers.length;
-      for (let i = 0; i < n; i++) {
-        this.residualCounter_ += 1;
-        this.residualSave_(featuremaps);
-        let numPointwiseSplits = null;
-        if (this.spec.interleaveSplitEveryNLayers && i > 0 && i < n - 2 &&
-            i % (this.spec.interleaveSplitEveryNLayers + 1) === 0) {
-          numPointwiseSplits = this.spec.numPointwiseSplits;
-        }
-        featuremaps = this.applyConvolution_(
-            featuremaps, this.spec.layers[i], i,
-            i >= this.spec.numRegularConvLayers, numPointwiseSplits);
-        featuremaps = this.applyResidual_(featuremaps, i === 0, i === n - 1, i);
-        featuremaps =
-            this.applyActivation_(featuremaps, this.spec.layers[i], i);
-        featuremaps = this.applyPooling_(featuremaps, this.spec.layers[i], i);
-      }
-      const predictions = this.computePredictions_(featuremaps);
-      return predictions;
-    });
-  }
-
   private samplePredictions(predictions: tf.Tensor4D, temperature = 0.99)
       : tf.Tensor {
     return tf.tidy(() => {
@@ -417,159 +588,6 @@ class Coconet {
           ])
           .transpose([0, 1, 3, 2]);
     });
-  }
-
-  private computePredictions_(logits: tf.Tensor): tf.Tensor {
-    if (this.spec.useSoftmaxLoss) {
-      return logits.transpose([0, 1, 3, 2]).softmax().transpose([0, 1, 3, 2]);
-    }
-    return logits.sigmoid();
-  }
-
-  private residualReset_() {
-    this.outputForResidual_ = null;
-    this.residualCounter_ = 0;
-  }
-
-  private residualSave_(x: tf.Tensor) {
-    if (this.residualCounter_ % this.residualPeriod_ === 1) {
-      this.outputForResidual_ = x;
-    }
-  }
-
-  private applyResidual_(
-      x: tf.Tensor4D, isFirst: boolean, isLast: boolean,
-      i: number): tf.Tensor4D {
-    if (this.outputForResidual_ == null) {
-      return x;
-    }
-    if (this.outputForResidual_
-            .shape[this.outputForResidual_.shape.length - 1] !==
-        x.shape[x.shape.length - 1]) {
-      this.residualReset_();
-      return x;
-    }
-    if (this.residualCounter_ % this.residualPeriod_ === 0) {
-      if (!isFirst && !isLast) {
-        x = x.add(this.outputForResidual_);
-      }
-    }
-    return x;
-  }
-
-  private getVar_(name: string, layerNum: number) : tf.Tensor4D {
-    const varname = 'model/conv' + layerNum + '/' + name;
-    return this.rawVars[varname] as tf.Tensor4D;
-  }
-
-  private getSepConvVar_(name: string, layerNum: number): tf.Tensor4D {
-    const varname = 'model/conv' + layerNum + '/SeparableConv2d/' + name;
-    return this.rawVars[varname] as tf.Tensor4D;
-  }
-
-  private getPointwiseSplitVar_(
-      name: string, layerNum: number, splitNum: number) {
-    const varname = 'model/conv' + layerNum + '/split_' + layerNum + '_' +
-        splitNum + '/' + name;
-    return this.rawVars[varname];
-  }
-
-  private applyConvolution_(
-      x: tf.Tensor4D, layer: LayerSpec, i: number, depthwise: boolean,
-      numPointwiseSplits?: number): tf.Tensor4D {
-    if (layer.filters == null) {
-      return x;
-    }
-    const filterShape = layer.filters;
-    const stride = layer.convStride || 1;
-    const padding = layer.convPad ?
-        layer.convPad.toLowerCase() as 'same' | 'valid' :
-        'same';
-    let conv = null;
-    if (depthwise) {
-      const dWeights = this.getSepConvVar_('depthwise_weights', i);
-      if (!numPointwiseSplits) {
-        const pWeights = this.getSepConvVar_('pointwise_weights', i);
-        const biases = this.getSepConvVar_('biases', i);
-        const sepConv = tf.separableConv2d(
-            x, dWeights, pWeights, [stride, stride], padding,
-            (layer.dilation as [number, number]), 'NHWC');
-        conv = sepConv.add(biases);
-      } else {
-        conv = tf.depthwiseConv2d(
-            x, dWeights, [stride, stride], padding, 'NHWC',
-            (layer.dilation as [number, number]));
-        const splits = tf.split(conv, numPointwiseSplits, conv.rank - 1);
-        const pointwiseSplits = [];
-        for (let splitIdx = 0; splitIdx < numPointwiseSplits; splitIdx++) {
-          const outputShape = filterShape[3] / numPointwiseSplits;
-          const weights = this.getPointwiseSplitVar_('kernel', i, splitIdx);
-          const biases = this.getPointwiseSplitVar_('bias', i, splitIdx);
-          const dot = tf.matMul(
-              splits[splitIdx].reshape([-1, outputShape]), weights, false,
-              false);
-          const bias = tf.add(dot, biases);
-          pointwiseSplits.push(bias.reshape([
-            splits[splitIdx].shape[0], splits[splitIdx].shape[1],
-            splits[splitIdx].shape[2], outputShape
-          ]));
-        }
-        conv = tf.concat(pointwiseSplits, conv.rank - 1);
-      }
-    } else {
-      const weights = this.getVar_('weights', i);
-      const stride = layer.convStride || 1;
-      const padding = layer.convPad ?
-          layer.convPad.toLowerCase() as 'same' | 'valid' :
-          'same';
-      conv = tf.conv2d(x, weights, [stride, stride], padding, 'NHWC', [1, 1]);
-    }
-    return this.applyBatchnorm_(conv, i) as tf.Tensor4D;
-  }
-
-  private applyBatchnorm_(x: tf.Tensor4D, i: number): tf.Tensor {
-    const gammas = this.getVar_('gamma', i);
-    const betas = this.getVar_('beta', i);
-    const mean = this.getVar_('popmean', i);
-    const variance = this.getVar_('popvariance', i);
-    if (IS_IOS) {
-      // iOS WebGL floats are 16-bit, and the variance is outside this range.
-      // This loads the variance to 32-bit floats in JS to compute batchnorm.
-      const v = tf.sqrt(tf.add(variance, this.spec.batchNormVarianceEpsilon));
-      return x.sub(mean).mul(gammas.div(v)).add(betas);
-    }
-    return tf.batchNormalization(
-        x, tf.squeeze(mean), tf.squeeze(variance),
-        this.spec.batchNormVarianceEpsilon, tf.squeeze(gammas),
-        tf.squeeze(betas));
-  }
-
-  private applyActivation_(x: tf.Tensor4D, layer: LayerSpec, i: number):
-      tf.Tensor4D {
-    if (layer.activation === 'identity') {
-      return x;
-    }
-    return x.relu();
-  }
-
-  private applyPooling_(x: tf.Tensor4D, layer: LayerSpec, i: number):
-      tf.Tensor4D {
-    if (layer.pooling == null) {
-      return x;
-    }
-    const pooling = layer.pooling;
-    const padding = layer.poolPad ?
-        layer.poolPad.toLowerCase() as 'same' | 'valid' :
-        'same';
-    return tf.maxPool(
-        x, [pooling[0], pooling[1]], [pooling[0], pooling[1]], padding);
-  }
-
-  private getConvnetInput_(pianoroll: tf.Tensor4D, masks: tf.Tensor4D):
-      tf.Tensor4D {
-    pianoroll = tf.scalar(1, 'float32').sub(masks).mul(pianoroll);
-    masks = tf.scalar(1, 'float32').sub(masks);
-    return pianoroll.concat(masks, 3);
   }
 }
 
