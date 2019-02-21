@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import * as tf from '@tensorflow/tfjs-core';
+import * as tf from '@tensorflow/tfjs';
 import * as test from 'tape';
 
 import {NoteSequence} from '../protobuf/index';
@@ -229,11 +229,12 @@ test('Test DrumConverters', (t: test.Test) => {
 
   const drumOneHotTensor = drumsOneHotConverter.toTensor(DRUM_NS);
   t.deepEqual(drumOneHotTensor.shape, [32, 512]);
-  t.equal(
-      tf.tidy(
-          () =>
-              drumOneHotTensor.sum(1).equal(tf.scalar(1, 'int32')).sum().get()),
-      32);
+  const value = tf.tidy(
+      () => drumOneHotTensor.sum(1)
+                .equal(tf.scalar(1, 'int32'))
+                .sum()
+                .arraySync() as number);
+  t.equal(value, 32);
 
   const drumRollTensorOutput = drumRollTensor.slice([0, 0], [32, 9]);
   drumRollConverter.toNoteSequence(drumRollTensorOutput, 2)
@@ -259,9 +260,10 @@ test('Test TrioConverter', (t: test.Test) => {
 
   const trioTensor = trioConverter.toTensor(TRIO_NS);
   t.deepEqual(trioTensor.shape, [32, 90 + 90 + 512]);
-  t.equal(
-      tf.tidy(() => trioTensor.sum(1).equal(tf.scalar(3, 'int32')).sum().get()),
-      32);
+  const value = tf.tidy(
+      () => trioTensor.sum(1).equal(tf.scalar(3, 'int32')).sum().arraySync() as
+          number);
+  t.equal(value, 32);
 
   trioConverter.toNoteSequence(trioTensor, 2)
       .then(ns => t.deepEqual(ns.toJSON(), TRIO_NS.toJSON()));

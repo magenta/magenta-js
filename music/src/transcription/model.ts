@@ -257,7 +257,10 @@ class AcousticCnn {
   readonly outputShape: number[];
   private readonly nn = tf.sequential();
 
-  constructor(finalDenseActivation?: string) {
+  // Activation types come from here, which isn't exported:
+  // tfjs-layers/blob/master/src/keras_format/activation_config.ts#L16
+  constructor(finalDenseActivation?:'elu'|'hardSigmoid'|'linear'|'relu'
+      |'relu6'|'selu'|'sigmoid'|'softmax'|'softplus'|'softsign'|'tanh') {
     // tslint:disable-next-line:no-any
     const convConfig: any = {
       filters: 48,
