@@ -19,7 +19,6 @@
  * =============================================================================
  */
 import * as tf from '@tensorflow/tfjs-core';
-tf.disableDeprecationWarnings();
 import {logging, sequences} from '..';
 import {INoteSequence} from '../protobuf';
 import {IS_IOS, pianorollToSequence, sequenceToPianoroll} from './coconet_utils';
@@ -239,10 +238,9 @@ class ConvNet {
           v.map(x => Math.sqrt(x + this.spec.batchNormVarianceEpsilon)));
       return x.sub(mean).mul(gammas.div(stdevs)).add(betas);
     }
-    return tf.batchNormalization(
-        x, tf.squeeze(mean), tf.squeeze(variance),
-        this.spec.batchNormVarianceEpsilon, tf.squeeze(gammas),
-        tf.squeeze(betas));
+    return tf.batchNorm(
+        x, tf.squeeze(mean), tf.squeeze(variance), tf.squeeze(betas),
+        tf.squeeze(gammas), this.spec.batchNormVarianceEpsilon);
   }
 
   private applyActivation(x: tf.Tensor4D, layer: LayerSpec, i: number):
@@ -370,9 +368,9 @@ class Coconet {
   }
 
   /**
-   * Use the model to generate a new sequence, conditioned on the input
-   * sequence. The notes in the sequence should have the `instrument` property
-   * set, corresponding to which voice the note should be considered part of:
+   * Use the model to generate a Bach-style 4-part harmony, conditioned on an
+   * input sequence. The notes in the input sequence should have the
+   * `instrument` property set corresponding to which voice the note belongs to:
    * 0 for Soprano, 1 for Alto, 2 for Tenor and 3 for Bass.
    *
    * **Note**: regardless of the length of the notes in the original sequence,
