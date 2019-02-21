@@ -17,7 +17,9 @@
 
 import * as tf from '@tensorflow/tfjs';
 
-// To remove the warning that tf.get() is deprecated.
+// TODO(notwaldorf): Added this to remove the warning that tf.get() is
+// deprecated. Remove it when https://github.com/tensorflow/tfjs/issues/1271 is
+// fixed.
 tf.disableDeprecationWarnings();
 import * as test from 'tape';
 
