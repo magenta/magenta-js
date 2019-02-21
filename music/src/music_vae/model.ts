@@ -20,7 +20,7 @@
 /**
  * Imports
  */
-import * as tf from '@tensorflow/tfjs-core';
+import * as tf from '@tensorflow/tfjs';
 
 import * as chords from '../core/chords';
 import * as constants from '../core/constants';
@@ -359,7 +359,7 @@ abstract class BaseDecoder extends Decoder {
  * Uses argmax if no temperature is provided.
  */
 class CategoricalDecoder extends BaseDecoder {
-  sample(lstmOutput: tf.Tensor2D, temperature?: number) {
+  sample(lstmOutput: tf.Tensor2D, temperature?: number): tf.Tensor2D {
     const logits = lstmOutput;
     const timeLabels =
         (temperature ?
@@ -367,7 +367,7 @@ class CategoricalDecoder extends BaseDecoder {
                    logits.div(tf.scalar(temperature)) as tf.Tensor2D, 1)
                  .as1D() :
              logits.argMax(1).as1D());
-    return tf.oneHot(timeLabels, this.outputDims).toFloat();
+    return tf.oneHot(timeLabels, this.outputDims).toFloat() as tf.Tensor2D;
   }
 }
 
@@ -386,7 +386,7 @@ class NadeDecoder extends BaseDecoder {
     this.nade = nade;
   }
 
-  sample(lstmOutput: tf.Tensor2D, temperature?: number) {
+  sample(lstmOutput: tf.Tensor2D, temperature?: number): tf.Tensor2D {
     const [encBias, decBias] =
         tf.split(lstmOutput, [this.nade.numHidden, this.nade.numDims], 1);
     return this.nade.sample(encBias as tf.Tensor2D, decBias as tf.Tensor2D);
@@ -401,7 +401,7 @@ class NadeDecoder extends BaseDecoder {
 // TODO(adarob): Remove ts-ignore once are using this.
 // @ts-ignore
 class GrooveDecoder extends BaseDecoder {
-  sample(lstmOutput: tf.Tensor2D, temperature?: number) {
+  sample(lstmOutput: tf.Tensor2D, temperature?: number): tf.Tensor2D {
     let [hits, velocities, offsets] = tf.split(lstmOutput, 3, 1);
 
     velocities = tf.sigmoid(velocities);
@@ -540,7 +540,7 @@ class Nade {
    * @param decBias A batch of biases to use when decoding, sized
    * `[batchSize, numDims]`.
    */
-  sample(encBias: tf.Tensor2D, decBias: tf.Tensor2D) {
+  sample(encBias: tf.Tensor2D, decBias: tf.Tensor2D): tf.Tensor2D {
     const batchSize = encBias.shape[0];
     return tf.tidy(() => {
       const samples: tf.Tensor1D[] = [];
