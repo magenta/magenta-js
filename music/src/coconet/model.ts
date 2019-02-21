@@ -1,4 +1,9 @@
 /**
+ // tslint:disable-next-line:max-line-length
+ * * Implementation for [Coconet]{@link
+ [https://ismir2017.smcnus.org/wp-content/uploads/2017/10/187_Paper.pdf}](https://ismir2017.smcnus.org/wp-content/uploads/2017/10/187_Paper.pdf%7D)
+ models.
+ *
  * @license
  * Copyright 2019 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -107,8 +112,7 @@ class ConvNet {
             featuremaps, this.spec.layers[i], i,
             i >= this.spec.numRegularConvLayers, numPointwiseSplits);
         featuremaps = this.applyResidual(featuremaps, i === 0, i === n - 1, i);
-        featuremaps =
-            this.applyActivation(featuremaps, this.spec.layers[i], i);
+        featuremaps = this.applyActivation(featuremaps, this.spec.layers[i], i);
         featuremaps = this.applyPooling(featuremaps, this.spec.layers[i], i);
       }
       const predictions = this.computePredictions(featuremaps);
@@ -154,7 +158,7 @@ class ConvNet {
     return x;
   }
 
-  private getVar(name: string, layerNum: number) : tf.Tensor4D {
+  private getVar(name: string, layerNum: number): tf.Tensor4D {
     const varname = `model/conv${layerNum}/${name}`;
     return this.rawVars[varname] as tf.Tensor4D;
   }
@@ -167,7 +171,8 @@ class ConvNet {
   private getPointwiseSplitVar(
       name: string, layerNum: number, splitNum: number) {
     // tslint:disable-next-line:max-line-length
-    const varname = `model/conv${layerNum}/split_${layerNum}_${splitNum}/${name}`;
+    const varname =
+        `model/conv${layerNum}/split_${layerNum}_${splitNum}/${name}`;
     return this.rawVars[varname];
   }
 
@@ -374,7 +379,7 @@ class Coconet {
    * pitch and instruments as "held", as well as restore the original
    * sequence, you can call `mergeHeldNotes()` on the result.
    *
-   * @param sequence The sequence to continue. Must be quantized.
+   * @param sequence The sequence to infill. Must be quantized.
    */
   async infill(sequence: INoteSequence) {
     sequences.assertIsRelativeQuantizedSequence(sequence);
@@ -452,8 +457,8 @@ class Coconet {
    * @return a new `NoteSequence` with sustained notes merged, and a voice
    * replaced.
    */
-  public replaceVoice(sequence: INoteSequence, originalVoice: INoteSequence)
-      : NoteSequence {
+  public replaceVoice(sequence: INoteSequence, originalVoice: INoteSequence):
+      NoteSequence {
     const output = this.mergeHeldNotes(sequence);
     const newNotes = [];
     const voice = originalVoice.notes[0].instrument;
@@ -566,8 +571,8 @@ class Coconet {
     });
   }
 
-  private samplePredictions(predictions: tf.Tensor4D, temperature = 0.99)
-      : tf.Tensor {
+  private samplePredictions(predictions: tf.Tensor4D, temperature = 0.99):
+      tf.Tensor {
     return tf.tidy(() => {
       predictions = tf.pow(predictions, tf.scalar(1 / temperature, 'float32'));
       const cmf = tf.cumsum(predictions, 2, false, false);

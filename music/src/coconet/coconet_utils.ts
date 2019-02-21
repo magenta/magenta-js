@@ -19,8 +19,10 @@
 /**
  * Imports
  */
-import {INoteSequence, NoteSequence} from '../protobuf';
 import * as tf from '@tensorflow/tfjs-core';
+
+import {logging} from '..';
+import {INoteSequence, NoteSequence} from '../protobuf';
 
 export const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 export const DURATION_STEPS = 32;
@@ -35,19 +37,19 @@ export const NUM_VOICES = 4;
 /**
  * Converts a pianoroll representation to a `NoteSequence`. Note that since
  * the pianoroll representation can't distinguish between multiple eighth notes
- *  and held notes, the resulting `NoteSequence` won't either.
+ * and held notes, the resulting `NoteSequence` won't either.
  *
  * @param pianoroll Array of shape `[steps][NUM_PITCHES][NUM_VOICES]`,
  * where each entry represents an instrument being played at a particular step
  * and for a particular pitch. For example, `pianoroll[0][64] =[0, 0, 1, 0]`
  * means that the third instrument plays pitch 64 at time 0.
- * @returns A `NoteSequence` containing the melody.
+ * @returns A `NoteSequence`.
  */
-export function pianorollToSequence(pianoroll: tf.Tensor4D,
-    numberOfSteps: number): NoteSequence {
+export function pianorollToSequence(
+    pianoroll: tf.Tensor4D, numberOfSteps: number): NoteSequence {
   // First reshape the flat tensor so that it's shaped [steps][NUM_PITCHES][4].
-  const reshaped = tf.reshape(pianoroll,
-      [numberOfSteps, NUM_PITCHES, NUM_VOICES]);
+  const reshaped =
+      tf.reshape(pianoroll, [numberOfSteps, NUM_PITCHES, NUM_VOICES]);
   const sequence = NoteSequence.create();
   const notes: NoteSequence.Note[] = [];
 
@@ -79,12 +81,14 @@ export function pianorollToSequence(pianoroll: tf.Tensor4D,
  * this pianoroll representation can't distinguish between
  * multiple eighth notes and held notes, so that information will be lost.
  *
- * @param ns A `NoteSequence` containing a melody.
+ * @param ns A `NoteSequence`.
  * @returns A Tensor of shape `[numberOfSteps][NUM_PITCHES][NUM_VOICES]`
  * where each entry represents an instrument being played at a particular
  * step and for a particular pitch. For example,
  * `pianoroll[0][64] = [0, 0, 1, 0]` means that the third instrument plays
- * pitch 64 at time 0.
+ * pitch 64 at time 0. Instruments 0-4 represent "voices": 0 is Soprano,
+ * 1 is Alto, 2 Tenor and 3 Bass. Any instruments outside of this range are
+ * ignored.
  */
 export function sequenceToPianoroll(
     ns: INoteSequence, numberOfSteps: number): tf.Tensor4D {
@@ -96,8 +100,10 @@ export function sequenceToPianoroll(
     const duration = note.quantizedEndStep - note.quantizedStartStep;
     const voice = note.instrument;
 
-    if (voice < 0 || voice > 3) {
-      throw new Error(`Found invalid voice ${voice}. Skipping.`);
+    if (voice < 0 || voice >= NUM_VOICES) {
+      logging.log(
+          `Found invalid voice ${voice}. Skipping.`, 'Coconet',
+          logging.Level.WARN);
     } else {
       for (let i = stepIndex; i < stepIndex + duration; i++) {
         pianoroll[i][pitchIndex][voice] = 1;
