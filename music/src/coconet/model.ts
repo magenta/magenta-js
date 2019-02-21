@@ -88,6 +88,9 @@ class ConvNet {
     if (this.rawVars !== null) {
       tf.dispose(this.rawVars);
     }
+    if (this.outputForResidual) {
+      this.outputForResidual.dispose();
+    }
   }
 
   public predictFromPianoroll(pianoroll: tf.Tensor4D, masks: tf.Tensor4D):
@@ -111,8 +114,7 @@ class ConvNet {
         featuremaps = this.applyActivation(featuremaps, this.spec.layers[i], i);
         featuremaps = this.applyPooling(featuremaps, this.spec.layers[i], i);
       }
-      const predictions = this.computePredictions(featuremaps);
-      return predictions;
+      return this.computePredictions(featuremaps);
     });
   }
 
@@ -392,7 +394,6 @@ class Coconet {
       throw new Error(
           `NoteSequence ${sequence.id} does not have any notes to infill.`);
     }
-
     const numSteps = sequence.totalQuantizedSteps ||
         sequence.notes[sequence.notes.length - 1].quantizedEndStep;
 
@@ -416,20 +417,21 @@ class Coconet {
   private async run(
       pianorolls: tf.Tensor4D, numSteps: number,
       temperature: number): Promise<tf.Tensor4D> {
-    const masks = this.getCompletionMask(pianorolls);
-    return await this.gibbs(pianorolls, masks, numSteps, temperature);
+    return this.gibbs(pianorolls, numSteps, temperature);
   }
 
   private getCompletionMask(pianorolls: tf.Tensor4D): tf.Tensor4D {
-    const isEmpty = pianorolls.sum(2, true).equal(tf.scalar(0, 'float32'));
-    // Explicit broadcasting.
-    return tf.tidy(
-        () => tf.cast(isEmpty, 'float32').add(tf.zerosLike(pianorolls)));
+    return tf.tidy(() => {
+      const isEmpty = pianorolls.sum(2, true).equal(tf.scalar(0, 'float32'));
+      // Explicit broadcasting.
+      return tf.cast(isEmpty, 'float32').add(tf.zerosLike(pianorolls));
+    });
   }
 
   private async gibbs(
-      pianorolls: tf.Tensor4D, outerMasks: tf.Tensor4D, numSteps: number,
+      pianorolls: tf.Tensor4D, numSteps: number,
       temperature: number): Promise<tf.Tensor4D> {
+    const outerMasks = this.getCompletionMask(pianorolls);
     let numStepsTensor: tf.Scalar = null;
     if (!numSteps) {
       numStepsTensor = this.numbersOfMaskedVariables(outerMasks).max();
@@ -460,7 +462,8 @@ class Coconet {
       });
       await tf.nextFrame();
     }
-
+    numStepsTensor.dispose();
+    outerMasks.dispose();
     return pianoroll;
   }
 

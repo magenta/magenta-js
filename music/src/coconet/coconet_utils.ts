@@ -95,7 +95,6 @@ export function pianorollToSequence(
  */
 export function sequenceToPianoroll(
     ns: INoteSequence, numberOfSteps: number): tf.Tensor4D {
-  console.log(numberOfSteps);
   const pianoroll = tf.tidy(
       () => tf.zeros([numberOfSteps, NUM_PITCHES, NUM_VOICES]).arraySync() as
           number[][][]);
