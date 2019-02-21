@@ -20,13 +20,11 @@ import * as mm from '../src/index';
 import {sequences} from '../src/index';
 
 export const CHECKPOINTS_DIR =
-    // tslint:disable-next-line:max-line-length
     'https://storage.googleapis.com/magentadata/js/checkpoints';
 
 // Samples from Shan's SGM SoundFont:
 // http://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01
 export const SOUNDFONT_URL =
-    // tslint:disable-next-line:max-line-length
     'https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus';
 
 export const DRUM_SEQS: mm.INoteSequence[] = [
@@ -142,24 +140,106 @@ export const MEL_TEAPOT: mm.INoteSequence = {
 };
 
 export const MEL_TWINKLE: mm.INoteSequence = {
-  // tslint:disable:max-line-length
   notes: [
-    {pitch: 60, quantizedStartStep: 0, quantizedEndStep: 2, program: 0, instrument: 0},
-    {pitch: 60, quantizedStartStep: 2, quantizedEndStep: 4, program: 0, instrument: 0},
-    {pitch: 67, quantizedStartStep: 4, quantizedEndStep: 6, program: 0, instrument: 0},
-    {pitch: 67, quantizedStartStep: 6, quantizedEndStep: 8, program: 0, instrument: 0},
-    {pitch: 69, quantizedStartStep: 8, quantizedEndStep: 10, program: 0, instrument: 0},
-    {pitch: 69, quantizedStartStep: 10, quantizedEndStep: 12, program: 0, instrument: 0},
-    {pitch: 67, quantizedStartStep: 12, quantizedEndStep: 16, program: 0, instrument: 0},
-    {pitch: 65, quantizedStartStep: 16, quantizedEndStep: 18, program: 0, instrument: 0},
-    {pitch: 65, quantizedStartStep: 18, quantizedEndStep: 20, program: 0, instrument: 0},
-    {pitch: 64, quantizedStartStep: 20, quantizedEndStep: 22, program: 0, instrument: 0},
-    {pitch: 64, quantizedStartStep: 22, quantizedEndStep: 24, program: 0, instrument: 0},
-    {pitch: 62, quantizedStartStep: 24, quantizedEndStep: 26, program: 0, instrument: 0},
-    {pitch: 62, quantizedStartStep: 26, quantizedEndStep: 28, program: 0, instrument: 0},
-    {pitch: 60, quantizedStartStep: 28, quantizedEndStep: 32, program: 0, instrument: 0}
+    {
+      pitch: 60,
+      quantizedStartStep: 0,
+      quantizedEndStep: 2,
+      program: 0,
+      instrument: 0
+    },
+    {
+      pitch: 60,
+      quantizedStartStep: 2,
+      quantizedEndStep: 4,
+      program: 0,
+      instrument: 0
+    },
+    {
+      pitch: 67,
+      quantizedStartStep: 4,
+      quantizedEndStep: 6,
+      program: 0,
+      instrument: 0
+    },
+    {
+      pitch: 67,
+      quantizedStartStep: 6,
+      quantizedEndStep: 8,
+      program: 0,
+      instrument: 0
+    },
+    {
+      pitch: 69,
+      quantizedStartStep: 8,
+      quantizedEndStep: 10,
+      program: 0,
+      instrument: 0
+    },
+    {
+      pitch: 69,
+      quantizedStartStep: 10,
+      quantizedEndStep: 12,
+      program: 0,
+      instrument: 0
+    },
+    {
+      pitch: 67,
+      quantizedStartStep: 12,
+      quantizedEndStep: 16,
+      program: 0,
+      instrument: 0
+    },
+    {
+      pitch: 65,
+      quantizedStartStep: 16,
+      quantizedEndStep: 18,
+      program: 0,
+      instrument: 0
+    },
+    {
+      pitch: 65,
+      quantizedStartStep: 18,
+      quantizedEndStep: 20,
+      program: 0,
+      instrument: 0
+    },
+    {
+      pitch: 64,
+      quantizedStartStep: 20,
+      quantizedEndStep: 22,
+      program: 0,
+      instrument: 0
+    },
+    {
+      pitch: 64,
+      quantizedStartStep: 22,
+      quantizedEndStep: 24,
+      program: 0,
+      instrument: 0
+    },
+    {
+      pitch: 62,
+      quantizedStartStep: 24,
+      quantizedEndStep: 26,
+      program: 0,
+      instrument: 0
+    },
+    {
+      pitch: 62,
+      quantizedStartStep: 26,
+      quantizedEndStep: 28,
+      program: 0,
+      instrument: 0
+    },
+    {
+      pitch: 60,
+      quantizedStartStep: 28,
+      quantizedEndStep: 32,
+      program: 0,
+      instrument: 0
+    }
   ],
-  // tslint:enable:max-line-length
   quantizationInfo: {stepsPerQuarter: 4},
   totalQuantizedSteps: 32,
 };

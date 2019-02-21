@@ -237,8 +237,6 @@ class ConvNet {
       const v = variance.dataSync() as Float32Array;
       const stdevs = tf.tensor(
           v.map(x => Math.sqrt(x + this.spec.batchNormVarianceEpsilon)));
-
-
       return x.sub(mean).mul(gammas.div(stdevs)).add(betas);
     }
     return tf.batchNormalization(
