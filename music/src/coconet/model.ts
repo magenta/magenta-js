@@ -385,13 +385,18 @@ class Coconet {
    * restored.
    *
    * @param sequence The sequence to infill. Must be quantized.
-   * @param numSteps (Optional) The number of 16th notes to infill. Default
-   * is 32.
    * @param temperature (Optional) The softmax temperature to use when sampling
    * from the logits. Default is 0.99.
    */
-  async infill(sequence: INoteSequence, numSteps = 32, temperature = 0.99) {
+  async infill(sequence: INoteSequence, temperature = 0.99) {
     sequences.assertIsRelativeQuantizedSequence(sequence);
+    if (sequence.notes.length === 0) {
+      throw new Error(
+          `NoteSequence ${sequence.id} does not have any notes to infill.`);
+    }
+
+    const numSteps = sequence.totalQuantizedSteps ||
+        sequence.notes[sequence.notes.length - 1].quantizedEndStep;
 
     // Convert the sequence to a pianoroll.
     const pianoroll = sequenceToPianoroll(sequence, numSteps);
@@ -420,7 +425,8 @@ class Coconet {
   private getCompletionMask(pianorolls: tf.Tensor4D): tf.Tensor4D {
     const isEmpty = pianorolls.sum(2, true).equal(tf.scalar(0, 'float32'));
     // Explicit broadcasting.
-    return tf.cast(isEmpty, 'float32').add(tf.zerosLike(pianorolls));
+    return tf.tidy(
+        () => tf.cast(isEmpty, 'float32').add(tf.zerosLike(pianorolls)));
   }
 
   private async gibbs(

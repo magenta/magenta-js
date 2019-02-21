@@ -39,10 +39,11 @@ export const NUM_VOICES = 4;
  * the pianoroll representation can't distinguish between multiple eighth notes
  * and held notes, the resulting `NoteSequence` won't either.
  *
- * @param pianoroll Array of shape `[steps][NUM_PITCHES][NUM_VOICES]`,
+ * @param pianoroll Tensor of shape `[steps][NUM_PITCHES][NUM_VOICES]`,
  * where each entry represents an instrument being played at a particular step
  * and for a particular pitch. For example, `pianoroll[0][64] =[0, 0, 1, 0]`
  * means that the third instrument plays pitch 64 at time 0.
+ * @param numberOfSteps The number of quantized steps in the sequence.
  * @returns A `NoteSequence`.
  */
 export function pianorollToSequence(
@@ -82,7 +83,8 @@ export function pianorollToSequence(
  * this pianoroll representation can't distinguish between
  * multiple eighth notes and held notes, so that information will be lost.
  *
- * @param ns A `NoteSequence`.
+ * @param ns A `NoteSequence` with at least one note.
+ * @param numberOfSteps The number of quantized steps in the sequence.
  * @returns A Tensor of shape `[numberOfSteps][NUM_PITCHES][NUM_VOICES]`
  * where each entry represents an instrument being played at a particular
  * step and for a particular pitch. For example,
@@ -93,6 +95,7 @@ export function pianorollToSequence(
  */
 export function sequenceToPianoroll(
     ns: INoteSequence, numberOfSteps: number): tf.Tensor4D {
+  console.log(numberOfSteps);
   const pianoroll = tf.tidy(
       () => tf.zeros([numberOfSteps, NUM_PITCHES, NUM_VOICES]).arraySync() as
           number[][][]);

@@ -50,7 +50,7 @@ async function infillSecondVoice() {
   writeNoteSeqs('input-2', [ns], true);
 
   const start = performance.now();
-  const output = await model.infill(ns);
+  const output = await model.infill(ns, 0.5);
   // Optionally, merge the held notes and restore the original melody timing
   // since the model chunks up the melody in 16ths.
   const fixedOutput = replaceVoice(output, ns);
@@ -112,7 +112,7 @@ async function infillSection() {
     }
   }
 
-  ns2.totalQuantizedSteps = ns2.notes[ns2.notes.length - 1].quantizedEndStep;
+  ns2.totalQuantizedSteps = 32;
   writeNoteSeqs('input-3', [ns2], true);
 
   const start = performance.now();
