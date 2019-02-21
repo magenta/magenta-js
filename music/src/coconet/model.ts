@@ -1,8 +1,7 @@
 /**
- // tslint:disable-next-line:max-line-length
- * * Implementation for [Coconet]{@link
- [https://ismir2017.smcnus.org/wp-content/uploads/2017/10/187_Paper.pdf}](https://ismir2017.smcnus.org/wp-content/uploads/2017/10/187_Paper.pdf%7D)
- models.
+ * Implementation for [Coconet]{@link
+ * https://ismir2017.smcnus.org/wp-content/uploads/2017/10/187_Paper.pdf%7D}
+ * models.
  *
  * @license
  * Copyright 2019 Google Inc. All Rights Reserved.
@@ -20,12 +19,10 @@
  * =============================================================================
  */
 import * as tf from '@tensorflow/tfjs-core';
-
+tf.disableDeprecationWarnings();
 import {logging, sequences} from '..';
-import {INoteSequence, NoteSequence} from '../protobuf';
-
-// tslint:disable-next-line:max-line-length
-import {DURATION_STEPS, IS_IOS, pianorollToSequence, sequenceToPianoroll} from './coconet_utils';
+import {INoteSequence} from '../protobuf';
+import {IS_IOS, pianorollToSequence, sequenceToPianoroll} from './coconet_utils';
 
 interface LayerSpec {
   pooling?: number[];
@@ -90,7 +87,7 @@ class ConvNet {
 
   dispose() {
     if (this.rawVars !== null) {
-      Object.keys(this.rawVars).forEach(name => this.rawVars[name].dispose());
+      tf.dispose(this.rawVars);
     }
   }
 
@@ -237,8 +234,12 @@ class ConvNet {
     if (IS_IOS) {
       // iOS WebGL floats are 16-bit, and the variance is outside this range.
       // This loads the variance to 32-bit floats in JS to compute batchnorm.
-      const v = tf.sqrt(tf.add(variance, this.spec.batchNormVarianceEpsilon));
-      return x.sub(mean).mul(gammas.div(v)).add(betas);
+      const v = variance.dataSync() as Float32Array;
+      const stdevs = tf.tensor(
+          v.map(x => Math.sqrt(x + this.spec.batchNormVarianceEpsilon)));
+
+
+      return x.sub(mean).mul(gammas.div(stdevs)).add(betas);
     }
     return tf.batchNormalization(
         x, tf.squeeze(mean), tf.squeeze(variance),
@@ -372,26 +373,36 @@ class Coconet {
 
   /**
    * Use the model to generate a new sequence, conditioned on the input
-   * sequence.
+   * sequence. The notes in the sequence should have the `instrument` property
+   * set, corresponding to which voice the note should be considered part of:
+   * 0 for Soprano, 1 for Alto, 2 for Tenor and 3 for Bass.
+   *
    * **Note**: regardless of the length of the notes in the original sequence,
    * all the notes in the generated sequence will be 1 step long. If you want
    * to clean up the sequence to consider consecutive notes for the same
-   * pitch and instruments as "held", as well as restore the original
-   * sequence, you can call `mergeHeldNotes()` on the result.
+   * pitch and instruments as "held", you can call `mergeHeldNotes` on the
+   * result. This function will replace any of the existing voices with
+   * the output of the model. If you want to restore any of the original voices,
+   * you can call `replaceVoice` on the output, specifying which voice should be
+   * restored.
    *
    * @param sequence The sequence to infill. Must be quantized.
+   * @param numSteps (Optional) The number of 16th notes to infill. Default
+   * is 32.
+   * @param temperature (Optional) The softmax temperature to use when sampling
+   * from the logits. Default is 0.99.
    */
-  async infill(sequence: INoteSequence) {
+  async infill(sequence: INoteSequence, numSteps = 32, temperature = 0.99) {
     sequences.assertIsRelativeQuantizedSequence(sequence);
 
     // Convert the sequence to a pianoroll.
-    const pianoroll = sequenceToPianoroll(sequence, DURATION_STEPS);
+    const pianoroll = sequenceToPianoroll(sequence, numSteps);
 
     // Run sampling on the pianoroll.
-    const samples = await this.run(pianoroll, this.spec.numSteps);
+    const samples = await this.run(pianoroll, this.spec.numSteps, temperature);
 
     // Convert the resulting pianoroll to a noteSequence.
-    const outputSequence = pianorollToSequence(samples, DURATION_STEPS);
+    const outputSequence = pianorollToSequence(samples, numSteps);
 
     pianoroll.dispose();
     samples.dispose();
@@ -401,10 +412,11 @@ class Coconet {
   /**
    * Runs sampling on pianorolls.
    */
-  private async run(pianorolls: tf.Tensor4D, numSteps: number):
-      Promise<tf.Tensor4D> {
+  private async run(
+      pianorolls: tf.Tensor4D, numSteps: number,
+      temperature: number): Promise<tf.Tensor4D> {
     const masks = this.getCompletionMask(pianorolls);
-    return await this.gibbs(pianorolls, masks, numSteps);
+    return await this.gibbs(pianorolls, masks, numSteps, temperature);
   }
 
   private getCompletionMask(pianorolls: tf.Tensor4D): tf.Tensor4D {
@@ -414,8 +426,8 @@ class Coconet {
   }
 
   private async gibbs(
-      pianorolls: tf.Tensor4D, outerMasks: tf.Tensor4D,
-      numSteps: number): Promise<tf.Tensor4D> {
+      pianorolls: tf.Tensor4D, outerMasks: tf.Tensor4D, numSteps: number,
+      temperature: number): Promise<tf.Tensor4D> {
     let numStepsTensor: tf.Scalar = null;
     if (!numSteps) {
       numStepsTensor = this.numbersOfMaskedVariables(outerMasks).max();
@@ -435,7 +447,8 @@ class Coconet {
       }) as tf.Tensor4D;
       await tf.nextFrame();
       pianoroll = tf.tidy(() => {
-        const samples = this.samplePredictions(predictions) as tf.Tensor4D;
+        const samples =
+            this.samplePredictions(predictions, temperature) as tf.Tensor4D;
         const updatedPianorolls =
             tf.where(tf.cast(innerMasks, 'bool'), samples, pianoroll);
         pianoroll.dispose();
@@ -447,102 +460,6 @@ class Coconet {
     }
 
     return pianoroll;
-  }
-
-  /**
-   * Replace a voice in a `NoteSequence` sequence with a different voice.
-   * @param sequence The `NoteSequence` to be changed.
-   * @param originalVoice The `NoteSequence` that will replace the notes in
-   * `sequence` with the same instrument.
-   * @return a new `NoteSequence` with sustained notes merged, and a voice
-   * replaced.
-   */
-  public replaceVoice(sequence: INoteSequence, originalVoice: INoteSequence):
-      NoteSequence {
-    const output = this.mergeHeldNotes(sequence);
-    const newNotes = [];
-    const voice = originalVoice.notes[0].instrument;
-    let hasReplacedVoice = false;
-
-    for (let i = 0; i < output.notes.length; i++) {
-      if (output.notes[i].instrument === voice && !hasReplacedVoice) {
-        hasReplacedVoice = true;
-        for (let i = 0; i < originalVoice.notes.length; i++) {
-          const note = new NoteSequence.Note();
-          note.pitch = originalVoice.notes[i].pitch;
-          note.velocity = originalVoice.notes[i].velocity;
-          note.instrument = originalVoice.notes[i].instrument;
-          note.program = originalVoice.notes[i].program;
-          note.isDrum = originalVoice.notes[i].isDrum;
-          note.quantizedStartStep = originalVoice.notes[i].quantizedStartStep;
-          note.quantizedEndStep = originalVoice.notes[i].quantizedEndStep;
-          newNotes.push(note);
-        }
-      } else if (output.notes[i].instrument !== voice) {
-        newNotes.push(output.notes[i]);
-      }
-    }
-    output.notes = newNotes;
-    return output;
-  }
-
-  /**
-   * Any consecutive notes of the same pitch are merged into a sustained note.
-   * Does not merge notes that connect on a measure boundary. This process
-   * also rearranges the order of the notes - notes are grouped by instrument,
-   * then ordered by timestamp.
-   *
-   * @param sequence The `NoteSequence` to be merged.
-   * @return a new `NoteSequence` with sustained notes merged.
-   */
-  public mergeHeldNotes(sequence: INoteSequence) {
-    const output = sequences.clone(sequence);
-    output.notes = [];
-
-    // Sort the input notes.
-    const newNotes = sequence.notes.sort((a, b) => {
-      const voiceCompare = a.instrument - b.instrument;
-      if (voiceCompare) {
-        return voiceCompare;
-      }
-      return a.quantizedStartStep - b.quantizedStartStep;
-    });
-
-    // Start with the first note.
-    const note = new NoteSequence.Note();
-    note.pitch = newNotes[0].pitch;
-    note.instrument = newNotes[0].instrument;
-    note.quantizedStartStep = newNotes[0].quantizedStartStep;
-    note.quantizedEndStep = newNotes[0].quantizedEndStep;
-    output.notes.push(note);
-    let o = 0;
-
-    for (let i = 1; i < newNotes.length; i++) {
-      const thisNote = newNotes[i];
-      const previousNote = output.notes[o];
-      // Compare next note's start time with previous note's end time.
-      if (previousNote.instrument === thisNote.instrument &&
-          previousNote.pitch === thisNote.pitch &&
-          thisNote.quantizedStartStep === previousNote.quantizedEndStep &&
-          // Doesn't start on the measure boundary.
-          thisNote.quantizedStartStep % 16 !== 0) {
-        // If the next note has the same pitch as this note and starts at the
-        // same time as the previous note ends, absorb the next note into the
-        // previous output note.
-        output.notes[o].quantizedEndStep +=
-            thisNote.quantizedEndStep - thisNote.quantizedStartStep;
-      } else {
-        // Otherwise, append the next note to the output notes.
-        const note = new NoteSequence.Note();
-        note.pitch = newNotes[i].pitch;
-        note.instrument = newNotes[i].instrument;
-        note.quantizedStartStep = newNotes[i].quantizedStartStep;
-        note.quantizedEndStep = newNotes[i].quantizedEndStep;
-        output.notes.push(note);
-        o++;
-      }
-    }
-    return output;
   }
 
   private numbersOfMaskedVariables(masks: tf.Tensor4D): tf.Tensor {
@@ -571,7 +488,7 @@ class Coconet {
     });
   }
 
-  private samplePredictions(predictions: tf.Tensor4D, temperature = 0.99):
+  private samplePredictions(predictions: tf.Tensor4D, temperature: number):
       tf.Tensor {
     return tf.tidy(() => {
       predictions = tf.pow(predictions, tf.scalar(1 / temperature, 'float32'));

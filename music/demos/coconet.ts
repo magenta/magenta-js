@@ -16,11 +16,13 @@
  */
 
 import * as tf from '@tensorflow/tfjs-core';
+
+import {mergeHeldNotes, replaceVoice} from '../src/coconet/coconet_utils';
 import * as mm from '../src/index';
+import {NoteSequence} from '../src/index';
 
 // tslint:disable-next-line:max-line-length
 import {CHECKPOINTS_DIR, MEL_TWINKLE, writeMemory, writeNoteSeqs, writeTimer} from './common';
-import { NoteSequence } from '../src/index';
 
 async function infillFirstVoice() {
   const model = new mm.Coconet(`${CHECKPOINTS_DIR}/coconet/bach`);
@@ -31,7 +33,7 @@ async function infillFirstVoice() {
   const output = await model.infill(MEL_TWINKLE);
   // Optionally, merge the held notes and restore the original melody timing
   // since the model chunks up the melody in 16ths.
-  const fixedOutput = model.replaceVoice(output, MEL_TWINKLE);
+  const fixedOutput = replaceVoice(output, MEL_TWINKLE);
   writeNoteSeqs('output-1', [fixedOutput], true);
   writeTimer('time-1', start);
   model.dispose();
@@ -42,7 +44,7 @@ async function infillSecondVoice() {
   await model.initialize();
 
   const ns = mm.sequences.clone(MEL_TWINKLE);
-  for (let i = 0; i < ns.notes.length; i++ ) {
+  for (let i = 0; i < ns.notes.length; i++) {
     ns.notes[i].instrument = 2;
   }
   writeNoteSeqs('input-2', [ns], true);
@@ -51,7 +53,7 @@ async function infillSecondVoice() {
   const output = await model.infill(ns);
   // Optionally, merge the held notes and restore the original melody timing
   // since the model chunks up the melody in 16ths.
-  const fixedOutput = model.replaceVoice(output, ns);
+  const fixedOutput = replaceVoice(output, ns);
   writeNoteSeqs('output-2', [fixedOutput], true);
   writeTimer('time-2', start);
   model.dispose();
@@ -117,17 +119,14 @@ async function infillSection() {
   const output = await model.infill(ns2);
 
   // Optionally, treat any consecutive notes as merged.
-  const fixedOutput = model.mergeHeldNotes(output);
+  const fixedOutput = mergeHeldNotes(output);
   writeNoteSeqs('output-3', [fixedOutput], true);
   writeTimer('time-3', start);
   model.dispose();
 }
 
 try {
-  Promise
-      .all([
-        infillFirstVoice(), infillSecondVoice(), infillSection()
-      ])
+  Promise.all([infillFirstVoice(), infillSecondVoice(), infillSection()])
       .then(() => writeMemory(tf.memory().numBytes));
 } catch (err) {
   console.error(err);
