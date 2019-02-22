@@ -238,8 +238,8 @@ class ConvNet {
       // continuously download it and upload it which is the problem with
       // dataSync.
       const v = variance.arraySync()[0][0][0];
-      const stdevs = tf.tensor(
-          v.map(x => Math.sqrt(x + this.spec.batchNormVarianceEpsilon)));
+      const stdevs = tf.tensor(v.map(
+          (x: number) => Math.sqrt(x + this.spec.batchNormVarianceEpsilon)));
       return x.sub(mean).mul(gammas.div(stdevs)).add(betas);
     }
     return tf.batchNorm(
