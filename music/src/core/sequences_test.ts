@@ -506,3 +506,78 @@ test('Merge Instruments', (t: test.Test) => {
 
   t.end();
 });
+
+test('Replace Instruments', (t: test.Test) => {
+  const ns1 = createTestNS();
+  // This should be kept.
+  ns1.notes.push({pitch: 72, instrument: 2});
+  // These should be replaced.
+  ns1.notes.push({pitch: 60, instrument: 0});
+  ns1.notes.push({pitch: 70, instrument: 1});
+  ns1.notes.push({pitch: 62, instrument: 0});
+  // This should be kept.
+  ns1.notes.push({pitch: 70, instrument: 2});
+
+  const ns2 = createTestNS();
+  // These should be replaced.
+  ns2.notes.push({pitch: 40, instrument: 0});
+  ns2.notes.push({pitch: 41, instrument: 0});
+  ns2.notes.push({pitch: 42, instrument: 0});
+  ns2.notes.push({pitch: 50, instrument: 1});
+  ns2.notes.push({pitch: 51, instrument: 1});
+  // This should not be replaced.
+  ns2.notes.push({pitch: 60, instrument: 3});
+
+  const expected = createTestNS();
+  // These are sorted by instrument, then time.
+  expected.notes.push({pitch: 40, instrument: 0});
+  expected.notes.push({pitch: 41, instrument: 0});
+  expected.notes.push({pitch: 42, instrument: 0});
+  expected.notes.push({pitch: 50, instrument: 1});
+  expected.notes.push({pitch: 51, instrument: 1});
+  // We are not sorting by pitch.
+  expected.notes.push({pitch: 72, instrument: 2});
+  expected.notes.push({pitch: 70, instrument: 2});
+
+  t.deepEqual(
+      NoteSequence.toObject(sequences.replaceInstruments(ns1, ns2)),
+      NoteSequence.toObject(expected));
+  t.end();
+});
+
+test('Merge Consecutive Notes', (t: test.Test) => {
+  const ns1 = createTestNS();
+  ns1.quantizationInfo = NoteSequence.QuantizationInfo.create(
+      {stepsPerQuarter: STEPS_PER_QUARTER});
+
+  // These should be merged.
+  ns1.notes.push({pitch: 60, quantizedStartStep: 1, quantizedEndStep: 2});
+  ns1.notes.push({pitch: 60, quantizedStartStep: 2, quantizedEndStep: 3});
+  ns1.notes.push({pitch: 60, quantizedStartStep: 3, quantizedEndStep: 4});
+  ns1.notes.push({pitch: 60, quantizedStartStep: 4, quantizedEndStep: 5});
+  // This shouldn't be merged because it's not consecutive.
+  ns1.notes.push({pitch: 60, quantizedStartStep: 6, quantizedEndStep: 10});
+  // This shouldn't be merged because it's a different pitch.
+  ns1.notes.push({pitch: 70, quantizedStartStep: 10, quantizedEndStep: 11});
+  // These should be merged.
+  ns1.notes.push({pitch: 70, quantizedStartStep: 11, quantizedEndStep: 13});
+  ns1.notes.push({pitch: 70, quantizedStartStep: 13, quantizedEndStep: 16});
+  // This shouldn't be merged because it starts on the measure boundary.
+  ns1.notes.push({pitch: 70, quantizedStartStep: 16, quantizedEndStep: 17});
+
+  const expected = createTestNS();
+  expected.quantizationInfo = NoteSequence.QuantizationInfo.create(
+      {stepsPerQuarter: STEPS_PER_QUARTER});
+  // These are sorted by instrument, then time.
+  expected.notes.push({pitch: 60, quantizedStartStep: 1, quantizedEndStep: 5});
+  expected.notes.push({pitch: 60, quantizedStartStep: 6, quantizedEndStep: 10});
+  expected.notes.push(
+      {pitch: 70, quantizedStartStep: 10, quantizedEndStep: 16});
+  expected.notes.push(
+      {pitch: 70, quantizedStartStep: 16, quantizedEndStep: 17});
+
+  t.deepEqual(
+      NoteSequence.toObject(sequences.mergeConsecutiveNotes(ns1)),
+      NoteSequence.toObject(expected));
+  t.end();
+});

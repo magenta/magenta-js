@@ -430,7 +430,8 @@ export function mergeInstruments(ns: INoteSequence) {
  * a second sequence. For example, if `replaceSequence` has notes that all have
  * either `instrument=0` or `instrument=1`, then any notes in `originalSequence`
  * with instruments 0 or 1 will be removed and replaced with the notes in
- * `replaceSequence`.
+ * `replaceSequence`. If there are instruments in `replaceSequence` that are
+ * *not* in `originalSequence`, they will not be added.
  * @param originalSequence The `NoteSequence` to be changed.
  * @param replaceSequence The `NoteSequence` that will replace the notes in
  * `sequence` with the same instrument.
@@ -439,22 +440,25 @@ export function mergeInstruments(ns: INoteSequence) {
 export function replaceInstruments(
     originalSequence: INoteSequence,
     replaceSequence: INoteSequence): NoteSequence {
-  // Get the instruments from the second sequence.
-  const instruments = new Set(replaceSequence.notes.map(n => n.instrument));
-  console.log(instruments);
+  const instrumentsInOriginal =
+      new Set(originalSequence.notes.map(n => n.instrument));
+  const instrumentsInReplace =
+      new Set(replaceSequence.notes.map(n => n.instrument));
 
   const newNotes: NoteSequence.Note[] = [];
-
   // Go through the original sequence, and only keep the notes for instruments
   // *not* in the second sequence.
   originalSequence.notes.forEach(n => {
-    if (!instruments.has(n.instrument)) {
+    if (!instrumentsInReplace.has(n.instrument)) {
       newNotes.push(NoteSequence.Note.create(n));
     }
   });
-  // Go through the second sequence and add all the notes.
+  // Go through the second sequence and add all the notes for instruments in the
+  // first sequence.
   replaceSequence.notes.forEach(n => {
-    newNotes.push(NoteSequence.Note.create(n));
+    if (instrumentsInOriginal.has(n.instrument)) {
+      newNotes.push(NoteSequence.Note.create(n));
+    }
   });
 
   // Sort the notes by instrument, and then by time.
