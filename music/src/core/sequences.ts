@@ -424,3 +424,104 @@ export function mergeInstruments(ns: INoteSequence) {
 
   return result;
 }
+
+/**
+ * Replaces the notes with a specific instrument in a `NoteSequence` with
+ * the notes from a different sequence.
+ * @param sequence The `NoteSequence` to be changed.
+ * @param originalVoice The `NoteSequence` that will replace the notes in
+ * `sequence` with the same instrument. It's assumed this sequence only
+ * has one instrument; if it has more, only the first occuring instrument will
+ * be used for replacement.
+ * @return a new `NoteSequence` with sustained notes merged, and a voice
+ * replaced.
+ */
+export function replaceInstrument(
+    sequence: INoteSequence, originalVoice: INoteSequence): NoteSequence {
+  const output = clone(sequence);
+  const newNotes = [];
+  const voice = originalVoice.notes[0].instrument;
+  let hasReplacedVoice = false;
+
+  for (let i = 0; i < output.notes.length; i++) {
+    if (output.notes[i].instrument === voice && !hasReplacedVoice) {
+      hasReplacedVoice = true;
+      for (let i = 0; i < originalVoice.notes.length; i++) {
+        const note = new NoteSequence.Note();
+        note.pitch = originalVoice.notes[i].pitch;
+        note.velocity = originalVoice.notes[i].velocity;
+        note.instrument = originalVoice.notes[i].instrument;
+        note.program = originalVoice.notes[i].program;
+        note.isDrum = originalVoice.notes[i].isDrum;
+        note.quantizedStartStep = originalVoice.notes[i].quantizedStartStep;
+        note.quantizedEndStep = originalVoice.notes[i].quantizedEndStep;
+        newNotes.push(note);
+      }
+    } else if (output.notes[i].instrument !== voice) {
+      newNotes.push(output.notes[i]);
+    }
+  }
+  output.notes = newNotes;
+  return output;
+}
+
+/**
+ * Any consecutive notes of the same pitch are merged into a sustained note.
+ * Does not merge notes that connect on a measure boundary. This process
+ * also rearranges the order of the notes - notes are grouped by instrument,
+ * then ordered by timestamp.
+ *
+ * @param sequence A quantized `NoteSequence` to be merged.
+ * @return a new `NoteSequence` with sustained notes merged.
+ */
+export function mergeConsecutiveNotes(sequence: INoteSequence) {
+  assertIsQuantizedSequence(sequence);
+
+  const output = clone(sequence);
+  output.notes = [];
+
+  // Sort the input notes.
+  const newNotes = sequence.notes.sort((a, b) => {
+    const voiceCompare = a.instrument - b.instrument;
+    if (voiceCompare) {
+      return voiceCompare;
+    }
+    return a.quantizedStartStep - b.quantizedStartStep;
+  });
+
+  // Start with the first note.
+  const note = new NoteSequence.Note();
+  note.pitch = newNotes[0].pitch;
+  note.instrument = newNotes[0].instrument;
+  note.quantizedStartStep = newNotes[0].quantizedStartStep;
+  note.quantizedEndStep = newNotes[0].quantizedEndStep;
+  output.notes.push(note);
+  let o = 0;
+
+  for (let i = 1; i < newNotes.length; i++) {
+    const thisNote = newNotes[i];
+    const previousNote = output.notes[o];
+    // Compare next note's start time with previous note's end time.
+    if (previousNote.instrument === thisNote.instrument &&
+        previousNote.pitch === thisNote.pitch &&
+        thisNote.quantizedStartStep === previousNote.quantizedEndStep &&
+        // Doesn't start on the measure boundary.
+        thisNote.quantizedStartStep % 16 !== 0) {
+      // If the next note has the same pitch as this note and starts at the
+      // same time as the previous note ends, absorb the next note into the
+      // previous output note.
+      output.notes[o].quantizedEndStep +=
+          thisNote.quantizedEndStep - thisNote.quantizedStartStep;
+    } else {
+      // Otherwise, append the next note to the output notes.
+      const note = new NoteSequence.Note();
+      note.pitch = newNotes[i].pitch;
+      note.instrument = newNotes[i].instrument;
+      note.quantizedStartStep = newNotes[i].quantizedStartStep;
+      note.quantizedEndStep = newNotes[i].quantizedEndStep;
+      output.notes.push(note);
+      o++;
+    }
+  }
+  return output;
+}

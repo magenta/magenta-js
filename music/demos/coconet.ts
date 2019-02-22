@@ -17,7 +17,7 @@
 
 import * as tf from '@tensorflow/tfjs-core';
 
-import {mergeHeldNotes, replaceVoice} from '../src/coconet/coconet_utils';
+import {mergeConsecutiveNotes, replaceInstrument} from '../src/core/sequences';
 import * as mm from '../src/index';
 import {NoteSequence} from '../src/index';
 
@@ -33,7 +33,8 @@ async function infillFirstVoice() {
   const output = await model.infill(MEL_TWINKLE);
   // Optionally, merge the held notes and restore the original melody timing
   // since the model chunks up the melody in 16ths.
-  const fixedOutput = replaceVoice(output, MEL_TWINKLE);
+  const fixedOutput =
+      replaceInstrument(mergeConsecutiveNotes(output), MEL_TWINKLE);
   writeNoteSeqs('output-1', [fixedOutput], true);
   writeTimer('time-1', start);
   model.dispose();
@@ -53,7 +54,7 @@ async function infillSecondVoice() {
   const output = await model.infill(ns, 0.5);
   // Optionally, merge the held notes and restore the original melody timing
   // since the model chunks up the melody in 16ths.
-  const fixedOutput = replaceVoice(output, ns);
+  const fixedOutput = replaceInstrument(mergeConsecutiveNotes(output), ns);
   writeNoteSeqs('output-2', [fixedOutput], true);
   writeTimer('time-2', start);
   model.dispose();
@@ -119,7 +120,7 @@ async function infillSection() {
   const output = await model.infill(ns2);
 
   // Optionally, treat any consecutive notes as merged.
-  const fixedOutput = mergeHeldNotes(output);
+  const fixedOutput = mergeConsecutiveNotes(output);
   writeNoteSeqs('output-3', [fixedOutput], true);
   writeTimer('time-3', start);
   model.dispose();
