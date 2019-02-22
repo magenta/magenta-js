@@ -110,6 +110,11 @@ export function sequenceToPianoroll(
           `Found invalid voice ${voice}. Skipping.`, 'Coconet',
           logging.Level.WARN);
     } else {
+      if (stepIndex + duration > numberOfSteps) {
+        throw new Error(
+            `NoteSequence ${ns.id} has notes that are longer than the sequence's
+          totalQuantizedSteps.`);
+      }
       for (let i = stepIndex; i < stepIndex + duration; i++) {
         pianoroll[i][pitchIndex][voice] = 1;
       }

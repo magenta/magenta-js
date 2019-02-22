@@ -426,42 +426,46 @@ export function mergeInstruments(ns: INoteSequence) {
 }
 
 /**
- * Replaces the notes with a specific instrument in a `NoteSequence` with
- * the notes from a different sequence.
- * @param sequence The `NoteSequence` to be changed.
- * @param originalVoice The `NoteSequence` that will replace the notes in
- * `sequence` with the same instrument. It's assumed this sequence only
- * has one instrument; if it has more, only the first occuring instrument will
- * be used for replacement.
- * @return a new `NoteSequence` with sustained notes merged, and a voice
- * replaced.
+ * Replaces all the notes in an input sequence that match the instruments in
+ * a second sequence. For example, if `replaceSequence` has notes that all have
+ * either `instrument=0` or `instrument=1`, then any notes in `originalSequence`
+ * with instruments 0 or 1 will be removed and replaced with the notes in
+ * `replaceSequence`.
+ * @param originalSequence The `NoteSequence` to be changed.
+ * @param replaceSequence The `NoteSequence` that will replace the notes in
+ * `sequence` with the same instrument.
+ * @return a new `NoteSequence` with the instruments replaced.
  */
-export function replaceInstrument(
-    sequence: INoteSequence, originalVoice: INoteSequence): NoteSequence {
-  const output = clone(sequence);
-  const newNotes = [];
-  const voice = originalVoice.notes[0].instrument;
-  let hasReplacedVoice = false;
+export function replaceInstruments(
+    originalSequence: INoteSequence,
+    replaceSequence: INoteSequence): NoteSequence {
+  // Get the instruments from the second sequence.
+  const instruments = new Set(replaceSequence.notes.map(n => n.instrument));
+  console.log(instruments);
 
-  for (let i = 0; i < output.notes.length; i++) {
-    if (output.notes[i].instrument === voice && !hasReplacedVoice) {
-      hasReplacedVoice = true;
-      for (let i = 0; i < originalVoice.notes.length; i++) {
-        const note = new NoteSequence.Note();
-        note.pitch = originalVoice.notes[i].pitch;
-        note.velocity = originalVoice.notes[i].velocity;
-        note.instrument = originalVoice.notes[i].instrument;
-        note.program = originalVoice.notes[i].program;
-        note.isDrum = originalVoice.notes[i].isDrum;
-        note.quantizedStartStep = originalVoice.notes[i].quantizedStartStep;
-        note.quantizedEndStep = originalVoice.notes[i].quantizedEndStep;
-        newNotes.push(note);
-      }
-    } else if (output.notes[i].instrument !== voice) {
-      newNotes.push(output.notes[i]);
+  const newNotes: NoteSequence.Note[] = [];
+
+  // Go through the original sequence, and only keep the notes for instruments
+  // *not* in the second sequence.
+  originalSequence.notes.forEach(n => {
+    if (!instruments.has(n.instrument)) {
+      newNotes.push(NoteSequence.Note.create(n));
     }
-  }
-  output.notes = newNotes;
+  });
+  // Go through the second sequence and add all the notes.
+  replaceSequence.notes.forEach(n => {
+    newNotes.push(NoteSequence.Note.create(n));
+  });
+
+  // Sort the notes by instrument, and then by time.
+  const output = clone(originalSequence);
+  output.notes = newNotes.sort((a, b) => {
+    const voiceCompare = a.instrument - b.instrument;
+    if (voiceCompare) {
+      return voiceCompare;
+    }
+    return a.quantizedStartStep - b.quantizedStartStep;
+  });
   return output;
 }
 

@@ -17,7 +17,7 @@
 
 import * as tf from '@tensorflow/tfjs-core';
 
-import {mergeConsecutiveNotes, replaceInstrument} from '../src/core/sequences';
+import {mergeConsecutiveNotes, replaceInstruments} from '../src/core/sequences';
 import * as mm from '../src/index';
 import {NoteSequence} from '../src/index';
 
@@ -34,7 +34,7 @@ async function infillFirstVoice() {
   // Optionally, merge the held notes and restore the original melody timing
   // since the model chunks up the melody in 16ths.
   const fixedOutput =
-      replaceInstrument(mergeConsecutiveNotes(output), MEL_TWINKLE);
+      replaceInstruments(mergeConsecutiveNotes(output), MEL_TWINKLE);
   writeNoteSeqs('output-1', [fixedOutput], true);
   writeTimer('time-1', start);
   model.dispose();
@@ -51,10 +51,12 @@ async function infillSecondVoice() {
   writeNoteSeqs('input-2', [ns], true);
 
   const start = performance.now();
-  const output = await model.infill(ns, 0.5);
+  // A smaller temperature means the output is more random. Fewer sampling
+  // iterations means the process is faster, but the results are less good.
+  const output = await model.infill(ns, 0.5, 10);
   // Optionally, merge the held notes and restore the original melody timing
   // since the model chunks up the melody in 16ths.
-  const fixedOutput = replaceInstrument(mergeConsecutiveNotes(output), ns);
+  const fixedOutput = replaceInstruments(mergeConsecutiveNotes(output), ns);
   writeNoteSeqs('output-2', [fixedOutput], true);
   writeTimer('time-2', start);
   model.dispose();

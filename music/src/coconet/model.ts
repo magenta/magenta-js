@@ -43,7 +43,6 @@ interface ModelSpec {
   numFilters: number;
   numLayers: number;
   numRegularConvLayers: number;
-  numSteps: number;
   dilation?: number[][];
   layers: LayerSpec[];
   interleaveSplitEveryNLayers?: number;
@@ -57,7 +56,6 @@ const DEFAULT_SPEC: ModelSpec = {
   numFilters: 128,
   numLayers: 33,
   numRegularConvLayers: 0,
-  numSteps: 96,
   dilation: [
     [1, 1], [2, 2], [4, 4], [8, 8], [16, 16], [16, 32],
     [1, 1], [2, 2], [4, 4], [8, 8], [16, 16], [16, 32],
@@ -387,8 +385,12 @@ class Coconet {
    * @param sequence The sequence to infill. Must be quantized.
    * @param temperature (Optional) The softmax temperature to use when sampling
    * from the logits. Default is 0.99.
+   * @param numIterations (Optional) The number of Gibbs sampling iterations
+   * before the final output. Fewer iterations will be faster but have poorer
+   * results; more iterations will be slower but have better results.
    */
-  async infill(sequence: INoteSequence, temperature = 0.99) {
+  async infill(
+      sequence: INoteSequence, temperature = 0.99, numIterations = 96) {
     sequences.assertIsRelativeQuantizedSequence(sequence);
     if (sequence.notes.length === 0) {
       throw new Error(
@@ -401,7 +403,7 @@ class Coconet {
     const pianoroll = sequenceToPianoroll(sequence, numSteps);
 
     // Run sampling on the pianoroll.
-    const samples = await this.run(pianoroll, this.spec.numSteps, temperature);
+    const samples = await this.run(pianoroll, numIterations, temperature);
 
     // Convert the resulting pianoroll to a noteSequence.
     const outputSequence = pianorollToSequence(samples, numSteps);
