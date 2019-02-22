@@ -233,7 +233,7 @@ class ConvNet {
     if (IS_IOS) {
       // iOS WebGL floats are 16-bit, and the variance is outside this range.
       // This loads the variance to 32-bit floats in JS to compute batchnorm.
-      const v = variance.dataSync() as Float32Array;
+      const v = variance.arraySync()[0][0][0];
       const stdevs = tf.tensor(
           v.map(x => Math.sqrt(x + this.spec.batchNormVarianceEpsilon)));
       return x.sub(mean).mul(gammas.div(stdevs)).add(betas);
@@ -434,19 +434,11 @@ class Coconet {
       pianorolls: tf.Tensor4D, numSteps: number,
       temperature: number): Promise<tf.Tensor4D> {
     const outerMasks = this.getCompletionMask(pianorolls);
-    let numStepsTensor: tf.Scalar = null;
-    if (!numSteps) {
-      numStepsTensor = this.numbersOfMaskedVariables(outerMasks).max();
-      numSteps = numStepsTensor.dataSync()[0];
-    } else {
-      numStepsTensor = tf.scalar(numSteps, 'float32');
-    }
+    const numStepsTensor = tf.scalar(numSteps, 'float32');
     let pianoroll = pianorolls.clone();
     for (let s = 0; s < numSteps; s++) {
-      const innerMasks = tf.tidy(() => {
-        const pm = this.yaoSchedule(s, numStepsTensor);
-        return this.bernoulliMask(pianoroll.shape, pm, outerMasks);
-      });
+      const pm = this.yaoSchedule(s, numStepsTensor);
+      const innerMasks = this.bernoulliMask(pianoroll.shape, pm, outerMasks);
       await tf.nextFrame();
       const predictions = tf.tidy(() => {
         return this.convnet.predictFromPianoroll(pianoroll, innerMasks);
@@ -467,10 +459,6 @@ class Coconet {
     numStepsTensor.dispose();
     outerMasks.dispose();
     return pianoroll;
-  }
-
-  private numbersOfMaskedVariables(masks: tf.Tensor4D): tf.Tensor {
-    return masks.max(2).sum([1, 2]);
   }
 
   private yaoSchedule(i: number, n: tf.Scalar) {

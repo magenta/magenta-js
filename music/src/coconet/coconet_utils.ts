@@ -80,19 +80,20 @@ export function pianorollToSequence(
 }
 
 /**
- * Converts a `NoteSequence` to a pianoroll representation. Note that
- * this pianoroll representation can't distinguish between
- * multiple eighth notes and held notes, so that information will be lost.
+ * Converts a `NoteSequence` to a pianoroll representation. This sequence
+ * needs to contain notes with a valid set of instruments, representing the
+ * voices in a Bach harmony: 0 is Soprano, 1 is Alto, 2 Tenor and 3 Bass. Any
+ * notes with instruments outside of this range are ignored. Note that this
+ * pianoroll representation can't distinguish between multiple eighth notes and
+ * held notes, so that information will be lost.
  *
- * @param ns A `NoteSequence` with at least one note.
+ * @param ns A quantized `NoteSequence` with at least one note.
  * @param numberOfSteps The number of quantized steps in the sequence.
  * @returns A Tensor of shape `[numberOfSteps][NUM_PITCHES][NUM_VOICES]`
  * where each entry represents an instrument being played at a particular
  * step and for a particular pitch. For example,
  * `pianoroll[0][64] = [0, 0, 1, 0]` means that the third instrument plays
- * pitch 64 at time 0. Instruments 0-4 represent "voices": 0 is Soprano,
- * 1 is Alto, 2 Tenor and 3 Bass. Any instruments outside of this range are
- * ignored.
+ * pitch 64 at time 0.
  */
 export function sequenceToPianoroll(
     ns: INoteSequence, numberOfSteps: number): tf.Tensor4D {
