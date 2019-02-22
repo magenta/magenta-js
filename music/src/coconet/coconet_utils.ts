@@ -62,11 +62,12 @@ export function pianorollToSequence(
         // If this note is on, then it's being played by a voice and
         // it should be added to the note sequence.
         if (value === 1.0) {
-          const note = new NoteSequence.Note();
-          note.pitch = p + MIN_PITCH;
-          note.instrument = v;
-          note.quantizedStartStep = s;
-          note.quantizedEndStep = s + 1;
+          const note = NoteSequence.Note.create({
+            pitch: p + MIN_PITCH,
+            instrument: v,
+            quantizedStartStep: s,
+            quantizedEndStep: s + 1
+          });
           notes.push(note);
         }
       }
