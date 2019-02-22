@@ -233,6 +233,10 @@ class ConvNet {
     if (IS_IOS) {
       // iOS WebGL floats are 16-bit, and the variance is outside this range.
       // This loads the variance to 32-bit floats in JS to compute batchnorm.
+      // This arraySync is OK because we don't use the variance anywhere,
+      // so it doesn't actually get uploaded to the GPU, so we don't
+      // continuously download it and upload it which is the problem with
+      // dataSync.
       const v = variance.arraySync()[0][0][0];
       const stdevs = tf.tensor(
           v.map(x => Math.sqrt(x + this.spec.batchNormVarianceEpsilon)));
