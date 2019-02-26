@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import * as tf from '@tensorflow/tfjs-core';
+import * as tf from '@tensorflow/tfjs';
 import * as clone from 'clone';
 
 import * as mm from '../src/index';

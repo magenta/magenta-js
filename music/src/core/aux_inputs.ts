@@ -22,7 +22,7 @@
 /**
  * Imports
  */
-import * as tf from '@tensorflow/tfjs-core';
+import * as tf from '@tensorflow/tfjs';
 
 export interface BinaryCounterSpec {
   type: 'BinaryCounter';

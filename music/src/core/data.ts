@@ -23,7 +23,7 @@
 /**
  * Imports
  */
-import * as tf from '@tensorflow/tfjs-core';
+import * as tf from '@tensorflow/tfjs';
 
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
@@ -207,10 +207,11 @@ export class DrumsConverter extends DataConverter {
     this.depth = this.pitchClasses.length;
   }
 
-  toTensor(noteSequence: INoteSequence) {
+  toTensor(noteSequence: INoteSequence): tf.Tensor2D {
     sequences.assertIsQuantizedSequence(noteSequence);
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
-    const drumRoll = tf.buffer([numSteps, this.pitchClasses.length + 1]);
+    const drumRoll = tf.buffer([numSteps, this.pitchClasses.length + 1],
+        'int32');
     // Set final values to 1 and change to 0 later if the column gets a note.
     for (let i = 0; i < numSteps; ++i) {
       drumRoll.set(1, i, -1);
@@ -307,14 +308,15 @@ export class DrumsOneHotConverter extends DrumsConverter {
     this.depth = Math.pow(2, this.pitchClasses.length);
   }
 
-  toTensor(noteSequence: INoteSequence) {
+  toTensor(noteSequence: INoteSequence): tf.Tensor2D {
     sequences.assertIsRelativeQuantizedSequence(noteSequence);
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
     const labels = Array<number>(numSteps).fill(0);
     for (const {pitch, quantizedStartStep} of noteSequence.notes) {
       labels[quantizedStartStep] += Math.pow(2, this.pitchToClass.get(pitch));
     }
-    return tf.tidy(() => tf.oneHot(tf.tensor1d(labels, 'int32'), this.depth));
+    return tf.tidy(() =>
+        tf.oneHot(tf.tensor1d(labels, 'int32'), this.depth) as tf.Tensor2D);
   }
 }
 
@@ -369,7 +371,7 @@ export class MelodyConverter extends DataConverter {
     this.depth = args.maxPitch - args.minPitch + 1 + this.FIRST_PITCH;
   }
 
-  toTensor(noteSequence: INoteSequence) {
+  toTensor(noteSequence: INoteSequence): tf.Tensor2D {
     sequences.assertIsQuantizedSequence(noteSequence);
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
     // Sort by note start times, and secondarily by pitch descending.
@@ -402,7 +404,8 @@ export class MelodyConverter extends DataConverter {
       mel.set(this.NOTE_OFF, n.quantizedEndStep);
       lastStart = n.quantizedStartStep;
     });
-    return tf.tidy(() => tf.oneHot(mel.toTensor() as tf.Tensor1D, this.depth));
+    return tf.tidy(() =>
+        tf.oneHot(mel.toTensor() as tf.Tensor1D, this.depth) as tf.Tensor2D);
   }
 
   async toNoteSequence(
@@ -473,7 +476,7 @@ export class TrioConverter extends DataConverter {
          this.drumsConverter.depth);
   }
 
-  toTensor(noteSequence: INoteSequence) {
+  toTensor(noteSequence: INoteSequence): tf.Tensor2D {
     sequences.assertIsQuantizedSequence(noteSequence);
     const melSeq = sequences.clone(noteSequence);
     const bassSeq = sequences.clone(noteSequence);
@@ -615,7 +618,7 @@ export class MultitrackConverter extends DataConverter {
 
   private trackToTensor(track?: performance.Performance) {
     const maxEventsPerTrack = this.numSteps / this.numSegments;
-    let tokens: tf.TensorBuffer<tf.Rank.R1> = undefined;
+    let tokens: tf.TensorBuffer<tf.Rank.R1, 'int32'> = undefined;
 
     if (track) {
       // Drop events from track until we have the maximum number of events
@@ -670,7 +673,7 @@ export class MultitrackConverter extends DataConverter {
     });
   }
 
-  toTensor(noteSequence: INoteSequence) {
+  toTensor(noteSequence: INoteSequence): tf.Tensor2D {
     sequences.assertIsRelativeQuantizedSequence(noteSequence);
 
     if (noteSequence.quantizationInfo.stepsPerQuarter !==
@@ -710,9 +713,8 @@ export class MultitrackConverter extends DataConverter {
     }
 
     // Convert tracks to tensors then concatenate.
-    return tf.tidy(
-        () => tf.concat(
-            sortedTracks.map((track) => this.trackToTensor(track)), 0));
+    return tf.tidy(() => tf.concat(sortedTracks.map((track) =>
+        this.trackToTensor(track)), 0) as tf.Tensor2D);
   }
 
   private tokensToTrack(tokens: Int32Array) {
@@ -860,7 +862,7 @@ export class GrooveConverter extends DataConverter {
     this.depth = 3;
   }
 
-  toTensor(ns: INoteSequence) {
+  toTensor(ns: INoteSequence): tf.Tensor2D {
     const qns = sequences.isRelativeQuantizedSequence(ns) ?
         ns :
         sequences.quantizeNoteSequence(ns, this.stepsPerQuarter);
