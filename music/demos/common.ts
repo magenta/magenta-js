@@ -16,8 +16,8 @@
  */
 
 import {saveAs} from 'file-saver';
-import * as mm from '../src/index';
-import {sequences} from '../src/index';
+import * as mm from '../src';
+import {sequences} from '../src';
 
 export const CHECKPOINTS_DIR =
     // tslint:disable-next-line:max-line-length
@@ -358,15 +358,31 @@ export function writeNoteSeqs(
   });
 }
 
+export function visualizeNoteSeqs(
+    elementId: string, seqs: mm.INoteSequence[], useSoundFontPlayer = false) {
+  const element = document.getElementById(elementId);
+  while (element.firstChild) {
+    element.removeChild(element.firstChild);
+  }
+  seqs.forEach(seq => {
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = 'View NoteSequence';
+    details.appendChild(summary);
+    details.appendChild(createPlayer(seq, useSoundFontPlayer));
+    element.appendChild(details);
+  });
+}
+
 export function writeMemory(bytes: number, name = 'leaked-memory') {
   document.getElementById(name).innerHTML = bytes.toString() + ' bytes';
 }
 
 function createPlayerButton(
     seq: mm.INoteSequence, withClick: boolean, useSoundFontPlayer: boolean,
-    canvas: HTMLElement) {
-  const visualizer = new mm.Visualizer(seq, canvas as HTMLCanvasElement);
-  const container = canvas.parentElement as HTMLDivElement;
+    el: SVGSVGElement) {
+  const visualizer = new mm.PianoRollSVGVisualizer(seq, el as SVGSVGElement);
+  const container = el.parentElement as HTMLDivElement;
 
   const callbackObject = {
     run: (note: mm.NoteSequence.Note) => {
@@ -423,17 +439,17 @@ function createPlayer(seq: mm.INoteSequence, useSoundFontPlayer = false) {
   div.classList.add('player-container');
   const containerDiv = document.createElement('div');
   containerDiv.classList.add('visualizer-container');
-  const canvas = document.createElement('canvas');
-  containerDiv.appendChild(canvas);
+  const el = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  containerDiv.appendChild(el);
 
   const buttonsDiv = document.createElement('div');
   // Regular player.
   buttonsDiv.appendChild(
-      createPlayerButton(seq, false, useSoundFontPlayer, canvas));
+      createPlayerButton(seq, false, useSoundFontPlayer, el));
 
   // Player with click. Only works for quantized sequences.
   if (!useSoundFontPlayer && sequences.isQuantizedSequence(seq)) {
-    buttonsDiv.appendChild(createPlayerButton(seq, true, false, canvas));
+    buttonsDiv.appendChild(createPlayerButton(seq, true, false, el));
   }
 
   // Download midi.

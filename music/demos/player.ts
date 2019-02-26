@@ -125,9 +125,9 @@ function generatePlayers() {
 }
 
 function generateTempoPlayer() {
-  const visualizer = new mm.Visualizer(
+  const visualizer = new mm.PianoRollSVGVisualizer(
       FULL_TWINKLE_UNQUANTIZED,
-      document.getElementById('canvas') as HTMLCanvasElement);
+      document.getElementsByClassName('svg')[0] as SVGSVGElement);
   const player = new mm.Player(false, {
     run: (note: mm.NoteSequence.Note) => {
       visualizer.redraw(note);
