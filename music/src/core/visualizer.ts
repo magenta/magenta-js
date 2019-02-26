@@ -242,8 +242,7 @@ export class PianoRollCanvasVisualizer extends BaseVisualizer {
    * active
    * @param activeNote (Optional) If specified, this `Note` will be painted
    * in the active color.
-   * @param scrollIntoView (Optional) If specified and the note being painted
-   *     is
+   * @param scrollIntoView (Optional) If specified and the note being painted is
    * offscreen, the parent container will be scrolled so that the note is
    * in view.
    * @returns The x position of the painted active note. Useful for
