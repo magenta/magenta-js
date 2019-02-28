@@ -28,15 +28,22 @@ limitations under the License.
   </p>
 
   <h2>Infilling the first voice</h2>
+  <p>The default behaviour of the model is to infill all of the "silence"
+    in a NoteSequence. In this example, only the first voice (Soprano) is present
+    for all the time steps, so Coconet will infill the other 3 voices (Alto,
+    Tenor and Bass)
+  </p>
   <section>
     <p><b>Input:</b> <code id="input-1"></code></p>
     <p><b>Result:</b> <code id="output-1">Loading...</code></p>
     <p><b>It took:</b> <code id="time-1"></code></p>
   </section>
 
-  <h2>Infilling the third voice: changing the temperature and the
-    number of sampling iterations.
-  </h2>
+  <h2>Infilling the third voice with configuration parameters.</h2>
+  In this example, only the Tenor voice is present, so we infill the first 2
+  and last voices (Soprano, Alto, Bass). In addition, we also use the
+  <code>temperature</code> and <code>numIterations</code> parameters to the
+  <code>infill()</code> method.
   <section>
     <p><b>Input:</b> <code id="input-2"></code></p>
     <p><b>Result:</b> <code id="output-2">Loading...</code></p>
@@ -44,6 +51,11 @@ limitations under the License.
   </section>
 
   <h2>Infilling a missing section from all the voices</h2>
+  <p>As mentioned before, the default behaviour of the model is to infill all
+    of the "silent" measures. In order to distinguish between intended rests and
+    infill sections, you can use the <code>infillMask</code> parameter to
+    specify exactly which section to be infilled.
+  </p>
   <section>
     <p><b>Input:</b> <code id="input-3"></code></p>
     <p><b>Result:</b> <code id="output-3">Loading...</code></p>

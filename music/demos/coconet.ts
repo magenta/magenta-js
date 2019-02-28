@@ -53,7 +53,7 @@ async function infillSecondVoice() {
   const start = performance.now();
   // A smaller temperature means the output is more random. Fewer sampling
   // iterations means the process is faster, but the results are less good.
-  const output = await model.infill(ns, 0.5, 10);
+  const output = await model.infill(ns, {temperature: 0.5, numIterations: 10});
   // Optionally, merge the held notes and restore the original melody timing
   // since the model chunks up the melody in 16ths.
   const fixedOutput = replaceInstruments(mergeConsecutiveNotes(output), ns);
@@ -67,59 +67,39 @@ async function infillSection() {
   await model.initialize();
 
   // First voice.
-  const ns = mm.sequences.clone(MEL_TWINKLE);
-  const firstVoiceNotes = ns.notes.length;
+  const ns = mm.NoteSequence.create();
 
-  // Second voice.
-  for (let i = 0; i < firstVoiceNotes; i++) {
-    const note = new NoteSequence.Note();
-    note.pitch = 58;
-    note.instrument = 1;
-    note.quantizedStartStep = i * 2;
-    note.quantizedEndStep = note.quantizedStartStep + 2;
-    ns.notes.push(note);
-  }
-
-  // Third voice.
-  for (let i = 0; i < firstVoiceNotes; i++) {
-    const note = new NoteSequence.Note();
-    note.pitch = i % 2 ? 55 : 53;
-    note.instrument = 2;
-    note.quantizedStartStep = ns.notes[i].quantizedStartStep;
-    note.quantizedEndStep = ns.notes[i].quantizedEndStep;
-    ns.notes.push(note);
-  }
-
-  // Fourth voice.
-  for (let i = 0; i < firstVoiceNotes; i++) {
-    const note = new NoteSequence.Note();
-    note.pitch = 50;
-    note.instrument = 3;
-    note.quantizedStartStep = i * 2;
-    note.quantizedEndStep = note.quantizedStartStep + 2;
-    ns.notes.push(note);
-  }
-
-  // Remove everything between timesteps 10 and 20.
-  const ns2 = mm.sequences.clone(ns);
-  ns2.notes = [];
-  for (let i = 0; i < ns.notes.length; i++) {
-    if (ns.notes[i].quantizedEndStep < 16 ||
-        ns.notes[i].quantizedStartStep > 20) {
+  for (let i = 0; i < 32; i++) {
+    // Leave silence for 4 beats, between time steps 4 and 8, to
+    // show that using a mask doesn't infill space.
+    if (i < 8 && i > 4) {
+      continue;
+    }
+    // One per voice.
+    for (let v = 0; v < 4; v++) {
       const note = new NoteSequence.Note();
-      note.pitch = ns.notes[i].pitch;
-      note.instrument = ns.notes[i].instrument;
-      note.quantizedStartStep = ns.notes[i].quantizedStartStep;
-      note.quantizedEndStep = ns.notes[i].quantizedEndStep;
-      ns2.notes.push(note);
+      note.pitch = 76 - 10 * v;  // Different pitches for each voice.
+      note.instrument = v;
+      note.quantizedStartStep = i;
+      note.quantizedEndStep = note.quantizedStartStep + 1;
+      ns.notes.push(note);
     }
   }
+  ns.quantizationInfo = {stepsPerQuarter: 4};
+  ns.totalQuantizedSteps = 32;
 
-  ns2.totalQuantizedSteps = 32;
-  writeNoteSeqs('input-3', [ns2], true);
+  // Remove everything between timesteps 10 and 30
+  const mask = [];
+  for (let i = 10; i < 30; i++) {
+    // Infill all voices.
+    for (let v = 0; v < 4; v++) {
+      mask.push({step: i, voice: v});
+    }
+  }
+  writeNoteSeqs('input-3', [ns], true);
 
   const start = performance.now();
-  const output = await model.infill(ns2);
+  const output = await model.infill(ns, {infillMask: mask});
 
   // Optionally, treat any consecutive notes as merged.
   const fixedOutput = mergeConsecutiveNotes(output);

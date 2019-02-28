@@ -19,9 +19,40 @@
  * =============================================================================
  */
 import * as tf from '@tensorflow/tfjs-core';
+
 import {logging, sequences} from '..';
 import {INoteSequence} from '../protobuf';
-import {IS_IOS, pianorollToSequence, sequenceToPianoroll} from './coconet_utils';
+
+import {IS_IOS, NUM_PITCHES, pianorollToSequence, sequenceToPianoroll} from './coconet_utils';
+
+/**
+ * An interface for providing an infilling mask.
+ * @param step The quantized time step at which to infill.
+ * @param voice The voice to infill at the time step.
+ */
+interface InfillMask {
+  step: number;
+  voice: number;
+}
+
+/**
+ * An interface for providing configurable properties to a Coconet model.
+ * @param temperature (Optional) The softmax temperature to use when sampling
+ * from the logits. Default is 0.99.
+ * @param numIterations (Optional) The number of Gibbs sampling iterations
+ * before the final output. Fewer iterations will be faster but have poorer
+ * results; more iterations will be slower but have better results.
+ * @param infillMask (Optional) Array of timesteps at which the model should
+ * infill notes. The array should contain pairs of the form
+ * `{step: number, voice: number}`, indicating which voice should be
+ * infilled for a particular step. If this value isn't provided, then the model
+ * will attempt to infill all the "silent" steps in the input sequence.
+ */
+interface CoconetConfig {
+  temperature?: number;
+  numIterations?: number;
+  infillMask?: InfillMask[];
+}
 
 interface LayerSpec {
   pooling?: number[];
@@ -387,14 +418,10 @@ class Coconet {
    * restored.
    *
    * @param sequence The sequence to infill. Must be quantized.
-   * @param temperature (Optional) The softmax temperature to use when sampling
-   * from the logits. Default is 0.99.
-   * @param numIterations (Optional) The number of Gibbs sampling iterations
-   * before the final output. Fewer iterations will be faster but have poorer
-   * results; more iterations will be slower but have better results.
+   * @param config (Optional) Infill parameterers like temperature, the number
+   * of sampling iterations, or masks.
    */
-  async infill(
-      sequence: INoteSequence, temperature = 0.99, numIterations = 96) {
+  async infill(sequence: INoteSequence, config?: CoconetConfig) {
     sequences.assertIsRelativeQuantizedSequence(sequence);
     if (sequence.notes.length === 0) {
       throw new Error(
@@ -406,14 +433,29 @@ class Coconet {
     // Convert the sequence to a pianoroll.
     const pianoroll = sequenceToPianoroll(sequence, numSteps);
 
+    // Figure out the sampling configuration.
+    let temperature = 0.99;
+    let numIterations = 96;
+    let outerMasks;
+    if (config) {
+      numIterations = config.numIterations || numIterations;
+      temperature = config.temperature || temperature;
+      outerMasks =
+          this.getCompletionMaskFromInput(config.infillMask, pianoroll);
+    } else {
+      outerMasks = this.getCompletionMask(pianoroll);
+    }
+
     // Run sampling on the pianoroll.
-    const samples = await this.run(pianoroll, numIterations, temperature);
+    const samples =
+        await this.run(pianoroll, numIterations, temperature, outerMasks);
 
     // Convert the resulting pianoroll to a noteSequence.
     const outputSequence = pianorollToSequence(samples, numSteps);
 
     pianoroll.dispose();
     samples.dispose();
+    outerMasks.dispose();
     return outputSequence;
   }
 
@@ -421,9 +463,28 @@ class Coconet {
    * Runs sampling on pianorolls.
    */
   private async run(
-      pianorolls: tf.Tensor4D, numSteps: number,
-      temperature: number): Promise<tf.Tensor4D> {
-    return this.gibbs(pianorolls, numSteps, temperature);
+      pianorolls: tf.Tensor4D, numSteps: number, temperature: number,
+      outerMasks: tf.Tensor4D): Promise<tf.Tensor4D> {
+    return this.gibbs(pianorolls, numSteps, temperature, outerMasks);
+  }
+
+  private getCompletionMaskFromInput(
+      masks: InfillMask[], pianorolls: tf.Tensor4D): tf.Tensor4D {
+    if (!masks) {
+      return this.getCompletionMask(pianorolls);
+    } else {
+      // Create a buffer to store the input.
+      const buffer = tf.buffer([pianorolls.shape[1], 4]);
+      for (let i = 0; i < masks.length; i++) {
+        buffer.set(1, masks[i].step, masks[i].voice);
+      }
+
+      // Expand that buffer to the right shape.
+      return buffer.toTensor()
+                 .expandDims(1)
+                 .tile([1, NUM_PITCHES, 1])
+                 .expandDims(0) as tf.Tensor4D;
+    }
   }
 
   private getCompletionMask(pianorolls: tf.Tensor4D): tf.Tensor4D {
@@ -435,9 +496,8 @@ class Coconet {
   }
 
   private async gibbs(
-      pianorolls: tf.Tensor4D, numSteps: number,
-      temperature: number): Promise<tf.Tensor4D> {
-    const outerMasks = this.getCompletionMask(pianorolls);
+      pianorolls: tf.Tensor4D, numSteps: number, temperature: number,
+      outerMasks: tf.Tensor4D): Promise<tf.Tensor4D> {
     const numStepsTensor = tf.scalar(numSteps, 'float32');
     let pianoroll = pianorolls.clone();
     for (let s = 0; s < numSteps; s++) {
@@ -461,7 +521,6 @@ class Coconet {
       await tf.nextFrame();
     }
     numStepsTensor.dispose();
-    outerMasks.dispose();
     return pianoroll;
   }
 
