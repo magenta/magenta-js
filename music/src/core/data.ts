@@ -23,7 +23,7 @@
 /**
  * Imports
  */
-import * as tf from '@tensorflow/tfjs-core';
+import * as tf from '@tensorflow/tfjs';
 
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
@@ -77,6 +77,11 @@ export interface MultitrackConverterSpec {
   args: MultitrackConverterArgs;
 }
 
+export interface GrooveConverterSpec {
+  type: 'GrooveConverter';
+  args: GrooveConverterArgs;
+}
+
 /**
  * Interface for JSON specification of a `DataConverter`.
  *
@@ -84,9 +89,9 @@ export interface MultitrackConverterSpec {
  * @property args Map containing values for argments to the constructor of the
  * `DataConverter` class specified above.
  */
-export type ConverterSpec =
-    MelodyConverterSpec|DrumsConverterSpec|DrumRollConverterSpec|
-    TrioConverterSpec|DrumsOneHotConverterSpec|MultitrackConverterSpec;
+export type ConverterSpec = MelodyConverterSpec|DrumsConverterSpec|
+    DrumRollConverterSpec|TrioConverterSpec|DrumsOneHotConverterSpec|
+    MultitrackConverterSpec|GrooveConverterSpec;
 
 /**
  * Builds a `DataConverter` based on the given `ConverterSpec`.
@@ -108,6 +113,8 @@ export function converterFromSpec(spec: ConverterSpec): DataConverter {
       return new DrumsOneHotConverter(spec.args);
     case 'MultitrackConverter':
       return new MultitrackConverter(spec.args);
+    case 'GrooveConverter':
+      return new GrooveConverter(spec.args);
     default:
       throw new Error(`Unknown DataConverter type: ${spec}`);
   }
@@ -136,11 +143,13 @@ export abstract class DataConverter {
   readonly numSegments: number;              // Number of steps for conductor.
   abstract readonly depth: number;           // Size of final output dimension.
   abstract readonly endTensor: tf.Tensor1D;  // Tensor marking segment end.
-  abstract readonly NUM_SPLITS: number;  // Const number of conductor splits.
-  abstract readonly SEGMENTED_BY_TRACK: boolean;  // Segments are tracks.
+  readonly NUM_SPLITS: number = 0;  // Const number of conductor splits.
+  readonly SEGMENTED_BY_TRACK: boolean = false;  // Segments are tracks.
+
   abstract toTensor(noteSequence: INoteSequence): tf.Tensor2D;
-  abstract async toNoteSequence(tensor: tf.Tensor2D, stepsPerQuarter: number):
-      Promise<INoteSequence>;
+  abstract async toNoteSequence(
+      tensor: tf.Tensor2D, stepsPerQuarter?: number,
+      qpm?: number): Promise<INoteSequence>;
 
   constructor(args: BaseConverterArgs) {
     this.numSteps = args.numSteps;
@@ -183,8 +192,6 @@ export interface DrumsConverterArgs extends BaseConverterArgs {
 export class DrumsConverter extends DataConverter {
   readonly pitchClasses: number[][];
   readonly pitchToClass: Map<number, number>;
-  readonly NUM_SPLITS = 0;              // const
-  readonly SEGMENTED_BY_TRACK = false;  // const
   readonly depth: number;
   readonly endTensor: tf.Tensor1D;
 
@@ -200,10 +207,11 @@ export class DrumsConverter extends DataConverter {
     this.depth = this.pitchClasses.length;
   }
 
-  toTensor(noteSequence: INoteSequence) {
+  toTensor(noteSequence: INoteSequence): tf.Tensor2D {
     sequences.assertIsQuantizedSequence(noteSequence);
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
-    const drumRoll = tf.buffer([numSteps, this.pitchClasses.length + 1]);
+    const drumRoll = tf.buffer([numSteps, this.pitchClasses.length + 1],
+        'int32');
     // Set final values to 1 and change to 0 later if the column gets a note.
     for (let i = 0; i < numSteps; ++i) {
       drumRoll.set(1, i, -1);
@@ -217,11 +225,8 @@ export class DrumsConverter extends DataConverter {
   }
 
   async toNoteSequence(
-      oh: tf.Tensor2D,
-      stepsPerQuarter = constants.DEFAULT_QUARTERS_PER_MINUTE) {
-    const noteSequence = NoteSequence.create();
-    noteSequence.quantizationInfo =
-        NoteSequence.QuantizationInfo.create({stepsPerQuarter});
+      oh: tf.Tensor2D, stepsPerQuarter?: number, qpm?: number) {
+    const noteSequence = createQuantizedNoteSequence(stepsPerQuarter, qpm);
     const labelsTensor = oh.argMax(1);
     const labels: Int32Array = await labelsTensor.data() as Int32Array;
     labelsTensor.dispose();
@@ -257,11 +262,8 @@ export class DrumsConverter extends DataConverter {
  */
 export class DrumRollConverter extends DrumsConverter {
   async toNoteSequence(
-      roll: tf.Tensor2D,
-      stepsPerQuarter = constants.DEFAULT_QUARTERS_PER_MINUTE) {
-    const noteSequence = NoteSequence.create();
-    noteSequence.quantizationInfo =
-        NoteSequence.QuantizationInfo.create({stepsPerQuarter});
+      roll: tf.Tensor2D, stepsPerQuarter?: number, qpm?: number) {
+    const noteSequence = createQuantizedNoteSequence(stepsPerQuarter, qpm);
     const flatRoll = await roll.data() as Uint8Array;
     for (let s = 0; s < roll.shape[0]; ++s) {  // step
       const pitches = flatRoll.slice(s * this.depth, (s + 1) * this.depth);
@@ -306,14 +308,15 @@ export class DrumsOneHotConverter extends DrumsConverter {
     this.depth = Math.pow(2, this.pitchClasses.length);
   }
 
-  toTensor(noteSequence: INoteSequence) {
+  toTensor(noteSequence: INoteSequence): tf.Tensor2D {
     sequences.assertIsRelativeQuantizedSequence(noteSequence);
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
     const labels = Array<number>(numSteps).fill(0);
     for (const {pitch, quantizedStartStep} of noteSequence.notes) {
       labels[quantizedStartStep] += Math.pow(2, this.pitchToClass.get(pitch));
     }
-    return tf.tidy(() => tf.oneHot(tf.tensor1d(labels, 'int32'), this.depth));
+    return tf.tidy(() =>
+        tf.oneHot(tf.tensor1d(labels, 'int32'), this.depth) as tf.Tensor2D);
   }
 }
 
@@ -356,10 +359,8 @@ export class MelodyConverter extends DataConverter {
   readonly depth: number;
   readonly endTensor: tf.Tensor1D;
 
-  readonly NUM_SPLITS = 0;              // const
-  readonly SEGMENTED_BY_TRACK = false;  // const
-  readonly NOTE_OFF = 1;                // const
-  readonly FIRST_PITCH = 2;             // const
+  readonly NOTE_OFF = 1;     // const
+  readonly FIRST_PITCH = 2;  // const
 
   constructor(args: MelodyConverterArgs) {
     super(args);
@@ -370,7 +371,7 @@ export class MelodyConverter extends DataConverter {
     this.depth = args.maxPitch - args.minPitch + 1 + this.FIRST_PITCH;
   }
 
-  toTensor(noteSequence: INoteSequence) {
+  toTensor(noteSequence: INoteSequence): tf.Tensor2D {
     sequences.assertIsQuantizedSequence(noteSequence);
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
     // Sort by note start times, and secondarily by pitch descending.
@@ -403,15 +404,13 @@ export class MelodyConverter extends DataConverter {
       mel.set(this.NOTE_OFF, n.quantizedEndStep);
       lastStart = n.quantizedStartStep;
     });
-    return tf.tidy(() => tf.oneHot(mel.toTensor() as tf.Tensor1D, this.depth));
+    return tf.tidy(() =>
+        tf.oneHot(mel.toTensor() as tf.Tensor1D, this.depth) as tf.Tensor2D);
   }
 
   async toNoteSequence(
-      oh: tf.Tensor2D,
-      stepsPerQuarter = constants.DEFAULT_QUARTERS_PER_MINUTE) {
-    const noteSequence = NoteSequence.create();
-    noteSequence.quantizationInfo =
-        NoteSequence.QuantizationInfo.create({stepsPerQuarter});
+      oh: tf.Tensor2D, stepsPerQuarter?: number, qpm?: number) {
+    const noteSequence = createQuantizedNoteSequence(stepsPerQuarter, qpm);
     const labelsTensor = oh.argMax(1);
     const labels: Int32Array = await labelsTensor.data() as Int32Array;
     labelsTensor.dispose();
@@ -460,7 +459,6 @@ export class TrioConverter extends DataConverter {
   readonly depth: number;
   readonly endTensor: tf.Tensor1D;
   readonly NUM_SPLITS = 3;              // const
-  readonly SEGMENTED_BY_TRACK = false;  // const
   readonly MEL_PROG_RANGE = [0, 31];    // inclusive, const
   readonly BASS_PROG_RANGE = [32, 39];  // inclusive, const
 
@@ -478,7 +476,7 @@ export class TrioConverter extends DataConverter {
          this.drumsConverter.depth);
   }
 
-  toTensor(noteSequence: INoteSequence) {
+  toTensor(noteSequence: INoteSequence): tf.Tensor2D {
     sequences.assertIsQuantizedSequence(noteSequence);
     const melSeq = sequences.clone(noteSequence);
     const bassSeq = sequences.clone(noteSequence);
@@ -503,8 +501,7 @@ export class TrioConverter extends DataConverter {
   }
 
   async toNoteSequence(
-      th: tf.Tensor2D,
-      stepsPerQuarter = constants.DEFAULT_QUARTERS_PER_MINUTE) {
+      th: tf.Tensor2D, stepsPerQuarter?: number, qpm?: number) {
     const ohs = tf.split(
         th,
         [
@@ -512,19 +509,22 @@ export class TrioConverter extends DataConverter {
           this.drumsConverter.depth
         ],
         -1);
-    const ns = await this.melConverter.toNoteSequence(ohs[0], stepsPerQuarter);
+    const ns =
+        await this.melConverter.toNoteSequence(ohs[0], stepsPerQuarter, qpm);
 
     ns.notes.forEach(n => {
       n.instrument = 0;
       n.program = 0;
     });
-    const bassNs = await this.bassConverter.toNoteSequence(ohs[1]);
+    const bassNs =
+        await this.bassConverter.toNoteSequence(ohs[1], stepsPerQuarter, qpm);
     ns.notes.push(...bassNs.notes.map(n => {
       n.instrument = 1;
       n.program = this.BASS_PROG_RANGE[0];
       return n;
     }));
-    const drumsNs = await this.drumsConverter.toNoteSequence(ohs[2]);
+    const drumsNs =
+        await this.drumsConverter.toNoteSequence(ohs[2], stepsPerQuarter, qpm);
     ns.notes.push(...drumsNs.notes.map(n => {
       n.instrument = 2;
       return n;
@@ -573,7 +573,6 @@ export interface MultitrackConverterArgs extends BaseConverterArgs {
   maxPitch?: number;
 }
 export class MultitrackConverter extends DataConverter {
-  readonly NUM_SPLITS = 0;             // const
   readonly SEGMENTED_BY_TRACK = true;  // const
 
   readonly stepsPerQuarter: number;
@@ -619,7 +618,7 @@ export class MultitrackConverter extends DataConverter {
 
   private trackToTensor(track?: performance.Performance) {
     const maxEventsPerTrack = this.numSteps / this.numSegments;
-    let tokens: tf.TensorBuffer<tf.Rank.R1> = undefined;
+    let tokens: tf.TensorBuffer<tf.Rank.R1, 'int32'> = undefined;
 
     if (track) {
       // Drop events from track until we have the maximum number of events
@@ -674,7 +673,7 @@ export class MultitrackConverter extends DataConverter {
     });
   }
 
-  toTensor(noteSequence: INoteSequence) {
+  toTensor(noteSequence: INoteSequence): tf.Tensor2D {
     sequences.assertIsRelativeQuantizedSequence(noteSequence);
 
     if (noteSequence.quantizationInfo.stepsPerQuarter !==
@@ -714,9 +713,8 @@ export class MultitrackConverter extends DataConverter {
     }
 
     // Convert tracks to tensors then concatenate.
-    return tf.tidy(
-        () => tf.concat(
-            sortedTracks.map((track) => this.trackToTensor(track)), 0));
+    return tf.tidy(() => tf.concat(sortedTracks.map((track) =>
+        this.trackToTensor(track)), 0) as tf.Tensor2D);
   }
 
   private tokensToTrack(tokens: Int32Array) {
@@ -772,10 +770,8 @@ export class MultitrackConverter extends DataConverter {
   }
 
   async toNoteSequence(
-      oh: tf.Tensor2D, stepsPerQuarter = this.stepsPerQuarter) {
-    const noteSequence = NoteSequence.create();
-    noteSequence.quantizationInfo =
-        NoteSequence.QuantizationInfo.create({stepsPerQuarter});
+      oh: tf.Tensor2D, stepsPerQuarter = this.stepsPerQuarter, qpm?: number) {
+    const noteSequence = createQuantizedNoteSequence(stepsPerQuarter, qpm);
     noteSequence.totalQuantizedSteps = this.totalSteps;
 
     // Split into tracks and convert to performance representation.
@@ -798,4 +794,218 @@ export class MultitrackConverter extends DataConverter {
 
     return noteSequence;
   }
+}
+
+/**
+ * Converts to and from hit/velocity/offset representations.
+ * In this setting, we represent drum sequences and performances
+ * as triples of (hit, velocity, offset). Each timestep refers to a fixed beat
+ * on a grid, which is by default spaced at 16th notes (when `stepsPerQuarter`
+ * is 4). Drum hits that don't fall exactly on beat are represented through the
+ * offset value, which refers to the relative distance from the nearest
+ * quantized step.
+ *
+ * Hits are binary [0, 1].
+ * Velocities are continuous values in [0, 1].
+ * Offsets are continuous values in [-0.5, 0.5], rescaled to [-1, 1] for
+ * tensors.
+ *
+ * @param stepsPerQuarter The number of quantization steps per quarter note.
+ * @param humanize If True, flatten all input velocities and
+ * microtiming. The model then maps from a flattened input one with velocities
+ * and microtiming. Defaults to False.
+ * @param tapify  If True, squash all input drums at each timestep to the hi-hat
+ * channel (3) and set velocities to 0. Defaults to False.
+ * @param pitchClasses  An array of arrays, grouping together MIDI pitches to
+ * treat as the same drum. The first pitch in each class will be used in the
+ * `NoteSequence` returned by `toNoteSequence`. A default mapping to 9 classes
+ * is used if not provided.
+ * @param splitInstruments If True, the individual drum/pitch events for a given
+ * time are split across seprate, sequentail steps of the RNN. Otherwise, they
+ * are combined into a single step of the RNN. Defaults to False.
+ */
+export interface GrooveConverterArgs extends BaseConverterArgs {
+  stepsPerQuarter?: number;
+  humanize?: boolean;
+  tapify?: boolean;
+  pitchClasses?: number[][];
+  splitInstruments?: boolean;
+}
+export class GrooveConverter extends DataConverter {
+  readonly stepsPerQuarter: number;
+  readonly humanize: boolean;
+  readonly tapify: boolean;
+  readonly pitchClasses: number[][];
+  readonly pitchToClass: Map<number, number>;
+  readonly depth: number;
+  readonly endTensor: tf.Tensor1D;
+  readonly splitInstruments: boolean;
+  readonly TAPIFY_CHANNEL = 3;
+
+  constructor(args: GrooveConverterArgs) {
+    super(args);
+
+    this.stepsPerQuarter =
+        args.stepsPerQuarter || constants.DEFAULT_STEPS_PER_QUARTER;
+    this.pitchClasses = args.pitchClasses || DEFAULT_DRUM_PITCH_CLASSES;
+    this.pitchToClass = new Map<number, number>();
+    for (let c = 0; c < this.pitchClasses.length; ++c) {  // class
+      this.pitchClasses[c].forEach((p) => {
+        this.pitchToClass.set(p, c);
+      });
+    }
+    this.humanize = args.humanize || false;
+    this.tapify = args.tapify || false;
+    this.splitInstruments = args.splitInstruments || false;
+
+    // Each drum hit is represented by 3 numbers - on/off, velocity, and offset.
+    this.depth = 3;
+  }
+
+  toTensor(ns: INoteSequence): tf.Tensor2D {
+    const qns = sequences.isRelativeQuantizedSequence(ns) ?
+        ns :
+        sequences.quantizeNoteSequence(ns, this.stepsPerQuarter);
+    const numSteps = this.numSteps;
+    const qpm = (qns.tempos && qns.tempos.length) ?
+        qns.tempos[0].qpm :
+        constants.DEFAULT_QUARTERS_PER_MINUTE;
+    const stepLength = (60. / qpm) / this.stepsPerQuarter;
+
+    // For each quantized time step bin, collect a mapping from each pitch class
+    // to at most one drum hit. Break ties by selecting hit with highest
+    // velocity.
+    const stepNotes: Array<Map<number, NoteSequence.INote>> = [];
+    for (let i = 0; i < numSteps; ++i) {
+      stepNotes.push(new Map<number, NoteSequence.INote>());
+    }
+    qns.notes.forEach(n => {
+      if (!(this.tapify || this.pitchToClass.has(n.pitch))) {
+        return;
+      }
+      const s = n.quantizedStartStep;
+      if (s >= stepNotes.length) {
+        throw Error(`Model does not support sequences with more than ${
+            numSteps} steps (${numSteps * stepLength} seconds at qpm ${qpm}).`);
+      }
+      const d =
+          this.tapify ? this.TAPIFY_CHANNEL : this.pitchToClass.get(n.pitch);
+      if (!stepNotes[s].has(d) || stepNotes[s].get(d).velocity < n.velocity) {
+        stepNotes[s].set(d, n);
+      }
+    });
+
+    // For each time step and drum (pitch class), store the value of the
+    // hit (bool for whether the drum what hit at that time), velocity
+    // ([0, 1] velocity of hit, or 0 if not hit), and offset ([-1, 1] distance
+    // from quantized start).
+    const numDrums = this.pitchClasses.length;
+    const hitVectors = tf.buffer([numSteps, numDrums]);
+    const velocityVectors = tf.buffer([numSteps, numDrums]);
+    const offsetVectors = tf.buffer([numSteps, numDrums]);
+
+    function getOffset(n: NoteSequence.INote) {
+      if (n.startTime === undefined) {
+        return 0;
+      }
+      const tOnset = n.startTime;
+      const qOnset = n.quantizedStartStep * stepLength;
+      return 2 * (qOnset - tOnset) / stepLength;
+    }
+
+    // Loop through each step.
+    for (let s = 0; s < numSteps; ++s) {
+      // Loop through each drum instrument and set the hit, velocity, and
+      // offset.
+      for (let d = 0; d < numDrums; ++d) {
+        const note = stepNotes[s].get(d);
+        hitVectors.set(note ? 1 : 0, s, d);
+        if (!this.humanize && !this.tapify) {
+          velocityVectors.set(
+              note ? note.velocity / constants.MAX_MIDI_VELOCITY : 0, s, d);
+        }
+        if (!this.humanize) {
+          offsetVectors.set(note ? getOffset(note) : 0, s, d);
+        }
+      }
+    }
+
+    return tf.tidy(() => {
+      const hits = hitVectors.toTensor() as tf.Tensor2D;
+      const velocities = velocityVectors.toTensor() as tf.Tensor2D;
+      const offsets = offsetVectors.toTensor() as tf.Tensor2D;
+
+      // Stack the three signals, first flattening if splitInstruemnts is
+      // enabled.
+      const outLength = this.splitInstruments ? numSteps * numDrums : numSteps;
+      return tf.concat(
+                 [
+                   hits.as2D(outLength, -1), velocities.as2D(outLength, -1),
+                   offsets.as2D(outLength, -1)
+                 ],
+                 1) as tf.Tensor2D;
+    });
+  }
+
+  async toNoteSequence(
+      t: tf.Tensor2D, stepsPerQuarter?: number,
+      qpm = constants.DEFAULT_QUARTERS_PER_MINUTE) {
+    if (stepsPerQuarter && stepsPerQuarter !== this.stepsPerQuarter) {
+      throw Error('`stepsPerQuarter` is set by the model.');
+    }
+    stepsPerQuarter = this.stepsPerQuarter;
+    const numSteps = this.splitInstruments ?
+        t.shape[0] / this.pitchClasses.length :
+        t.shape[0];
+    const stepLength = (60. / qpm) / this.stepsPerQuarter;
+    const ns = NoteSequence.create(
+        {totalTime: numSteps * stepLength, tempos: [{qpm}]});
+    const results = await t.data() as Float32Array;
+
+    function clip(v: number, min: number, max: number) {
+      return Math.min(Math.max(v, min), max);
+    }
+
+    const numDrums = this.pitchClasses.length;
+    // Loop through time steps.
+    for (let s = 0; s < numSteps; ++s) {
+      const stepResults = results.slice(
+          s * numDrums * this.depth, (s + 1) * numDrums * this.depth);
+      // Loop through individual drums at each time step.
+      for (let d = 0; d < numDrums; ++d) {
+        const hitOutput =
+            stepResults[this.splitInstruments ? d * this.depth : d];
+        const velI =
+            this.splitInstruments ? (d * this.depth + 1) : (numDrums + d);
+        const velOutput = stepResults[velI];
+        const offsetI =
+            this.splitInstruments ? (d * this.depth + 2) : (2 * numDrums + d);
+        const offsetOutput = stepResults[offsetI];
+        // If hit output is above threshold, add note.
+        if (hitOutput > 0.5) {
+          // Convert output to velocity, clipping to be in the valid range.
+          const velocity = clip(
+              Math.round(velOutput * constants.MAX_MIDI_VELOCITY),
+              constants.MIN_MIDI_VELOCITY, constants.MAX_MIDI_VELOCITY);
+          // Convert output to time offset, clipping to be in the valid range.
+          const offset = clip(offsetOutput / 2, -0.5, 0.5);
+          ns.notes.push(NoteSequence.Note.create({
+            pitch: this.pitchClasses[d][0],
+            startTime: (s - offset) * stepLength,
+            endTime: (s - offset + 1) * stepLength,
+            velocity,
+            isDrum: true
+          }));
+        }
+      }
+    }
+    return ns;
+  }
+}
+
+function createQuantizedNoteSequence(
+    stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER,
+    qpm = constants.DEFAULT_QUARTERS_PER_MINUTE) {
+  return NoteSequence.create(
+      {quantizationInfo: {stepsPerQuarter}, tempos: [{qpm}]});
 }

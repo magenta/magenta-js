@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 
-import * as tf from '@tensorflow/tfjs-core';
+import * as tf from '@tensorflow/tfjs';
 import * as test from 'tape';
 import * as chords from './chords';
 
-import ChordEncodingException = chords.ChordEncodingException;
 import ChordQuality = chords.ChordQuality;
+import ChordSymbolException = chords.ChordSymbolException;
+import ChordEncodingException = chords.ChordEncodingException;
 import ChordSymbols = chords.ChordSymbols;
 
 test('Test Chord Pitches', (t: test.Test) => {
@@ -34,6 +35,9 @@ test('Test Chord Pitches', (t: test.Test) => {
   t.deepEqual(
       ChordSymbols.pitches('E##13').sort((x, y) => x - y), [1, 3, 4, 6, 8, 10]);
   t.deepEqual(ChordSymbols.pitches('G+').sort((x, y) => x - y), [3, 7, 11]);
+  t.throws(() => ChordSymbols.pitches('blah'), ChordSymbolException);
+  t.throws(() => ChordSymbols.pitches('9'), ChordSymbolException);
+  t.throws(() => ChordSymbols.pitches('M'), ChordSymbolException);
   t.end();
 });
 
@@ -46,6 +50,9 @@ test('Test Chord Root', (t: test.Test) => {
   t.equal(ChordSymbols.root('Abmaj7'), 8);
   t.equal(ChordSymbols.root('D##5(add6)'), 4);
   t.equal(ChordSymbols.root('F(b7)(#9)(b13)'), 5);
+  t.throws(() => ChordSymbols.root(''), ChordSymbolException);
+  t.throws(() => ChordSymbols.root('o'), ChordSymbolException);
+  t.throws(() => ChordSymbols.root('7#9'), ChordSymbolException);
   t.end();
 });
 
@@ -82,6 +89,12 @@ test('Test Chord Quality', (t: test.Test) => {
   t.equal(ChordSymbols.quality('Dsus'), ChordQuality.Other);
   t.equal(ChordSymbols.quality('Esus24'), ChordQuality.Other);
   t.equal(ChordSymbols.quality('Em7#5'), ChordQuality.Other);
+
+  // Test invalid chords.
+  t.throws(() => ChordSymbols.quality('Xdim'), ChordSymbolException);
+  t.throws(() => ChordSymbols.quality('-13'), ChordSymbolException);
+  t.throws(() => ChordSymbols.quality('++'), ChordSymbolException);
+  t.throws(() => ChordSymbols.quality('H#'), ChordSymbolException);
 
   t.end();
 });

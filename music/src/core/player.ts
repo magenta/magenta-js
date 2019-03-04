@@ -120,6 +120,17 @@ export abstract class BasePlayer {
   }
 
   /**
+   * Resumes the Audio context. Due to autoplay restrictions, you must call
+   * this function in a click handler (i.e. as a result of a user action) before
+   * you can start playing audio with a player. This is already done in start(),
+   * but you might have to call it yourself if you have any deferred/async
+   * calls.
+   */
+  resumeContext() {
+    Tone.context.resume();
+  }
+
+  /**
    * Starts playing a `NoteSequence` (either quantized or unquantized), and
    * returns a Promise that resolves when it is done playing.
    * @param seq The `NoteSequence` to play.
@@ -128,7 +139,9 @@ export abstract class BasePlayer {
    * default of 120. Only valid for quantized sequences.
    * @returns a Promise that resolves when playback is complete.
    */
+
   start(seq: INoteSequence, qpm?: number): Promise<void> {
+    this.resumeContext();
     const isQuantized = sequences.isQuantizedSequence(seq);
     if (this.playClick && isQuantized) {
       seq = this.makeClickSequence(seq);
@@ -182,6 +195,7 @@ export abstract class BasePlayer {
   stop() {
     if (this.currentPart) {
       this.currentPart.stop();
+      Tone.Transport.stop();
       this.currentPart = null;
     }
     Tone.Transport.clear(this.scheduledStop);
@@ -189,8 +203,37 @@ export abstract class BasePlayer {
     this.desiredQPM = undefined;
   }
 
+  /**
+   * Pause playing the currently playing sequence right away. Call unpause()
+   * to resume.
+   */
+  pause() {
+    Tone.Transport.pause();
+  }
+
+  /**
+   * Pause playing the currently playing sequence right away. Call resume()
+   * to resume playing the sequence.
+   */
+  resume() {
+    Tone.Transport.start();
+  }
+
+  /**
+   * Returns true iff the player is completely stopped. This will only be
+   * false after calling stop(), and will be true after calling
+   * start(), pause() or unpause().
+   */
   isPlaying() {
     return !!this.currentPart;
+  }
+
+  /**
+   * Returns the playback state of the player, either "started",
+   * "stopped", or "paused".
+   */
+  getPlayState() {
+    return Tone.Transport.state;
   }
 }
 
@@ -371,7 +414,10 @@ export class Player extends BasePlayer {
  *
  * Example (explicitly loading samples):
  *
- *   `player.loadSamples(seq).then(() => player.start(seq))`
+ *
+ *   `player.loadSamples(seq).then(() => {
+ *      player.start(seq)
+ *    })`
  *
  * Explicitly loads samples, so that playing starts immediately when `start` is
  * called.
@@ -401,6 +447,10 @@ export class SoundFontPlayer extends BasePlayer {
     this.drumOutputs = drumOutputs;
   }
 
+  /**
+   * Loads the audio samples required to play a NoteSequence.
+   * @param seq The NoteSequence to be played.
+   */
   async loadSamples(seq: INoteSequence): Promise<void> {
     await this.soundFont.loadSamples(
         seq.notes.map((note) => ({
@@ -411,11 +461,87 @@ export class SoundFontPlayer extends BasePlayer {
                       })));
   }
 
+  /**
+   * Loads the audio samples for all valid midi pitches, for a specific program.
+   * **Note**: this method is rather slow; only use it if you're sure
+   * that you need to load _all_ possible samples (for example, you're
+   * playing a stream of live notes from the user) -- otherwise, if you already
+   * have the NoteSequence you have to play, use `loadSamples` instead.
+   *
+   * If you do end up using `loadAllSamples`, make sure you're calling it
+   * asynchronously, as to not block other main thread work (like UI
+   * interactions) while waiting for it to finish.
+   *
+   * @param program (optional) Program number to use for instrument lookup.
+   * Default is 0.
+   * @param isDrum (optional) True if the drum status should be used for
+   * instrument lookup. Default is false.
+   */
+  async loadAllSamples(program = 0, isDrum = false): Promise<void> {
+    // Create a NoteSequence that has all the possible pitches and all the
+    // possible velocities for the given program.
+    const ns = NoteSequence.create();
+    const min = isDrum ? constants.MIN_DRUM_PITCH : constants.MIN_PIANO_PITCH;
+    const max = isDrum ? constants.MAX_DRUM_PITCH : constants.MAX_PIANO_PITCH;
+    for (let i = min; i <= max; i++) {
+      for (let j = constants.MIN_MIDI_VELOCITY; j < constants.MAX_MIDI_VELOCITY;
+           j++) {
+        ns.notes.push({pitch: i, velocity: j, program, isDrum});
+      }
+    }
+    return this.loadSamples(ns);
+  }
+
+  /**
+   * Resumes the Audio context. Due to autoplay restrictions, you must call
+   * this function in a click handler (i.e. as a result of a user action) before
+   * you can start playing audio with a player. This is already done in start(),
+   * but you might have to call it yourself if you have any deferred/async
+   * calls.
+   */
+  resumeContext() {
+    Tone.context.resume();
+  }
+
   start(seq: INoteSequence, qpm?: number): Promise<void> {
+    this.resumeContext();
     return this.loadSamples(seq).then(() => super.start(seq, qpm));
   }
 
   protected playNote(time: number, note: NoteSequence.INote) {
+    this.soundFont.playNote(
+        note.pitch, note.velocity, time, note.endTime - note.startTime,
+        note.program, note.isDrum, this.getAudioNodeOutput(note));
+  }
+
+  /*
+   * Plays the down stroke of a note (the attack and the sustain).
+   * Note that this does not call `loadSamples`, and assumes that the
+   * sample for this note is already loaded. If you call this
+   * twice without calling playNoteUp() in between, it will implicitely release
+   * the note before striking it the second time.
+   */
+  public playNoteDown(note: NoteSequence.INote) {
+    this.soundFont.playNoteDown(
+        note.pitch, note.velocity, note.program, note.isDrum,
+        this.getAudioNodeOutput(note));
+  }
+
+  /*
+   * Plays the up stroke of a note (the release).
+   * Note that this does not call `loadSamples`, and assumes that the
+   * sample for this note is already loaded. If you call this
+   * twice without calling playNoteDown() in between, it will *not* implicitely
+   * call playNoteDown() for you, and the second call will have no noticeable
+   * effect.
+   */
+  public playNoteUp(note: NoteSequence.INote) {
+    this.soundFont.playNoteUp(
+        note.pitch, note.velocity, note.program, note.isDrum,
+        this.getAudioNodeOutput(note));
+  }
+
+  getAudioNodeOutput(note: NoteSequence.INote) {
     // Determine which `AudioNode` to use for output. Non-drums are mapped to
     // outputs by program number, while drums are mapped to outputs by MIDI
     // pitch value. A single output (defaulting to `Tone.Master`) is used as a
@@ -430,10 +556,7 @@ export class SoundFontPlayer extends BasePlayer {
         output = this.drumOutputs.get(note.pitch);
       }
     }
-
-    this.soundFont.playNote(
-        note.pitch, note.velocity, time, note.endTime - note.startTime,
-        note.program, note.isDrum, output);
+    return output;
   }
 }
 
@@ -451,5 +574,148 @@ export class PlayerWithClick extends Player {
    */
   constructor(callbackObject?: BasePlayerCallback) {
     super(true, callbackObject);
+  }
+}
+
+/**
+ * A `NoteSequence` player that uses a MIDI output for playing. Note that
+ * WebMIDI is not supported in all browsers. A
+ * [polyfill](https://cwilso.github.io/WebMIDIAPIShim/) exists, but it too
+ * requires a plugin to be installed on the user's computer, so it might not
+ * work in all cases.
+ *
+ * If you want to use a particular MIDI output port, you must update the
+ * `output` property before calling `start`, otherwise a message will be sent to
+ * all connected MIDI outputs:
+ *
+ * Example (easy mode):
+ *
+ *   ```
+ *    const player = new mm.MIDIPlayer();
+ *    player.requestMIDIAccess().then(() => {
+ *      // For example, use only the first port. If you omit this,
+ *      // a message will be sent to all ports.
+ *      player.outputs = [player.availableOutputs[0]];
+ *      player.start(seq);
+ *    })```
+ *
+ * You can also explicitly request MIDI access outside of the player, in
+ * your application, and just update the `output` property before playing:
+ *
+ * Example (advanced mode):
+ *
+ *   ```
+ *    navigator.requestMIDIAccess().then((midi) => {
+ *       // Get all the MIDI outputs to show them in a <select> (for example)
+ *       const availableOutputs = [];
+ *       const it = midi.outputs.values();
+ *       for (let o = it.next(); o && !o.done; o = it.next()) {
+ *          availableOutputs.push(o.value);
+ *       }
+ *       // Populate the <select>
+ *       const el = document.querySelector('select');
+ *       el.innerHTML = availableOutputs.map(i =>
+ *           `<option>${i.name}</option>`).join('');
+ *
+ *       // Use the selected output port.
+ *       player = new mm.MIDIPlayer();
+ *       player.outputs = [availableOutputs[el.selectedIndex]];
+ *       player.start(seq)
+ *     });```
+ */
+export class MIDIPlayer extends BasePlayer {
+  public outputs: WebMidi.MIDIOutput[] = [];
+  public readonly availableOutputs: WebMidi.MIDIOutput[] = [];
+  private NOTE_ON = 0x90;
+  private NOTE_OFF = 0x80;
+
+  /**
+   *   `MIDIPlayer` constructor.
+   *
+   *   @param callbackObject An optional BasePlayerCallback, specifies an
+   *     object that contains run() and stop() methods to invode during
+   *     playback.
+   */
+  constructor(callbackObject?: BasePlayerCallback) {
+    super(false, callbackObject);
+  }
+
+  /**
+   * Requests MIDI access from the user, and stores all available MIDI outputs.
+   */
+  async requestMIDIAccess() {
+    if (navigator.requestMIDIAccess) {
+      return new Promise((resolve, reject) => {
+        navigator.requestMIDIAccess().then((midi) => {
+          // Also react to device changes.
+          midi.addEventListener(
+              'statechange',
+              (event: WebMidi.MIDIMessageEvent) => this.initOutputs(midi));
+          resolve(this.initOutputs(midi));
+        }, (err) => console.log('Something went wrong', reject(err)));
+      });
+    } else {
+      return null;
+    }
+  }
+
+  private initOutputs(midi: WebMidi.MIDIAccess) {
+    const outputs = midi.outputs.values();
+    for (let output = outputs.next(); output && !output.done;
+         output = outputs.next()) {
+      this.availableOutputs.push(output.value);
+    }
+    return this.availableOutputs;
+  }
+
+  protected playNote(time: number, note: NoteSequence.INote) {
+    // Some good defaults.
+    const velocity = note.velocity || 100;
+    const length = (note.endTime - note.startTime) * 1000;  // in ms.
+
+    const msgOn = [this.NOTE_ON, note.pitch, velocity];
+    const msgOff = [this.NOTE_OFF, note.pitch, velocity];
+
+    const outputs = this.outputs ? this.outputs : this.availableOutputs;
+    for (let i = 0; i < outputs.length; i++) {
+      this.sendMessageToOutput(outputs[i], msgOn);
+      this.sendMessageToOutput(
+          outputs[i], msgOff, window.performance.now() + length);
+    }
+  }
+
+  private sendMessageToOutput(
+      output: WebMidi.MIDIOutput, message: number[], time?: number) {
+    if (output) {
+      output.send(message, time);
+    }
+  }
+
+  /*
+   * Plays the down stroke of a note (the attack and the sustain). If you call
+   * this twice without calling playNoteUp() in between, it will implicitely
+   * release the note before striking it the second time.
+   */
+  public playNoteDown(note: NoteSequence.INote) {
+    const msgOn = [this.NOTE_ON, note.pitch, note.velocity];
+    const outputs = this.outputs ? this.outputs : this.availableOutputs;
+    for (let i = 0; i < outputs.length; i++) {
+      this.sendMessageToOutput(outputs[i], msgOn);
+    }
+  }
+
+  /*
+   * Plays the up stroke of a note (the release). If you call this
+   * twice without calling playNoteDown() in between, it will *not*
+   * implicitely call playNoteDown() for you, and the second call will have no
+   * noticeable effect.
+   */
+  public playNoteUp(note: NoteSequence.INote) {
+    const msgOff = [this.NOTE_OFF, note.pitch, note.velocity];
+    const outputs = this.outputs ? this.outputs : this.availableOutputs;
+    for (let i = 0; i < outputs.length; i++) {
+      this.sendMessageToOutput(
+          outputs[i], msgOff, note.endTime - note.startTime);
+    }
   }
 }
