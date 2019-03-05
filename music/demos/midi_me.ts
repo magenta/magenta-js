@@ -1,12 +1,12 @@
 import * as mm from '../src';
-import {blobToNoteSequence, INoteSequence, NoteSequence} from '../src';
+import {blobToNoteSequence, INoteSequence, NoteSequence, sequences} from '../src';
 import {quantizeNoteSequence} from '../src/core/sequences';
 
 // tslint:disable-next-line:max-line-length
 import {CHECKPOINTS_DIR, visualizeNoteSeqs, writeMemory, writeTimer} from './common';
 import {updateGraph} from './common_graph';
 
-const MEL_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_2bar_big_q1`;
+const MEL_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_2bar_small`;
 const BARS = 2;
 
 const fileInput = document.getElementById('fileInput') as HTMLInputElement;
@@ -39,34 +39,52 @@ async function doTheThing(mel: NoteSequence) {
 
   // 2. Use that z as input to train MidiMe.
   // Reconstruction before training.
-  const z1 = model.vae.predict(z) as mm.tf.Tensor2D[];
-  const ns1 = await mvae.decode(z1[1] as mm.tf.Tensor2D);
+  const z1 = model.vae.predict(z) as mm.tf.Tensor2D;
+  const ns1 = await mvae.decode(z1);
   visualizeNoteSeqs('pre-training', [concatenate(ns1)]);
-  z1[0].dispose();
-  z1[1].dispose();
+  z1.dispose();
 
   // 3. Train!
   const losses: number[] = [];
+
   // tslint:disable-next-line:no-any
   await model.train(z, (epoch: number, logs: any) => {
-    losses.push(logs.loss);
+    losses.push(logs.total);
+    console.log(`total: ${logs.total.toFixed(3)}, recon: ${
+        logs.losses[0].toFixed(3)} , latent: ${logs.losses[1]}`);
     updateGraph(losses, 'svg');
   });
 
   // 4. Check reconstruction after training.
-  const z2 = model.vae.predict(z) as mm.tf.Tensor2D[];
-  const ns2 = await mvae.decode(z2[1] as mm.tf.Tensor2D);
+  const z2 = model.vae.predict(z) as mm.tf.Tensor2D;
+  const ns2 = await mvae.decode(z2);
   visualizeNoteSeqs('post-training', [concatenate(ns2)]);
-  z2[0].dispose();
-  z2[1].dispose();
+  z2.dispose();
 
   writeTimer('training-time', start);
 
   // 5. Sample from MidiMe
-  const sample1 = await model.sample(4) as mm.tf.Tensor2D;
-  const ns3 = await mvae.decode(sample1);
-  visualizeNoteSeqs('sample-midime', [concatenate(ns3)]);
-  sample1.dispose();
+  const sample11 = await model.sample(4) as mm.tf.Tensor2D;
+  const sample12 = await model.sample(4) as mm.tf.Tensor2D;
+  const sample13 = await model.sample(4) as mm.tf.Tensor2D;
+  const sample14 = await model.sample(4) as mm.tf.Tensor2D;
+  const sample15 = await model.sample(4) as mm.tf.Tensor2D;
+
+  const ns31 = await mvae.decode(sample11);
+  const ns32 = await mvae.decode(sample12);
+  const ns33 = await mvae.decode(sample13);
+  const ns34 = await mvae.decode(sample14);
+  const ns35 = await mvae.decode(sample15);
+
+  visualizeNoteSeqs('sample-midime', [
+    concatenate(ns31), concatenate(ns32), concatenate(ns33), concatenate(ns34),
+    concatenate(ns35)
+  ]);
+  sample11.dispose();
+  sample12.dispose();
+  sample13.dispose();
+  sample14.dispose();
+  sample15.dispose();
 
   // 5. Sample from MusicVAE.
   const sample2 = await mvae.sample(4);
@@ -77,6 +95,7 @@ async function doTheThing(mel: NoteSequence) {
 }
 
 function dispose() {
+  console.log('demo dispose?');
   mvae.dispose();
   model.dispose();
   writeMemory(mm.tf.memory().numBytes);
@@ -85,7 +104,9 @@ function dispose() {
  * Helpers
  */
 
-function splitNoteSequence(ns: INoteSequence, chunkSize = 32): NoteSequence[] {
+function splitNoteSequence(seq: INoteSequence, chunkSize = 32): NoteSequence[] {
+  const ns = sequences.clone(seq);
+
   // Sort notes first.
   const notesBystartStep =
       ns.notes.sort((a, b) => a.quantizedStartStep - b.quantizedStartStep);

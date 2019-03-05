@@ -2,18 +2,6 @@ import * as tf from '@tensorflow/tfjs';
 import * as logging from '../core/logging';
 export {MidiMe};
 
-// TODO(notwaldorf): This function exists in tfjs-layers, but hasn't been
-// released yet. Use that version when it's available. See:
-// https://github.com/tensorflow/tfjs-layers/blob/master/src/losses.ts#L269
-function klDivergence(yTrue: tf.Tensor, yPred: tf.Tensor): tf.Tensor {
-  const epsilon = 0.00001;
-  return tf.tidy(() => {
-    const clippedTrue = tf.clipByValue(yTrue, epsilon, 1);
-    const clippedPred = tf.clipByValue(yPred, epsilon, 1);
-    return tf.sum(tf.mul(yTrue, tf.log(tf.div(clippedTrue, clippedPred))), -1);
-  });
-}
-
 /**
  * Class for transforming a single variable Gaussian distribution into a
  * multivariate one.
@@ -29,7 +17,7 @@ class SamplingLayer extends tf.layers.Layer {
 
   call(inputs: [tf.Tensor2D, tf.Tensor2D]) {
     return tf.tidy(() => {
-      const [sigma, mu] = inputs;
+      const [mu, sigma] = inputs;
       return tf.add(tf.mul(tf.randomNormal(sigma.shape), sigma), mu);
     });
   }
@@ -116,9 +104,9 @@ class MidiMe {
     this.config = {
       encoder_layers: config.encoder_layers || [1024, 256, 64],
       decoder_layers: config.decoder_layers || [64, 256, 1024],
-      input_size: config.input_size || 512,
+      input_size: config.input_size || 256,
       output_size: config.output_size || 4,
-      beta: config.beta || 0.0001,
+      beta: config.beta || 1,
       input_sigma: config.input_sigma || tf.ones([1]),
       batch_size: config.batch_size || 32,
       epochs: config.epochs || 10,
@@ -155,16 +143,13 @@ class MidiMe {
 
     // Encoder model, goes from the original input, returns an output.
     this.encoder = this.getEncoder(z);
-    const sampleZ = this.encoder.apply(z) as tf.SymbolicTensor;
+    const [sampleZ, , ] = this.encoder.apply(z) as tf.SymbolicTensor[];
 
     // Decoder model, goes from the output of the encoder, to the final output.
     this.decoder = this.getDecoder(sampleZ.shape.slice(1));
     const y = this.decoder.apply(sampleZ) as tf.SymbolicTensor;
 
-    this.vae = tf.model({inputs: z, outputs: [sampleZ, y], name: 'vae'});
-    // const lr = 3e-4;
-    this.vae.compile({optimizer: 'adam', loss: this.vaeLoss.bind(this)});
-
+    this.vae = tf.model({inputs: z, outputs: y, name: 'vae'});
     this.initialized = true;
     logging.logWithDuration('Initialized model', startTime, 'MidiMe');
   }
@@ -178,29 +163,35 @@ class MidiMe {
    *
    * @returns The final training error.
    */
-  async train(data: tf.Tensor, callback: Function) {
+  async train(xTrain: tf.Tensor, callback?: Function) {
     const startTime = performance.now();
     this.trained = false;
-    const xTrain = data;
 
-    // The model predicts [sampleZ, pxMu], but the yTrue values are ignored for
-    // sampleZ, so fill them with zeroes of the right size.
-    const yTrain =
-        [tf.zeros([xTrain.shape[0], this.config['output_size']]), xTrain];
+    // TODO(notwaldorf): need to batch this data.
+    // const xTrain = data;
+    const optimizer = tf.train.adam();
 
-    const h = await this.vae.fit(xTrain, yTrain, {
-      batchSize: this.config['batch_size'],
-      epochs: this.config['epochs'],
-      callbacks: {onEpochEnd: async (epoch, logs) => callback(epoch, logs)}
-    });
+    for (let e = 0; e < this.config['epochs']; e++) {
+      await optimizer.minimize(() => {
+        const [, muZ, sigmaZ] = this.encoder.predict(xTrain) as tf.Tensor[];
+        const y = this.vae.predict(xTrain) as tf.Tensor;
+        const loss = this.loss(muZ, sigmaZ, y, xTrain);
 
-    const finalLoss = h.history.loss[h.history.loss.length - 1];
-    logging.logWithDuration(
-        'Final training error ' + finalLoss, startTime, 'MidiMe');
+        if (callback) {
+          callback(e, {
+            total: loss.totalLoss.get(),
+            losses: [loss.reconLoss.get(), loss.latentLoss.get()]
+          });
+        }
+        return loss.totalLoss;
+      });
+
+      // Use tf.nextFrame to not block the browser.
+      await tf.nextFrame();
+    }
+
+    logging.logWithDuration('Training finished', startTime, 'MidiMe');
     this.trained = true;
-
-    yTrain[0].dispose();
-    return finalLoss;
   }
 
   /**
@@ -214,11 +205,11 @@ class MidiMe {
     if (!this.initialized) {
       await this.initialize();
     }
-    const randZs: tf.Tensor2D = tf.tidy(
-        () => tf.randomNormal([numSamples, this.config['output_size']]));
-    const output = this.decoder.predict(randZs);
-    randZs.dispose();
-    return output;
+    return tf.tidy(() => {
+      const randZs: tf.Tensor2D =
+          tf.randomNormal([numSamples, this.config['output_size']]);
+      return this.decoder.predict(randZs);
+    });
   }
 
   private getEncoder(input: tf.SymbolicTensor) {
@@ -238,8 +229,9 @@ class MidiMe {
         this.getAffineLayers(x, this.config['output_size'], input, true) as
         tf.SymbolicTensor;
 
-    const z = new SamplingLayer().apply([sigma, mu]) as tf.SymbolicTensor;
-    return tf.model({inputs: input, outputs: z, name: 'encoder'});
+    const z = new SamplingLayer().apply([mu, sigma]) as tf.SymbolicTensor;
+
+    return tf.model({inputs: input, outputs: [z, mu, sigma], name: 'encoder'});
   }
 
   private getDecoder(shape: tf.Shape) {
@@ -257,50 +249,44 @@ class MidiMe {
     return tf.model({inputs: z, outputs: mu, name: 'decoder'});
   }
 
-  // This function is actually called for each of the outputs of the vae model,
-  // so once for sampleZ, and once for pxMu. Then tfjs sums the two losses up
-  // before it uses them.
-  vaeLoss(yTrue: tf.Tensor2D, yPred: tf.Tensor2D): tf.Scalar {
+  loss(muZ: tf.Tensor, sigmaZ: tf.Tensor, yPred: tf.Tensor, yTrue: tf.Tensor):
+      {latentLoss: tf.Scalar, reconLoss: tf.Scalar, totalLoss: tf.Scalar} {
     return tf.tidy(() => {
-      if (yTrue.shape[1] === this.config['output_size']) {  // 4
-        // This is the sampleZ.
-        // The latent loss represents how closely the z matches a unit gaussian.
-        const pz = tf.randomNormal(yTrue.shape);  // unit gaussian.
-        const latentLoss = this.klLoss(yPred, pz) as tf.Scalar;
-        pz.dispose();
-        const result = tf.mul(latentLoss, this.config['beta']) as tf.Scalar;
-        console.log('KL', result.get());
-        return result;
-      } else if (yTrue.shape[1] === this.config['input_size']) {  // 512
-        // This is the pxMu.
-        // THe reconstruction loss represents how well we regenerated yTrue.
-        const reconLoss =
-            this.reconstructionLoss(yTrue, yPred, this.config['input_sigma']) as
-            tf.Scalar;
-        console.log('RECON', reconLoss.get());
-        return reconLoss;
-      } else {
-        return tf.zeros([1]);
-      }
+      // The latent loss represents how closely the z matches a unit gaussian.
+      const latentLoss = this.klLoss(muZ, sigmaZ);
+
+      // The reconstruction loss represents how well we regenerated yTrue.
+      const reconLoss =
+          this.reconstructionLoss(yTrue, yPred, this.config['input_sigma']);
+
+      const totalLoss =
+          tf.add(reconLoss, tf.mul(latentLoss, this.config['beta'])) as
+          tf.Scalar;
+      return {latentLoss, reconLoss, totalLoss};
     });
   }
 
-  reconstructionLoss(
-      yTrue: tf.Tensor, yPred: tf.Tensor, inputSigma: tf.Tensor) {
+  reconstructionLoss(yTrue: tf.Tensor, yPred: tf.Tensor, inputSigma: tf.Tensor):
+      tf.Scalar {
     return tf.tidy(() => {
       // = mse(x,p_x_mu) / 2 'input_sigma ^2
-      const nll = tf.div(
-          tf.losses.meanSquaredError(yTrue, yPred),
-          tf.mul(2, tf.pow(inputSigma, 2)));
-      return tf.mean(nll);
+      const se = tf.pow(tf.sub(yTrue, yPred), 2);
+      const nll = tf.div(se, tf.mul(2, tf.pow(inputSigma, 2)));
+      return tf.mean(tf.sum(nll, -1));
     });
   }
 
-  klLoss(qz: tf.Tensor, pz: tf.Tensor) {
+  klLoss(mu: tf.Tensor, sigma: tf.Tensor): tf.Scalar {
     return tf.tidy(() => {
-      const klQP = klDivergence(qz, pz);
-      const kl = tf.sum(klQP);
-      return tf.mean(kl);
+      // - { [(1 + s^2) - (mu^2 + s^2)] / 2}
+      const mu2 = tf.pow(mu, 2);
+      const sigma2 = tf.pow(sigma, 2);
+
+      const term1 = tf.add(1, tf.log(sigma2));
+      const term2 = tf.add(mu2, sigma2);
+      const term = tf.sub(term1, term2);
+      const div = tf.div(tf.mean(tf.sum(term, -1)), 2);
+      return tf.mul(-1, div);
     });
   }
 
