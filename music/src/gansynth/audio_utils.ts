@@ -230,7 +230,7 @@ export function istft(reIm: Float32Array[], params: SpecParams): Float32Array {
     y.set(yTmp, sample);
   }
 
-  // Center
+  // Normally You Would Center
   // const yTrimmed = y.slice(nFft / 2, y.length - (nFft / 2));
   // const yTrimmed = y.slice(0, y.length - nFft);
   // For Gansynth, we did all the padding at the front instead of centering,
@@ -243,17 +243,6 @@ export function istft(reIm: Float32Array[], params: SpecParams): Float32Array {
 //------------------------------------------------------------------------------
 // Onsets and Frames Code
 //------------------------------------------------------------------------------
-// Safari Webkit only supports 44.1kHz audio.
-const WEBKIT_SAMPLE_RATE = 44100;
-// tslint:disable-next-line:no-any
-const appeaseTsLintWindow = (window as any);
-const isSafari = appeaseTsLintWindow.webkitOfflineAudioContext as boolean;
-// tslint:disable-next-line:variable-name
-const offlineCtx = isSafari ?
-    new appeaseTsLintWindow.webkitOfflineAudioContext(
-        1, WEBKIT_SAMPLE_RATE, WEBKIT_SAMPLE_RATE) :
-    new appeaseTsLintWindow.OfflineAudioContext(1, SAMPLE_RATE, SAMPLE_RATE);
-
 /**
  * Parameters for computing a spectrogram from audio.
  */
@@ -305,16 +294,16 @@ function padConstant(data: Float32Array, padding: number|number[]) {
   return out;
 }
 
-function padReflect(data: Float32Array, padding: number) {
-  const out = padConstant(data, padding);
-  for (let i = 0; i < padding; i++) {
-    // Pad the beginning with reflected values.
-    out[i] = out[2 * padding - i];
-    // Pad the end with reflected values.
-    out[out.length - i - 1] = out[out.length - 2 * padding + i - 1];
-  }
-  return out;
-}
+// function padReflect(data: Float32Array, padding: number) {
+//   const out = padConstant(data, padding);
+//   for (let i = 0; i < padding; i++) {
+//     // Pad the beginning with reflected values.
+//     out[i] = out[2 * padding - i];
+//     // Pad the end with reflected values.
+//     out[out.length - i - 1] = out[out.length - 2 * padding + i - 1];
+//   }
+//   return out;
+// }
 
 /**
  * Given a timeseries, returns an array of timeseries that are windowed
