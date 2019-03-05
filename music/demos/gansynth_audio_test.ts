@@ -14,12 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as tf from '@tensorflow/tfjs-core';
 //@ts-ignore
-import * as stftModule from 'stft';
 import * as Tone from 'tone';
 
-import {fft, ifft, istft, stft} from '../src/gansynth/audio_utils';
+import {istft, stft} from '../src/gansynth/audio_utils';
 import * as mm from '../src/index';
 
 import {TEST_AUDIO} from './gansynth_audio_test_const';
@@ -44,7 +42,6 @@ async function runAudioTest() {
   // Testing inverse fourier transform
   const SR = 16000;
   const T = 0.1;
-
 
   // const audioArray =
   //     tf.sin(tf.linspace(0, 800 * 2 * Math.PI, T * SR)).dataSync();

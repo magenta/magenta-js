@@ -27,10 +27,6 @@ import * as logging from '../core/logging';
 import {MIDI_PITCHES, MIN_MIDI_PITCH, N_LATENTS, N_PITCHES} from './constants';
 import {boxUpscale, initialPad, pixelNorm} from './custom_layers';
 
-// async function dump(tensor: tf.Tensor) {
-//   console.log(JSON.stringify(tensor.dataSync()));
-// }
-
 /**
  * Main "GANSynth" neural synthesizer model class.
  */
@@ -229,38 +225,26 @@ class GANSynth {
       getVar(`${prefix}1/conv0/bias/ExponentialMovingAverage`),
       getVar(`${prefix}1/conv1/conv2d/kernel/ExponentialMovingAverage`),
       getVar(`${prefix}1/conv1/bias/ExponentialMovingAverage`),
-      // getVar("${prefix}1/to_rgb/conv2d/kernel/ExponentialMovingAverage"),
-      // getVar("${prefix}1/to_rgb/bias/ExponentialMovingAverage"),
       getVar(`${prefix}2/conv0/conv2d/kernel/ExponentialMovingAverage`),
       getVar(`${prefix}2/conv0/bias/ExponentialMovingAverage`),
       getVar(`${prefix}2/conv1/conv2d/kernel/ExponentialMovingAverage`),
       getVar(`${prefix}2/conv1/bias/ExponentialMovingAverage`),
-      // getVar("${prefix}2/to_rgb/conv2d/kernel/ExponentialMovingAverage"),
-      // getVar("${prefix}2/to_rgb/bias/ExponentialMovingAverage"),
       getVar(`${prefix}3/conv0/conv2d/kernel/ExponentialMovingAverage`),
       getVar(`${prefix}3/conv0/bias/ExponentialMovingAverage`),
       getVar(`${prefix}3/conv1/conv2d/kernel/ExponentialMovingAverage`),
       getVar(`${prefix}3/conv1/bias/ExponentialMovingAverage`),
-      // getVar("${prefix}3/to_rgb/conv2d/kernel/ExponentialMovingAverage"),
-      // getVar("${prefix}3/to_rgb/bias/ExponentialMovingAverage"),
       getVar(`${prefix}4/conv0/conv2d/kernel/ExponentialMovingAverage`),
       getVar(`${prefix}4/conv0/bias/ExponentialMovingAverage`),
       getVar(`${prefix}4/conv1/conv2d/kernel/ExponentialMovingAverage`),
       getVar(`${prefix}4/conv1/bias/ExponentialMovingAverage`),
-      // getVar("${prefix}4/to_rgb/conv2d/kernel/ExponentialMovingAverage"),
-      // getVar("${prefix}4/to_rgb/bias/ExponentialMovingAverage"),
       getVar(`${prefix}5/conv0/conv2d/kernel/ExponentialMovingAverage`),
       getVar(`${prefix}5/conv0/bias/ExponentialMovingAverage`),
       getVar(`${prefix}5/conv1/conv2d/kernel/ExponentialMovingAverage`),
       getVar(`${prefix}5/conv1/bias/ExponentialMovingAverage`),
-      // getVar("${prefix}5/to_rgb/conv2d/kernel/ExponentialMovingAverage"),
-      // getVar("${prefix}5/to_rgb/bias/ExponentialMovingAverage"),
       getVar(`${prefix}6/conv0/conv2d/kernel/ExponentialMovingAverage`),
       getVar(`${prefix}6/conv0/bias/ExponentialMovingAverage`),
       getVar(`${prefix}6/conv1/conv2d/kernel/ExponentialMovingAverage`),
       getVar(`${prefix}6/conv1/bias/ExponentialMovingAverage`),
-      // getVar("${prefix}6/to_rgb/conv2d/kernel/ExponentialMovingAverage"),
-      // getVar("${prefix}6/to_rgb/bias/ExponentialMovingAverage"),
       getVar(`${prefix}7/conv0/conv2d/kernel/ExponentialMovingAverage`),
       getVar(`${prefix}7/conv0/bias/ExponentialMovingAverage`),
       getVar(`${prefix}7/conv1/conv2d/kernel/ExponentialMovingAverage`),
