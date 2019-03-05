@@ -3,7 +3,7 @@
  * https://g.co/magenta/gansynth} models.
  *
  * @license
- * Copyright 2018 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -259,7 +259,7 @@ class GANSynth {
     return this.nn.predict(inputs, {batchSize}) as tf.Tensor4D;
   }
 
-  random_sample(pitch: number) {
+  randomSample(pitch: number) {
     return tf.tidy(() => {
       const z = tf.randomNormal([1, N_LATENTS], 0, 1, 'float32');
       // const z = tf.zeros([1, N_LATENTS], 'float32');

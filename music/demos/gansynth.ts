@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2018 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,26 +17,21 @@
 import * as tf from '@tensorflow/tfjs-core';
 import * as Tone from 'tone';
 
-// import {CHECKPOINTS_DIR} from './common';
 import {specgramsToAudio} from '../src/gansynth/audio_utils';
 import * as mm from '../src/index';
 
-import {writeMemory, writeTimer} from './common';
+import {CHECKPOINTS_DIR, writeMemory, writeTimer} from './common';
 
-// const GANSYNTH_CHECKPOINT = `${CHECKPOINTS_DIR}/gansynth`;
-const GANSYNTH_CHECKPOINT = `./gansynth_ckpt_js`;
+const GANSYNTH_CHECKPOINT = `${CHECKPOINTS_DIR}/gansynth/acoustic_only`;
 
 mm.logging.verbosity = mm.logging.Level.DEBUG;
 
 async function runGANSynth() {
-  console.log('Yay!!');
-
   const gansynth = new mm.GANSynth(GANSYNTH_CHECKPOINT);
   await gansynth.initialize();
-  console.log('Done loading!');
 
   const start = await performance.now();
-  const specgrams = await gansynth.random_sample(36);
+  const specgrams = await gansynth.randomSample(36);
   const audio = await specgramsToAudio(specgrams);
   await writeTimer('single-sample-gen-time', start);
 
@@ -74,8 +69,36 @@ async function runGANSynth() {
     console.log(player);
   });
 
+  // PLOTTING
+  // Get magnitudes
+  const magSlicePlot =
+      tf.slice(specgrams, [0, 0, 0, 0], [1, -1, -1, 1]).reshape([128, 1024]);
+  let magPlot = magSlicePlot as tf.Tensor2D;
+  // Scale from [-1, 1] to [0, 1]
+  magPlot = tf.add(magPlot, 1.0);
+  magPlot = tf.div(magPlot, 2.0);
+  // Plot on canvas
+  const magCanvas = document.getElementById('mag-canvas') as HTMLCanvasElement;
+  await tf.toPixels(magPlot, magCanvas);
+
+  // Get IFreq
+  const ifreqSlice =
+      tf.slice(specgrams, [0, 0, 0, 1], [1, -1, -1, 1]).reshape([128, 1024]);
+  let ifreq = ifreqSlice as tf.Tensor3D;
+  // Scale to [0, 1]
+  ifreq = tf.sub(ifreq, tf.min(ifreq));
+  ifreq = tf.div(ifreq, tf.max(ifreq));
+  // Plot on canvas
+  const ifreqCanvas =
+      document.getElementById('ifreq-canvas') as HTMLCanvasElement;
+  await tf.toPixels(ifreq, ifreqCanvas);
+
   // Cleanup
   // audio.dispose();
+  magPlot.dispose();
+  magSlicePlot.dispose();
+  ifreq.dispose();
+  ifreqSlice.dispose();
   specgrams.dispose();
   gansynth.dispose();
   console.log('Done disposing!');

@@ -1,4 +1,4 @@
-<!-- Copyright 2018 Google Inc. All Rights Reserved.
+<!-- Copyright 2019 Google Inc. All Rights Reserved.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -16,15 +16,6 @@ limitations under the License.
   <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
   <link rel="stylesheet" href="./style.css">
   <title>GANSynth</title>
-  <style>
-    input[type="file"] {
-      width: 0;
-      height: 0;
-      opacity: 0;
-      cursor: pointer;
-      display: none;
-    }
-  </style>
 </head>
 <body>
   <h1>GANSynth</h1>
@@ -36,17 +27,11 @@ limitations under the License.
     <p><b>Time for 1 sample:</b> <code id="single-sample-gen-time"></code></b></p>
   </section>
 
-  <!-- <p><b>Log Magnitude</b>
-  <canvas id="mag-canvas" style="border:1px solid #ff0077;"></canvas> -->
+  <p><b>Log Magnitude</b>
+  <canvas id="mag-canvas" style="border:1px solid #ff0077;"></canvas>
 
-  <!-- <p><b>Linear Magnitude</b>
-  <canvas id="magLin-canvas" style="border:1px solid #ff0077;"></canvas> -->
-
-  <!-- <p><b>Mel2Linear</b>
-    <canvas id="m2l-canvas" style="border:1px solid #ff0077;"></canvas> -->
-
-  <!-- <p><b>Instantaneous Frequency</b>
-    <canvas id="ifreq-canvas" style="border:1px solid #7700ff;"></canvas> -->
+  <p><b>Instantaneous Frequency</b>
+    <canvas id="ifreq-canvas" style="border:1px solid #7700ff;"></canvas>
 
   <section>
     <p><b>Total Leaked Memory:</b> <code id="leaked-memory"></code></b></p>

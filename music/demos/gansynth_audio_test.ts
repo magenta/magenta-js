@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2018 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,6 @@ function Float32Concat(first: Float32Array, second: Float32Array) {
 }
 
 async function runAudioTest() {
-  console.log('Yay!!');
-
   // Testing inverse fourier transform
   const SR = 16000;
   const T = 0.1;
