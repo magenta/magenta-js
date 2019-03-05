@@ -44,31 +44,6 @@ async function runGANSynth() {
   const options = {'url': audioBuffer, 'loop': true, 'volume': -24};
   const player = new Tone.Player(options).toMaster();
 
-  // GUI
-  const startButton = document.createElement('BUTTON');
-  const startText = document.createTextNode('Start');
-  startButton.appendChild(startText);
-  document.body.appendChild(startButton);
-  startButton.addEventListener('click', () => {
-    player.start();
-  });
-
-  const stopButton = document.createElement('BUTTON');
-  const stopText = document.createTextNode('Stop');
-  stopButton.appendChild(stopText);
-  document.body.appendChild(stopButton);
-  stopButton.addEventListener('click', () => {
-    player.stop();
-  });
-
-  const newButton = document.createElement('BUTTON');
-  const newText = document.createTextNode('NewSample');
-  newButton.appendChild(newText);
-  document.body.appendChild(newButton);
-  newButton.addEventListener('click', () => {
-    console.log(player);
-  });
-
   // PLOTTING
   // Get magnitudes
   const magSlicePlot =
@@ -79,7 +54,7 @@ async function runGANSynth() {
   magPlot = tf.div(magPlot, 2.0);
   // Plot on canvas
   const magCanvas = document.getElementById('mag-canvas') as HTMLCanvasElement;
-  await tf.toPixels(magPlot, magCanvas);
+  await tf.browser.toPixels(magPlot, magCanvas);
 
   // Get IFreq
   const ifreqSlice =
@@ -91,7 +66,18 @@ async function runGANSynth() {
   // Plot on canvas
   const ifreqCanvas =
       document.getElementById('ifreq-canvas') as HTMLCanvasElement;
-  await tf.toPixels(ifreq, ifreqCanvas);
+  await tf.browser.toPixels(ifreq, ifreqCanvas);
+
+  // GUI
+  document.getElementById('start-button').addEventListener('click', () => {
+    player.start();
+  });
+  document.getElementById('stop-button').addEventListener('click', () => {
+    player.stop();
+  });
+  document.getElementById('sample-button').addEventListener('click', () => {
+    console.log(player);
+  });
 
   // Cleanup
   // audio.dispose();
@@ -101,7 +87,6 @@ async function runGANSynth() {
   ifreqSlice.dispose();
   specgrams.dispose();
   gansynth.dispose();
-  console.log('Done disposing!');
 }
 
 try {

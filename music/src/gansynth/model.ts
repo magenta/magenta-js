@@ -209,7 +209,7 @@ class GANSynth {
     });
   }
 
-  setWeights(vars: tf.NamedTensorMap) {
+  private setWeights(vars: tf.NamedTensorMap) {
     function getVar(name: string) {
       const v = vars[name];
       if (v === undefined) {
@@ -255,21 +255,31 @@ class GANSynth {
     this.nn.setWeights(weights);
   }
 
+  /**
+   * Predicts MelLogMagnitudes and IFreq from latent (z) and pitch conditioning.
+   *
+   * @param inputs A 4-D Tensor of latent (z) concatenated with one-hot pitch
+   * conditioning. Size [batch, 1, 1, N_LATENTS].
+   * @param batchSize Size of input batch.
+   */
   predict(inputs: tf.Tensor4D, batchSize: number) {
     return this.nn.predict(inputs, {batchSize}) as tf.Tensor4D;
   }
 
+  /**
+   * Creates one random sample of MelLogSpecgram and IFreq from integer pitch.
+   *
+   * @param pitch Integer MIDI pitch number of sound to generate.
+   */
   randomSample(pitch: number) {
     return tf.tidy(() => {
       const z = tf.randomNormal([1, N_LATENTS], 0, 1, 'float32');
-      // const z = tf.zeros([1, N_LATENTS], 'float32');
       // Get one hot for pitch encoding
       const pitchIdx = tf.tensor1d([pitch - MIN_MIDI_PITCH], 'int32');
       const pitchOneHot = tf.oneHot(pitchIdx, MIDI_PITCHES);
       // Concat and add width and height dimensions.
       const cond = tf.concat([z, pitchOneHot], 1).expandDims(1).expandDims(1) as
           tf.Tensor4D;
-      // dump(cond);
       const specgrams = this.predict(cond, 1);
       return specgrams;
     });
