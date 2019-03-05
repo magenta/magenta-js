@@ -50,8 +50,6 @@ async function doTheThing(mel: NoteSequence) {
   // tslint:disable-next-line:no-any
   await model.train(z, (epoch: number, logs: any) => {
     losses.push(logs.total);
-    console.log(`total: ${logs.total.toFixed(3)}, recon: ${
-        logs.losses[0].toFixed(3)} , latent: ${logs.losses[1]}`);
     updateGraph(losses, 'svg');
   });
 
@@ -95,7 +93,6 @@ async function doTheThing(mel: NoteSequence) {
 }
 
 function dispose() {
-  console.log('demo dispose?');
   mvae.dispose();
   model.dispose();
   writeMemory(mm.tf.memory().numBytes);

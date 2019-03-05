@@ -60,9 +60,6 @@ class AffineLayer extends tf.layers.Layer {
  * equal to the number of latent variables used by MusicVAE (`zDims`).
  * @param output_size The size of the output.
  * @param beta Weight of the latent loss in the VAE loss.
- * @param input_sigma The standard deviation of the inputs. This shouldn't
- * change across samples, and is basically the standard deviation of the
- * MusicVAE latent variables.
  * @param batch_size The batch size used in training.
  * @param epochs Number of epochs to train for
  */
@@ -72,7 +69,6 @@ interface MidiMeConfig {
   input_size?: number;
   output_size?: number;
   beta?: number;
-  input_sigma?: tf.Tensor;
   // For training:
   batch_size?: number;
   epochs?: number;
@@ -107,7 +103,6 @@ class MidiMe {
       input_size: config.input_size || 256,
       output_size: config.output_size || 4,
       beta: config.beta || 1,
-      input_sigma: config.input_sigma || tf.ones([1]),
       batch_size: config.batch_size || 32,
       epochs: config.epochs || 10,
     };
@@ -256,8 +251,7 @@ class MidiMe {
       const latentLoss = this.klLoss(muZ, sigmaZ);
 
       // The reconstruction loss represents how well we regenerated yTrue.
-      const reconLoss =
-          this.reconstructionLoss(yTrue, yPred, this.config['input_sigma']);
+      const reconLoss = this.reconstructionLoss(yTrue, yPred);
 
       const totalLoss =
           tf.add(reconLoss, tf.mul(latentLoss, this.config['beta'])) as
@@ -266,12 +260,11 @@ class MidiMe {
     });
   }
 
-  reconstructionLoss(yTrue: tf.Tensor, yPred: tf.Tensor, inputSigma: tf.Tensor):
-      tf.Scalar {
+  reconstructionLoss(yTrue: tf.Tensor, yPred: tf.Tensor): tf.Scalar {
     return tf.tidy(() => {
       // = mse(x,p_x_mu) / 2 'input_sigma ^2
       const se = tf.pow(tf.sub(yTrue, yPred), 2);
-      const nll = tf.div(se, tf.mul(2, tf.pow(inputSigma, 2)));
+      const nll = tf.div(se, tf.mul(2, tf.pow(tf.ones([1]), 2)));
       return tf.mean(tf.sum(nll, -1));
     });
   }
