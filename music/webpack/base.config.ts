@@ -6,6 +6,9 @@ export const baseConfig = {
       use: 'ts-loader',
     }],
   },
+  node: {
+    fs: 'empty'
+  },
   resolve: {
     extensions: ['.ts', '.js'],
   },

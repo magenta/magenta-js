@@ -53,10 +53,13 @@ startStreamBtn.addEventListener('click', () => {
   recorder.callbackObject = {
     run: (seq: mm.NoteSequence) => {
       if (seq) {
-        new mm.Visualizer(
-            seq, document.getElementById('canvas') as HTMLCanvasElement);
+        // tslint:disable-next-line:no-unused-expression
+        new mm.PianoRollSVGVisualizer(
+            seq, document.getElementsByClassName('svg')[0] as SVGSVGElement);
       }
-    }
+    },
+    noteOn: (pitch, velocity, device) => {console.log('We have received a noteOn event!')},
+    noteOff: (pitch, velocity, device) => {console.log('We have received a noteOff event!')}
   };
   startStreamBtn.textContent = '...';
   recorder.start();

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import * as tf from '@tensorflow/tfjs-core';
+import * as tf from '@tensorflow/tfjs';
 
 /**
  * Constants.
@@ -180,11 +180,11 @@ class PianoGenie {
   }
 
   /**
-   * Given a button number with optional sampling temperature and seed, 
+   * Given a button number with optional sampling temperature and seed,
    * evaluates Piano Genie to produce a piano key note {0, 1, ... 87}. This is
    * the simplest access point for Piano Genie, designed to be called by your
    * application in real time (it keeps track of time internally).
-   * 
+   *
    * @param button Button number (one of {0, 1, 2, 3, 4, 5, 6, 7}).
    * @param temperature Temperature. From 0 to 1, goes from argmax to random.
    * @param seed Random seed. Use a fixed number to get reproducible output.
@@ -203,7 +203,7 @@ class PianoGenie {
    * scale or range of the piano). For example, if you wanted to restrict Piano
    * Genie's outputs to be C major from middle C to one octave above, you would
    * pass [39, 41, 43, 44, 46, 48, 50, 51] as the whitelist.
-   * 
+   *
    * @param button Button number (one of {0, 1, 2, 3, 4, 5, 6, 7}).
    * @param keyWhitelist Subset of keys restricting possible note outputs.
    * @param temperature Temperature. From 0 to 1, goes from argmax to random.
@@ -232,9 +232,9 @@ class PianoGenie {
    * Given a button number, evaluates Piano Genie to produce unnormalized logits
    * then samples from these logits with a custom function. Use this if you
    * want to define custom sampling behavior (e.g. a neural cache).
-   * 
+   *
    * @param button Button number (one of {0, 1, 2, 3, 4, 5, 6, 7}).
-   * @param sampleFunc Sampling function mapping unweighted model logits 
+   * @param sampleFunc Sampling function mapping unweighted model logits
    * (tf.Tensor1D of size 88) to an integer (tf.Scalar) representing one of
    * them (e.g. 60).
    */
@@ -295,7 +295,7 @@ class PianoGenie {
   /**
    * Overrides the model's state for its last output. Mainly used to test the
    * model, but can also be used in combination with custom sampling behavior.
-   * 
+   *
    * @param lastOutput Previous piano key sampled from the model logits.
    */
   overrideLastOutput(lastOutput: number) {
@@ -306,7 +306,7 @@ class PianoGenie {
    * Overrides the model's internal clock with a designated time. Mainly used
    * to test the model, but can also be used to remove user control over note
    * timing or to run preprogrammed sequences through the model.
-   * 
+   *
    * @param deltaTime Amount of elapsed time in seconds since previous note.
    */
   overrideDeltaTime(deltaTime: number) {
@@ -322,7 +322,7 @@ class PianoGenie {
    * @param lastState The LSTM state at the previous timestep.
    * @param lastOutput The note sampled at the previous timestep.
    * @param deltaTime Elapsed time since last button press.
-   * @param sampleFunc Sampling function mapping unweighted model logits 
+   * @param sampleFunc Sampling function mapping unweighted model logits
    * (tf.Tensor1D of size 88) to an integer (tf.Scalar) representing one of
    * them (e.g. 60).
    */
@@ -346,7 +346,7 @@ class PianoGenie {
 
     // Ensure that the model is initialized.
     if (!this.initialized) {
-      // This should be an error in real-time context because the model isn't 
+      // This should be an error in real-time context because the model isn't
       // ready to be evaluated.
       throw new Error('Model is not initialized.');
     }
@@ -358,27 +358,28 @@ class PianoGenie {
 
       // Add button input to decoder feats and translate to [-1, 1].
       const buttonTensor = tf.tensor2d([button], [1, 1], 'float32');
-      const buttonScaled = 
+      const buttonScaled =
         tf.sub(tf.mul(2., tf.div(buttonTensor, NUM_BUTTONS - 1)), 1);
       decFeatsArr.push(buttonScaled as tf.Tensor2D);
 
       // Add autoregression (history) to decoder feats.
       const lastOutputTensor = tf.tensor1d([lastOutput], 'int32');
-      const lastOutputInc = 
+      const lastOutputInc =
         tf.add(lastOutputTensor, tf.scalar(1, 'int32')) as tf.Tensor1D;
-      const lastOutputOh = 
-        tf.cast(tf.oneHot(lastOutputInc, NUM_PIANOKEYS + 1), 'float32');
+      const lastOutputOh =
+        tf.cast(tf.oneHot(lastOutputInc, NUM_PIANOKEYS + 1),
+        'float32') as tf.Tensor2D;
       decFeatsArr.push(lastOutputOh);
 
       // Add delta times to decoder feats.
       const deltaTimeTensor = tf.tensor1d([deltaTime], 'float32');
-      const deltaTimeBin = 
+      const deltaTimeBin =
         tf.round(tf.mul(deltaTimeTensor, DATA_TIME_QUANTIZE_RATE));
       const deltaTimeTrunc = tf.minimum(deltaTimeBin, DATA_MAX_DISCRETE_TIMES);
-      const deltaTimeInt = 
+      const deltaTimeInt =
         tf.cast(tf.add(deltaTimeTrunc, 1e-4), 'int32') as tf.Tensor1D;
       const deltaTimeOh = tf.oneHot(deltaTimeInt, DATA_MAX_DISCRETE_TIMES + 1);
-      const deltaTimeOhFloat = tf.cast(deltaTimeOh, 'float32');
+      const deltaTimeOhFloat = tf.cast(deltaTimeOh, 'float32') as tf.Tensor2D;
       decFeatsArr.push(deltaTimeOhFloat);
 
       // Project feats array through RNN input matrix.
