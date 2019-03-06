@@ -16,16 +16,22 @@ fileInput.addEventListener('change', loadFile);
 const mvae = new mm.MusicVAE(MEL_CKPT);
 mvae.initialize().then(() => {
   document.getElementById('fileBtn').removeAttribute('disabled');
+  console.log(
+      'mvae', mm.tf.memory().numBytes / 1000, mm.tf.memory().numTensors);
 });
 
-const model = new mm.MidiMe({epochs: 150});
+const model = new mm.MidiMe({epochs: 10});
 model.initialize();
+console.log('model', mm.tf.memory().numBytes / 1000, mm.tf.memory().numTensors);
 
 function loadFile(e: Event) {
   blobToNoteSequence(fileInput.files[0]).then(doTheThing);
 }
 
 async function doTheThing(mel: NoteSequence) {
+  console.log(
+      'start', mm.tf.memory().numBytes / 1000, mm.tf.memory().numTensors);
+
   visualizeNoteSeqs('input', [mel]);
   const start = performance.now();
 
@@ -45,13 +51,20 @@ async function doTheThing(mel: NoteSequence) {
   z1.dispose();
 
   // 3. Train!
-  const losses: number[] = [];
+  // const losses: number[] = [];
+
+  console.log(
+      'before train', mm.tf.memory().numBytes / 1000,
+      mm.tf.memory().numTensors);
 
   // tslint:disable-next-line:no-any
-  await model.train(z, (epoch: number, logs: any) => {
-    losses.push(logs.total);
-    updateGraph(losses, 'svg');
-  });
+  // await model.train(z, async (epoch: number, logs: any) => {
+  //   losses.push(logs.total);
+  //   updateGraph(losses, 'graph');
+  // });
+  console.log(updateGraph.length);
+  console.log(
+      'after train', mm.tf.memory().numBytes / 1000, mm.tf.memory().numTensors);
 
   // 4. Check reconstruction after training.
   const z2 = model.vae.predict(z) as mm.tf.Tensor2D;
@@ -89,6 +102,7 @@ async function doTheThing(mel: NoteSequence) {
   visualizeNoteSeqs('sample-musicvae', [concatenate(sample2)]);
 
   z.dispose();
+  console.log('end', mm.tf.memory().numBytes / 1000, mm.tf.memory().numTensors);
   dispose();
 }
 
@@ -96,6 +110,10 @@ function dispose() {
   mvae.dispose();
   model.dispose();
   writeMemory(mm.tf.memory().numBytes);
+
+  console.log(
+      'after dispose', mm.tf.memory().numBytes / 1000,
+      mm.tf.memory().numTensors);
 }
 /*
  * Helpers

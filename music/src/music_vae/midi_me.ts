@@ -112,6 +112,9 @@ class MidiMe {
    * Disposes of any untracked `Tensors` to avoid GPU memory leaks.
    */
   dispose() {
+    if (!this.initialized) {
+      return;
+    }
     if (this.encoder) {
       this.encoder.dispose();
     }
@@ -132,8 +135,8 @@ class MidiMe {
    */
   initialize() {
     this.dispose();
-    const startTime = performance.now();
 
+    const startTime = performance.now();
     const z = tf.input({shape: [this.config['input_size']]});
 
     // Encoder model, goes from the original input, returns an output.
@@ -167,18 +170,25 @@ class MidiMe {
     const optimizer = tf.train.adam();
 
     for (let e = 0; e < this.config['epochs']; e++) {
-      await optimizer.minimize(() => {
-        const [, muZ, sigmaZ] = this.encoder.predict(xTrain) as tf.Tensor[];
-        const y = this.vae.predict(xTrain) as tf.Tensor;
-        const loss = this.loss(muZ, sigmaZ, y, xTrain);
+      await tf.nextFrame();
 
-        if (callback) {
-          callback(e, {
-            total: loss.totalLoss.get(),
-            losses: [loss.reconLoss.get(), loss.latentLoss.get()]
-          });
-        }
-        return loss.totalLoss;
+      await optimizer.minimize(() => {
+        return tf.tidy(() => {
+          const [z, muZ, sigmaZ] = this.encoder.predict(xTrain) as tf.Tensor[];
+          z.dispose();
+          const y = this.vae.predict(xTrain) as tf.Tensor;
+          const loss = this.loss(muZ, sigmaZ, y, xTrain);
+          if (callback) {
+            callback(e, {
+              y,
+              total: loss.totalLoss.get(),
+              losses: [loss.reconLoss.get(), loss.latentLoss.get()]
+            });
+          }
+          loss.reconLoss.dispose();
+          loss.latentLoss.dispose();
+          return loss.totalLoss;
+        });
       });
 
       // Use tf.nextFrame to not block the browser.
@@ -244,13 +254,14 @@ class MidiMe {
     return tf.model({inputs: z, outputs: mu, name: 'decoder'});
   }
 
-  loss(muZ: tf.Tensor, sigmaZ: tf.Tensor, yPred: tf.Tensor, yTrue: tf.Tensor):
+  private loss(
+      muZ: tf.Tensor, sigmaZ: tf.Tensor, yPred: tf.Tensor, yTrue: tf.Tensor):
       {latentLoss: tf.Scalar, reconLoss: tf.Scalar, totalLoss: tf.Scalar} {
     return tf.tidy(() => {
-      // The latent loss represents how closely the z matches a unit gaussian.
+      // How closely the z matches a unit gaussian.
       const latentLoss = this.klLoss(muZ, sigmaZ);
 
-      // The reconstruction loss represents how well we regenerated yTrue.
+      // How well we regenerated yTrue.
       const reconLoss = this.reconstructionLoss(yTrue, yPred);
 
       const totalLoss =
@@ -288,7 +299,6 @@ class MidiMe {
       softplus: boolean, residual = false) {
     let output;
     if (residual) {
-      console.log('doing residual');
       const dzLayer = tf.layers.dense({units: outputSize});
       const gatesLayer =
           tf.layers.dense({units: outputSize, activation: 'sigmoid'});
