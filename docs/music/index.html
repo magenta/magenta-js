@@ -63,6 +63,7 @@
 		<div class="col-8 col-content">
 			<div class="tsd-panel tsd-typography">
 				<h1 id="-magenta-music">@magenta/music</h1>
+				<p><a href="https://badge.fury.io/js/%40magenta%2Fmusic"><img src="https://badge.fury.io/js/%40magenta%2Fmusic.svg" alt="npm version"></a> <a href="https://www.jsdelivr.com/package/npm/@magenta/music"><img src="https://data.jsdelivr.com/v1/package/npm/@magenta/music/badge?style=rounded" alt=""></a></p>
 				<p>This JavaScript implementation of Magenta&#39;s musical note-based models uses <a href="https://js.tensorflow.org">TensorFlow.js</a> for GPU-accelerated inference.</p>
 				<p>Complete documentation is available at <a href="https://tensorflow.github.io/magenta-js/music">https://tensorflow.github.io/magenta-js/music</a>.</p>
 				<p>For the Python TensorFlow implementations, see the <a href="https://github.com/tensorflow/magenta">main Magenta repo</a>.</p>
@@ -94,8 +95,11 @@
 				<p><a href="https://tensorflow.github.io/magenta-js/music/classes/_music_rnn_model_.musicrnn.html">MusicRNN</a> implements Magenta&#39;s LSTM-based language models. These include <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/melody_rnn">MelodyRNN</a>, <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/drums_rnn">DrumsRNN</a>, <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/improv_rnn">ImprovRNN</a>, and <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/performance_rnn">PerformanceRNN</a>.</p>
 				<p><strong>Demo Application:</strong> <a href="https://goo.gl/magenta/neuraldrum">Neural Drum Machine</a></p>
 				<h3 id="musicvae">MusicVAE</h3>
-				<p><a href="https://tensorflow.github.io/magenta-js/music/classes/_music_vae_model_.musicvae.html">MusicVAE</a> implements several configurations of Magenta&#39;s variational autoencoder model called <a href="https://g.co/magenta/musicvae">MusicVAE</a> including melody and drum &quot;loop&quot; models, 4- and 16-bar &quot;trio&quot; models, and chord-conditioned &quot;multi-track&quot; models.</p>
+				<p><a href="https://tensorflow.github.io/magenta-js/music/classes/_music_vae_model_.musicvae.html">MusicVAE</a> implements several configurations of Magenta&#39;s variational autoencoder model called <a href="https://g.co/magenta/musicvae">MusicVAE</a> including melody and drum &quot;loop&quot; models, 4- and 16-bar &quot;trio&quot; models, chord-conditioned <a href="https://g.co/magenta/multitrack">multi-track</a> models, and drum performance &quot;humanizations&quot; with GrooVAE.</p>
 				<p><strong>Demo Application:</strong> <a href="https://goo.gl/magenta/endless-trios">Endless Trios</a></p>
+				<h3 id="piano-genie">Piano Genie</h3>
+				<p><a href="https://g.co/magenta/pianogenie">Piano Genie</a> is a VQ-VAE model that that maps 8-button input to a full 88-key piano in real time.</p>
+				<p><strong>Demo Application:</strong> <a href="https://goo.gl/magenta/piano-genie">Piano Genie</a></p>
 				<h2 id="getting-started">Getting started</h2>
 				<p>There are two main ways to get MagentaMusic.js in your JavaScript project:
 					via <a href="https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_JavaScript_within_a_webpage">script tags</a> <strong>or</strong> by installing it from <a href="https://www.npmjs.com/">NPM</a>
@@ -147,15 +151,16 @@ model
 				<p><code>yarn install</code> to install dependencies.</p>
 				<p><code>yarn test</code> to run tests.</p>
 				<p><code>yarn bundle</code> to produce a bundled version in <code>dist/</code>.</p>
-				<p><code>yarn run-demos</code> to build and run the demo.</p>
+				<p><code>yarn run-demos</code> to build and serve the demos, with live reload.</p>
+				<p><em>(Note: the default behavior is to build/watch all demos - specific demos can be built by passing a comma-separated list of specific demo names as follows: <code>yarn run-demos --demos=transcription,visualizer</code>)</em></p>
 				<h2 id="model-checkpoints">Model Checkpoints</h2>
 				<p>Since MagentaMusic.js does not support training models, you must use weights from a model trained with the Python-based <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models">Magenta models</a>. We are also making available our own hosted pre-trained checkpoints.</p>
 				<h3 id="magenta-hosted-checkpoints">Magenta-Hosted Checkpoints</h3>
-				<p>Several pre-trained MusicRNN and MusicVAE checkpoints are hosted on GCS. The full list can is available in <a href="checkpoints/README.md#table">this table</a> and can be accessed programmatically via a JSON index at <a href="https://goo.gl/magenta/js-checkpoints-json">https://goo.gl/magenta/js-checkpoints-json</a>.</p>
+				<p>Several pre-trained MusicRNN and MusicVAE checkpoints are hosted on GCS. The full list can is available in <a href="https://github.com/tensorflow/magenta-js/blob/master/music/checkpoints/README.md#table">this table</a> and can be accessed programmatically via a JSON index at <a href="https://goo.gl/magenta/js-checkpoints-json">https://goo.gl/magenta/js-checkpoints-json</a>.</p>
 				<p>More information is available at <a href="https://goo.gl/magenta/js-checkpoints">https://goo.gl/magenta/js-checkpoints</a>.</p>
 				<h3 id="your-own-checkpoints">Your Own Checkpoints</h3>
 				<h4 id="dumping-your-weights">Dumping Your Weights</h4>
-				<p>To use your own checkpoints with one of our models, you must first convert the weights to the appropriate format using the provided <a href="../scripts/checkpoint_converter.py">checkpoint_converter</a> script.</p>
+				<p>To use your own checkpoints with one of our models, you must first convert the weights to the appropriate format using the provided <a href="https://github.com/tensorflow/magenta-js/blob/master/scripts/checkpoint_converter.py">checkpoint_converter</a> script.</p>
 				<p>This tool is dependent on <a href="https://github.com/tensorflow/tfjs-converter">tfjs-converter</a>, which you must first install using <code>pip install tensorflowjs</code>. Once installed, you can execute the script as follows:</p>
 				<pre><code class="lang-bash">../scripts/checkpoint_converter.py /path/to/model.ckpt /path/to/output_dir
 </code></pre>
@@ -228,6 +233,9 @@ model
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="modules/_music_vae_model_.html">"music_<wbr>vae/model"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_piano_genie_model_.html">"piano_<wbr>genie/model"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="modules/_transcription_audio_utils_.html">"transcription/audio_<wbr>utils"</a>

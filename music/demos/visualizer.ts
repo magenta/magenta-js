@@ -16,21 +16,19 @@
  */
 
 import * as mm from '../src/index';
+import {blobToNoteSequence, urlToNoteSequence} from '../src/index';
 
 import {FULL_TWINKLE_UNQUANTIZED} from './common';
 
 const MIDI_URL = './melody.mid';
 
-let visualizer: mm.Visualizer;
+let canvasVisualizer: mm.PianoRollCanvasVisualizer;
+let svgVisualizer: mm.PianoRollSVGVisualizer;
+
 const player = new mm.Player(false, {
   run: (note: mm.NoteSequence.Note) => {
-    const currentNotePosition = visualizer.redraw(note);
-
-    // See if we need to scroll the container.
-    const containerWidth = container.getBoundingClientRect().width;
-    if (currentNotePosition > (container.scrollLeft + containerWidth)) {
-      container.scrollLeft = currentNotePosition - 20;
-    }
+    canvasVisualizer.redraw(note, true);
+    svgVisualizer.redraw(note, true);
   },
   stop: () => {}
 });
@@ -42,8 +40,8 @@ const seqBtn = document.getElementById('seqBtn') as HTMLButtonElement;
 const tempoInput = document.getElementById('tempoInput') as HTMLInputElement;
 const tempoValue = document.getElementById('tempoValue') as HTMLDivElement;
 const fileInput = document.getElementById('fileInput') as HTMLInputElement;
-const container = document.getElementById('container') as HTMLDivElement;
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+const svg = document.getElementsByTagName('svg')[0] as SVGSVGElement;
 
 // Set up some event listeners
 urlBtn.addEventListener('click', () => fetchMidi(MIDI_URL));
@@ -58,22 +56,13 @@ tempoInput.addEventListener('input', () => {
 });
 
 function fetchMidi(url: string) {
-  fetch(url)
-      .then((response) => {
-        return response.blob();
-      })
-      .then(parseMidiBlob)
-      .catch((error) => {
-        console.log('Well, something went wrong somewhere.', error.message);
-      });
+  urlToNoteSequence(url).then((seq) => initPlayerAndVisualizer(seq));
 }
 
-function parseMidiBlob(blob: Blob) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    initPlayerAndVisualizer(mm.midiToSequenceProto(e.target.result));
-  };
-  reader.readAsBinaryString(blob);
+// tslint:disable-next-line:no-any
+function loadFile(e: any) {
+  blobToNoteSequence(e.target.files[0])
+      .then((seq) => initPlayerAndVisualizer(seq));
 }
 
 function initPlayerAndVisualizer(seq: mm.INoteSequence) {
@@ -81,7 +70,8 @@ function initPlayerAndVisualizer(seq: mm.INoteSequence) {
   playBtn.disabled = false;
   playBtn.textContent = 'Loading';
 
-  visualizer = new mm.Visualizer(seq, canvas);
+  canvasVisualizer = new mm.PianoRollCanvasVisualizer(seq, canvas);
+  svgVisualizer = new mm.PianoRollSVGVisualizer(seq, svg);
 
   const tempo = seq.tempos[0].qpm;
   player.setTempo(tempo);
@@ -92,19 +82,12 @@ function initPlayerAndVisualizer(seq: mm.INoteSequence) {
   playBtn.textContent = 'Play';
 }
 
-// tslint:disable-next-line:no-any
-function loadFile(e: any) {
-  const file = e.target.files[0];
-  parseMidiBlob(file);
-  return false;
-}
-
 function startOrStop() {
   if (player.isPlaying()) {
     player.stop();
     playBtn.textContent = 'Play';
   } else {
-    player.start(visualizer.noteSequence);
+    player.start(canvasVisualizer.noteSequence);
     playBtn.textContent = 'Stop';
   }
 }

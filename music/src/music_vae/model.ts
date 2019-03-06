@@ -20,13 +20,13 @@
 /**
  * Imports
  */
-import * as tf from '@tensorflow/tfjs-core';
+import * as tf from '@tensorflow/tfjs';
 
 import * as chords from '../core/chords';
 import * as constants from '../core/constants';
 import * as data from '../core/data';
 import * as logging from '../core/logging';
-import {INoteSequence} from '../protobuf/index';
+import {INoteSequence} from '../protobuf';
 
 /**
  * A class for keeping track of the parameters of an affine transformation.
@@ -73,14 +73,14 @@ abstract class Encoder {
 /**
  * A single-layer bidirectional LSTM encoder.
  */
-class BidirectonalLstmEncoder extends Encoder {
+class BidirectionalLstmEncoder extends Encoder {
   private lstmFwVars: LayerVars;
   private lstmBwVars: LayerVars;
   private muVars: LayerVars;
   readonly zDims: number;
 
   /**
-   * `BidirectonalLstmEncoder` contructor.
+   * `BidirectionalLstmEncoder` contructor.
    *
    * @param lstmFwVars The forward LSTM `LayerVars`.
    * @param lstmBwVars The backward LSTM `LayerVars`.
@@ -316,7 +316,7 @@ abstract class BaseDecoder extends Decoder {
    * @param controls (Optional) Control tensors to use for conditioning, sized
    * `[length, controlDepth]`.
    *
-   * @returns A boolean tensor containing the decoded sequences, shaped
+   * @returns A float32 tensor containing the decoded sequences, shaped
    * `[batchSize, length, depth]`.
    */
   decode(
@@ -359,7 +359,7 @@ abstract class BaseDecoder extends Decoder {
  * Uses argmax if no temperature is provided.
  */
 class CategoricalDecoder extends BaseDecoder {
-  sample(lstmOutput: tf.Tensor2D, temperature?: number) {
+  sample(lstmOutput: tf.Tensor2D, temperature?: number): tf.Tensor2D {
     const logits = lstmOutput;
     const timeLabels =
         (temperature ?
@@ -367,7 +367,7 @@ class CategoricalDecoder extends BaseDecoder {
                    logits.div(tf.scalar(temperature)) as tf.Tensor2D, 1)
                  .as1D() :
              logits.argMax(1).as1D());
-    return tf.oneHot(timeLabels, this.outputDims).toFloat();
+    return tf.oneHot(timeLabels, this.outputDims).toFloat() as tf.Tensor2D;
   }
 }
 
@@ -386,7 +386,7 @@ class NadeDecoder extends BaseDecoder {
     this.nade = nade;
   }
 
-  sample(lstmOutput: tf.Tensor2D, temperature?: number) {
+  sample(lstmOutput: tf.Tensor2D, temperature?: number): tf.Tensor2D {
     const [encBias, decBias] =
         tf.split(lstmOutput, [this.nade.numHidden, this.nade.numDims], 1);
     return this.nade.sample(encBias as tf.Tensor2D, decBias as tf.Tensor2D);
@@ -398,15 +398,12 @@ class NadeDecoder extends BaseDecoder {
  *
  * Uses argmax if no temperature is provided.
  */
-// TODO(adarob): Remove ts-ignore once are using this.
-// @ts-ignore
 class GrooveDecoder extends BaseDecoder {
-  sample(lstmOutput: tf.Tensor2D, temperature?: number) {
+  sample(lstmOutput: tf.Tensor2D, temperature?: number): tf.Tensor2D {
     let [hits, velocities, offsets] = tf.split(lstmOutput, 3, 1);
 
     velocities = tf.sigmoid(velocities);
     offsets = tf.tanh(offsets);
-
     if (temperature) {
       hits = tf.sigmoid(hits.div(tf.scalar(temperature))) as tf.Tensor2D;
       const threshold = tf.randomUniform(hits.shape, 0, 1);
@@ -541,7 +538,7 @@ class Nade {
    * @param decBias A batch of biases to use when decoding, sized
    * `[batchSize, numDims]`.
    */
-  sample(encBias: tf.Tensor2D, decBias: tf.Tensor2D) {
+  sample(encBias: tf.Tensor2D, decBias: tf.Tensor2D): tf.Tensor2D {
     const batchSize = encBias.shape[0];
     return tf.tidy(() => {
       const samples: tf.Tensor1D[] = [];
@@ -599,7 +596,7 @@ class MusicVAE {
   private checkpointURL: string;
   private spec: MusicVAESpec;
 
-  private dataConverter: data.DataConverter;
+  public dataConverter: data.DataConverter;
   private chordEncoder?: chords.ChordEncoder;
 
   private encoder: Encoder;
@@ -716,8 +713,8 @@ class MusicVAE {
             `Got ${fwLayers.length} forward and ${bwLayers.length} ` +
             'backward.');
       }
-      const baseEncoders: BidirectonalLstmEncoder[] = [0, 1].map(
-          l => new BidirectonalLstmEncoder(fwLayers[l], bwLayers[l]));
+      const baseEncoders: BidirectionalLstmEncoder[] = [0, 1].map(
+          l => new BidirectionalLstmEncoder(fwLayers[l], bwLayers[l]));
       this.encoder = new HierarchicalEncoder(
           baseEncoders, [this.dataConverter.numSegments, 1], encMu);
     } else {
@@ -732,7 +729,7 @@ class MusicVAE {
             'backward.');
       }
       this.encoder =
-          new BidirectonalLstmEncoder(fwLayers[0], bwLayers[0], encMu);
+          new BidirectionalLstmEncoder(fwLayers[0], bwLayers[0], encMu);
     }
 
     // BaseDecoder variables.
@@ -764,6 +761,10 @@ class MusicVAE {
                    new Nade(
                        vars[`${varPrefix}nade/w_enc`] as tf.Tensor3D,
                        vars[`${varPrefix}nade/w_dec_t`] as tf.Tensor3D)) as
+            Decoder;
+      } else if (this.spec.dataConverter.type === 'GrooveConverter') {
+        return new GrooveDecoder(
+                   decLstmLayers, decZtoInitState, decOutputProjection) as
             Decoder;
       } else {
         return new CategoricalDecoder(
@@ -1001,12 +1002,14 @@ class MusicVAE {
    * conditioning.
    * @param stepsPerQuarter The step resolution of the resulting
    * `NoteSequence`.
+   * @param qpm The tempo of the resulting `NoteSequence`s.
    *
    * @returns The decoded `NoteSequence`s.
    */
   async decode(
       z: tf.Tensor2D, temperature?: number, chordProgression?: string[],
-      stepsPerQuarter = 4) {
+      stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER,
+      qpm = constants.DEFAULT_QUARTERS_PER_MINUTE) {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
     }
@@ -1038,7 +1041,7 @@ class MusicVAE {
     const outputSequences: INoteSequence[] = [];
     for (const oh of ohSeqs) {
       outputSequences.push(
-          await this.dataConverter.toNoteSequence(oh, stepsPerQuarter));
+          await this.dataConverter.toNoteSequence(oh, stepsPerQuarter, qpm));
       oh.dispose();
     }
 
@@ -1108,12 +1111,14 @@ class MusicVAE {
    * conditioning.
    * @param stepsPerQuarter The step resolution of the resulting
    * `NoteSequence`s.
+   * @param qpm The tempo of the resulting `NoteSequence`s.
    *
    * @returns An array of sampled `NoteSequence` objects.
    */
   async sample(
       numSamples: number, temperature = 0.5, chordProgression?: string[],
-      stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER) {
+      stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER,
+      qpm = constants.DEFAULT_QUARTERS_PER_MINUTE) {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
     }

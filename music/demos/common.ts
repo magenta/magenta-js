@@ -16,8 +16,8 @@
  */
 
 import {saveAs} from 'file-saver';
-import * as mm from '../src/index';
-import {sequences} from '../src/index';
+import * as mm from '../src';
+import {sequences} from '../src';
 
 export const CHECKPOINTS_DIR =
     // tslint:disable-next-line:max-line-length
@@ -25,7 +25,7 @@ export const CHECKPOINTS_DIR =
 
 // Samples from Shan's SGM SoundFont:
 // http://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01
-const SOUNDFONT_URL =
+export const SOUNDFONT_URL =
     // tslint:disable-next-line:max-line-length
     'https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus';
 
@@ -40,7 +40,7 @@ export const DRUM_SEQS: mm.INoteSequence[] = [
       {pitch: 36, quantizedStartStep: 28}, {pitch: 42, quantizedStartStep: 30}
     ],
     quantizationInfo: {stepsPerQuarter: 4},
-    totalQuantizedSteps: 30,
+    totalQuantizedSteps: 32,
   },
   {
     notes: [
@@ -71,7 +71,7 @@ export const DRUM_SEQS: mm.INoteSequence[] = [
       {pitch: 42, quantizedStartStep: 30}, {pitch: 48, quantizedStartStep: 30}
     ],
     quantizationInfo: {stepsPerQuarter: 4},
-    totalQuantizedSteps: 30
+    totalQuantizedSteps: 32,
   },
   {
     notes: [
@@ -95,13 +95,14 @@ export const DRUM_SEQS: mm.INoteSequence[] = [
       {pitch: 45, quantizedStartStep: 30}
     ],
     quantizationInfo: {stepsPerQuarter: 4},
-    totalQuantizedSteps: 30,
+    totalQuantizedSteps: 32,
   },
   {
     notes: [
       {pitch: 50, quantizedStartStep: 4}, {pitch: 50, quantizedStartStep: 20}
     ],
-    quantizationInfo: {stepsPerQuarter: 4}
+    quantizationInfo: {stepsPerQuarter: 4},
+    totalQuantizedSteps: 32,
   }
 ];
 DRUM_SEQS.map(s => s.notes.map(n => {
@@ -357,15 +358,31 @@ export function writeNoteSeqs(
   });
 }
 
+export function visualizeNoteSeqs(
+    elementId: string, seqs: mm.INoteSequence[], useSoundFontPlayer = false) {
+  const element = document.getElementById(elementId);
+  while (element.firstChild) {
+    element.removeChild(element.firstChild);
+  }
+  seqs.forEach(seq => {
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = 'View NoteSequence';
+    details.appendChild(summary);
+    details.appendChild(createPlayer(seq, useSoundFontPlayer));
+    element.appendChild(details);
+  });
+}
+
 export function writeMemory(bytes: number, name = 'leaked-memory') {
   document.getElementById(name).innerHTML = bytes.toString() + ' bytes';
 }
 
 function createPlayerButton(
     seq: mm.INoteSequence, withClick: boolean, useSoundFontPlayer: boolean,
-    canvas: HTMLElement) {
-  const visualizer = new mm.Visualizer(seq, canvas as HTMLCanvasElement);
-  const container = canvas.parentElement as HTMLDivElement;
+    el: SVGSVGElement) {
+  const visualizer = new mm.PianoRollSVGVisualizer(seq, el as SVGSVGElement);
+  const container = el.parentElement as HTMLDivElement;
 
   const callbackObject = {
     run: (note: mm.NoteSequence.Note) => {
@@ -422,17 +439,17 @@ function createPlayer(seq: mm.INoteSequence, useSoundFontPlayer = false) {
   div.classList.add('player-container');
   const containerDiv = document.createElement('div');
   containerDiv.classList.add('visualizer-container');
-  const canvas = document.createElement('canvas');
-  containerDiv.appendChild(canvas);
+  const el = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  containerDiv.appendChild(el);
 
   const buttonsDiv = document.createElement('div');
   // Regular player.
   buttonsDiv.appendChild(
-      createPlayerButton(seq, false, useSoundFontPlayer, canvas));
+      createPlayerButton(seq, false, useSoundFontPlayer, el));
 
   // Player with click. Only works for quantized sequences.
   if (!useSoundFontPlayer && sequences.isQuantizedSequence(seq)) {
-    buttonsDiv.appendChild(createPlayerButton(seq, true, false, canvas));
+    buttonsDiv.appendChild(createPlayerButton(seq, true, false, el));
   }
 
   // Download midi.

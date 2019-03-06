@@ -20,7 +20,7 @@
 /**
  * Imports
  */
-import * as tf from '@tensorflow/tfjs-core';
+import * as tf from '@tensorflow/tfjs';
 
 import * as aux_inputs from '../core/aux_inputs';
 import * as chords from '../core/chords';
@@ -339,7 +339,8 @@ export class MusicRNN {
           probs.push(tf.softmax(logits));
         }
 
-        nextInput = tf.oneHot(sampledOutput, outputSize).toFloat();
+        nextInput =
+            tf.oneHot(sampledOutput, outputSize).toFloat() as tf.Tensor2D;
         // Save samples as bool to reduce data sync time.
         samples.push(nextInput.as1D());
       }

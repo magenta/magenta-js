@@ -15,11 +15,12 @@
  * limitations under the License.
  */
 
-import * as tf from '@tensorflow/tfjs-core';
+import * as tf from '@tensorflow/tfjs';
 import * as test from 'tape';
 
 import {NoteSequence} from '../protobuf/index';
 
+import * as constants from './constants';
 import * as data from './data';
 import * as sequences from './sequences';
 
@@ -35,6 +36,7 @@ const MEL_NS = NoteSequence.create({
     {pitch: 80, quantizedStartStep: 20, quantizedEndStep: 24},
     {pitch: 75, quantizedStartStep: 24, quantizedEndStep: 28}
   ],
+  tempos: [{qpm: 120}],
   quantizationInfo: {stepsPerQuarter: 2},
   totalQuantizedSteps: 32,
 });
@@ -48,6 +50,7 @@ const DRUM_NS = NoteSequence.create({
     {pitch: 36, quantizedStartStep: 16}, {pitch: 36, quantizedStartStep: 24},
     {pitch: 36, quantizedStartStep: 28}, {pitch: 42, quantizedStartStep: 30}
   ],
+  tempos: [{qpm: 120}],
   quantizationInfo: {stepsPerQuarter: 2}
 });
 DRUM_NS.notes.forEach(n => {
@@ -56,7 +59,7 @@ DRUM_NS.notes.forEach(n => {
 });
 DRUM_NS.totalQuantizedSteps = 32;
 
-const TRIO_NS = NoteSequence.create();
+const TRIO_NS = NoteSequence.create({tempos: [{qpm: 120}]});
 TRIO_NS.quantizationInfo =
     NoteSequence.QuantizationInfo.create({stepsPerQuarter: 2});
 sequences.clone(MEL_NS).notes.forEach(n => {
@@ -143,13 +146,40 @@ const MULTITRACK_NS = NoteSequence.create({
       isDrum: true
     },
   ],
+  tempos: [{qpm: 120}],
   quantizationInfo: {stepsPerQuarter: 1},
   totalQuantizedSteps: 8
 });
 
+const GROOVE_NS = NoteSequence.create({
+  tempos: [{qpm: 60}],
+  notes: [
+    {pitch: 36, startTime: 0, velocity: 80},
+    {pitch: 42, startTime: 0.13, velocity: 10},
+    {pitch: 36, startTime: 1.3, velocity: 15},
+    {pitch: 42, startTime: 1.5, velocity: 8},
+    {pitch: 36, startTime: 2, velocity: 16},
+    {pitch: 42, startTime: 2.45, velocity: 4},
+    {pitch: 36, startTime: 3.1, velocity: 127},
+    {pitch: 42, startTime: 3.6, velocity: 80},
+    {pitch: 36, startTime: 4.1, velocity: 99},
+    {pitch: 36, startTime: 5.99, velocity: 2},
+    {pitch: 36, startTime: 7, velocity: 3},
+    {pitch: 42, startTime: 7.5, velocity: 22}
+  ],
+  totalTime: 8.0
+});
+GROOVE_NS.notes.forEach(n => {
+  n.endTime = n.startTime + 0.25;
+  n.isDrum = true;
+});
+
 test('Test MelodyConverter', (t: test.Test) => {
-  const melConverter = new data.MelodyConverter(
-      {'numSteps': 32, 'minPitch': 21, 'maxPitch': 108});
+  const melConverter = new data.MelodyConverter({
+    numSteps: 32,
+    minPitch: 21,
+    maxPitch: 108,
+  });
 
   const melTensor = melConverter.toTensor(MEL_NS);
   t.deepEqual(melTensor.shape, [32, 90]);
@@ -162,9 +192,9 @@ test('Test MelodyConverter', (t: test.Test) => {
 
 test('Test MelodyConverterWithPolyphonicInput', (t: test.Test) => {
   const melConverter = new data.MelodyConverter({
-    'numSteps': 32,
-    'minPitch': 21,
-    'maxPitch': 108,
+    numSteps: 32,
+    minPitch: 21,
+    maxPitch: 108,
   });
 
   const polyMelNs = sequences.clone(MEL_NS);
@@ -177,19 +207,19 @@ test('Test MelodyConverterWithPolyphonicInput', (t: test.Test) => {
   melTensor.dispose();
 
   const melConverterDisallowsPolyphony = new data.MelodyConverter({
-    'numSteps': 32,
-    'minPitch': 21,
-    'maxPitch': 108,
-    'ignorePolyphony': false
+    numSteps: 32,
+    minPitch: 21,
+    maxPitch: 108,
+    ignorePolyphony: false,
   });
   t.throws(() => melConverterDisallowsPolyphony.toTensor(polyMelNs));
   t.end();
 });
 
 test('Test DrumConverters', (t: test.Test) => {
-  const drumsConverter = new data.DrumsConverter({'numSteps': 32});
-  const drumsOneHotConverter = new data.DrumsOneHotConverter({'numSteps': 32});
-  const drumRollConverter = new data.DrumRollConverter({'numSteps': 32});
+  const drumsConverter = new data.DrumsConverter({numSteps: 32});
+  const drumsOneHotConverter = new data.DrumsOneHotConverter({numSteps: 32});
+  const drumRollConverter = new data.DrumRollConverter({numSteps: 32});
 
   const drumRollTensor = drumsConverter.toTensor(DRUM_NS);
   t.deepEqual(
@@ -199,11 +229,12 @@ test('Test DrumConverters', (t: test.Test) => {
 
   const drumOneHotTensor = drumsOneHotConverter.toTensor(DRUM_NS);
   t.deepEqual(drumOneHotTensor.shape, [32, 512]);
-  t.equal(
-      tf.tidy(
-          () =>
-              drumOneHotTensor.sum(1).equal(tf.scalar(1, 'int32')).sum().get()),
-      32);
+  const value = tf.tidy(
+      () => drumOneHotTensor.sum(1)
+                .equal(tf.scalar(1, 'int32'))
+                .sum()
+                .arraySync() as number);
+  t.equal(value, 32);
 
   const drumRollTensorOutput = drumRollTensor.slice([0, 0], [32, 9]);
   drumRollConverter.toNoteSequence(drumRollTensorOutput, 2)
@@ -221,17 +252,18 @@ test('Test DrumConverters', (t: test.Test) => {
 
 test('Test TrioConverter', (t: test.Test) => {
   const trioConverter = new data.TrioConverter({
-    'numSteps': 32,
-    'melArgs': {'minPitch': 21, 'maxPitch': 108},
-    'bassArgs': {'minPitch': 21, 'maxPitch': 108},
-    'drumsArgs': {}
+    numSteps: 32,
+    melArgs: {minPitch: 21, maxPitch: 108},
+    bassArgs: {minPitch: 21, maxPitch: 108},
+    drumsArgs: {},
   });
 
   const trioTensor = trioConverter.toTensor(TRIO_NS);
   t.deepEqual(trioTensor.shape, [32, 90 + 90 + 512]);
-  t.equal(
-      tf.tidy(() => trioTensor.sum(1).equal(tf.scalar(3, 'int32')).sum().get()),
-      32);
+  const value = tf.tidy(
+      () => trioTensor.sum(1).equal(tf.scalar(3, 'int32')).sum().arraySync() as
+          number);
+  t.equal(value, 32);
 
   trioConverter.toNoteSequence(trioTensor, 2)
       .then(ns => t.deepEqual(ns.toJSON(), TRIO_NS.toJSON()));
@@ -259,4 +291,137 @@ test('Test MultitrackConverter', (t: test.Test) => {
 
   multitrackTensor.dispose();
   t.end();
+});
+
+function roundNoteTimes(notes: NoteSequence.INote[], binsPerSecond = 1000) {
+  notes.forEach(n => {
+    n.startTime = Math.round(n.startTime * binsPerSecond) / binsPerSecond;
+    n.endTime = Math.round(n.endTime * binsPerSecond) / binsPerSecond;
+  });
+}
+
+test('Test GrooveConverter', (t: test.Test) => {
+  const grooveConverter = new data.GrooveConverter({numSteps: 32});
+
+  const grooveTensor = grooveConverter.toTensor(GROOVE_NS);
+  t.deepEqual(grooveTensor.shape, [32, 9 * 3]);
+
+  grooveConverter.toNoteSequence(grooveTensor, undefined, 60).then(ns => {
+    roundNoteTimes(ns.notes);
+    t.deepEqual(ns, GROOVE_NS);
+  });
+
+  grooveTensor.dispose();
+  t.end();
+});
+
+test('Test GrooveConverter TooLong', (t: test.Test) => {
+  const grooveConverter = new data.GrooveConverter({numSteps: 32});
+
+  const longNs = sequences.clone(GROOVE_NS);
+  longNs.notes[0].startTime = 8.1;
+  t.throws(() => grooveConverter.toTensor(longNs));
+  t.end();
+});
+
+test('Test GrooveConverter Split', (t: test.Test) => {
+  const grooveConverter =
+      new data.GrooveConverter({numSteps: 32, splitInstruments: true});
+
+  const grooveTensor = grooveConverter.toTensor(GROOVE_NS);
+  t.deepEqual(grooveTensor.shape, [32 * 9, 3]);
+
+  grooveConverter.toNoteSequence(grooveTensor, undefined, 60).then(ns => {
+    roundNoteTimes(ns.notes);
+    t.deepEqual(ns, GROOVE_NS);
+  });
+
+  grooveTensor.dispose();
+  t.end();
+});
+
+test('Test GrooveConverterHumanize', (t: test.Test) => {
+  const grooveConverter = new data.GrooveConverter({
+    numSteps: 32,
+    humanize: true,
+  });
+
+  const grooveTensor = grooveConverter.toTensor(GROOVE_NS);
+  t.deepEqual(grooveTensor.shape, [32, 9 * 3]);
+
+  const expectedNs = sequences.clone(GROOVE_NS);
+  // Humanize removes velocities.
+  expectedNs.notes.forEach(n => n.velocity = 0);
+  // Humanize snaps to the 16th notes.
+  roundNoteTimes(expectedNs.notes, 4);
+
+  grooveConverter.toNoteSequence(grooveTensor, undefined, 60).then(ns => {
+    t.deepEqual(ns, expectedNs);
+  });
+
+  grooveTensor.dispose();
+  t.end();
+});
+
+test('Test GrooveConverterTapify', (t: test.Test) => {
+  const grooveConverter = new data.GrooveConverter({
+    numSteps: 16,
+    stepsPerQuarter: 2,
+    tapify: true,
+  });
+
+  const inputNs = sequences.clone(GROOVE_NS);
+
+  // Set arbitrary pitches and drum states. They should be ignored.
+  inputNs.notes.forEach((n, i) => {
+    n.pitch = i + 21;
+    n.isDrum = Boolean(i % 2);
+  });
+
+  const grooveTensor = grooveConverter.toTensor(inputNs);
+  t.deepEqual(grooveTensor.shape, [16, 9 * 3]);
+
+  // Tapify removes velocities and only keeps the highest velocity hit at each
+  // step, moving it to the high-hat (46).
+  const expectedNs = NoteSequence.create({
+    tempos: [{qpm: 60}],
+    notes: [
+      {pitch: 46, startTime: 0}, {pitch: 46, startTime: 1.3},
+      {pitch: 46, startTime: 2}, {pitch: 46, startTime: 2.45},
+      {pitch: 46, startTime: 3.1}, {pitch: 46, startTime: 3.6},
+      {pitch: 46, startTime: 4.1}, {pitch: 46, startTime: 5.99},
+      {pitch: 46, startTime: 7}, {pitch: 46, startTime: 7.5}
+    ],
+    totalTime: 8.0
+  });
+  expectedNs.notes.forEach(n => {
+    n.endTime = n.startTime + 0.5;
+    n.velocity = 0;
+
+    n.isDrum = true;
+  });
+
+  grooveConverter.toNoteSequence(grooveTensor, undefined, 60)
+      .then(ns => {
+        roundNoteTimes(ns.notes);
+        t.deepEqual(ns, expectedNs);
+      })
+      .then(() => {
+        // Now try with default qpm.
+        return grooveConverter.toNoteSequence(grooveTensor);
+      })
+      .then(ns => {
+        expectedNs.tempos[0].qpm = constants.DEFAULT_QUARTERS_PER_MINUTE;
+        expectedNs.totalTime /= 2;
+        expectedNs.notes.forEach(n => {
+          n.startTime /= 2;
+          n.endTime /= 2;
+        });
+        roundNoteTimes(ns.notes);
+        t.deepEqual(ns, expectedNs);
+      })
+      .then(() => {
+        grooveTensor.dispose();
+        t.end();
+      });
 });

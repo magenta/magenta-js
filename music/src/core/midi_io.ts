@@ -190,3 +190,49 @@ export function sequenceProtoToMidi(ns: INoteSequence) {
 
   return new Uint8Array(midiconvert.fromJSON(json).toArray());
 }
+
+/**
+ * Fetches a MIDI file from a url and returns a Blob with its contents.
+ *
+ * @param url The url for the MIDI file.
+ * @returns a Blob containing the MIDI.
+ */
+export function urlToBlob(url: string): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    fetch(url)
+        .then((response) => {
+          return response.blob();
+        })
+        .then((blob) => {
+          resolve(blob);
+        })
+        .catch((error) => reject(error));
+  });
+}
+
+/**
+ * Converts a Blob containing MIDI to a `NoteSequence`.
+ *
+ * @param blob The Blob containing MIDI
+ * @returns a new `NoteSequence`
+ */
+export function blobToNoteSequence(blob: Blob): Promise<NoteSequence> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      resolve(midiToSequenceProto(reader.result));
+    };
+    reader.onerror = (e) => reject(e);
+    reader.readAsBinaryString(blob);
+  });
+}
+
+/**
+ * Fetches a MIDI file from a url and converts it to a `NoteSequence`.
+ *
+ * @param url The URL for the MIDI file.
+ * @returns a new `NoteSequence`
+ */
+export function urlToNoteSequence(url: string): Promise<NoteSequence> {
+  return urlToBlob(url).then(blobToNoteSequence);
+}

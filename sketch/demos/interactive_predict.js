@@ -14,578 +14,285 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
+ /**
  * Author: David Ha <hadavid@google.com>
  *
  * @fileoverview Basic p5.js sketch to show how to use sketch-rnn
- * to finish the user's incomplete drawing, and loop through different
+ * to finish a fixed incomplete drawings, and loop through multiple
  * endings automatically.
  */
-var sketch = function( p ) {
-  "use strict";
 
-  var BASE_URL = "https://storage.googleapis.com/quickdraw-models/sketchRNN/large_models/";
+const sketch = function(p) {
+  // Available SketchRNN models.
+  const BASE_URL = 'https://storage.googleapis.com/quickdraw-models/sketchRNN/models/';
+  const availableModels = ['bird', 'ant','ambulance','angel','alarm_clock','antyoga','backpack','barn','basket','bear','bee','beeflower','bicycle','book','brain','bridge','bulldozer','bus','butterfly','cactus','calendar','castle','cat','catbus','catpig','chair','couch','crab','crabchair','crabrabbitfacepig','cruise_ship','diving_board','dog','dogbunny','dolphin','duck','elephant','elephantpig','everything','eye','face','fan','fire_hydrant','firetruck','flamingo','flower','floweryoga','frog','frogsofa','garden','hand','hedgeberry','hedgehog','helicopter','kangaroo','key','lantern','lighthouse','lion','lionsheep','lobster','map','mermaid','monapassport','monkey','mosquito','octopus','owl','paintbrush','palm_tree','parrot','passport','peas','penguin','pig','pigsheep','pineapple','pool','postcard','power_outlet','rabbit','rabbitturtle','radio','radioface','rain','rhinoceros','rifle','roller_coaster','sandwich','scorpion','sea_turtle','sheep','skull','snail','snowflake','speedboat','spider','squirrel','steak','stove','strawberry','swan','swing_set','the_mona_lisa','tiger','toothbrush','toothpaste','tractor','trombone','truck','whale','windmill','yoga','yogabicycle'];
+  let model;
 
-  var init_model_name = "bird";
+  // Model state.
+  let modelState; // Store the hidden states of rnn's neurons.
+  let temperature = 0.25; // Controls the amount of uncertainty of the model.
+  let modelLoaded = false;
+  let modelIsActive = false;
 
-  var class_list = ['bird', 'ant',
-    'ambulance',
-    'angel',
-    'alarm_clock',
-    'antyoga',
-    'backpack',
-    'barn',
-    'basket',
-    'bear',
-    'bee',
-    'beeflower',
-    'bicycle',
-    'book',
-    'brain',
-    'bridge',
-    'bulldozer',
-    'bus',
-    'butterfly',
-    'cactus',
-    'calendar',
-    'castle',
-    'cat',
-    'catbus',
-    'catpig',
-    'chair',
-    'couch',
-    'crab',
-    'crabchair',
-    'crabrabbitfacepig',
-    'cruise_ship',
-    'diving_board',
-    'dog',
-    'dogbunny',
-    'dolphin',
-    'duck',
-    'elephant',
-    'elephantpig',
-    'everything',
-    'eye',
-    'face',
-    'fan',
-    'fire_hydrant',
-    'firetruck',
-    'flamingo',
-    'flower',
-    'floweryoga',
-    'frog',
-    'frogsofa',
-    'garden',
-    'hand',
-    'hedgeberry',
-    'hedgehog',
-    'helicopter',
-    'kangaroo',
-    'key',
-    'lantern',
-    'lighthouse',
-    'lion',
-    'lionsheep',
-    'lobster',
-    'map',
-    'mermaid',
-    'monapassport',
-    'monkey',
-    'mosquito',
-    'octopus',
-    'owl',
-    'paintbrush',
-    'palm_tree',
-    'parrot',
-    'passport',
-    'peas',
-    'penguin',
-    'pig',
-    'pigsheep',
-    'pineapple',
-    'pool',
-    'postcard',
-    'power_outlet',
-    'rabbit',
-    'rabbitturtle',
-    'radio',
-    'radioface',
-    'rain',
-    'rhinoceros',
-    'rifle',
-    'roller_coaster',
-    'sandwich',
-    'scorpion',
-    'sea_turtle',
-    'sheep',
-    'skull',
-    'snail',
-    'snowflake',
-    'speedboat',
-    'spider',
-    'squirrel',
-    'steak',
-    'stove',
-    'strawberry',
-    'swan',
-    'swing_set',
-    'the_mona_lisa',
-    'tiger',
-    'toothbrush',
-    'toothpaste',
-    'tractor',
-    'trombone',
-    'truck',
-    'whale',
-    'windmill',
-    'yoga',
-    'yogabicycle'];
+  let dx, dy; // Offsets of the pen strokes, in pixels.
+  let x, y; // Absolute coordinates on the screen of where the pen is.
+  let startX, startY;
+  let userPen = 0; // above or below the paper
+  let previousUserPen = 0;
+  let pen = [0,0,0]; // Current pen state, [pen_down, pen_up, pen_end].
+  let previousPen = [1, 0, 0]; // Previous pen state.
+  const PEN = {DOWN: 0, UP: 1, END: 2};
+  const epsilon = 2.0; // to ignore data from user's pen staying in one spot.
 
-  // sketch_rnn model
-  var model;
-  var temperature = 0.25;
-  var min_sequence_length = 5;
+  let userHasEverDrawn = false;
+  let allRawLines;
+  let currentRawLine = [];
+  let strokes;
+  /*
+   * Main p5 code
+   */
+  p.setup = function() {
+    const containerSize = document.getElementById('sketch').getBoundingClientRect();
+    // Initialize the canvas.
+    const screenWidth = Math.floor(containerSize.width);
+    const screenHeight = p.windowHeight / 2;
+    p.createCanvas(screenWidth, screenHeight);
+    p.frameRate(60);
 
-  var model_pdf; // store all the parameters of a mixture-density distribution
-  var model_state, model_state_orig;
-  var model_prev_pen;
-  var model_dx, model_dy;
-  var model_pen_down, model_pen_up, model_pen_end;
-  var model_x, model_y;
-  var model_is_active;
-  var model_loaded = false;
-
-  // variables for the sketch input interface.
-  var pen;
-  var prev_pen;
-  var x, y; // absolute coordinates on the screen of where the pen is
-  var start_x, start_y;
-  var has_started; // set to true after user starts writing.
-  var just_finished_line;
-  var epsilon = 2.0; // to ignore data from user's pen staying in one spot.
-  var raw_lines;
-  var current_raw_line;
-  var strokes;
-  var line_color, current_line_color, predict_line_color;
-
-  // UI
-  var screen_width, screen_height, temperature_slider;
-  var line_width = 3.0;
-  var screen_scale_factor = 3.0;
-
-  // dom
-  var reset_button, model_sel, random_model_button;
-  var text_title, text_temperature;
-
-  var title_text = "loading model...";
-
-  var set_title_text = function(new_text) {
-    title_text = new_text.split('_').join(' ');
-    text_title.html(title_text);
-    text_title.position(screen_width/2-12*title_text.length/2+10, 0);
+    restart();
+    initModel(0);
+    initDOMElements();
   };
 
-  var update_temperature_text = function() {
-    var the_color="rgba("+Math.round(255*temperature)+",0,"+255+",1)";
-    text_temperature.style("color", the_color); // ff990a
-    text_temperature.html(""+Math.round(temperature*100));
+  /*
+  * Human is drawing.
+  */
+  p.mousePressed = function () {
+    if (p.isInBounds()) {
+      // First time anything is written.
+      if (!userHasEverDrawn) {
+        userHasEverDrawn = true;
+        x = startX = p.mouseX;
+        y = startY = p.mouseY;
+        userPen = 1; // down!
+      }
+
+      modelIsActive = false;
+      previousUserPen = userPen;
+      p.stroke(p.color(255,0,0));  // User always draws in red.
+    }
+  }
+
+  p.mouseReleased = function () {
+    if (p.isInBounds()) {
+      userPen = 0;  // Up!
+
+      const currentRawLineSimplified = model.simplifyLine(currentRawLine);
+      let lastX, lastY;
+
+      // If it's an accident...ignore it.
+      if (currentRawLineSimplified.length > 1) {
+        // Need to keep track of the first point of the last line.
+        if (allRawLines.length === 0) {
+          lastX = startX;
+          lastY = startY;
+        } else {
+          // The last line.
+          const idx = allRawLines.length - 1;
+          const lastPoint = allRawLines[idx][allRawLines[idx].length-1];
+          lastX = lastPoint[0];
+          lastY = lastPoint[1];
+        }
+
+        // Encode this line as a stroke, and feed it to the model.
+        const stroke = model.lineToStroke(currentRawLineSimplified, [lastX, lastY]);
+        allRawLines.push(currentRawLineSimplified);
+        strokes = strokes.concat(stroke);
+
+        initRNNStateFromStrokes(strokes);
+      }
+      currentRawLine = [];
+    }
+    modelIsActive = true;
+    previousUserPen = userPen;
+  }
+
+  p.mouseDragged = function () {
+    if (!modelIsActive && p.isInBounds()) {
+      const dx0 = p.mouseX - x; // Candidate for dx.
+      const dy0 = p.mouseY - y; // Candidate for dy.
+      if (dx0*dx0+dy0*dy0 > epsilon*epsilon) { // Only if pen is not in same area.
+        dx = dx0;
+        dy = dy0;
+        userPen = 1;
+        if (previousUserPen == 1) {
+          p.line(x, y, x+dx, y+dy); // draw line connecting prev point to current point.
+        }
+        x += dx;
+        y += dy;
+        currentRawLine.push([x, y]);
+      }
+      previousUserPen = userPen;
+    }
+  }
+
+ /*
+  * Model is drawing.
+  */
+  p.draw = function() {
+    if (!modelLoaded || !modelIsActive) {
+      return;
+    }
+    // New state.
+    pen = previousPen;
+    modelState = model.update([dx, dy, ...pen], modelState);
+    const pdf = model.getPDF(modelState, temperature);
+    [dx, dy, ...pen] = model.sample(pdf);
+
+    // If we finished the previous drawing, start a new one.
+    if (pen[PEN.END] === 1) {
+      initRNNStateFromStrokes(strokes);
+    } else {
+      // Only draw on the paper if the pen is still touching the paper.
+      if (previousPen[PEN.DOWN] === 1) {
+        p.line(x, y, x+dx, y+dy); // Draw line connecting prev point to current point.
+      }
+      // Update.
+      x += dx;
+      y += dy;
+      previousPen = pen;
+    }
   };
 
-  var draw_example = function(example, start_x, start_y, line_color) {
-    var i;
-    var x=start_x, y=start_y;
-    var dx, dy;
-    var pen_down, pen_up, pen_end;
-    var prev_pen = [1, 0, 0];
+  p.isInBounds = function () {
+    return p.mouseX >= 0 && p.mouseY >= 0;
+  }
+   /*
+   * Helpers.
+   */
+  function restart() {
+    p.background(255, 255, 255, 255);
+    p.strokeWeight(3.0);
 
-    for(i=0;i<example.length;i++) {
-      // sample the next pen's states from our probability distribution
-      [dx, dy, pen_down, pen_up, pen_end] = example[i];
+    // Start drawing in the middle-ish of the screen
+    startX = x = p.width / 2.0;
+    startY = y = p.height / 3.0;
 
-      if (prev_pen[2] == 1) { // end of drawing.
+    // Reset the user drawing state.
+    userPen = 1;
+    previousUserPen = 0;
+    userHasEverDrawn = false;
+    allRawLines = [];
+    currentRawLine = [];
+    strokes = [];
+
+    // Reset the model drawing state.
+    modelIsActive = false;
+    previousPen = [0, 1, 0];
+  };
+
+  function initRNNStateFromStrokes(strokes) {
+    // Initialize the RNN with these strokes.
+    encodeStrokes(strokes);
+    // Draw them.
+    p.background(255, 255, 255, 255);
+    drawStrokes(strokes, startX, startY);
+  }
+
+  function initModel(index) {
+    modelLoaded = false;
+    if (model) {
+      model.dispose();
+    }
+    model = new ms.SketchRNN(`${BASE_URL}${availableModels[index]}.gen.json`);
+
+    Promise.all([model.initialize()]).then(function() {
+      modelLoaded = true;
+      console.log('SketchRNN model loaded.');
+
+      // Initialize the scale factor for the model. Bigger -> large outputs
+      model.setPixelFactor(5.0);
+
+      if (strokes.length > 0) {
+        initRNNStateFromStrokes(strokes);
+      }
+    });
+  };
+
+  function encodeStrokes(sequence) {
+    if (sequence.length <= 5) {
+      return;
+    }
+
+    // Encode the strokes in the model.
+    let newState = model.zeroState();
+    newState = model.update(model.zeroInput(), newState);
+    newState = model.updateStrokes(sequence, newState, sequence.length-1);
+
+    // Reset the actual model we're using to this one that has the encoded strokes.
+    modelState = model.copyState(newState);
+
+    // Reset the state.
+    const idx = allRawLines.length - 1;
+    const lastPoint = allRawLines[idx][allRawLines[idx].length-1];
+    x = lastPoint[0];
+    y = lastPoint[1];
+
+    const s = sequence[sequence.length-1];
+    dx = s[0];
+    dy = s[1];
+    previousPen = [s[2], s[3], s[4]];
+
+    modelIsActive = true;
+  }
+
+  // This is very similar to the p.draw() loop, but instead of
+  // sampling from the model, it uses the given set of strokes.
+  function drawStrokes(strokes, startX, startY) {
+    p.stroke(p.color(255,0,0));
+
+    let x = startX;
+    let y = startY;
+    let dx, dy;
+    let pen = [0,0,0];
+    let previousPen = [1,0,0];
+    for( let i = 0; i < strokes.length; i++) {
+      [dx, dy, ...pen] = strokes[i];
+
+      if (previousPen[PEN.END] === 1) { // End of drawing.
         break;
       }
 
-      // only draw on the paper if the pen is touching the paper
-      if (prev_pen[0] == 1) {
-        p.stroke(line_color);
-        p.strokeWeight(line_width);
-        p.line(x, y, x+dx, y+dy); // draw line connecting prev point to current point.
+      // Only draw on the paper if the pen is still touching the paper.
+      if (previousPen[PEN.DOWN] === 1) {
+        p.line(x, y, x+dx, y+dy);
       }
-
-      // update the absolute coordinates from the offsets
       x += dx;
       y += dy;
-
-      // update the previous pen's state to the current one we just sampled
-      prev_pen = [pen_down, pen_up, pen_end];
+      previousPen = pen;
     }
 
+    // Draw in a random colour after the predefined strokes.
+    p.stroke(p.color(p.random(64, 224), p.random(64, 224), p.random(64, 224)));
   };
 
-  var init_model = function(category_name) {
-    // model
-    model = new ms.SketchRNN(BASE_URL+category_name+".gen.json");
+  function initDOMElements() {
+    // Setup the DOM bits.
+    textTemperature.textContent = inputTemperature.value = temperature;
 
-    Promise.all([model.initialize()]).then(function() {
-      // initialize the scale factor for the model. Bigger -> large outputs
-      model.setPixelFactor(screen_scale_factor);
-
-      console.log("model loaded.");
-      set_title_text("draw something on the screen!");
-      model_loaded = true;
+    // Listeners
+    selectModels.innerHTML = availableModels.map(m => `<option>${m}</option>`).join('');
+    selectModels.addEventListener('change', () => initModel(selectModels.selectedIndex));
+    inputTemperature.addEventListener('change', () => {
+      temperature = parseFloat(inputTemperature.value);
+      textTemperature.textContent = temperature;
     });
-  };
-
-  var change_model = function(category_name, call_back) {
-    // model
-    model.dispose();
-    model = new ms.SketchRNN(BASE_URL+category_name+".gen.json");
-
-    Promise.all([model.initialize()]).then(function() {
-      console.log("model loaded.");
-      call_back();
-      model_loaded = true;
+    btnClear.addEventListener('click', restart)
+    btnRandom.addEventListener('click', () => {
+      selectModels.selectedIndex = Math.floor(Math.random() * availableModels.length);
+      initModel(selectModels.selectedIndex);
     });
-  };
-
-  var init = function() {
-
-    init_model(init_model_name);
-
-    screen_width = p.windowWidth; //window.innerWidth
-    screen_height = p.windowHeight; //window.innerHeight
-
-    // dom
-
-    reset_button = p.createButton('clear drawing');
-    reset_button.position(10, screen_height-27-27);
-    reset_button.mousePressed(reset_button_event); // attach button listener
-
-    // random model buttom
-    random_model_button = p.createButton('random');
-    random_model_button.position(117, screen_height-27-27);
-    random_model_button.mousePressed(random_model_button_event); // attach button listener
-
-    // model selection
-    model_sel = p.createSelect();
-    model_sel.position(195, screen_height-27-27);
-    for (var i=0;i<class_list.length;i++) {
-      model_sel.option(class_list[i]);
-    }
-    model_sel.changed(model_sel_event);
-
-    // temp
-    temperature_slider = p.createSlider(1, 100, temperature*100);
-    temperature_slider.position(0*screen_width/2-10*0+10, screen_height-27);
-    temperature_slider.style('width', screen_width/1-25+'px');
-    temperature_slider.changed(temperature_slider_event);
-
-    // title
-    text_title = p.createP(title_text);
-    text_title.style("font-family", "Courier New");
-    text_title.style("font-size", "20");
-    text_title.style("color", "#3393d1"); // ff990a
-    set_title_text(title_text);
-
-    // temperature text
-    text_temperature = p.createP();
-    text_temperature.style("font-family", "Courier New");
-    text_temperature.style("font-size", "16");
-    text_temperature.position(screen_width-40, screen_height-64);
-    update_temperature_text(title_text);
-
-  };
-
-  var encode_strokes = function(sequence) {
-
-    model_state_orig = model.zeroState();
-
-    if (sequence.length <= min_sequence_length) {
-      return;
-    }
-
-    // encode sequence
-    model_state_orig = model.update(model.zeroInput(), model_state_orig);
-    // the slower way:
-    /*
-    for (var i=0;i<sequence.length-1;i++) {
-      model_state_orig = model.update(sequence[i], model_state_orig);
-    }
-    */
-    // the faster way:
-    model_state_orig = model.updateStrokes(sequence, model_state_orig, sequence.length-1);
-
-    restart_model(sequence);
-
-    model_is_active = true;
-
   }
-
-  var restart_model = function(sequence) {
-
-    model_state = model.copyState(model_state_orig); // bounded
-
-    var idx = raw_lines.length-1;
-    var last_point = raw_lines[idx][raw_lines[idx].length-1];
-    var last_x = last_point[0];
-    var last_y = last_point[1];
-
-    // individual models:
-    var sx = last_x;
-    var sy = last_y;
-
-    var dx, dy, pen_down, pen_up, pen_end;
-    var s = sequence[sequence.length-1];
-
-    model_x = sx;
-    model_y = sy;
-
-    dx = s[0];
-    dy = s[1];
-    pen_down = s[2];
-    pen_up = s[3];
-    pen_end = s[4];
-
-    model_dx = dx;
-    model_dy = dy;
-    model_prev_pen = [pen_down, pen_up, pen_end];
-
-  }
-
-  var restart = function() {
-
-    // reinitialize variables before calling p5.js setup.
-    line_color = p.color(p.random(64, 224), p.random(64, 224), p.random(64, 224));
-    current_line_color = p.color(p.random(0, 128), p.random(0, 128), p.random(0, 128));
-    predict_line_color = p.color(p.random(128, 224), p.random(128, 224), p.random(128, 224));
-
-    // make sure we enforce some minimum size of our demo
-    screen_width = Math.max(window.innerWidth, 480);
-    screen_height = Math.max(window.innerHeight, 320);
-
-    // variables for the sketch input interface.
-    pen = 0;
-    prev_pen = 1;
-    has_started = false; // set to true after user starts writing.
-    just_finished_line = false;
-    raw_lines = [];
-    current_raw_line = [];
-    strokes = [];
-    // start drawing from somewhere in middle of the canvas
-    x = screen_width/2.0;
-    y = screen_height/2.0;
-    start_x = x;
-    start_y = y;
-    has_started = false;
-
-    model_x = x;
-    model_y = y;
-    model_prev_pen = [0, 1, 0];
-    model_is_active = false;
-
-  };
-
-  var clear_screen = function() {
-    p.background(255, 255, 255, 255);
-    p.fill(255, 255, 255, 255);
-  };
-
-  p.setup = function() {
-    init();
-    restart();
-    p.createCanvas(screen_width, screen_height);
-    p.frameRate(60);
-    clear_screen();
-    console.log('ready.');
-  };
-
-  // tracking mouse  touchpad
-  var tracking = {
-    down: false,
-    x: 0,
-    y: 0
-  };
-
-  p.draw = function() {
-    if (!model_loaded) {
-      return;
-    }
-    deviceEvent();
-    // record pen drawing from user:
-    if (tracking.down && (tracking.x > 0) && tracking.y < (screen_height-60)) { // pen is touching the paper
-      if (has_started == false) { // first time anything is written
-        has_started = true;
-        x = tracking.x;
-        y = tracking.y;
-        start_x = x;
-        start_y = y;
-        pen = 0;
-      }
-      var dx0 = tracking.x-x; // candidate for dx
-      var dy0 = tracking.y-y; // candidate for dy
-      if (dx0*dx0+dy0*dy0 > epsilon*epsilon) { // only if pen is not in same area
-        var dx = dx0;
-        var dy = dy0;
-        pen = 0;
-
-        if (prev_pen == 0) {
-          p.stroke(current_line_color);
-          p.strokeWeight(line_width); // nice thick line
-          p.line(x, y, x+dx, y+dy); // draw line connecting prev point to current point.
-        }
-
-        // update the absolute coordinates from the offsets
-        x += dx;
-        y += dy;
-
-        // update raw_lines
-        current_raw_line.push([x, y]);
-        just_finished_line = true;
-
-        // using the previous pen states, and hidden state, get next hidden state
-        // update_rnn_state();
-      }
-    } else { // pen is above the paper
-      pen = 1;
-      if (just_finished_line) {
-        var current_raw_line_simple = model.simplifyLine(current_raw_line);
-        var idx, last_point, last_x, last_y;
-
-        if (current_raw_line_simple.length > 1) {
-          if (raw_lines.length === 0) {
-            last_x = start_x;
-            last_y = start_y;
-          } else {
-            idx = raw_lines.length-1;
-            last_point = raw_lines[idx][raw_lines[idx].length-1];
-            last_x = last_point[0];
-            last_y = last_point[1];
-          }
-          var stroke = model.lineToStroke(current_raw_line_simple, [last_x, last_y]);
-          raw_lines.push(current_raw_line_simple);
-          strokes = strokes.concat(stroke);
-
-          // initialize rnn:
-          encode_strokes(strokes);
-
-          // redraw simplified strokes
-          clear_screen();
-          draw_example(strokes, start_x, start_y, line_color);
-
-          /*
-          p.stroke(line_color);
-          p.strokeWeight(2.0);
-          p.ellipse(x, y, 5, 5); // draw line connecting prev point to current point.
-          */
-
-        } else {
-          if (raw_lines.length === 0) {
-            has_started = false;
-          }
-        }
-
-        current_raw_line = [];
-        just_finished_line = false;
-      }
-
-      // have machine take over the drawing here:
-      if (model_is_active) {
-
-        model_pen_down = model_prev_pen[0];
-        model_pen_up = model_prev_pen[1];
-        model_pen_end = model_prev_pen[2];
-
-        model_state = model.update([model_dx, model_dy, model_pen_down, model_pen_up, model_pen_end], model_state);
-        model_pdf = model.getPDF(model_state, temperature);
-        [model_dx, model_dy, model_pen_down, model_pen_up, model_pen_end] = model.sample(model_pdf);
-
-        if (model_pen_end === 1) {
-          restart_model(strokes);
-          //model_pen_end = 0;
-          //model_pen_down = 1;
-          //model_pen_up = 1;
-          predict_line_color = p.color(p.random(64, 224), p.random(64, 224), p.random(64, 224));
-          clear_screen();
-          draw_example(strokes, start_x, start_y, line_color);
-        } else {
-
-          if (model_prev_pen[0] === 1) {
-
-            // draw line connecting prev point to current point.
-            p.stroke(predict_line_color);
-            p.strokeWeight(line_width);
-            p.line(model_x, model_y, model_x+model_dx, model_y+model_dy);
-          }
-
-          model_prev_pen = [model_pen_down, model_pen_up, model_pen_end];
-
-          model_x += model_dx;
-          model_y += model_dy;
-        }
-      }
-
-    }
-
-    prev_pen = pen;
-  };
-
-  var model_sel_event = function() {
-    model_loaded = false;
-    var c = model_sel.value();
-    console.log("user wants to change to model "+c);
-    var call_back = function() {
-      model.setPixelFactor(screen_scale_factor);
-      encode_strokes(strokes);
-      clear_screen();
-      draw_example(strokes, start_x, start_y, line_color);
-      set_title_text('draw '+model.info.name+'.');
-    }
-    set_title_text('loading '+c+' model...');
-    change_model(c, call_back);
-  };
-
-  var random_model_button_event = function() {
-    var item = class_list[Math.floor(Math.random()*class_list.length)];
-    model_sel.value(item);
-    model_sel_event();
-  };
-
-  var reset_button_event = function() {
-    restart();
-    clear_screen();
-  };
-
-  var temperature_slider_event = function() {
-    temperature = temperature_slider.value()/100;
-    clear_screen();
-    draw_example(strokes, start_x, start_y, line_color);
-    update_temperature_text();
-  };
-
-  var deviceReleased = function() {
-    "use strict";
-    tracking.down = false;
-  }
-
-  var devicePressed = function(x, y) {
-    if (y < (screen_height-60)) {
-      tracking.x = x;
-      tracking.y = y;
-      if (!tracking.down) {
-        tracking.down = true;
-      }
-    }
-  };
-
-  var deviceEvent = function() {
-    if (p.mouseIsPressed) {
-      devicePressed(p.mouseX, p.mouseY);
-    } else {
-      deviceReleased();
-    }
-  }
-
 };
-var custom_p5 = new p5(sketch, 'sketch');
+
+new p5(sketch, 'sketch');

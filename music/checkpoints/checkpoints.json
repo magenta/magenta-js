@@ -21,6 +21,20 @@
     "size_mb": 27.6
   },
   {
+    "id": "drums_4bar_med_q2",
+    "model": "MusicVAE",
+    "description": "A medium-sized 2-bar, 9-class onehot drum model with a weak prior (higher KL divergence), which is better for reconstructions and interpolations. Quantized to 2-byte weights.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/drums_4bar_med_q2",
+    "size_mb": 68.2
+  },
+  {
+    "id": "drums_4bar_med_lokl_q2",
+    "model": "MusicVAE",
+    "description": "A medium-sized 2-bar, 9-class onehot drum model with a strong prior (lower KL divergence), which is better for sampling. Quantized to 2-byte weights.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/drums_4bar_med_lokl_q2",
+    "size_mb": 68.2
+  },
+  {
     "id": "mel_2bar_small",
     "model": "MusicVAE",
     "description": "A 2-bar, 90-class onehot melody model. Less accurate, but smaller in size than full model.",
@@ -28,12 +42,27 @@
     "size_mb": 17.7
   },
   {
+    "id": "mel_4bar_med_q2",
+    "model": "MusicVAE",
+    "description": "A medium-sized 4-bar, 90-class onehot melody model. Quantized to 2-byte weights.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_4bar_med_q2",
+    "size_mb": 65.4
+  },
+  {
+    "id": "mel_4bar_med_lokl_q2",
+    "model": "MusicVAE",
+    "description": "A medium-sized 4-bar, 90-class onehot melody model.  Trained with a strong prior (low KL divergence), which is better for sampling. Quantized to 2-byte weights.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_4bar_med_lokl_q2",
+    "size_mb": 65.4
+  },
+  {
     "id": "mel_4bar_small_q2",
     "model": "MusicVAE",
     "description": "A 4-bar, 90-class onehot melody model. Less accurate, but smaller in size than full model. Quantized to 2-byte weights.",
     "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_4bar_small_q2",
     "size_mb": 26.5
-  },{
+  },
+  {
     "id": "mel_chords",
     "model": "MusicVAE",
     "description": "A 2-bar, 90-class onehot melody model with chord conditioning. Quantized to 2-byte weights.",
@@ -97,11 +126,25 @@
     "size_mb": 96.9
   },
   {
+    "id": "groovae_unquantize_4bar",
+    "model": "MusicVAE",
+    "description": "A 4-bar GrooVAE model, trained to add feel to 9-class quantized drum beats.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/groovae_unquantize_4bar",
+    "size_mb": 15.8
+  },
+  {
     "id": "basic_rnn",
     "model": "MusicRNN",
     "description": "A 36-class onehot MelodyRNN model. Converted from http://download.magenta.tensorflow.org/models/basic_rnn.mag.",
     "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/basic_rnn",
     "size_mb": 13.0
+  },
+  {
+    "id": "melody_rnn",
+    "model": "MusicRNN",
+    "description": "A 128-class onehot MelodyRNN model.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/melody_rnn",
+    "size_mb": 13.4
   },
   {
     "id": "drum_kit_rnn",

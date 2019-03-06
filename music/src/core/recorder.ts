@@ -27,11 +27,15 @@ import {DEFAULT_QUARTERS_PER_MINUTE} from './constants';
  * @param playClick Whether to play a click track while recording.
  * @param playCountIn Whether to play a count-in click at the beginning of
  * the recording.
+ * @param startRecordingAtFirstNote Whether to start the note time offset at
+ * the first note received instead of the start of the recording.  Defaults to
+ * false.
  */
 interface RecorderConfig {
   qpm?: number;
   playClick?: boolean;
   playCountIn?: boolean;
+  startRecordingAtFirstNote?: boolean;
 }
 
 /**
@@ -45,6 +49,24 @@ export abstract class BaseRecorderCallback {
    * @param seq The note sequence up to this point.
    */
   abstract run(seq: NoteSequence): void;
+  /**
+   * Will be called for each time a note on event is observed.
+   *
+   * @param pitch The pitch of the midi event received.
+   * @param velocity The velocity of the midi event received.
+   * @param device The device the midi event was received from.
+   */
+  abstract noteOn(pitch: number, velocity: number, 
+                  device: Element): void;
+  /**
+   * Will be called for each time a note off event is observed.
+   *
+   * @param pitch The pitch of the midi event received.
+   * @param velocity The velocity of the midi event received.
+   * @param device The device the midi event was received from.
+   */
+  abstract noteOff(pitch: number, velocity: number,
+                   device: Element): void;
 }
 
 /**
@@ -59,6 +81,7 @@ export class Recorder {
   private notes: NoteSequence.Note[] = [];
   private onNotes: Map<number, NoteSequence.Note>;
   private midiInputs: WebMidi.MIDIInput[] = [];
+  private startRecordingAtFirstNote: boolean;
 
   private loClick = new Tone
       .MembraneSynth({
@@ -87,7 +110,8 @@ export class Recorder {
     this.config = {
       playClick: config.playClick,
       qpm: config.qpm || DEFAULT_QUARTERS_PER_MINUTE,
-      playCountIn: config.playCountIn
+      playCountIn: config.playCountIn,
+      startRecordingAtFirstNote: config.startRecordingAtFirstNote || false
     };
 
     this.callbackObject = callbackObject;
@@ -157,13 +181,13 @@ export class Recorder {
 
   private initClickLoop() {
     let clickStep = 0;
-    this.clickLoop = new Tone.Loop((_:number) => {
+    this.clickLoop = new Tone.Loop((time:number) => {
       // TODO(notwaldorf): It would be nice if this took into account a
       // time signature.
       if (clickStep % 4 === 0) {
-        this.loClick.triggerAttack('G5');
+        this.loClick.triggerAttack('G5', time);
       } else {
-        this.hiClick.triggerAttack('C6');
+        this.hiClick.triggerAttack('C6', time);
       }
       clickStep++;
       if (this.config.playCountIn && clickStep === 4) {
@@ -211,6 +235,11 @@ export class Recorder {
     this.firstNoteTimestamp = undefined;
     this.notes = [];
     this.onNotes = new Map<number, NoteSequence.Note>();
+
+   if (!this.startRecordingAtFirstNote) {
+    const timeStamp: number = Date.now();
+    this.firstNoteTimestamp = timeStamp;
+   }
   }
 
   /**
@@ -258,6 +287,21 @@ export class Recorder {
     });
   }
 
+  /**
+   * Resets the `notes` array to an empty array and stops the recording.
+   * @returns a non-quantized `NoteSequence` containing all the recorded notes.
+   */
+  reset(): NoteSequence {
+    const noteSequence = this.stop();
+
+    // Reset all the things needed for the recording.
+    this.firstNoteTimestamp = undefined;
+    this.notes = [];
+    this.onNotes = new Map<number, NoteSequence.Note>();
+
+    return noteSequence;
+  }
+
   midiMessageReceived(event: WebMidi.MIDIMessageEvent) {
     // Don't care about any messages we're receiving while we're not recording.
     if (!this.recording) {
@@ -266,8 +310,14 @@ export class Recorder {
 
     // event.timeStamp doesn't seem to work reliably across all
     // apps and controllers (sometimes it isn't set, sometimes it doesn't
-    // change between notes). Use the actual message time for now.
-    const timeStamp: number = Date.now();
+    // change between notes). Use the performance now timing, unless it exists.
+    let timeStampOffset;
+    if (event.timeStamp !== undefined && event.timeStamp !== 0) {
+      timeStampOffset = event.timeStamp;
+    } else {
+      timeStampOffset = performance.now();
+    }
+    const timeStamp = timeStampOffset + performance.timing.navigationStart;
 
     // Save the first note.
     if (this.firstNoteTimestamp === undefined) {
@@ -283,14 +333,21 @@ export class Recorder {
     const cmd = event.data[0] >> 4;
     const pitch = event.data[1];
     const velocity = (event.data.length > 2) ? event.data[2] : 1;
+    const device = event.srcElement;
 
     // Some MIDI controllers don't send a separate NOTE_OFF command.
     if (cmd === NOTE_OFF || (cmd === NOTE_ON && velocity === 0)) {
+      if (this.callbackObject && this.callbackObject.noteOff) {
+        this.callbackObject.noteOff(pitch, velocity, device);
+      }
       this.noteOff(pitch, timeStamp);
-      if (this.callbackObject) {
+      if (this.callbackObject && this.callbackObject.run) {
         this.callbackObject.run(this.getNoteSequence());
       }
     } else if (cmd === NOTE_ON) {
+      if (this.callbackObject && this.callbackObject.noteOn) {
+        this.callbackObject.noteOn(pitch, velocity, device);
+      }
       this.noteOn(pitch, velocity, timeStamp);
     }
   }
