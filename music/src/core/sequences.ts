@@ -426,7 +426,9 @@ export function mergeInstruments(ns: INoteSequence) {
 }
 
 /**
- * Splits an unquantized `NoteSequence` into chunks.
+ * Splits an unquantized `NoteSequence` into smaller `NoteSequences` of
+ * eaqual chunks. If a note splits across a chunk boundary, then it will be
+ * split between the two chunks.
  *
  * @param ns The `NoteSequence` to split.
  * @param chunkSize The number of steps per chunk. For example, if you want to
@@ -469,15 +471,12 @@ export function split(seq: INoteSequence, chunkSize: number): NoteSequence[] {
     } else {
       // If this note spills over, truncate it and add it to this sequence.
       if (note.quantizedStartStep < chunkSize) {
-        currentNotes.push(new NoteSequence.Note({
-          pitch: note.pitch,
-          velocity: note.velocity,
-          instrument: note.instrument,
-          program: note.program,
-          isDrum: note.isDrum,
-          quantizedStartStep: note.quantizedStartStep,
-          quantizedEndStep: chunkSize
-        }));
+        const newNote = NoteSequence.Note.create(note);
+        newNote.quantizedEndStep = chunkSize;
+        // Clear any absolute times since they're not valid.
+        newNote.startTime = newNote.endTime = undefined;
+        currentNotes.push(newNote);
+
         // Keep the rest of this note, and make sure that next loop still deals
         // with it, and reset it for the next loop.
         note.quantizedStartStep = startStep + chunkSize;
@@ -493,7 +492,7 @@ export function split(seq: INoteSequence, chunkSize: number): NoteSequence[] {
           note.quantizedStartStep > chunkSize) {
         i = i - 1;
       }
-      // Save this bar if it isn't empty.
+      // Save this chunk if it isn't empty.
       if (currentNotes.length !== 0) {
         const newSequence = clone(ns);
         newSequence.notes = currentNotes;
@@ -501,13 +500,13 @@ export function split(seq: INoteSequence, chunkSize: number): NoteSequence[] {
         chunks.push(newSequence);
       }
 
-      // Start a new bar.
+      // Start a new chunk.
       currentNotes = [];
       startStep += chunkSize;
     }
   }
 
-  // Deal with the leftover notes we have in the last bar.
+  // Deal with the leftover notes we have in the last chunk.
   if (currentNotes.length !== 0) {
     const newSequence = clone(ns);
     newSequence.notes = currentNotes;
