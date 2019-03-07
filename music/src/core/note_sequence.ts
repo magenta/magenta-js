@@ -1,6 +1,3 @@
-import {constants} from '.';
-// tslint:disable-next-line:max-line-length
-import { ITimeSignature, IKeySignature, ITempo, IQuantizationInfo, IPitchBend, IControlChange, PitchName } from '../protobuf';
 /**
  * @license
  * Copyright 2019 Google Inc. All Rights Reserved.
@@ -17,6 +14,10 @@ import { ITimeSignature, IKeySignature, ITempo, IQuantizationInfo, IPitchBend, I
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+ import {constants} from '.';
+// tslint:disable-next-line:max-line-length
+import { ITimeSignature, IKeySignature, ITempo, IQuantizationInfo, IPitchBend, IControlChange, PitchName, INoteSequence, NoteSequence } from '../protobuf';
 
 /*
  * Helpers
@@ -100,7 +101,7 @@ export class QuantizationStatusException extends Error {
 /*
  * Note
  */
-export class SimpleNote {
+export class SimpleNote implements NoteSequence.INote {
   // Basic properties.
   public pitch?: number;
   public velocity?: number;
@@ -135,36 +136,36 @@ export class SimpleNote {
 /*
  * NoteSequence
  */
-export class SimpleNoteSequence {
+export class SimpleNoteSequence implements INoteSequence {
   public id?: string;
-  public notes?: SimpleNote[];
+  public notes?: SimpleNote[] = [];
   public totalTime?: number;
   public totalQuantizedSteps?: number;
   public ticksPerQuarter?: number;
-  public timeSignatures?: ITimeSignature[];
-  public keySignatures?: IKeySignature[];
-  public tempos?: ITempo[];
-  public quantizationInfo?: IQuantizationInfo;
-  public pitchBends?: IPitchBend[];
-  public controlChanges?: IControlChange[];
+  public timeSignatures?: ITimeSignature[] = [];
+  public keySignatures?: IKeySignature[] = [];
+  public tempos?: ITempo[] = [];
+  public quantizationInfo?: IQuantizationInfo = {};
+  public pitchBends?: IPitchBend[] = [];
+  public controlChanges?: IControlChange[] = [];
 
   /**
    * Constructs a new NoteSequence.
    * @param [properties] Properties to set
    */
   constructor(seq?: SimpleNoteSequence) {
-    if (seq) {
-      this.id = seq.id;
-      this.notes = JSON.parse(JSON.stringify(seq.notes));
-      this.totalTime = seq.totalTime;
-      this.totalQuantizedSteps = seq.totalQuantizedSteps;
-      this.ticksPerQuarter = seq.ticksPerQuarter;
-      this.timeSignatures = JSON.parse(JSON.stringify(seq.timeSignatures));
-      this.keySignatures = JSON.parse(JSON.stringify(seq.keySignatures));
-      this.tempos = JSON.parse(JSON.stringify(seq.tempos));
-      this.pitchBends = JSON.parse(JSON.stringify(seq.pitchBends));
-      this.controlChanges = JSON.parse(JSON.stringify(seq.controlChanges));
-    }
+    // if (seq) {
+    //   this.id = seq.id;
+    //   this.notes = JSON.parse(JSON.stringify(seq.notes));
+    //   this.totalTime = seq.totalTime;
+    //   this.totalQuantizedSteps = seq.totalQuantizedSteps;
+    //   this.ticksPerQuarter = seq.ticksPerQuarter;
+    //   this.timeSignatures = JSON.parse(JSON.stringify(seq.timeSignatures));
+    //   this.keySignatures = JSON.parse(JSON.stringify(seq.keySignatures));
+    //   this.tempos = JSON.parse(JSON.stringify(seq.tempos));
+    //   this.pitchBends = JSON.parse(JSON.stringify(seq.pitchBends));
+    //   this.controlChanges = JSON.parse(JSON.stringify(seq.controlChanges));
+    // }
   }
 
   addNote(note: SimpleNote) {
@@ -180,6 +181,7 @@ export class SimpleNoteSequence {
       }
     }
   }
+
   /**
    * Returns whether the given NoteSequence has been quantized by absolute
    * time.
