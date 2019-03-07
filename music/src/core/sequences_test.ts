@@ -697,6 +697,42 @@ test('Concatenate 3 NoteSequences (quantized)', (t: test.Test) => {
   t.end();
 });
 
+test('Concatenate error case: mismatched quantizationInfo', (t: test.Test) => {
+  const ns1 = createTestNS();
+  const ns2 = createTestNS();
+
+  addQuantizedTrackToSequence(ns1, 0, [[60, 100, 0, 4], [72, 100, 2, 6]]);
+  addQuantizedTrackToSequence(ns2, 0, [[59, 100, 0, 4], [71, 100, 1, 6]]);
+  ns1.quantizationInfo = NoteSequence.QuantizationInfo.create(
+      {stepsPerQuarter: STEPS_PER_QUARTER});
+  ns2.quantizationInfo =
+      NoteSequence.QuantizationInfo.create({stepsPerQuarter: 1});
+
+  try {
+    sequences.concatenate([ns1, ns2]);
+  } catch (error) {
+    t.end();
+  }
+});
+
+test(
+    'Concatenate error case: mismatched quantized and unquantized sequences',
+    (t: test.Test) => {
+      const ns1 = createTestNS();
+      const ns2 = createTestNS();
+
+      addQuantizedTrackToSequence(ns1, 0, [[60, 100, 0, 4], [72, 100, 2, 6]]);
+      addTrackToSequence(ns2, 0, [[59, 100, 0, 4], [71, 100, 1, 6]]);
+      ns1.quantizationInfo = NoteSequence.QuantizationInfo.create(
+          {stepsPerQuarter: STEPS_PER_QUARTER});
+
+      try {
+        sequences.concatenate([ns1, ns2]);
+      } catch (error) {
+        t.end();
+      }
+    });
+
 test('Trim NoteSequence (unquantized)', (t: test.Test) => {
   const ns1 = createTestNS();
   const expected = createTestNS();

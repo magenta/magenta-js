@@ -446,12 +446,24 @@ export function concatenate(
         // tslint:disable-next-line:max-line-length
         'Number of sequences to concatenate and their individual durations does not match.');
   }
-  return isQuantizedSequence(seqs[0]) ?
-      concatenateHelper(
-          seqs, 'totalQuantizedSteps', 'quantizedStartStep', 'quantizedEndStep',
-          individualDuration) :
-      concatenateHelper(
-          seqs, 'totalTime', 'startTime', 'endTime', individualDuration);
+
+  if (isQuantizedSequence(seqs[0])) {
+    // Check that all the sequences are quantized, and that their quantization
+    // info matches.
+    for (let i = 0; i < seqs.length; ++i) {
+      assertIsQuantizedSequence(seqs[i]);
+      if (seqs[i].quantizationInfo.stepsPerQuarter !==
+          seqs[0].quantizationInfo.stepsPerQuarter) {
+        throw new Error('Not all sequences have the same quantizationInfo');
+      }
+    }
+    return concatenateHelper(
+        seqs, 'totalQuantizedSteps', 'quantizedStartStep', 'quantizedEndStep',
+        individualDuration);
+  } else {
+    return concatenateHelper(
+        seqs, 'totalTime', 'startTime', 'endTime', individualDuration);
+  }
 }
 
 /**
