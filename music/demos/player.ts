@@ -17,7 +17,7 @@
 import * as mm from '../src/index';
 
 // tslint:disable-next-line:max-line-length
-import {DRUM_SEQ_WITH_VELOCITIES, DRUM_SEQS, FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED, MEL_TWINKLE_WITH_VELOCITIES, SOUNDFONT_URL, writeNoteSeqs} from './common';
+import {DRUM_SEQ_WITH_VELOCITIES, DRUM_SEQS, FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED, MEL_TWINKLE_WITH_VELOCITIES, SOUNDFONT_URL, writeNoteSeqs, MEL_TEAPOT} from './common';
 
 async function testLoadAllSamples() {
   const p = new mm.SoundFontPlayer(SOUNDFONT_URL);
@@ -40,7 +40,7 @@ function setupPlayerControlsDemo() {
   playState.textContent = player.getPlayState();
 
   playBtn.addEventListener('click', () => {
-    player.start(FULL_TWINKLE);
+    player.start(MEL_TEAPOT);
     playState.textContent = player.getPlayState();
     playBtn.disabled = true;
     stopBtn.disabled = false;

@@ -17,7 +17,7 @@
 
 import {saveAs} from 'file-saver';
 import * as mm from '../src';
-import {sequences} from '../src';
+import {sequences, SimpleNoteSequence} from '../src';
 
 export const CHECKPOINTS_DIR =
     // tslint:disable-next-line:max-line-length
@@ -125,8 +125,8 @@ export const MEL_A_QUARTERS: mm.INoteSequence = {
   totalQuantizedSteps: 32,
 };
 
-export const MEL_TEAPOT: mm.INoteSequence = {
-  notes: [
+export const MEL_TEAPOT = new SimpleNoteSequence();
+MEL_TEAPOT.notes = [
     {pitch: 69, quantizedStartStep: 0, quantizedEndStep: 2, program: 0},
     {pitch: 71, quantizedStartStep: 2, quantizedEndStep: 4, program: 0},
     {pitch: 73, quantizedStartStep: 4, quantizedEndStep: 6, program: 0},
@@ -136,10 +136,9 @@ export const MEL_TEAPOT: mm.INoteSequence = {
     {pitch: 78, quantizedStartStep: 16, quantizedEndStep: 20, program: 0},
     {pitch: 81, quantizedStartStep: 20, quantizedEndStep: 24, program: 0},
     {pitch: 76, quantizedStartStep: 24, quantizedEndStep: 32, program: 0}
-  ],
-  quantizationInfo: {stepsPerQuarter: 4},
-  totalQuantizedSteps: 32,
-};
+  ];
+MEL_TEAPOT.quantizationInfo.stepsPerQuarter = 4;
+MEL_TEAPOT.totalQuantizedSteps = 32;
 
 export const MEL_TWINKLE: mm.INoteSequence = {
   notes: [
