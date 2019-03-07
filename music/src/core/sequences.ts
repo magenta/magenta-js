@@ -430,6 +430,8 @@ export function mergeInstruments(ns: INoteSequence) {
  * equal chunks. If a note splits across a chunk boundary, then it will be
  * split between the two chunks.
  *
+ * Silent padding may be added to the final chunk to make it `chunkSize`.
+ *
  * @param ns The `NoteSequence` to split.
  * @param chunkSize The number of steps per chunk. For example, if you want to
  * split the sequence into 2 bar chunks, then if the sequence has 4
