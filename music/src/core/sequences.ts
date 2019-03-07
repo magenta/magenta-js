@@ -429,8 +429,8 @@ export function mergeInstruments(ns: INoteSequence) {
  * Concatenate a series of NoteSequences together.
  *
  * Individual sequences will be shifted and then merged together.
- * @param seqs An array of `NoteSequences` to be concatenated.
- * @param individualDuration (Optional) An array of durations for each of the
+ * @param concatenateSequences An array of `NoteSequences` to be concatenated.
+ * @param sequenceDurations (Optional) An array of durations for each of the
  * `NoteSequences` in `args`. If not provided, the `totalTime` /
  * `totalQuantizedSteps` of each sequence will be used. Specifying durations is
  * useful if the sequences to be concatenated are effectively longer than
@@ -440,29 +440,31 @@ export function mergeInstruments(ns: INoteSequence) {
  * sequences.
  */
 export function concatenate(
-    seqs: INoteSequence[], individualDuration?: number[]): NoteSequence {
-  if (individualDuration && individualDuration.length !== seqs.length) {
-    throw new Error(
-        // tslint:disable-next-line:max-line-length
-        'Number of sequences to concatenate and their individual durations does not match.');
+    concatenateSequences: INoteSequence[],
+    sequenceDurations?: number[]): NoteSequence {
+  if (sequenceDurations &&
+      sequenceDurations.length !== concatenateSequences.length) {
+    throw new Error(`Number of sequences to concatenate and their individual
+ durations does not match.`);
   }
 
-  if (isQuantizedSequence(seqs[0])) {
+  if (isQuantizedSequence(concatenateSequences[0])) {
     // Check that all the sequences are quantized, and that their quantization
     // info matches.
-    for (let i = 0; i < seqs.length; ++i) {
-      assertIsQuantizedSequence(seqs[i]);
-      if (seqs[i].quantizationInfo.stepsPerQuarter !==
-          seqs[0].quantizationInfo.stepsPerQuarter) {
+    for (let i = 0; i < concatenateSequences.length; ++i) {
+      assertIsQuantizedSequence(concatenateSequences[i]);
+      if (concatenateSequences[i].quantizationInfo.stepsPerQuarter !==
+          concatenateSequences[0].quantizationInfo.stepsPerQuarter) {
         throw new Error('Not all sequences have the same quantizationInfo');
       }
     }
     return concatenateHelper(
-        seqs, 'totalQuantizedSteps', 'quantizedStartStep', 'quantizedEndStep',
-        individualDuration);
+        concatenateSequences, 'totalQuantizedSteps', 'quantizedStartStep',
+        'quantizedEndStep', sequenceDurations);
   } else {
     return concatenateHelper(
-        seqs, 'totalTime', 'startTime', 'endTime', individualDuration);
+        concatenateSequences, 'totalTime', 'startTime', 'endTime',
+        sequenceDurations);
   }
 }
 
@@ -497,13 +499,13 @@ function concatenateHelper(
     seqs: INoteSequence[], totalKey: 'totalQuantizedSteps'|'totalTime',
     startKey: 'startTime'|'quantizedStartStep',
     endKey: 'endTime'|'quantizedEndStep',
-    individualDuration?: number[]): NoteSequence {
+    sequenceDurations?: number[]): NoteSequence {
   let concatSeq: NoteSequence;
   let totalDuration = 0;
 
   for (let i = 0; i < seqs.length; ++i) {
     const seqDuration =
-        individualDuration ? individualDuration[i] : seqs[i][totalKey];
+        sequenceDurations ? sequenceDurations[i] : seqs[i][totalKey];
     if (seqDuration === 0) {
       throw Error(`Sequence ${seqs[i].id} has no ${
           totalKey}, and no individual duration was provided.`);
