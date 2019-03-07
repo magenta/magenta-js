@@ -707,12 +707,8 @@ test('Concatenate error case: mismatched quantizationInfo', (t: test.Test) => {
       {stepsPerQuarter: STEPS_PER_QUARTER});
   ns2.quantizationInfo =
       NoteSequence.QuantizationInfo.create({stepsPerQuarter: 1});
-
-  try {
-    sequences.concatenate([ns1, ns2]);
-  } catch (error) {
-    t.end();
-  }
+  t.throws(() => sequences.concatenate([ns1, ns2]), Error);
+  t.end();
 });
 
 test(
@@ -725,12 +721,8 @@ test(
       addTrackToSequence(ns2, 0, [[59, 100, 0, 4], [71, 100, 1, 6]]);
       ns1.quantizationInfo = NoteSequence.QuantizationInfo.create(
           {stepsPerQuarter: STEPS_PER_QUARTER});
-
-      try {
-        sequences.concatenate([ns1, ns2]);
-      } catch (error) {
-        t.end();
-      }
+      t.throws(() => sequences.concatenate([ns1, ns2]), Error);
+      t.end();
     });
 
 test('Trim NoteSequence (unquantized)', (t: test.Test) => {
