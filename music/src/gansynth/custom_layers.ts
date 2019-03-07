@@ -49,14 +49,12 @@ class PixelNorm extends tf.layers.Layer {
    * @param kwargs Only used as a pass through to call hooks.
    * @returns A 4D `Tensor` with pixel-wise normalized channels.
    */
-  // tslint:disable-next-line:no-any
-  call(inputs: tf.Tensor4D, kwargs: any): tf.Tensor4D {
+  call(inputs: tf.Tensor4D): tf.Tensor4D {
     return tf.tidy(() => {
       let input = inputs;
       if (Array.isArray(input)) {
         input = input[0];
       }
-      this.invokeCallHook(inputs, kwargs);
       const mean = tf.mean(tf.square(input), [3], true);
       return tf.mul(input, tf.rsqrt(tf.add(mean, this.epsilon)));
     });
@@ -104,13 +102,11 @@ class InitialPad extends tf.layers.Layer {
    * @param kwargs Only used as a pass through to call hooks.
    * @returns A 4D `Tensor` with with padding in width and height.
    */
-  // tslint:disable-next-line:no-any
-  call(inputs: tf.Tensor4D, kwargs: any): tf.Tensor4D {
+  call(inputs: tf.Tensor4D): tf.Tensor4D {
     let input = inputs;
     if (Array.isArray(input)) {
       input = input[0];
     }
-    this.invokeCallHook(inputs, kwargs);
     const padH = this.kernelH - 1;
     const padW = this.kernelW - 1;
     return tf.pad(input, [[0, 0], [padH, padH], [padW, padW], [0, 0]]);
@@ -153,14 +149,12 @@ class BoxUpscale extends tf.layers.Layer {
    * @param kwargs Only used as a pass through to call hooks.
    * @returns A 4D `Tensor` of `images` up scaled by a factor `scale`.
    */
-  // tslint:disable-next-line:no-any
-  call(inputs: tf.Tensor4D, kwargs: any): tf.Tensor4D {
+  call(inputs: tf.Tensor4D): tf.Tensor4D {
     return tf.tidy(() => {
       let input = inputs;
       if (Array.isArray(input)) {
         input = input[0];
       }
-      this.invokeCallHook(inputs, kwargs);
       const tiledInput = tf.tile(input, [this.scale ** 2, 1, 1, 1]);
       return tf.batchToSpaceND(
           tiledInput, [this.scale, this.scale], [[0, 0], [0, 0]]);
