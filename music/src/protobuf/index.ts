@@ -18,5 +18,13 @@
 import {tensorflow} from './proto';
 import NoteSequence = tensorflow.magenta.NoteSequence;
 import INoteSequence = tensorflow.magenta.INoteSequence;
+import ITimeSignature = tensorflow.magenta.NoteSequence.ITimeSignature;
+import IKeySignature = tensorflow.magenta.NoteSequence.IKeySignature;
+import ITempo = tensorflow.magenta.NoteSequence.ITempo;
+import IQuantizationInfo = tensorflow.magenta.NoteSequence.IQuantizationInfo;
+import IPitchBend = tensorflow.magenta.NoteSequence.IPitchBend;
+import IControlChange = tensorflow.magenta.NoteSequence.IControlChange;
+import PitchName = tensorflow.magenta.NoteSequence.PitchName;
 
-export {NoteSequence, INoteSequence};
+export {NoteSequence, INoteSequence, ITimeSignature, IKeySignature, ITempo,
+    IQuantizationInfo, IPitchBend, IControlChange, PitchName};

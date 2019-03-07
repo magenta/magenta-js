@@ -22,8 +22,10 @@ import * as data from './data';
 import * as logging from './logging';
 import * as performance from './performance';
 import * as sequences from './sequences';
+import * as new_sequences from './note_sequence';
 
-export {aux_inputs, chords, constants, data, logging, performance, sequences};
+export {aux_inputs, chords, constants, data, logging, performance, sequences,
+    new_sequences};
 
 export * from './midi_io';
 export * from './player';

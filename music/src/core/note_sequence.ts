@@ -1,9 +1,6 @@
-import {tensorflow} from '../protobuf/proto';
-
 import {constants} from '.';
 // tslint:disable-next-line:max-line-length
-import {BadTimeSignatureException, MultipleTempoException, MultipleTimeSignatureException, NegativeTimeException, QuantizationStatusException, quantizeToStep, stepsPerQuarterToStepsPerSecond,} from './note_sequence_utils';
-
+import { ITimeSignature, IKeySignature, ITempo, IQuantizationInfo, IPitchBend, IControlChange, PitchName } from '../protobuf';
 /**
  * @license
  * Copyright 2019 Google Inc. All Rights Reserved.
@@ -20,6 +17,89 @@ import {BadTimeSignatureException, MultipleTempoException, MultipleTimeSignature
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * Helpers
+ */
+// Set the quantization cutoff.
+// Note events before this cutoff are rounded down to nearest step. Notes
+// above this cutoff are rounded up to nearest step. The cutoff is given as a
+// fraction of a step.
+// For example, with quantize_cutoff = 0.75 using 0-based indexing,
+// if .75 < event <= 1.75, it will be quantized to step 1.
+// If 1.75 < event <= 2.75 it will be quantized to step 2.
+// A number close to 1.0 gives less wiggle room for notes that start early,
+// and they will be snapped to the previous step.
+const QUANTIZE_CUTOFF = 0.5;
+
+/**
+ * Calculates steps per second given stepsPerQuarter and a QPM.
+ */
+export function stepsPerQuarterToStepsPerSecond(
+    stepsPerQuarter: number, qpm: number): number {
+  return stepsPerQuarter * qpm / 60.0;
+}
+
+/**
+ * Quantizes seconds to the nearest step, given steps_per_second.
+ * See the comments above `QUANTIZE_CUTOFF` for details on how the
+ * quantizing algorithm works.
+ * @param unquantizedSeconds Seconds to quantize.
+ * @param stepsPerSecond Quantizing resolution.
+ * @param quantizeCutoff Value to use for quantizing cutoff.
+ * @returns the quantized step.
+ */
+export function quantizeToStep(
+    unquantizedSeconds: number, stepsPerSecond: number,
+    quantizeCutoff = QUANTIZE_CUTOFF): number {
+  const unquantizedSteps = unquantizedSeconds * stepsPerSecond;
+  return Math.floor(unquantizedSteps + (1 - quantizeCutoff));
+}
+
+/*
+ * Exceptions.
+ */
+export class MultipleTimeSignatureException extends Error {
+  constructor(message?: string) {
+    super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+export class BadTimeSignatureException extends Error {
+  constructor(message?: string) {
+    super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+export class NegativeTimeException extends Error {
+  constructor(message?: string) {
+    super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+export class MultipleTempoException extends Error {
+  constructor(message?: string) {
+    super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+
+/**
+ * Exception for when a sequence was unexpectedly quantized or unquantized.
+ *
+ * Should not happen during normal operation and likely indicates a programming
+ * error.
+ */
+export class QuantizationStatusException extends Error {
+  constructor(message?: string) {
+    super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+
+/*
+ * Note
+ */
 export class SimpleNote {
   // Basic properties.
   public pitch?: number;
@@ -27,7 +107,7 @@ export class SimpleNote {
   public instrument?: number;
   public program?: number;
   public isDrum?: boolean;
-  public pitchName?: tensorflow.magenta.NoteSequence.PitchName;
+  public pitchName?: PitchName;
   // Unquantized notes.
   public startTime?: number;
   public endTime?: number;
@@ -52,18 +132,21 @@ export class SimpleNote {
   }
 }
 
+/*
+ * NoteSequence
+ */
 export class SimpleNoteSequence {
   public id?: string;
   public notes?: SimpleNote[];
   public totalTime?: number;
   public totalQuantizedSteps?: number;
   public ticksPerQuarter?: number;
-  public timeSignatures?: tensorflow.magenta.NoteSequence.ITimeSignature[];
-  public keySignatures?: tensorflow.magenta.NoteSequence.IKeySignature[];
-  public tempos?: tensorflow.magenta.NoteSequence.ITempo[];
-  public quantizationInfo?: tensorflow.magenta.NoteSequence.IQuantizationInfo;
-  public pitchBends?: tensorflow.magenta.NoteSequence.IPitchBend[];
-  public controlChanges?: tensorflow.magenta.NoteSequence.IControlChange[];
+  public timeSignatures?: ITimeSignature[];
+  public keySignatures?: IKeySignature[];
+  public tempos?: ITempo[];
+  public quantizationInfo?: IQuantizationInfo;
+  public pitchBends?: IPitchBend[];
+  public controlChanges?: IControlChange[];
 
   /**
    * Constructs a new NoteSequence.
@@ -84,8 +167,22 @@ export class SimpleNoteSequence {
     }
   }
 
+  addNote(note: SimpleNote) {
+    this.notes.push(note);
+
+    if (this.isQuantizedSequence()) {
+      if (this.totalQuantizedSteps < note.quantizedEndStep) {
+        this.totalQuantizedSteps = note.quantizedEndStep;
+      }
+    } else {
+      if (this.totalTime < note.endTime) {
+        this.totalTime = note.endTime;
+      }
+    }
+  }
   /**
-   * Returns whether the given NoteSequence has been quantized by absolute time.
+   * Returns whether the given NoteSequence has been quantized by absolute
+   * time.
    */
   isAbsoluteQuantizedSequence() {
     return this.quantizationInfo && this.quantizationInfo.stepsPerSecond > 0;
@@ -129,7 +226,8 @@ export class SimpleNoteSequence {
   }
 
   /**
-   * Confirms that the given NoteSequence has been quantized relative to tempo.
+   * Confirms that the given NoteSequence has been quantized relative to
+   * tempo.
    */
   assertIsRelativeQuantizedSequence() {
     if (!this.isRelativeQuantizedSequence()) {
@@ -178,10 +276,10 @@ export class SimpleNoteSequence {
    * populated. Sets the `steps_per_quarter` field in the `quantization_info`
    * message in the NoteSequence.
    *
-   * Note start and end times, and chord times are snapped to a nearby quantized
-   * step, and the resulting times are stored in a separate field (e.g.,
-   * QuantizedStartStep). See the comments above `QUANTIZE_CUTOFF` for details
-   * on how the quantizing algorithm works.
+   * Note start and end times, and chord times are snapped to a nearby
+   * quantized step, and the resulting times are stored in a separate field
+   * (e.g., QuantizedStartStep). See the comments above `QUANTIZE_CUTOFF` for
+   * details on how the quantizing algorithm works.
    *
    * @param stepsPerQuarter Each quarter note of music will be divided into
    *    this many quantized time steps.
@@ -192,20 +290,21 @@ export class SimpleNoteSequence {
    * @throws {MultipleTimeSignatureException} If there is a change in time
    * signature in the sequence.
    * @throws {BadTimeSignatureException} If the time signature found in
-   * the sequence has a 0 numerator or a denominator which is not a power of 2.
+   * the sequence has a 0 numerator or a denominator which is not a power
+   * of 2.
    * @throws {NegativeTimeException} If a note or chord occurs at a negative
    * time.
    */
-  quantizeNoteSequence(stepsPerQuarter: number): SimpleNoteSequence {
+  quantize(stepsPerQuarter: number): SimpleNoteSequence {
     // Make a copy.
     const qns = new SimpleNoteSequence(this);
 
     qns.quantizationInfo.stepsPerQuarter = stepsPerQuarter;
     if (qns.timeSignatures.length > 0) {
       qns.timeSignatures.sort((a, b) => a.time - b.time);
-      // There is an implicit 4/4 time signature at 0 time. So if the first time
-      // signature is something other than 4/4 and it's at a time other than 0,
-      // that's an implicit time signature change.
+      // There is an implicit 4/4 time signature at 0 time. So if the first
+      // time signature is something other than 4/4 and it's at a time other
+      // than 0, that's an implicit time signature change.
       if (qns.timeSignatures[0].time !== 0 &&
           !(qns.timeSignatures[0].numerator === 4 &&
             qns.timeSignatures[0].denominator === 4)) {
@@ -229,8 +328,8 @@ export class SimpleNoteSequence {
         }
       }
 
-      // Make it clear that there is only 1 time signature and it starts at the
-      // beginning.
+      // Make it clear that there is only 1 time signature and it starts at
+      // the beginning.
       qns.timeSignatures[0].time = 0;
       qns.timeSignatures = [qns.timeSignatures[0]];
     } else {
@@ -253,7 +352,8 @@ export class SimpleNoteSequence {
     if (qns.tempos.length > 0) {
       qns.assertSingleTempo();
 
-      // Make it clear that there is only 1 tempo and it starts at the beginning
+      // Make it clear that there is only 1 tempo and it starts at the
+      // beginning
       qns.tempos[0].time = 0;
       qns.tempos = [qns.tempos[0]];
     } else {
@@ -277,11 +377,12 @@ export class SimpleNoteSequence {
    * Any existing times will be replaced in the output `NoteSequence` and
    * quantization info and steps will be removed.
    *
-   * @param qpm The tempo to use. If not provided, the sequence's tempo is used,
-   * or the default of 120 if it is not specified in the sequence either.
+   * @param qpm The tempo to use. If not provided, the sequence's tempo is
+   * used, or the default of 120 if it is not specified in the sequence
+   * either.
    * @returns a new non-quantized `NoteSequence` wih time in seconds.
    */
-  unquantizeSequence(qpm?: number) {
+  unquantize(qpm?: number) {
     // TODO(adarob): Support absolute quantized times and multiple tempos.
     this.assertIsRelativeQuantizedSequence();
     this.assertSingleTempo();
