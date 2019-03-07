@@ -605,8 +605,10 @@ test('Concatenate 1 NoteSequence (quantized)', (t: test.Test) => {
 
   addQuantizedTrackToSequence(ns1, 0, [[60, 100, 0, 2], [72, 100, 2, 3]]);
   addQuantizedTrackToSequence(expected, 0, [[60, 100, 0, 2], [72, 100, 2, 3]]);
-  ns1.quantizationInfo = {stepsPerQuarter: 4};
-  expected.quantizationInfo = {stepsPerQuarter: 4};
+  ns1.quantizationInfo = NoteSequence.QuantizationInfo.create(
+      {stepsPerQuarter: STEPS_PER_QUARTER});
+  expected.quantizationInfo = NoteSequence.QuantizationInfo.create(
+      {stepsPerQuarter: STEPS_PER_QUARTER});
 
   t.deepEqual(
       NoteSequence.toObject(sequences.concatenate([ns1])),
@@ -621,13 +623,16 @@ test('Concatenate 2 NoteSequences (quantized)', (t: test.Test) => {
 
   addQuantizedTrackToSequence(ns1, 0, [[60, 100, 0, 4], [72, 100, 2, 6]]);
   addQuantizedTrackToSequence(ns2, 0, [[59, 100, 0, 4], [71, 100, 1, 6]]);
-  ns1.quantizationInfo = {stepsPerQuarter: 4};
-  ns2.quantizationInfo = {stepsPerQuarter: 4};
+  ns1.quantizationInfo = NoteSequence.QuantizationInfo.create(
+      {stepsPerQuarter: STEPS_PER_QUARTER});
+  ns2.quantizationInfo = NoteSequence.QuantizationInfo.create(
+      {stepsPerQuarter: STEPS_PER_QUARTER});
 
   addQuantizedTrackToSequence(
       expected, 0,
       [[60, 100, 0, 4], [72, 100, 2, 6], [59, 100, 6, 10], [71, 100, 7, 12]]);
-  expected.quantizationInfo = {stepsPerQuarter: 4};
+  expected.quantizationInfo = NoteSequence.QuantizationInfo.create(
+      {stepsPerQuarter: STEPS_PER_QUARTER});
   t.deepEqual(
       NoteSequence.toObject(sequences.concatenate([ns1, ns2])),
       NoteSequence.toObject(expected));
@@ -643,14 +648,17 @@ test(
 
       addQuantizedTrackToSequence(ns1, 0, [[60, 100, 0, 4], [72, 100, 2, 6]]);
       addQuantizedTrackToSequence(ns2, 0, [[59, 100, 0, 4], [71, 100, 1, 6]]);
-      ns1.quantizationInfo = {stepsPerQuarter: 4};
-      ns2.quantizationInfo = {stepsPerQuarter: 4};
+      ns1.quantizationInfo = NoteSequence.QuantizationInfo.create(
+          {stepsPerQuarter: STEPS_PER_QUARTER});
+      ns2.quantizationInfo = NoteSequence.QuantizationInfo.create(
+          {stepsPerQuarter: STEPS_PER_QUARTER});
 
       addQuantizedTrackToSequence(expected, 0, [
         [60, 100, 0, 4], [72, 100, 2, 6], [59, 100, 10, 14],
         [71, 100, 11, 16]
       ]);
-      expected.quantizationInfo = {stepsPerQuarter: 4};
+      expected.quantizationInfo = NoteSequence.QuantizationInfo.create(
+          {stepsPerQuarter: STEPS_PER_QUARTER});
       expected.totalQuantizedSteps = 20;
 
       t.deepEqual(
@@ -669,15 +677,19 @@ test('Concatenate 3 NoteSequences (quantized)', (t: test.Test) => {
   addQuantizedTrackToSequence(ns1, 0, [[60, 100, 0, 2], [72, 100, 1, 3]]);
   addQuantizedTrackToSequence(ns2, 0, [[59, 100, 0, 2], [71, 100, 1, 3]]);
   addQuantizedTrackToSequence(ns3, 0, [[58, 100, 2, 3], [70, 100, 4, 6]]);
-  ns1.quantizationInfo = {stepsPerQuarter: 4};
-  ns2.quantizationInfo = {stepsPerQuarter: 4};
-  ns3.quantizationInfo = {stepsPerQuarter: 4};
+  ns1.quantizationInfo = NoteSequence.QuantizationInfo.create(
+      {stepsPerQuarter: STEPS_PER_QUARTER});
+  ns2.quantizationInfo = NoteSequence.QuantizationInfo.create(
+      {stepsPerQuarter: STEPS_PER_QUARTER});
+  ns3.quantizationInfo = NoteSequence.QuantizationInfo.create(
+      {stepsPerQuarter: STEPS_PER_QUARTER});
 
   addQuantizedTrackToSequence(expected, 0, [
     [60, 100, 0, 2], [72, 100, 1, 3], [59, 100, 3, 5], [71, 100, 4, 6],
     [58, 100, 8, 9], [70, 100, 10, 12]
   ]);
-  expected.quantizationInfo = {stepsPerQuarter: 4};
+  expected.quantizationInfo = NoteSequence.QuantizationInfo.create(
+      {stepsPerQuarter: STEPS_PER_QUARTER});
 
   t.deepEqual(
       NoteSequence.toObject(sequences.concatenate([ns1, ns2, ns3])),
@@ -724,19 +736,14 @@ test('Trim NoteSequence (quantized)', (t: test.Test) => {
   const ns1 = createTestNS();
   ns1.quantizationInfo = NoteSequence.QuantizationInfo.create(
       {stepsPerQuarter: STEPS_PER_QUARTER});
-  ns1.quantizationInfo.stepsPerQuarter = STEPS_PER_QUARTER;
-  ns1.notes.push({pitch: 60, quantizedStartStep: 0, quantizedEndStep: 4});
-  ns1.notes.push({pitch: 60, quantizedStartStep: 2, quantizedEndStep: 3});
-  ns1.notes.push({pitch: 60, quantizedStartStep: 3, quantizedEndStep: 4});
-  ns1.notes.push({pitch: 60, quantizedStartStep: 3, quantizedEndStep: 6});
-  ns1.totalQuantizedSteps = 6;
+  addQuantizedTrackToSequence(
+      ns1, 0,
+      [[60, 100, 0, 4], [60, 100, 2, 3], [60, 100, 3, 4], [60, 100, 3, 6]]);
 
   const expected = createTestNS();
   expected.quantizationInfo = NoteSequence.QuantizationInfo.create(
       {stepsPerQuarter: STEPS_PER_QUARTER});
-  expected.quantizationInfo.stepsPerQuarter = STEPS_PER_QUARTER;
-  expected.notes.push({pitch: 60, quantizedStartStep: 1, quantizedEndStep: 2});
-  expected.notes.push({pitch: 60, quantizedStartStep: 2, quantizedEndStep: 3});
+  addQuantizedTrackToSequence(expected, 0, [[60, 100, 1, 2], [60, 100, 2, 3]]);
   expected.totalQuantizedSteps = 5;
 
   t.deepEqual(
@@ -749,21 +756,15 @@ test('Trim and truncate NoteSequence (quantized)', (t: test.Test) => {
   const ns1 = createTestNS();
   ns1.quantizationInfo = NoteSequence.QuantizationInfo.create(
       {stepsPerQuarter: STEPS_PER_QUARTER});
-  ns1.quantizationInfo.stepsPerQuarter = STEPS_PER_QUARTER;
-  ns1.notes.push({pitch: 60, quantizedStartStep: 0, quantizedEndStep: 4});
-  ns1.notes.push({pitch: 60, quantizedStartStep: 2, quantizedEndStep: 3});
-  ns1.notes.push({pitch: 60, quantizedStartStep: 3, quantizedEndStep: 4});
-  ns1.notes.push({pitch: 60, quantizedStartStep: 3, quantizedEndStep: 6});
-  ns1.totalQuantizedSteps = 6;
+  addQuantizedTrackToSequence(
+      ns1, 0,
+      [[60, 100, 0, 4], [60, 100, 2, 3], [60, 100, 3, 4], [60, 100, 3, 6]]);
 
   const expected = createTestNS();
   expected.quantizationInfo = NoteSequence.QuantizationInfo.create(
       {stepsPerQuarter: STEPS_PER_QUARTER});
-  expected.quantizationInfo.stepsPerQuarter = STEPS_PER_QUARTER;
-  expected.notes.push({pitch: 60, quantizedStartStep: 1, quantizedEndStep: 2});
-  expected.notes.push({pitch: 60, quantizedStartStep: 2, quantizedEndStep: 3});
-  expected.notes.push({pitch: 60, quantizedStartStep: 2, quantizedEndStep: 5});
-  expected.totalQuantizedSteps = 5;
+  addQuantizedTrackToSequence(
+      expected, 0, [[60, 100, 1, 2], [60, 100, 2, 3], [60, 100, 2, 5]]);
 
   t.deepEqual(
       NoteSequence.toObject(sequences.trim(ns1, 1, 5, true)),
