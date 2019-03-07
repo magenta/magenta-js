@@ -50,13 +50,15 @@ class PixelNorm extends tf.layers.Layer {
    */
   // tslint:disable-next-line:no-any
   call(inputs: tf.Tensor4D, kwargs: any): tf.Tensor4D {
-    let input = inputs;
-    if (Array.isArray(input)) {
-      input = input[0];
-    }
-    this.invokeCallHook(inputs, kwargs);
-    const mean = tf.mean(tf.square(input), [3], true);
-    return tf.mul(input, tf.rsqrt(tf.add(mean, this.epsilon)));
+    return tf.tidy(() => {
+      let input = inputs;
+      if (Array.isArray(input)) {
+        input = input[0];
+      }
+      this.invokeCallHook(inputs, kwargs);
+      const mean = tf.mean(tf.square(input), [3], true);
+      return tf.mul(input, tf.rsqrt(tf.add(mean, this.epsilon)));
+    });
   }
 
   /**
@@ -87,7 +89,7 @@ class InitialPad extends tf.layers.Layer {
   }
 
   /**
-   * @param {*} inputShapes
+   * @param inputShapes A number[] of the input `Tensor` shape.
    */
   computeOutputShape(inputShape: number[]) {
     return [

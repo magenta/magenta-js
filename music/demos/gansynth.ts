@@ -26,6 +26,21 @@ const GANSYNTH_CHECKPOINT = `${CHECKPOINTS_DIR}/gansynth/acoustic_only`;
 
 mm.logging.verbosity = mm.logging.Level.DEBUG;
 
+async function plotSpectra(
+    spectra: tf.Tensor4D, canvasId: string, channel: number) {
+  // Slice a single example.
+  const spectraSlice = tf.slice(spectra, [0, 0, 0, channel], [
+                           1, -1, -1, 1
+                         ]).reshape([128, 1024]);
+  let spectraPlot = spectraSlice as tf.Tensor3D;
+  // Scale to [0, 1].
+  spectraPlot = tf.sub(spectraPlot, tf.min(spectraPlot));
+  spectraPlot = tf.div(spectraPlot, tf.max(spectraPlot));
+  // Plot on canvas.
+  const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+  await tf.browser.toPixels(spectraPlot, canvas);
+}
+
 async function runGANSynth() {
   const gansynth = new mm.GANSynth(GANSYNTH_CHECKPOINT);
   await gansynth.initialize();
@@ -35,7 +50,7 @@ async function runGANSynth() {
   const audio = await specgramsToAudio(specgrams);
   await writeTimer('single-sample-gen-time', start);
 
-  // Play sound
+  // Play sound.
   const T = 4.0;
   const SR = 16000;
 
@@ -44,47 +59,19 @@ async function runGANSynth() {
   const options = {'url': audioBuffer, 'loop': true, 'volume': -24};
   const player = new Tone.Player(options).toMaster();
 
-  // PLOTTING
-  // Get magnitudes
-  const magSlicePlot =
-      tf.slice(specgrams, [0, 0, 0, 0], [1, -1, -1, 1]).reshape([128, 1024]);
-  let magPlot = magSlicePlot as tf.Tensor2D;
-  // Scale from [-1, 1] to [0, 1]
-  magPlot = tf.add(magPlot, 1.0);
-  magPlot = tf.div(magPlot, 2.0);
-  // Plot on canvas
-  const magCanvas = document.getElementById('mag-canvas') as HTMLCanvasElement;
-  await tf.browser.toPixels(magPlot, magCanvas);
+  // Plotting.
+  plotSpectra(specgrams, 'mag-canvas', 0);
+  plotSpectra(specgrams, 'ifreq-canvas', 1);
 
-  // Get IFreq
-  const ifreqSlice =
-      tf.slice(specgrams, [0, 0, 0, 1], [1, -1, -1, 1]).reshape([128, 1024]);
-  let ifreq = ifreqSlice as tf.Tensor3D;
-  // Scale to [0, 1]
-  ifreq = tf.sub(ifreq, tf.min(ifreq));
-  ifreq = tf.div(ifreq, tf.max(ifreq));
-  // Plot on canvas
-  const ifreqCanvas =
-      document.getElementById('ifreq-canvas') as HTMLCanvasElement;
-  await tf.browser.toPixels(ifreq, ifreqCanvas);
-
-  // GUI
+  // Connect GUI actions.
   document.getElementById('start-button').addEventListener('click', () => {
     player.start();
   });
   document.getElementById('stop-button').addEventListener('click', () => {
     player.stop();
   });
-  document.getElementById('sample-button').addEventListener('click', () => {
-    console.log(player);
-  });
 
-  // Cleanup
-  // audio.dispose();
-  magPlot.dispose();
-  magSlicePlot.dispose();
-  ifreq.dispose();
-  ifreqSlice.dispose();
+  // Cleanup.
   specgrams.dispose();
   gansynth.dispose();
 }

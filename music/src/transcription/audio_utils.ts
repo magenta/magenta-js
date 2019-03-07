@@ -286,7 +286,7 @@ function applyFilterbank(
   return out;
 }
 
-function applyWindow(buffer: Float32Array, win: Float32Array) {
+export function applyWindow(buffer: Float32Array, win: Float32Array) {
   if (buffer.length !== win.length) {
     console.error(
         `Buffer length ${buffer.length} != window length ${win.length}.`);
@@ -300,7 +300,7 @@ function applyWindow(buffer: Float32Array, win: Float32Array) {
   return out;
 }
 
-function padCenterToLength(data: Float32Array, length: number) {
+export function padCenterToLength(data: Float32Array, length: number) {
   // If data is longer than length, error!
   if (data.length > length) {
     throw new Error('Data is longer than length.');
@@ -311,7 +311,7 @@ function padCenterToLength(data: Float32Array, length: number) {
   return padConstant(data, [paddingLeft, paddingRight]);
 }
 
-function padConstant(data: Float32Array, padding: number|number[]) {
+export function padConstant(data: Float32Array, padding: number|number[]) {
   let padLeft, padRight;
   if (typeof (padding) === 'object') {
     [padLeft, padRight] = padding;
@@ -338,8 +338,9 @@ function padReflect(data: Float32Array, padding: number) {
  * Given a timeseries, returns an array of timeseries that are windowed
  * according to the params specified.
  */
-function frame(data: Float32Array, frameLength: number, hopLength: number):
-    Float32Array[] {
+export function frame(
+    data: Float32Array, frameLength: number,
+    hopLength: number): Float32Array[] {
   const bufferCount = Math.floor((data.length - frameLength) / hopLength) + 1;
   const buffers = Array.from(
       {length: bufferCount}, (x, i) => new Float32Array(frameLength));
@@ -401,7 +402,7 @@ function fft(y: Float32Array) {
   return out;
 }
 
-function hannWindow(length: number) {
+export function hannWindow(length: number) {
   const win = new Float32Array(length);
   for (let i = 0; i < length; i++) {
     win[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (length - 1)));

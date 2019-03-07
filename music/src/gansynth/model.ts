@@ -18,7 +18,7 @@
  */
 
 /**
- * Imports
+ * Imports.
  */
 import * as tf from '@tensorflow/tfjs';
 
@@ -99,9 +99,10 @@ class GANSynth {
    */
   private build(vars: tf.NamedTensorMap) {
     tf.tidy(() => {
-      // Generates spectrograms and phase from random noise
+      // Generates spectrograms and phase from random noise.
 
-      // Stage 1
+      // A single config of args for all convolutional layers.
+      // `any` because ConvLayerArgs is not exported from tf.js.
       // tslint:disable-next-line:no-any
       const convConfig: any = {
         filters: 256,
@@ -114,9 +115,10 @@ class GANSynth {
         trainable: false
       };
 
+      // Stage 1.
       // The first layer is basically a 'same' conv2dTranspose
-      // but have to implement with padding because python did it this way
-      // otherwise weight matrix is transposed wrong
+      // but we have to implement with padding because python did it this way
+      // otherwise the weight matrix is transposed wrong.
       const inputShape = {inputShape: [1, 1, N_LATENTS + N_PITCHES]};
       // this.nn.add(pixelNorm(1e-8, inputShape));
       // this.nn.add(initialPad(2, 16));
@@ -131,9 +133,9 @@ class GANSynth {
       this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
       this.nn.add(pixelNorm());
 
-      // upsample
+      // Upsample.
       this.nn.add(boxUpscale(2));
-      // Stage 2
+      // Stage 2.
       convConfig.filters = 256;
       this.nn.add(tf.layers.conv2d(convConfig));
       this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
@@ -142,9 +144,9 @@ class GANSynth {
       this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
       this.nn.add(pixelNorm());
 
-      // upsample
+      // Upsample.
       this.nn.add(boxUpscale(2));
-      // Stage 3
+      // Stage 3.
       convConfig.filters = 256;
       this.nn.add(tf.layers.conv2d(convConfig));
       this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
@@ -153,9 +155,9 @@ class GANSynth {
       this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
       this.nn.add(pixelNorm());
 
-      // upsample
+      // Upsample.
       this.nn.add(boxUpscale(2));
-      // Stage 4
+      // Stage 4.
       convConfig.filters = 256;
       this.nn.add(tf.layers.conv2d(convConfig));
       this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
@@ -164,9 +166,9 @@ class GANSynth {
       this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
       this.nn.add(pixelNorm());
 
-      // upsample
+      // Upsample.
       this.nn.add(boxUpscale(2));
-      // Stage 5
+      // Stage 5.
       convConfig.filters = 128;
       this.nn.add(tf.layers.conv2d(convConfig));
       this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
@@ -175,9 +177,9 @@ class GANSynth {
       this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
       this.nn.add(pixelNorm());
 
-      // upsample
+      // Upsample.
       this.nn.add(boxUpscale(2));
-      // Stage 6
+      // Stage 6.
       convConfig.filters = 64;
       this.nn.add(tf.layers.conv2d(convConfig));
       this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
@@ -186,9 +188,9 @@ class GANSynth {
       this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
       this.nn.add(pixelNorm());
 
-      // upsample
+      // Upsample.
       this.nn.add(boxUpscale(2));
-      // Stage 7
+      // Stage 7.
       convConfig.filters = 32;
       this.nn.add(tf.layers.conv2d(convConfig));
       this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
@@ -197,7 +199,7 @@ class GANSynth {
       this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
       this.nn.add(pixelNorm());
 
-      // Output
+      // Output.
       convConfig.filters = 2;
       convConfig.kernelSize = [1, 1];
       convConfig.activation = 'tanh';
