@@ -40,38 +40,45 @@ function descale(data: tf.Tensor, a: number, b: number) {
 }
 
 export function melToLinear(melLogPower: tf.Tensor3D) {
-  const m2l = melToLinearMatrix().expandDims(0);
-  const melLogPowerDb = descale(melLogPower, MAG_DESCALE_A, MAG_DESCALE_B);
-  // Linear scale the magnitude.
-  const melPower = tf.exp(melLogPowerDb);
-  // Mel to linear frequency scale.
-  const powerLin = tf.matMul(melPower, m2l);
-  // Power to magnitude.
-  const magLin = tf.sqrt(powerLin);
-  return magLin;
+  return tf.tidy(() => {
+    const m2l = melToLinearMatrix().expandDims(0);
+    const melLogPowerDb = descale(melLogPower, MAG_DESCALE_A, MAG_DESCALE_B);
+    // Linear scale the magnitude.
+    const melPower = tf.exp(melLogPowerDb);
+    // Mel to linear frequency scale.
+    const powerLin = tf.matMul(melPower, m2l);
+    // Power to magnitude.
+    const magLin = tf.sqrt(powerLin);
+    return magLin;
+  });
 }
 
 export function ifreqToPhase(ifreq: tf.Tensor) {
-  const m2l = melToLinearMatrix().expandDims(0);
-  const ifreqDescale = descale(ifreq, PHASE_DESCALE_A, PHASE_DESCALE_B);
-  // Need to multiply phase by -1.0 to account for conjugacy difference
-  // between tensorflow and librosa/javascript istft.
-  const phase = tf.cumsum(tf.mul(ifreqDescale, Math.PI), 1);
-  const phaseLin = tf.matMul(phase, m2l);
-  return phaseLin;
+  return tf.tidy(() => {
+    const m2l = melToLinearMatrix().expandDims(0);
+    const ifreqDescale = descale(ifreq, PHASE_DESCALE_A, PHASE_DESCALE_B);
+    // Need to multiply phase by -1.0 to account for conjugacy difference
+    // between tensorflow and librosa/javascript istft.
+    const phase = tf.cumsum(tf.mul(ifreqDescale, Math.PI), 1);
+    const phaseLin = tf.matMul(phase, m2l);
+    return phaseLin;
+  });
 }
 
-async function interleaveReIm(real: tf.Tensor, imag: tf.Tensor) {
-  // Combine and add back in the zero DC component
-  let reImBatch = tf.concat([real, imag], 0).expandDims(3);
-  reImBatch = tf.pad(reImBatch, [[0, 0], [0, 0], [1, 0], [0, 0]]);
+function interleaveReIm(real: tf.Tensor, imag: tf.Tensor) {
+  const reImInterleave = tf.tidy(() => {
+    // Combine and add back in the zero DC component
+    let reImBatch = tf.concat([real, imag], 0).expandDims(3);
+    reImBatch = tf.pad(reImBatch, [[0, 0], [0, 0], [1, 0], [0, 0]]);
 
-  // Interleave real and imaginary for javascript ISTFT.
-  // Hack to interleave [re0, im0, re1, im1, ...] with batchToSpace.
-  const crops = [[0, 0], [0, 0]];
-  const reImInterleave =
-      tf.batchToSpaceND(reImBatch, [1, 2], crops).reshape([128, 4096]);
-  // Convert Tensor to a Float32Array[]
+    // Interleave real and imaginary for javascript ISTFT.
+    // Hack to interleave [re0, im0, re1, im1, ...] with batchToSpace.
+    const crops = [[0, 0], [0, 0]];
+    const reImInterleave =
+        tf.batchToSpaceND(reImBatch, [1, 2], crops).reshape([128, 4096]);
+    // Convert Tensor to a Float32Array[]
+    return reImInterleave;
+  });
   const reImArray = reImInterleave.dataSync();
   const reIm = [] as Float32Array[];
   for (let i = 0; i < 128; i++) {
@@ -90,31 +97,36 @@ async function reImToAudio(reIm: Float32Array[]) {
   return istft(reIm, ispecParams);
 }
 
-export async function specgramsToAudio(specgram: tf.Tensor4D) {
-  // Synthesize audio
-  const magSlice =
-      tf.slice(specgram, [0, 0, 0, 0], [1, -1, -1, 1]).reshape([1, 128, 1024]);
-  const magMel = magSlice as tf.Tensor3D;
-  const mag = melToLinear(magMel);
+// TODO(jesseengel): Make it work for batch of spectrograms.
+export async function specgramsToAudio(specgrams: tf.Tensor4D) {
+  const reImArray = tf.tidy(() => {
+    // Synthesize audio
+    const magSlice = tf.slice(specgrams, [0, 0, 0, 0], [1, -1, -1, 1]).reshape([
+      1, 128, 1024
+    ]);
+    const magMel = magSlice as tf.Tensor3D;
+    const mag = melToLinear(magMel);
 
-  const ifreqSlice =
-      tf.slice(specgram, [0, 0, 0, 1], [1, -1, -1, 1]).reshape([1, 128, 1024]);
-  const ifreq = ifreqSlice as tf.Tensor3D;
-  const phase = ifreqToPhase(ifreq);
+    const ifreqSlice = tf.slice(specgrams, [0, 0, 0, 1], [
+                           1, -1, -1, 1
+                         ]).reshape([1, 128, 1024]);
+    const ifreq = ifreqSlice as tf.Tensor3D;
+    const phase = ifreqToPhase(ifreq);
 
-  // Reflect all frequencies except for the Nyquist, which is shared between
-  // positive and negative frequencies for even nFft.
-  let real = mag.mul(tf.cos(phase));
-  const mirrorReal = tf.reverse(real.slice([0, 0, 0], [1, 128, 1023]), 2);
-  real = tf.concat([real, mirrorReal], 2);
+    // Reflect all frequencies except for the Nyquist, which is shared between
+    // positive and negative frequencies for even nFft.
+    let real = mag.mul(tf.cos(phase));
+    const mirrorReal = tf.reverse(real.slice([0, 0, 0], [1, 128, 1023]), 2);
+    real = tf.concat([real, mirrorReal], 2);
 
-  // Reflect all frequencies except for the Nyquist, take complex conjugate of
-  // the negative frequencies.
-  let imag = mag.mul(tf.sin(phase));
-  const mirrorImag = tf.reverse(imag.slice([0, 0, 0], [1, 128, 1023]), 2);
-  imag = tf.concat([imag, tf.mul(mirrorImag, -1.0)], 2);
-
-  const reIm = await interleaveReIm(real, imag);
+    // Reflect all frequencies except for the Nyquist, take complex conjugate of
+    // the negative frequencies.
+    let imag = mag.mul(tf.sin(phase));
+    const mirrorImag = tf.reverse(imag.slice([0, 0, 0], [1, 128, 1023]), 2);
+    imag = tf.concat([imag, tf.mul(mirrorImag, -1.0)], 2);
+    return [real, imag];
+  });
+  const reIm = await interleaveReIm(reImArray[0], reImArray[1]);
   const audio = await reImToAudio(reIm);
   return audio;
 }

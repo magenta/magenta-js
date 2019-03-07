@@ -23,8 +23,7 @@
 import * as tf from '@tensorflow/tfjs';
 
 import * as logging from '../core/logging';
-
-import {MIDI_PITCHES, MIN_MIDI_PITCH, N_LATENTS, N_PITCHES} from './constants';
+import {specgramsToAudio} from './audio_utils';
 import {boxUpscale, initialPad, pixelNorm} from './custom_layers';
 
 /**
@@ -33,8 +32,13 @@ import {boxUpscale, initialPad, pixelNorm} from './custom_layers';
 class GANSynth {
   private checkpointURL: string;
   private initialized: boolean;
-  private outputShape: number[];
+  // private outputShape: number[];
   private readonly nn = tf.sequential();
+  public readonly nLatents = 256;
+  public readonly nPitches = 61;
+  public readonly minMidiPitch = 24;
+  public readonly maxMidiPitch = 84;
+  public readonly midiPitches = this.maxMidiPitch - this.minMidiPitch + 1;
 
   /**
    * `GANSynth` constructor.
@@ -63,17 +67,19 @@ class GANSynth {
     // Rescale for He initialization
     // Training initialized to N(0,1) and then rescaled output, so here we get
     // the same result by rescaling the saved weights.
-    for (const v in vars) {
-      if (v.includes('kernel')) {
-        const fanIn = vars[v].shape[0] * vars[v].shape[1] * vars[v].shape[2];
-        vars[v] = tf.mul(vars[v], tf.sqrt(2 / fanIn));
+    tf.tidy(() => {
+      for (const v in vars) {
+        if (v.includes('kernel')) {
+          const fanIn = vars[v].shape[0] * vars[v].shape[1] * vars[v].shape[2];
+          vars[v] = tf.mul(vars[v], tf.sqrt(2 / fanIn));
+        }
       }
-    }
 
-    this.build(vars);
-    Object.keys(vars).map(name => vars[name].dispose());
-    this.initialized = true;
-    logging.logWithDuration('Initialized model', startTime, 'GANSynth');
+      this.build(vars);
+      Object.keys(vars).map(name => vars[name].dispose());
+      this.initialized = true;
+      logging.logWithDuration('Initialized model', startTime, 'GANSynth');
+    });
   }
 
   /**
@@ -119,7 +125,7 @@ class GANSynth {
       // The first layer is basically a 'same' conv2dTranspose
       // but we have to implement with padding because python did it this way
       // otherwise the weight matrix is transposed wrong.
-      const inputShape = {inputShape: [1, 1, N_LATENTS + N_PITCHES]};
+      const inputShape = {inputShape: [1, 1, this.nLatents + this.nPitches]};
       // TODO(jesseengel): Figure out if this pixelNorm is needed.
       // this.nn.add(pixelNorm(1e-8, inputShape));
       // this.nn.add(initialPad(2, 16));
@@ -206,9 +212,8 @@ class GANSynth {
       convConfig.activation = 'tanh';
       this.nn.add(tf.layers.conv2d(convConfig));
 
-      this.outputShape = this.nn.outputShape as number[];
+      // this.outputShape = this.nn.outputShape as number[];
       this.setWeights(vars);
-      console.log(`Output Shape:${this.outputShape}`);
     });
   }
 
@@ -259,33 +264,50 @@ class GANSynth {
   }
 
   /**
-   * Predicts MelLogMagnitudes and IFreq from latent (z) and pitch conditioning.
+   * Predicts LogMelMagnitudes and IFreq from latent (z) and pitch conditioning.
    *
    * @param inputs A 4-D Tensor of latent (z) concatenated with one-hot pitch
-   * conditioning. Size [batch, 1, 1, N_LATENTS].
+   * conditioning. Size [batch, 1, 1, nLatents].
    * @param batchSize Size of input batch.
+   * @returns a 4-D Tensor size [batch, time, freq, ch]. First channel is
+   *     LogMelSpectrogram and second channel is InstantaneousFrequency.
    */
   predict(inputs: tf.Tensor4D, batchSize: number) {
     return this.nn.predict(inputs, {batchSize}) as tf.Tensor4D;
   }
 
   /**
-   * Creates one random sample of MelLogSpecgram and IFreq from integer pitch.
+   * Creates one random sample of LogMelSpecgram and IFreq from integer pitch.
    *
    * @param pitch Integer MIDI pitch number of sound to generate.
+   * @returns specgrams a 4-D Tensor size [batch, time, freq, ch].
+   *    First channel is LogMelSpectrogram and
+   *    second channel is InstantaneousFrequency.
    */
   randomSample(pitch: number) {
     return tf.tidy(() => {
-      const z = tf.randomNormal([1, N_LATENTS], 0, 1, 'float32');
+      const z = tf.randomNormal([1, this.nLatents], 0, 1, 'float32');
       // Get one hot for pitch encoding
-      const pitchIdx = tf.tensor1d([pitch - MIN_MIDI_PITCH], 'int32');
-      const pitchOneHot = tf.oneHot(pitchIdx, MIDI_PITCHES);
+      const pitchIdx = tf.tensor1d([pitch - this.minMidiPitch], 'int32');
+      const pitchOneHot = tf.oneHot(pitchIdx, this.midiPitches);
       // Concat and add width and height dimensions.
       const cond = tf.concat([z, pitchOneHot], 1).expandDims(1).expandDims(1) as
           tf.Tensor4D;
       const specgrams = this.predict(cond, 1);
       return specgrams;
     });
+  }
+
+  /**
+   * Include specgramsToAudio as a member method for API/export.
+   *
+   * @param specgrams a 4-D Tensor size [batch, time, freq, ch].
+   *    First channel is LogMelSpectrogram and
+   *    second channel is InstantaneousFrequency.
+   * @returns Float32Array of audio samples for first specgram in the batch.
+   */
+  specgramsToAudio(specgrams: tf.Tensor4D) {
+    return specgramsToAudio(specgrams);
   }
 }
 

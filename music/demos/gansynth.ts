@@ -17,7 +17,7 @@
 import * as tf from '@tensorflow/tfjs-core';
 import * as Tone from 'tone';
 
-import {specgramsToAudio} from '../src/gansynth/audio_utils';
+// import {specgramsToAudio} from '../src/gansynth/audio_utils';
 import * as mm from '../src/index';
 
 import {CHECKPOINTS_DIR, writeMemory, writeTimer} from './common';
@@ -47,7 +47,7 @@ async function runGANSynth() {
 
   const start = await performance.now();
   const specgrams = await gansynth.randomSample(36);
-  const audio = await specgramsToAudio(specgrams);
+  const audio = await gansynth.specgramsToAudio(specgrams);
   await writeTimer('single-sample-gen-time', start);
 
   // Play sound.

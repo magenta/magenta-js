@@ -20,13 +20,6 @@ export const MAG_DESCALE_B = 0.113718730221;
 export const PHASE_DESCALE_A = 0.8;
 export const PHASE_DESCALE_B = 0.0;
 
-export const N_LATENTS = 256;
-export const N_PITCHES = 61;
-
 export const SAMPLE_RATE = 16000;
 export const N_HOP = 512;
 export const N_FFT = 2048;
-
-export const MIN_MIDI_PITCH = 24;
-export const MAX_MIDI_PITCH = 84;
-export const MIDI_PITCHES = MAX_MIDI_PITCH - MIN_MIDI_PITCH + 1;
