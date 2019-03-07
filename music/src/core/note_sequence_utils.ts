@@ -49,3 +49,41 @@ export function quantizeToStep(
   const unquantizedSteps = unquantizedSeconds * stepsPerSecond;
   return Math.floor(unquantizedSteps + (1 - quantizeCutoff));
 }
+
+export class MultipleTimeSignatureException extends Error {
+  constructor(message?: string) {
+    super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+export class BadTimeSignatureException extends Error {
+  constructor(message?: string) {
+    super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+export class NegativeTimeException extends Error {
+  constructor(message?: string) {
+    super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+export class MultipleTempoException extends Error {
+  constructor(message?: string) {
+    super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+
+/**
+ * Exception for when a sequence was unexpectedly quantized or unquantized.
+ *
+ * Should not happen during normal operation and likely indicates a programming
+ * error.
+ */
+export class QuantizationStatusException extends Error {
+  constructor(message?: string) {
+    super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}

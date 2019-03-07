@@ -1,5 +1,8 @@
+import {tensorflow} from '../protobuf/proto';
+
 import {constants} from '.';
-import {quantizeToStep, stepsPerQuarterToStepsPerSecond} from './note_sequence_utils';
+// tslint:disable-next-line:max-line-length
+import {BadTimeSignatureException, MultipleTempoException, MultipleTimeSignatureException, NegativeTimeException, QuantizationStatusException, quantizeToStep, stepsPerQuarterToStepsPerSecond,} from './note_sequence_utils';
 
 /**
  * @license
@@ -17,164 +20,22 @@ import {quantizeToStep, stepsPerQuarterToStepsPerSecond} from './note_sequence_u
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-export class MultipleTimeSignatureException extends Error {
-  constructor(message?: string) {
-    super(message);
-    Object.setPrototypeOf(this, new.target.prototype);
-  }
-}
-export class BadTimeSignatureException extends Error {
-  constructor(message?: string) {
-    super(message);
-    Object.setPrototypeOf(this, new.target.prototype);
-  }
-}
-export class NegativeTimeException extends Error {
-  constructor(message?: string) {
-    super(message);
-    Object.setPrototypeOf(this, new.target.prototype);
-  }
-}
-export class MultipleTempoException extends Error {
-  constructor(message?: string) {
-    super(message);
-    Object.setPrototypeOf(this, new.target.prototype);
-  }
-}
-
-/**
- * Exception for when a sequence was unexpectedly quantized or unquantized.
- *
- * Should not happen during normal operation and likely indicates a programming
- * error.
- */
-export class QuantizationStatusException extends Error {
-  constructor(message?: string) {
-    super(message);
-    Object.setPrototypeOf(this, new.target.prototype);
-  }
-}
-
-export enum PitchName {
-  UNKNOWN_PITCH_NAME = 0,
-  F_FLAT_FLAT = 1,
-  C_FLAT_FLAT = 2,
-  G_FLAT_FLAT = 3,
-  D_FLAT_FLAT = 4,
-  A_FLAT_FLAT = 5,
-  E_FLAT_FLAT = 6,
-  B_FLAT_FLAT = 7,
-  F_FLAT = 8,
-  C_FLAT = 9,
-  G_FLAT = 10,
-  D_FLAT = 11,
-  A_FLAT = 12,
-  E_FLAT = 13,
-  B_FLAT = 14,
-  F = 15,
-  C = 16,
-  G = 17,
-  D = 18,
-  A = 19,
-  E = 20,
-  B = 21,
-  F_SHARP = 22,
-  C_SHARP = 23,
-  G_SHARP = 24,
-  D_SHARP = 25,
-  A_SHARP = 26,
-  E_SHARP = 27,
-  B_SHARP = 28,
-  F_SHARP_SHARP = 29,
-  C_SHARP_SHARP = 30,
-  G_SHARP_SHARP = 31,
-  D_SHARP_SHARP = 32,
-  A_SHARP_SHARP = 33,
-  E_SHARP_SHARP = 34,
-  B_SHARP_SHARP = 35
-}
-
-export enum Key {
-  C = 0,
-  C_SHARP = 1,
-  D_FLAT = 1,
-  D = 2,
-  D_SHARP = 3,
-  E_FLAT = 3,
-  E = 4,
-  F = 5,
-  F_SHARP = 6,
-  G_FLAT = 6,
-  G = 7,
-  G_SHARP = 8,
-  A_FLAT = 8,
-  A = 9,
-  A_SHARP = 10,
-  B_FLAT = 10,
-  B = 11
-}
-
-export enum Mode {
-  MAJOR = 0,
-  MINOR = 1,
-  NOT_SPECIFIED = 2,
-  MIXOLYDIAN = 3,
-  DORIAN = 4,
-  PHRYGIAN = 5,
-  LYDIAN = 6,
-  LOCRIAN = 7
-}
-
-enum TextAnnotationType {
-  UNKNOWN = 0,
-  CHORD_SYMBOL = 1,
-  BEAT = 2
-}
-
-export interface TimeSignature {
-  time?: (number|null);
-  numerator?: (number|null);
-  denominator?: (number|null);
-}
-
-export interface KeySignature {
-  time?: (number|null);
-  key?: (Key|null);
-  mode?: (Mode|null);
-}
-
-export interface Tempo {
-  time?: (number|null);
-  qpm?: (number|null);
-}
-
-export interface QuantizationInfo {
-  stepsPerQuarter?: (number|null);
-  stepsPerSecond?: (number|null);
-}
-
-export class Note {
+export class SimpleNote {
   // Basic properties.
   public pitch?: number;
   public velocity?: number;
   public instrument?: number;
   public program?: number;
   public isDrum?: boolean;
+  public pitchName?: tensorflow.magenta.NoteSequence.PitchName;
   // Unquantized notes.
   public startTime?: number;
   public endTime?: number;
   // Quantized notes.
   public quantizedStartStep?: number;
   public quantizedEndStep?: number;
-  // Optional properties.
-  public pitchName?: PitchName;
-  public numerator?: number;
-  public denominator?: number;
-  public part?: number;
-  public voice?: number;
 
-  constructor(note?: Note) {
+  constructor(note?: SimpleNote) {
     if (note) {
       this.pitch = note.pitch;
       this.pitchName = note.pitchName;
@@ -187,58 +48,28 @@ export class Note {
       this.quantizedStartStep = note.quantizedStartStep;
       this.quantizedEndStep = note.quantizedEndStep;
       this.pitchName = note.pitchName;
-      this.numerator = note.numerator;
-      this.denominator = note.denominator;
-      this.part = note.part;
-      this.voice = note.voice;
     }
   }
 }
 
-class ControlChange extends Note {
-  time?: (number|null);
-  quantizedStep?: (number|null);
-  controlNumber?: (number|null);
-  controlValue?: (number|null);
-  instrument?: (number|null);
-  program?: (number|null);
-  isDrum?: (boolean|null);
-}
-
-class PitchBend extends Note {
-  time?: (number|null);
-  bend?: (number|null);
-  instrument?: (number|null);
-  program?: (number|null);
-  isDrum?: (boolean|null);
-}
-
-class TextAnnotation extends Note {
-  time?: (number|null);
-  quantizedStep?: (number|null);
-  text?: (string|null);
-  annotationType?: (TextAnnotationType|null);
-}
-
-export class NoteSequence {
+export class SimpleNoteSequence {
   public id?: string;
-  public notes?: Note[];
+  public notes?: SimpleNote[];
   public totalTime?: number;
   public totalQuantizedSteps?: number;
   public ticksPerQuarter?: number;
-  public timeSignatures?: TimeSignature[];
-  public keySignatures?: KeySignature[];
-  public tempos?: Tempo[];
-  public quantizationInfo?: QuantizationInfo|null;
-  public pitchBends?: PitchBend[];
-  public controlChanges?: ControlChange[];
-  public textAnnotations?: TextAnnotation[];
+  public timeSignatures?: tensorflow.magenta.NoteSequence.ITimeSignature[];
+  public keySignatures?: tensorflow.magenta.NoteSequence.IKeySignature[];
+  public tempos?: tensorflow.magenta.NoteSequence.ITempo[];
+  public quantizationInfo?: tensorflow.magenta.NoteSequence.IQuantizationInfo;
+  public pitchBends?: tensorflow.magenta.NoteSequence.IPitchBend[];
+  public controlChanges?: tensorflow.magenta.NoteSequence.IControlChange[];
 
   /**
    * Constructs a new NoteSequence.
    * @param [properties] Properties to set
    */
-  constructor(seq?: NoteSequence) {
+  constructor(seq?: SimpleNoteSequence) {
     if (seq) {
       this.id = seq.id;
       this.notes = JSON.parse(JSON.stringify(seq.notes));
@@ -250,34 +81,7 @@ export class NoteSequence {
       this.tempos = JSON.parse(JSON.stringify(seq.tempos));
       this.pitchBends = JSON.parse(JSON.stringify(seq.pitchBends));
       this.controlChanges = JSON.parse(JSON.stringify(seq.controlChanges));
-      this.textAnnotations = JSON.parse(JSON.stringify(seq.textAnnotations));
     }
-  }
-
-  /**
-   * Assign instruments to the notes, pitch bends, and control changes of a
-   * `NoteSequence` based on program numbers and drum status. All drums will be
-   * assigned the last instrument (and program 0). All non-drum events with the
-   * same program number will be assigned to a single instrument.
-   * @returns A new `NoteSequence` with merged instruments.
-   */
-  mergeInstruments() {
-    const result = new NoteSequence(this);
-    const events =
-        result.notes.concat(result.pitchBends).concat(result.controlChanges);
-    const programs =
-        Array.from(new Set(events.filter(e => !e.isDrum).map(e => e.program)));
-
-    events.forEach(e => {
-      if (e.isDrum) {
-        e.program = 0;
-        e.instrument = programs.length;
-      } else {
-        e.instrument = programs.indexOf(e.program);
-      }
-    });
-
-    return result;
   }
 
   /**
@@ -392,9 +196,9 @@ export class NoteSequence {
    * @throws {NegativeTimeException} If a note or chord occurs at a negative
    * time.
    */
-  quantizeNoteSequence(stepsPerQuarter: number): NoteSequence {
+  quantizeNoteSequence(stepsPerQuarter: number): SimpleNoteSequence {
     // Make a copy.
-    const qns = new NoteSequence(this);
+    const qns = new SimpleNoteSequence(this);
 
     qns.quantizationInfo.stepsPerQuarter = stepsPerQuarter;
     if (qns.timeSignatures.length > 0) {
@@ -482,7 +286,7 @@ export class NoteSequence {
     this.assertIsRelativeQuantizedSequence();
     this.assertSingleTempo();
 
-    const ns = new NoteSequence(this);
+    const ns = new SimpleNoteSequence(this);
 
     if (qpm) {
       if (ns.tempos && ns.tempos.length > 0) {
@@ -519,7 +323,7 @@ export class NoteSequence {
    * Returns a list of events with a `time` and `quantizedStep` properties.
    */
   private getQuantizedTimeEvents() {
-    return this.controlChanges.concat(this.textAnnotations);
+    return this.controlChanges;
   }
 
   /**
@@ -564,19 +368,4 @@ export class NoteSequence {
       }
     });
   }
-
-  // TODO(notwaldorf): Add these too. Maybe?
-  // public filename: string;
-  // public referenceNumber: number;
-  // public collectionName: string;
-
-  // public partInfos: tensorflow.magenta.NoteSequence.IPartInfo[];
-  // public sourceInfo?: (tensorflow.magenta.NoteSequence.ISourceInfo|null);
-  // public textAnnotations: tensorflow.magenta.NoteSequence.ITextAnnotation[];
-  // public sectionAnnotations:
-  //     tensorflow.magenta.NoteSequence.ISectionAnnotation[];
-  // public sectionGroups: tensorflow.magenta.NoteSequence.ISectionGroup[];
-  // public subsequenceInfo?: (tensorflow.magenta.NoteSequence.ISubsequenceInfo|
-  //                           null);
-  // public sequenceMetadata?: (tensorflow.magenta.ISequenceMetadata|null);
 }
