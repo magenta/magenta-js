@@ -427,7 +427,7 @@ export function mergeInstruments(ns: INoteSequence) {
 
 /**
  * Splits an unquantized `NoteSequence` into smaller `NoteSequences` of
- * eaqual chunks. If a note splits across a chunk boundary, then it will be
+ * equal chunks. If a note splits across a chunk boundary, then it will be
  * split between the two chunks.
  *
  * @param ns The `NoteSequence` to split.
