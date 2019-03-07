@@ -29,13 +29,14 @@ import * as tf from '@tensorflow/tfjs';
  * @param epsilon A small positive number to avoid division by zero.
  */
 class PixelNorm extends tf.layers.Layer {
-  constructor(public epsilon = 1e-8, public layerConfig = {}) {
-    super(layerConfig);
+  constructor(public epsilon = 1e-8) {
+    super({});
     this.supportsMasking = true;
   }
 
   /**
-   * @param {*} inputShapes
+   * Computes output shape.
+   * @param inputShape Shape of input.
    */
   computeOutputShape(inputShape: number[]) {
     return [inputShape[0], inputShape[1], inputShape[2], inputShape[3]];
@@ -69,8 +70,8 @@ class PixelNorm extends tf.layers.Layer {
   }
 }
 
-export function pixelNorm(epsilon = 1e-8, layerConfig = {}) {
-  return new PixelNorm(epsilon, layerConfig);
+export function pixelNorm(epsilon = 1e-8) {
+  return new PixelNorm(epsilon);
 }
 
 /**
@@ -132,13 +133,13 @@ export function initialPad(kernelH = 2, kernelW = 16, layerConfig = {}) {
  * @param scale Integer amount to upscale width and height.
  */
 class BoxUpscale extends tf.layers.Layer {
-  constructor(public scale = 2, public layerConfig = {}) {
-    super(layerConfig);
+  constructor(public scale = 2) {
+    super({});
     this.supportsMasking = true;
   }
 
   /**
-   * @param {*} inputShapes
+   * @param inputShapes Shape of the input.
    */
   computeOutputShape(inputShape: number[]) {
     return [
@@ -154,14 +155,16 @@ class BoxUpscale extends tf.layers.Layer {
    */
   // tslint:disable-next-line:no-any
   call(inputs: tf.Tensor4D, kwargs: any): tf.Tensor4D {
-    let input = inputs;
-    if (Array.isArray(input)) {
-      input = input[0];
-    }
-    this.invokeCallHook(inputs, kwargs);
-    const tiledInput = tf.tile(input, [this.scale ** 2, 1, 1, 1]);
-    return tf.batchToSpaceND(
-        tiledInput, [this.scale, this.scale], [[0, 0], [0, 0]]);
+    return tf.tidy(() => {
+      let input = inputs;
+      if (Array.isArray(input)) {
+        input = input[0];
+      }
+      this.invokeCallHook(inputs, kwargs);
+      const tiledInput = tf.tile(input, [this.scale ** 2, 1, 1, 1]);
+      return tf.batchToSpaceND(
+          tiledInput, [this.scale, this.scale], [[0, 0], [0, 0]]);
+    });
   }
 
   /**
@@ -172,6 +175,6 @@ class BoxUpscale extends tf.layers.Layer {
   }
 }
 
-export function boxUpscale(scale = 2, layerConfig = {}) {
-  return new BoxUpscale(scale, layerConfig);
+export function boxUpscale(scale = 2) {
+  return new BoxUpscale(scale);
 }
