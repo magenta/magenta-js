@@ -424,3 +424,96 @@ export function mergeInstruments(ns: INoteSequence) {
 
   return result;
 }
+
+/**
+ * Splits an unquantized `NoteSequence` into smaller `NoteSequences` of
+ * equal chunks. If a note splits across a chunk boundary, then it will be
+ * split between the two chunks.
+ *
+ * Silent padding may be added to the final chunk to make it `chunkSize`.
+ *
+ * @param ns The `NoteSequence` to split.
+ * @param chunkSize The number of steps per chunk. For example, if you want to
+ * split the sequence into 2 bar chunks, then if the sequence has 4
+ * steps/quarter, that will be 32 steps for each 2 bars (so a chunkSize of 32).
+ *
+ * @returns An array of `NoteSequences` each of which are at most `chunkSize`
+ * steps.
+ */
+export function split(seq: INoteSequence, chunkSize: number): NoteSequence[] {
+  assertIsQuantizedSequence(seq);
+
+  // Make a clone so that we don't destroy the input.
+  const ns = clone(seq);
+
+  // Sort notes first.
+  const notesBystartStep =
+      ns.notes.sort((a, b) => a.quantizedStartStep - b.quantizedStartStep);
+
+  const chunks = [];
+  let startStep = 0;
+  let currentNotes = [];
+
+  for (let i = 0; i < notesBystartStep.length; i++) {
+    const note = notesBystartStep[i];
+
+    const originalStartStep = note.quantizedStartStep;
+    const originalEndStep = note.quantizedEndStep;
+
+    // Rebase this note on the current chunk.
+    note.quantizedStartStep -= startStep;
+    note.quantizedEndStep -= startStep;
+
+    if (note.quantizedStartStep < 0) {
+      continue;
+    }
+    // If this note fits in the chunk, add it to the current sequence.
+    if (note.quantizedEndStep <= chunkSize) {
+      currentNotes.push(note);
+    } else {
+      // If this note spills over, truncate it and add it to this sequence.
+      if (note.quantizedStartStep < chunkSize) {
+        const newNote = NoteSequence.Note.create(note);
+        newNote.quantizedEndStep = chunkSize;
+        // Clear any absolute times since they're not valid.
+        newNote.startTime = newNote.endTime = undefined;
+        currentNotes.push(newNote);
+
+        // Keep the rest of this note, and make sure that next loop still deals
+        // with it, and reset it for the next loop.
+        note.quantizedStartStep = startStep + chunkSize;
+        note.quantizedEndStep = originalEndStep;
+      } else {
+        // We didn't truncate this note at all, so reset it for the next loop.
+        note.quantizedStartStep = originalStartStep;
+        note.quantizedEndStep = originalEndStep;
+      }
+
+      // Do we need to look at this note again?
+      if (note.quantizedEndStep > chunkSize ||
+          note.quantizedStartStep > chunkSize) {
+        i = i - 1;
+      }
+      // Save this chunk if it isn't empty.
+      if (currentNotes.length !== 0) {
+        const newSequence = clone(ns);
+        newSequence.notes = currentNotes;
+        newSequence.totalQuantizedSteps = chunkSize;
+        chunks.push(newSequence);
+      }
+
+      // Start a new chunk.
+      currentNotes = [];
+      startStep += chunkSize;
+    }
+  }
+
+  // Deal with the leftover notes we have in the last chunk.
+  if (currentNotes.length !== 0) {
+    const newSequence = clone(ns);
+    newSequence.notes = currentNotes;
+    newSequence.totalQuantizedSteps = chunkSize;
+    chunks.push(newSequence);
+  }
+  return chunks;
+}
