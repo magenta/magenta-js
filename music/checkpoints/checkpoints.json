@@ -3,7 +3,7 @@
     "id": "drums_2bar_lokl_small",
     "model": "MusicVAE",
     "description": "A 2-bar, 9-class onehot drum model with a strong prior (low KL divergence), which is better for sampling. Less accurate, but smaller in size than full model.",
-    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/drums_lokl_small",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/drums_2bar_lokl_small",
     "size_mb": 18.5
   },
   {

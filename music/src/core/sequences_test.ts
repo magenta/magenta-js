@@ -127,6 +127,24 @@ function addQuantizedControlStepsToSequence(
   });
 }
 
+function compareNotes(note1: NoteSequence.INote, note2: NoteSequence.INote) {
+  return note1.pitch === note2.pitch && note1.velocity === note2.velocity &&
+      note1.quantizedStartStep === note2.quantizedStartStep &&
+      note1.quantizedEndStep === note2.quantizedEndStep;
+}
+
+function compareNotesArray(a: NoteSequence.INote[], b: NoteSequence.INote[]) {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let i = 0; i < a.length; i++) {
+    if (!compareNotes(a[i], b[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
 test('Quantize NoteSequence', (t: test.Test) => {
   const ns = createTestNS();
 
@@ -797,5 +815,90 @@ test('Trim and truncate NoteSequence (quantized)', (t: test.Test) => {
   t.deepEqual(
       NoteSequence.toObject(sequences.trim(ns1, 1, 5, true)),
       NoteSequence.toObject(expected));
+  t.end();
+});
+
+test('Split sequence in 2 steps', (t: test.Test) => {
+  let ns1 = createTestNS();
+  addTrackToSequence(
+      ns1, 0,
+      [[60, 100, 0, 3], [72, 100, 2, 4], [80, 100, 6, 9], [20, 100, 40, 42]]);
+  ns1 = sequences.quantizeNoteSequence(ns1, 1);
+
+  // The first [60, 100, 0, 3] is split in 2 sequences.
+  const expected1 = [new NoteSequence.Note(
+      {pitch: 60, velocity: 100, quantizedStartStep: 0, quantizedEndStep: 2})];
+  // This contains the leftover from the first note, and [72, 100, 2, 4].
+  const expected2 = [
+    new NoteSequence.Note(
+        {pitch: 60, velocity: 100, quantizedStartStep: 0, quantizedEndStep: 1}),
+    new NoteSequence.Note(
+        {pitch: 72, velocity: 100, quantizedStartStep: 0, quantizedEndStep: 2})
+  ];
+  // [80, 100, 6, 9] is basically [80, 100, 0, 3], so it's split in 2 sequences
+  const expected3 = [new NoteSequence.Note(
+      {pitch: 80, velocity: 100, quantizedStartStep: 0, quantizedEndStep: 2})];
+  const expected4 = [new NoteSequence.Note(
+      {pitch: 80, velocity: 100, quantizedStartStep: 0, quantizedEndStep: 1})];
+  const expected5 = [new NoteSequence.Note(
+      {pitch: 20, velocity: 100, quantizedStartStep: 0, quantizedEndStep: 2})];
+
+  const split = sequences.split(ns1, 2);
+  t.equal(5, split.length);
+
+  // The objects aren't exactly equal since the returned sequences' notes
+  // have more fields (instruments, drums), so loosely compare notes.
+  t.is(true, compareNotesArray(split[0].notes, expected1), 'split 1 ok');
+  t.is(true, compareNotesArray(split[1].notes, expected2), 'split 2 ok');
+  t.is(true, compareNotesArray(split[2].notes, expected3), 'split 3 ok');
+  t.is(true, compareNotesArray(split[3].notes, expected4), 'split 4 ok');
+  t.is(true, compareNotesArray(split[4].notes, expected5), 'split 5 ok');
+  t.end();
+});
+
+test('Split sequence in 64 steps', (t: test.Test) => {
+  let ns1 = createTestNS();
+  addTrackToSequence(ns1, 0, [
+    [60, 100, 0, 3], [70, 100, 2, 4], [80, 100, 6, 9], [90, 100, 40, 42],
+    [10, 100, 63, 68], [20, 100, 70, 74]
+  ]);
+  ns1 = sequences.quantizeNoteSequence(ns1, 1);
+
+  // There are basically just 2 sequences, before or after the 64 step mark.
+  const expected1 = [
+    new NoteSequence.Note(
+        {pitch: 60, velocity: 100, quantizedStartStep: 0, quantizedEndStep: 3}),
+    new NoteSequence.Note(
+        {pitch: 70, velocity: 100, quantizedStartStep: 2, quantizedEndStep: 4}),
+    new NoteSequence.Note(
+        {pitch: 80, velocity: 100, quantizedStartStep: 6, quantizedEndStep: 9}),
+    new NoteSequence.Note({
+      pitch: 90,
+      velocity: 100,
+      quantizedStartStep: 40,
+      quantizedEndStep: 42
+    }),
+    new NoteSequence.Note({
+      pitch: 10,
+      velocity: 100,
+      quantizedStartStep: 63,
+      quantizedEndStep: 64
+    })
+  ];
+  // This contains the leftover from the first note, and [72, 100, 2, 4].
+  const expected2 = [
+    new NoteSequence.Note(
+        {pitch: 10, velocity: 100, quantizedStartStep: 0, quantizedEndStep: 4}),
+    new NoteSequence.Note(
+        {pitch: 20, velocity: 100, quantizedStartStep: 6, quantizedEndStep: 10})
+  ];
+
+  const split = sequences.split(ns1, 64);
+  t.equal(2, split.length);
+
+  // The objects aren't exactly equal since the returned sequences' notes
+  // have more fields (instruments, drums), so loosely compare notes.
+  t.is(true, compareNotesArray(split[0].notes, expected1), 'split 1 ok');
+  t.is(true, compareNotesArray(split[1].notes, expected2), 'split 2 ok');
   t.end();
 });
