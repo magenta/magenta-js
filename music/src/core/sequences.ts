@@ -529,11 +529,11 @@ function concatenateHelper(
   return concatSeq;
 }
 
-function trimHelper
+function trimHelper(
     ns: INoteSequence, start: number, end: number,
     totalKey: 'totalQuantizedSteps'|'totalTime',
     startKey: 'startTime'|'quantizedStartStep',
-    endKey: 'endTime'|'quantizedEndStep', truncateEndNotes?: boolean) 
+    endKey: 'endTime'|'quantizedEndStep', truncateEndNotes?: boolean) {
   const result = clone(ns);
   result[totalKey] = end;
   result.notes = result.notes.filter(
