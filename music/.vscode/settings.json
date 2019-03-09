@@ -14,9 +14,7 @@
   "files.trimTrailingWhitespace": true,
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
-  "[typescript]": {
-    "editor.formatOnSave": true
-  },
+  "editor.formatOnSave": true,
   "editor.rulers": [
     80
   ],

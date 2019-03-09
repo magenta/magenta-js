@@ -29,4 +29,4 @@ export * from './midi_io';
 export * from './player';
 export * from './recorder';
 export * from './visualizer';
-export * from './note_sequence';
+export * from './new_sequence';

@@ -16,99 +16,178 @@
 //  */
 
 import * as test from 'tape';
-
-import { SimpleNoteSequence as batman } from './note_sequence';
-
-// tslint:disable-next-line:max-line-length
-//import {MultipleTempoException, MultipleTimeSignatureException, QuantizationStatusException, quantizeToStep, SimpleNote, SimpleNoteSequence, stepsPerQuarterToStepsPerSecond} from './note_sequence';
+import { SimpleNoteSequence, SimpleNote } from './new_sequence';
 
 const STEPS_PER_QUARTER = 4;
 
-// function createTestNS() {
-//   const ns = new batman();
-//   // ns.tempos.push({qpm: 60, time: 0});
+function createTestNS() {
+  const ns = new SimpleNoteSequence();
+  ns.tempos.push({qpm: 60, time: 0});
 
-//   // ns.timeSignatures.push({
-//   //   time: 0,
-//   //   numerator: 4,
-//   //   denominator: 4,
-//   // });
+  ns.timeSignatures.push({
+    time: 0,
+    numerator: 4,
+    denominator: 4,
+  });
 
-//   // return ns;
-//   // console.log('ok');
-// }
+  return ns;
+}
 
-// function addTrackToSequence(
-//     ns: SimpleNoteSequence, instrument: number, notes: number[][]) {
-//   for (const noteParams of notes) {
-//     const note = new SimpleNote();
-//     note.pitch = noteParams[0];
-//     note.velocity = noteParams[1];
-//     note.startTime = noteParams[2];
-//     note.endTime = noteParams[3];
-//     ns.addNote(note);
-//   }
-// }
+function addUnquantizedTrackToSequence(
+    ns: SimpleNoteSequence, instrument: number, notes: number[][]) {
+  for (const noteParams of notes) {
+    const note = new SimpleNote();
+    note.pitch = noteParams[0];
+    note.velocity = noteParams[1];
+    note.startTime = noteParams[2];
+    note.endTime = noteParams[3];
+    note.instrument = instrument;
+    ns.addUnquantizedNote(note);
+  }
+}
 
-// function addQuantizedStepsToSequence(
-//     ns: SimpleNoteSequence, quantizedSteps: number[][]) {
-//   quantizedSteps.forEach((qstep, i) => {
-//     const note = ns.notes[i];
-//     note.quantizedStartStep = qstep[0];
-//     note.quantizedEndStep = qstep[1];
-//     if (note.quantizedEndStep > ns.totalQuantizedSteps) {
-//       ns.totalQuantizedSteps = note.quantizedEndStep;
-//     }
-//   });
-// }
+function addQuantizedTrackToSequence(
+  ns: SimpleNoteSequence, instrument: number, notes: number[][]) {
+  for (const noteParams of notes) {
+    const note = new SimpleNote();
+    note.pitch = noteParams[0];
+    note.velocity = noteParams[1];
+    note.quantizedStartStep = noteParams[2];
+    note.quantizedEndStep = noteParams[3];
+    note.instrument = instrument;
+    ns.addQuantizedNote(note);
+  }
+}
 
-// function addControlChangesToSequence(
-//     ns: SimpleNoteSequence, instrument: number, controlChanges: number[][]) {
-//   for (const ccParams of controlChanges) {
-//     ns.controlChanges.push({
-//       time: ccParams[0],
-//       controlNumber: ccParams[1],
-//       controlValue: ccParams[2],
-//       instrument
-//     });
-//   }
-// }
+function setQuantizedStepsForSequence(
+    ns: SimpleNoteSequence, quantizedSteps: number[][]) {
+  quantizedSteps.forEach((qstep, i) => {
+    const note = ns.notes[i];
+    note.quantizedStartStep = qstep[0];
+    note.quantizedEndStep = qstep[1];
+    if (note.quantizedEndStep > ns.totalQuantizedSteps) {
+      ns.totalQuantizedSteps = note.quantizedEndStep;
+    }
+  });
+}
 
-// function addQuantizedControlStepsToSequence(
-//     ns: SimpleNoteSequence, quantizedSteps: number[]) {
-//   quantizedSteps.forEach((qstep, i) => {
-//     const cc = ns.controlChanges[i];
-//     cc.quantizedStep = qstep;
-//   });
-// }
+function addControlChangesToSequence(
+    ns: SimpleNoteSequence, instrument: number, controlChanges: number[][]) {
+  for (const ccParams of controlChanges) {
+    ns.controlChanges.push({
+      time: ccParams[0],
+      controlNumber: ccParams[1],
+      controlValue: ccParams[2],
+      instrument
+    });
+  }
+}
 
-// test('Quantize SimpleNoteSequence', (t: test.Test) => {
-//   const ns = createTestNS();
+function setQuantizedControlStepsForSequence(
+    ns: SimpleNoteSequence, quantizedSteps: number[]) {
+  quantizedSteps.forEach((qstep, i) => {
+    ns.controlChanges[i].quantizedStep = qstep;
+  });
+}
 
-//   addTrackToSequence(ns, 0, [
-//     [12, 100, 0.01, 10.0], [11, 55, 0.22, 0.50], [40, 45, 2.50, 3.50],
-//     [55, 120, 4.0, 4.01], [52, 99, 4.75, 5.0]
-//   ]);
-//   addControlChangesToSequence(ns, 0, [[2.0, 64, 127], [4.0, 64, 0]]);
+test('Cloning a SimpleNote (unquantized)', (t: test.Test) => {
+  const n = new SimpleNote();
+  n.pitch = 100;
+  n.velocity = 60;
+  n.startTime = 1.5;
+  n.endTime = 4.5;
+  const clone = new SimpleNote(n);
+  t.deepEqual(n, clone);
+  t.end();
+});
 
-//   // Make a copy.
-//   const expectedQuantizedSequence = new SimpleNoteSequence(ns);
-//   expectedQuantizedSequence.quantizationInfo.stepsPerQuarter =
-//       STEPS_PER_QUARTER;
-//   addQuantizedStepsToSequence(
-//       expectedQuantizedSequence,
-//       [[0, 40], [1, 2], [10, 14], [16, 17], [19, 20]]);
-//   addQuantizedControlStepsToSequence(expectedQuantizedSequence, [8, 16]);
+test('Cloning a SimpleNote (quantized)', (t: test.Test) => {
+  const n = new SimpleNote();
+  n.pitch = 100;
+  n.velocity = 60;
+  n.quantizedStartStep = 1;
+  n.quantizedEndStep = 4;
+  const clone = new SimpleNote(n);
+  t.deepEqual(n, clone);
+  t.end();
+});
 
-//   const qns = ns.quantize(STEPS_PER_QUARTER);
-//   t.deepEqual(qns, expectedQuantizedSequence);
+test('Cloning a SimpleNoteSequence (unquantized)', (t: test.Test) => {
+  const ns = new SimpleNoteSequence();
+  const n1 = new SimpleNote();
+  n1.pitch = 70;
+  n1.velocity = 50;
+  n1.startTime = 0;
+  n1.endTime = 2.5;
+  const n2 = new SimpleNote();
+  n2.pitch = 80;
+  n2.velocity = 60;
+  n2.startTime = 2.5;
+  n2.endTime = 3;
+  const n3 = new SimpleNote();
+  n3.pitch = 90;
+  n3.velocity = 70;
+  n3.startTime = 5;
+  n3.endTime = 6;
 
-//   t.end();
-// });
+  ns.addUnquantizedNote(n1);
+  ns.addUnquantizedNote(n2);
+  ns.addUnquantizedNote(n3);
 
-test('Batman', (t: test.Test) => {
-  t.equal(1,1);
- const ns = new batman();
+  const clone = new SimpleNoteSequence(ns);
+  t.deepEqual(ns, clone);
+  t.end();
+});
+
+test('Cloning a SimpleNoteSequence (quantized)', (t: test.Test) => {
+  const ns = new SimpleNoteSequence();
+  const n1 = new SimpleNote();
+  n1.pitch = 70;
+  n1.velocity = 50;
+  n1.quantizedStartStep = 0;
+  n1.quantizedEndStep = 2;
+  const n2 = new SimpleNote();
+  n2.pitch = 80;
+  n2.velocity = 60;
+  n2.quantizedStartStep = 2;
+  n2.quantizedEndStep = 4;
+  const n3 = new SimpleNote();
+  n3.pitch = 90;
+  n3.velocity = 70;
+  n3.quantizedStartStep = 6;
+  n3.quantizedEndStep = 8;
+
+  ns.addQuantizedNote(n1);
+  ns.addQuantizedNote(n2);
+  ns.addQuantizedNote(n3);
+
+  const clone = new SimpleNoteSequence(ns);
+  t.deepEqual(ns, clone);
+  t.end();
+});
+
+test('Quantize SimpleNoteSequence', (t: test.Test) => {
+  const ns = createTestNS();
+
+  addUnquantizedTrackToSequence(ns, 0, [
+    [12, 100, 0.01, 10.0], [11, 55, 0.22, 0.50], [40, 45, 2.50, 3.50],
+    [55, 120, 4.0, 4.01], [52, 99, 4.75, 5.0]
+  ]);
+  addControlChangesToSequence(ns, 0, [[2.0, 64, 127], [4.0, 64, 0]]);
+
+  // Make a copy.
+  const expectedQuantizedSequence = new SimpleNoteSequence(ns);
+  expectedQuantizedSequence.quantizationInfo.stepsPerQuarter =
+      STEPS_PER_QUARTER;
+
+  setQuantizedStepsForSequence(
+      expectedQuantizedSequence,
+      [[0, 40], [1, 2], [10, 14], [16, 17], [19, 20]]);
+  setQuantizedControlStepsForSequence(expectedQuantizedSequence, [8, 16]);
+
+  const qns = ns.quantize(STEPS_PER_QUARTER);
+  t.deepEqual(qns, expectedQuantizedSequence);
+
   t.end();
 });
 
@@ -431,3 +510,4 @@ test('Batman', (t: test.Test) => {
 //           t, [[0.0, 0.5], [0.5, 1.00], [1.00, 1.5], [1.5, 2.5], [2.5, 3.5]], 10,
 //           undefined, 30, 20);
 //     });
+

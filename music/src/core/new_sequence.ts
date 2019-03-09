@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 
- import {constants} from '.';
+import * as constants from './constants';
+
 // tslint:disable-next-line:max-line-length
-import { ITimeSignature, IKeySignature, ITempo, IQuantizationInfo, IPitchBend, IControlChange, PitchName, INoteSequence, NoteSequence } from '../protobuf';
+import { ITimeSignature, IKeySignature, ITempo, IQuantizationInfo, IPitchBend, IControlChange, PitchName, INoteSequence, NoteSequence } from '../protobuf/index';
 
 /*
  * Helpers
@@ -103,18 +104,18 @@ export class QuantizationStatusException extends Error {
  */
 export class SimpleNote implements NoteSequence.INote {
   // Basic properties.
-  public pitch?: number;
-  public velocity?: number;
-  public instrument?: number;
-  public program?: number;
-  public isDrum?: boolean;
-  public pitchName?: PitchName;
+  public pitch?: number = null;
+  public velocity?: number = null;
+  public instrument?: number = null;
+  public program?: number = null;
+  public isDrum?: boolean = null;
+  public pitchName?: PitchName = null;
   // Unquantized notes.
-  public startTime?: number;
-  public endTime?: number;
+  public startTime?: number = null;
+  public endTime?: number = null;
   // Quantized notes.
-  public quantizedStartStep?: number;
-  public quantizedEndStep?: number;
+  public quantizedStartStep?: number = null;
+  public quantizedEndStep?: number = null;
 
   constructor(note?: SimpleNote) {
     if (note) {
@@ -128,7 +129,6 @@ export class SimpleNote implements NoteSequence.INote {
       this.endTime = note.endTime;
       this.quantizedStartStep = note.quantizedStartStep;
       this.quantizedEndStep = note.quantizedEndStep;
-      this.pitchName = note.pitchName;
     }
   }
 }
@@ -137,48 +137,48 @@ export class SimpleNote implements NoteSequence.INote {
  * NoteSequence
  */
 export class SimpleNoteSequence implements INoteSequence {
-  public id?: string;
+  public id?: string = null;
   public notes?: SimpleNote[] = [];
-  public totalTime?: number;
-  public totalQuantizedSteps?: number;
-  public ticksPerQuarter?: number;
+  public totalTime?: number = null;
+  public totalQuantizedSteps?: number = null;
+  public ticksPerQuarter?: number = null;
   public timeSignatures?: ITimeSignature[] = [];
   public keySignatures?: IKeySignature[] = [];
   public tempos?: ITempo[] = [];
   public quantizationInfo?: IQuantizationInfo = {};
   public pitchBends?: IPitchBend[] = [];
   public controlChanges?: IControlChange[] = [];
-
   /**
    * Constructs a new NoteSequence.
    * @param [properties] Properties to set
    */
   constructor(seq?: SimpleNoteSequence) {
-    // if (seq) {
-    //   this.id = seq.id;
-    //   this.notes = JSON.parse(JSON.stringify(seq.notes));
-    //   this.totalTime = seq.totalTime;
-    //   this.totalQuantizedSteps = seq.totalQuantizedSteps;
-    //   this.ticksPerQuarter = seq.ticksPerQuarter;
-    //   this.timeSignatures = JSON.parse(JSON.stringify(seq.timeSignatures));
-    //   this.keySignatures = JSON.parse(JSON.stringify(seq.keySignatures));
-    //   this.tempos = JSON.parse(JSON.stringify(seq.tempos));
-    //   this.pitchBends = JSON.parse(JSON.stringify(seq.pitchBends));
-    //   this.controlChanges = JSON.parse(JSON.stringify(seq.controlChanges));
-    // }
+    if (seq) {
+      this.id = seq.id;
+      this.notes = JSON.parse(JSON.stringify(seq.notes));
+      this.totalTime = seq.totalTime;
+      this.totalQuantizedSteps = seq.totalQuantizedSteps;
+      this.ticksPerQuarter = seq.ticksPerQuarter;
+      this.timeSignatures = JSON.parse(JSON.stringify(seq.timeSignatures));
+      this.keySignatures = JSON.parse(JSON.stringify(seq.keySignatures));
+      this.tempos = JSON.parse(JSON.stringify(seq.tempos));
+      this.quantizationInfo = JSON.parse(JSON.stringify(seq.quantizationInfo));
+      this.pitchBends = JSON.parse(JSON.stringify(seq.pitchBends));
+      this.controlChanges = JSON.parse(JSON.stringify(seq.controlChanges));
+    }
   }
 
-  addNote(note: SimpleNote) {
+  addQuantizedNote(note: SimpleNote) {
     this.notes.push(note);
+    if (this.totalQuantizedSteps < note.quantizedEndStep) {
+      this.totalQuantizedSteps = note.quantizedEndStep;
+    }
+  }
 
-    if (this.isQuantizedSequence()) {
-      if (this.totalQuantizedSteps < note.quantizedEndStep) {
-        this.totalQuantizedSteps = note.quantizedEndStep;
-      }
-    } else {
-      if (this.totalTime < note.endTime) {
-        this.totalTime = note.endTime;
-      }
+  addUnquantizedNote(note: SimpleNote) {
+    this.notes.push(note);
+    if (this.totalTime < note.endTime) {
+      this.totalTime = note.endTime;
     }
   }
 
