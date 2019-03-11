@@ -36,6 +36,7 @@ limitations under the License.
   </p>
 
   <section>
+    <h2>Three visualizers linked to one single player</h2>
     <p>Load a melody in any of these formats:</p>
     <button id="urlBtn">Load URL</button>
     <button id="seqBtn">Load NoteSequence</button>
@@ -50,21 +51,54 @@ limitations under the License.
       <input id="tempoInput" value="100" type="range" min="20" max="240" value="120" step="1">
       <span id="tempoValue"></span>
     </span>
-  </section>
 
-  <h2>mm.PianoRollSVGVisualizer</h2>
-  <section>
+    <h3>mm.PianoRollSVGVisualizer</h3>
+    <div class="visualizer-container" id="container1">
+      <svg id="piano-roll-svg-viewer"></svg>
+    </div>
+
+    <h3>mm.StaffSVGVisualizer</h3>
     <div class="visualizer-container" id="container2">
-      <svg id="svg"></svg>
+      <div id="staff-svg-viewer"></div>
+    </div>
+
+    <h3>mm.PianoRollCanvasVisualizer</h3>
+    <div class="visualizer-container" id="container3">
+      <canvas id="piano-roll-canvas-viewer"></canvas>
     </div>
   </section>
 
-  <h2>mm.PianoRollCanvasVisualizer</h2>
   <section>
-    <div class="visualizer-container" id="container">
-      <canvas id="canvas"></canvas>
+    <h2>Advanced usage</h2>
+    <p>
+      mm.StaffSVGVisualizer extends the basic configuration capabilities to add:
+      <ul>
+        <li>
+          Displaying the score in a <b>compact visualization</b> way, just like paper printed 
+          scores, by setting config.pixelsPerTimeStep to zero. Otherways music signatures can 
+          blink to show first musical symbols in proportional visualization mode.
+        </li>
+        <li><b>Key declaration</b> to adapt the score to the right accidentals.</li>
+        <li><b>Instrument filtering</b> to draw a subset of the NoteSequence tracks.</li>
+        <li>Follow scoreplaying in packed chunks by doing <b>scroll on bar</b> starting.</li>
+      </ul>
+      There's no multiple key and time signature support... yet.
+    </p>
+    <button id="playBtn2" disabled>wait...</button>
+    <span class="input">
+      <b>Compact visualization:</b>
+      <input type="checkbox" id="visualization">
+      <b>Tempo:</b>
+      <input id="tempoInput2" value="100" type="range" min="20" max="240" value="120" step="1">
+      <span id="tempoValue2"></span>
+    </span>
+
+    <h3>mm.StaffSVGVisualizer</h3>
+    <div class="visualizer-container" id="container4">
+      <div id="right-hand"></div>
+      <div id="left-hand"></div>
     </div>
-  </section>
+
   <script src="visualizer_bundle.js"></script>
 </body>
 </html>
