@@ -148,8 +148,8 @@ let configLeft = {
 visualization.addEventListener('change', changeVisualization);
 playBtn2.addEventListener('click', () => startOrStop2());
 tempoInput2.addEventListener('input', () => {
-  player2.setTempo(parseInt(tempoInput.value, 10));
-  tempoValue2.textContent = tempoInput.value;
+  player2.setTempo(parseInt(tempoInput2.value, 10));
+  tempoValue2.textContent = tempoInput2.value;
 });
 
 function changeVisualization() {
