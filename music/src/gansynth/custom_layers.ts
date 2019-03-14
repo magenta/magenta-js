@@ -16,7 +16,7 @@
  *
  * Implementing a custom `Layer` in general invovles specifying a `call`
  * function, and possibly also a `computeOutputShape` and `build` function.
- * These layers does not need a custom `build` function because it does not
+ * These layers do not need a custom `build` function because they do not
  * store any variables.
  *
  * Custom layers currently can not be saved / loaded.  Tracking issue at
