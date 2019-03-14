@@ -1,5 +1,5 @@
 /**
- * ISTFT exacatly matching python tensorflow.
+ * ISTFT exactly matching python tensorflow.
  *
  * @license
  * Copyright 2019 Google Inc. All Rights Reserved.
