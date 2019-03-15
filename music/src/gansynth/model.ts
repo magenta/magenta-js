@@ -26,9 +26,6 @@ import * as logging from '../core/logging';
 import {specgramsToAudio} from './audio_utils';
 import {boxUpscale, initialPad, pixelNorm} from './custom_layers';
 
-/**
- * Main "GANSynth" neural synthesizer model class.
- */
 class GANSynth {
   private checkpointURL: string;
   private initialized: boolean;
@@ -140,71 +137,19 @@ class GANSynth {
       this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
       this.nn.add(pixelNorm());
 
-      // Upsample.
-      this.nn.add(boxUpscale(2));
-      // Stage 2.
-      convConfig.filters = 256;
-      this.nn.add(tf.layers.conv2d(convConfig));
-      this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
-      this.nn.add(pixelNorm());
-      this.nn.add(tf.layers.conv2d(convConfig));
-      this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
-      this.nn.add(pixelNorm());
-
-      // Upsample.
-      this.nn.add(boxUpscale(2));
-      // Stage 3.
-      convConfig.filters = 256;
-      this.nn.add(tf.layers.conv2d(convConfig));
-      this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
-      this.nn.add(pixelNorm());
-      this.nn.add(tf.layers.conv2d(convConfig));
-      this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
-      this.nn.add(pixelNorm());
-
-      // Upsample.
-      this.nn.add(boxUpscale(2));
-      // Stage 4.
-      convConfig.filters = 256;
-      this.nn.add(tf.layers.conv2d(convConfig));
-      this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
-      this.nn.add(pixelNorm());
-      this.nn.add(tf.layers.conv2d(convConfig));
-      this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
-      this.nn.add(pixelNorm());
-
-      // Upsample.
-      this.nn.add(boxUpscale(2));
-      // Stage 5.
-      convConfig.filters = 128;
-      this.nn.add(tf.layers.conv2d(convConfig));
-      this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
-      this.nn.add(pixelNorm());
-      this.nn.add(tf.layers.conv2d(convConfig));
-      this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
-      this.nn.add(pixelNorm());
-
-      // Upsample.
-      this.nn.add(boxUpscale(2));
-      // Stage 6.
-      convConfig.filters = 64;
-      this.nn.add(tf.layers.conv2d(convConfig));
-      this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
-      this.nn.add(pixelNorm());
-      this.nn.add(tf.layers.conv2d(convConfig));
-      this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
-      this.nn.add(pixelNorm());
-
-      // Upsample.
-      this.nn.add(boxUpscale(2));
-      // Stage 7.
-      convConfig.filters = 32;
-      this.nn.add(tf.layers.conv2d(convConfig));
-      this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
-      this.nn.add(pixelNorm());
-      this.nn.add(tf.layers.conv2d(convConfig));
-      this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
-      this.nn.add(pixelNorm());
+      const layerFilters = [256, 256, 256, 128, 64, 32];
+      for (let i = 0; i < layerFilters.length; i++) {
+        // Upsample.
+        this.nn.add(boxUpscale(2));
+        // Convolution stage.
+        convConfig.filters = layerFilters[i];
+        this.nn.add(tf.layers.conv2d(convConfig));
+        this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
+        this.nn.add(pixelNorm());
+        this.nn.add(tf.layers.conv2d(convConfig));
+        this.nn.add(tf.layers.leakyReLU({alpha: 0.2}));
+        this.nn.add(pixelNorm());
+      }
 
       // Output.
       convConfig.filters = 2;
@@ -212,7 +157,6 @@ class GANSynth {
       convConfig.activation = 'tanh';
       this.nn.add(tf.layers.conv2d(convConfig));
 
-      // this.outputShape = this.nn.outputShape as number[];
       this.setWeights(vars);
     });
   }
