@@ -20,9 +20,10 @@ import * as tf from '@tensorflow/tfjs';
 import * as FFT from 'fft.js';
 
 import {applyWindow, hannWindow} from './../transcription/audio_utils';
-import {padCenterToLength, SpecParams} from './../transcription/audio_utils';
+import {padCenterToLength} from './../transcription/audio_utils';
 import {MAG_DESCALE_A, MAG_DESCALE_B, N_FFT, N_HOP} from './constants';
-import {PHASE_DESCALE_A, PHASE_DESCALE_B, SAMPLE_RATE} from './constants';
+import {PHASE_DESCALE_A, PHASE_DESCALE_B} from './constants';
+import {SAMPLE_LENGTH, SAMPLE_RATE} from './constants';
 import {MEL_SPARSE_COEFFS} from './mel_sparse_coeffs';
 
 export function melToLinearMatrix() {
@@ -86,12 +87,24 @@ function interleaveReIm(real: tf.Tensor, imag: tf.Tensor) {
   return reIm;
 }
 
+/**
+ * Parameters for computing a inverse spectrogram from audio.
+ */
+export interface InverseSpecParams {
+  sampleRate: number;
+  hopLength?: number;
+  winLength?: number;
+  nFft?: number;
+  center?: boolean;
+}
+
 async function reImToAudio(reIm: Float32Array[]) {
   const ispecParams = {
     nFFt: N_FFT,
     winLength: N_FFT,
     hopLength: N_HOP,
-    sampleRate: SAMPLE_RATE
+    sampleRate: SAMPLE_RATE,
+    center: false,
   };
   return istft(reIm, ispecParams);
 }
@@ -145,12 +158,14 @@ export function ifft(reIm: Float32Array): Float32Array {
   return result;
 }
 
-export function istft(reIm: Float32Array[], params: SpecParams): Float32Array {
+export function istft(
+    reIm: Float32Array[], params: InverseSpecParams): Float32Array {
   const nFrames = reIm.length;
   const nReIm = reIm[0].length;
   const nFft = (nReIm / 2);
   const winLength = params.winLength || nFft;
   const hopLength = params.hopLength || Math.floor(winLength / 4);
+  const center = params.center || false;
 
   let ifftWindow = hannWindow(winLength);
   // Adjust normalization for 75% Hann cola (factor of 1.5 with stft/istft).
@@ -174,12 +189,19 @@ export function istft(reIm: Float32Array[], params: SpecParams): Float32Array {
     y.set(yTmp, sample);
   }
 
-  // Normally you would center the outputs,
-  // `const yTrimmed = y.slice(nFft / 2, y.length - (nFft / 2));`
-  // For gansynth, we did all the padding at the front instead of centering,
-  // so remove the padding at the front.
-  const nTrim = expectedSignalLen - 64000;  // 3072
-  const yTrimmed = y.slice(nTrim, y.length - nTrim);
+  let sliceStart = 0;
+  let sliceLength = expectedSignalLen;
+  if (center) {
+    // Normally you would center the outputs,
+    sliceStart = nFft / 2;
+    sliceLength = y.length - (nFft / 2);
+  } else {
+    // For gansynth, we did all the padding at the front instead of centering,
+    // so remove the padding at the front.
+    sliceStart = expectedSignalLen - SAMPLE_LENGTH;  // 3072
+    sliceLength = y.length - sliceStart;
+  }
+  const yTrimmed = y.slice(sliceStart, sliceLength);
   return yTrimmed;
 }
 
