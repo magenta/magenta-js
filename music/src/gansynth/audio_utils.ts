@@ -20,9 +20,9 @@ import * as tf from '@tensorflow/tfjs';
 import * as FFT from 'fft.js';
 
 import {applyWindow, hannWindow, padCenterToLength} from '../core/audio_utils';
-import {MAG_DESCALE_A, MAG_DESCALE_B, N_FFT, N_HOP} from './constants';
-import {PHASE_DESCALE_A, PHASE_DESCALE_B} from './constants';
-import {SAMPLE_LENGTH, SAMPLE_RATE} from './constants';
+
+// tslint:disable-next-line:max-line-length
+import {MAG_DESCALE_A, MAG_DESCALE_B, N_FFT, N_HOP, PHASE_DESCALE_A, PHASE_DESCALE_B, SAMPLE_LENGTH, SAMPLE_RATE} from './constants';
 import {MEL_SPARSE_COEFFS} from './mel_sparse_coeffs';
 
 export function melToLinearMatrix() {

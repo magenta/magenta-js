@@ -26,7 +26,6 @@ import {loadAudioFromFile, loadAudioFromUrl} from '../core/audio_utils';
 import * as logging from '../core/logging';
 import {INoteSequence} from '../protobuf';
 
-// tslint:disable-next-line:max-line-length
 import {preprocessAudio} from './audio_utils';
 import {MEL_SPEC_BINS, MIDI_PITCHES} from './constants';
 // tslint:disable-next-line:max-line-length

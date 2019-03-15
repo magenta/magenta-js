@@ -17,8 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {melSpectrogram, powerToDb} from '../core/audio_utils';
-import {resampleAndMakeMono} from '../core/audio_utils';
+// tslint:disable-next-line:max-line-length
+import {melSpectrogram, powerToDb, resampleAndMakeMono} from '../core/audio_utils';
 import {MEL_SPEC_BINS, SAMPLE_RATE, SPEC_HOP_LENGTH} from './constants';
 
 /**
