@@ -29,8 +29,8 @@ import * as tf from '@tensorflow/tfjs';
  * @param epsilon A small positive number to avoid division by zero.
  */
 class PixelNorm extends tf.layers.Layer {
-  constructor(public epsilon = 1e-8) {
-    super({});
+  constructor(public epsilon = 1e-8, public layerConfig = {}) {
+    super(layerConfig);
     this.supportsMasking = true;
   }
 
@@ -68,8 +68,8 @@ class PixelNorm extends tf.layers.Layer {
   }
 }
 
-export function pixelNorm(epsilon = 1e-8) {
-  return new PixelNorm(epsilon);
+export function pixelNorm(epsilon = 1e-8, layerConfig = {}) {
+  return new PixelNorm(epsilon, layerConfig);
 }
 
 /**

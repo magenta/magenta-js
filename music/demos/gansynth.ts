@@ -45,7 +45,7 @@ async function runGANSynth() {
   await gansynth.initialize();
 
   const start = await performance.now();
-  const specgrams = await gansynth.randomSample(36);
+  const specgrams = await gansynth.randomSample(60);
   const audio = await gansynth.specgramsToAudio(specgrams);
   await writeTimer('single-sample-gen-time', start);
 
