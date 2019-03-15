@@ -17,7 +17,6 @@
 import * as tf from '@tensorflow/tfjs-core';
 import * as Tone from 'tone';
 
-// import {specgramsToAudio} from '../src/gansynth/audio_utils';
 import * as mm from '../src/index';
 
 import {CHECKPOINTS_DIR, writeMemory, writeTimer} from './common';

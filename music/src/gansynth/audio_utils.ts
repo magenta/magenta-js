@@ -19,9 +19,8 @@ import * as tf from '@tensorflow/tfjs';
 //@ts-ignore
 import * as FFT from 'fft.js';
 
-import {applyWindow, frame, hannWindow} from './../transcription/audio_utils';
+import {applyWindow, hannWindow} from './../transcription/audio_utils';
 import {padCenterToLength, SpecParams} from './../transcription/audio_utils';
-//@ts-ignore
 import {MAG_DESCALE_A, MAG_DESCALE_B, N_FFT, N_HOP} from './constants';
 import {PHASE_DESCALE_A, PHASE_DESCALE_B, SAMPLE_RATE} from './constants';
 import {MEL_SPARSE_COEFFS} from './mel_sparse_coeffs';
@@ -134,50 +133,6 @@ export async function specgramsToAudio(specgrams: tf.Tensor4D) {
 //------------------------------------------------------------------------------
 // FFT Code
 //------------------------------------------------------------------------------
-export function fft(y: Float32Array) {
-  const fft = new FFT(y.length);
-  const out = fft.createComplexArray();
-  const data = fft.toComplexArray(y);
-  fft.transform(out, data);
-  return out;
-}
-
-export function stft(y: Float32Array, params: SpecParams): Float32Array[] {
-  const nFft = params.nFft || 2048;
-  const winLength = params.winLength || nFft;
-  const hopLength = params.hopLength || Math.floor(winLength / 4);
-
-  const fftWindow = hannWindow(winLength);
-
-  // Pad the window to be the size of nFft.
-  // fftWindow = padCenterToLength(fftWindow, nFft);
-
-  // Pad the time series so that the frames are centered.
-  // y = padReflect(y, Math.floor(nFft / 2));
-
-  // Window the time series.
-  const yFrames = frame(y, nFft, hopLength);
-  // Pre-allocate the STFT matrix.
-  const stftMatrix = [];
-
-  const width = yFrames.length;
-  const height = 2 * (nFft);
-  for (let i = 0; i < width; i++) {
-    // Each column is a Float32Array of size height.
-    const col = new Float32Array(height);
-    stftMatrix[i] = col;
-  }
-
-  for (let i = 0; i < width; i++) {
-    // Populate the STFT matrix.
-    const winBuffer = applyWindow(yFrames[i], fftWindow);
-    const col = fft(winBuffer);
-    stftMatrix[i].set(col.slice(0, height));
-  }
-
-  return stftMatrix;
-}
-
 // Perform ifft on a single frame.
 export function ifft(reIm: Float32Array): Float32Array {
   // Interleave.
