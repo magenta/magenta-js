@@ -22,13 +22,15 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
+import {loadAudioFromFile, loadAudioFromUrl} from '../core/audio_utils';
 import * as logging from '../core/logging';
+import {INoteSequence} from '../protobuf';
+
 // tslint:disable-next-line:max-line-length
-import {loadAudioFromFile, loadAudioFromUrl, preprocessAudio} from './audio_utils';
+import {preprocessAudio} from './audio_utils';
 import {MEL_SPEC_BINS, MIDI_PITCHES} from './constants';
 // tslint:disable-next-line:max-line-length
 import {batchInput, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
-import { INoteSequence } from '../protobuf';
 
 /**
  * Main "Onsets And Frames" piano transcription model class.
@@ -109,8 +111,8 @@ class OnsetsAndFrames {
    * @returns A `NoteSequence` containing the transcribed piano performance.
    */
   // tslint:enable:max-line-length
-  async transcribeFromMelSpec(melSpec: number[][], parallelBatches = 4)
-      : Promise<INoteSequence> {
+  async transcribeFromMelSpec(melSpec: number[][], parallelBatches = 4):
+      Promise<INoteSequence> {
     if (!this.isInitialized()) {
       this.initialize();
     }
@@ -259,8 +261,8 @@ class AcousticCnn {
 
   // Activation types come from here, which isn't exported:
   // tfjs-layers/blob/master/src/keras_format/activation_config.ts#L16
-  constructor(finalDenseActivation?:'elu'|'hardSigmoid'|'linear'|'relu'
-      |'relu6'|'selu'|'sigmoid'|'softmax'|'softplus'|'softsign'|'tanh') {
+  constructor(finalDenseActivation?: 'elu'|'hardSigmoid'|'linear'|'relu'|
+              'relu6'|'selu'|'sigmoid'|'softmax'|'softplus'|'softsign'|'tanh') {
     // tslint:disable-next-line:no-any
     const convConfig: any = {
       filters: 48,

@@ -19,8 +19,7 @@ import * as tf from '@tensorflow/tfjs';
 //@ts-ignore
 import * as FFT from 'fft.js';
 
-import {applyWindow, hannWindow} from './../transcription/audio_utils';
-import {padCenterToLength} from './../transcription/audio_utils';
+import {applyWindow, hannWindow, padCenterToLength} from '../core/audio_utils';
 import {MAG_DESCALE_A, MAG_DESCALE_B, N_FFT, N_HOP} from './constants';
 import {PHASE_DESCALE_A, PHASE_DESCALE_B} from './constants';
 import {SAMPLE_LENGTH, SAMPLE_RATE} from './constants';
