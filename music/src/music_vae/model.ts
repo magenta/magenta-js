@@ -398,8 +398,6 @@ class NadeDecoder extends BaseDecoder {
  *
  * Uses argmax if no temperature is provided.
  */
-// TODO(adarob): Remove ts-ignore once are using this.
-// @ts-ignore
 class GrooveDecoder extends BaseDecoder {
   sample(lstmOutput: tf.Tensor2D, temperature?: number): tf.Tensor2D {
     let [hits, velocities, offsets] = tf.split(lstmOutput, 3, 1);

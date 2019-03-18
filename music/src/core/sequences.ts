@@ -533,3 +533,224 @@ export function mergeConsecutiveNotes(sequence: INoteSequence) {
   }
   return output;
 }
+
+/*
+ * Concatenate a series of NoteSequences together.
+ *
+ * Individual sequences will be shifted and then merged together.
+ * @param concatenateSequences An array of `NoteSequences` to be concatenated.
+ * @param sequenceDurations (Optional) An array of durations for each of the
+ * `NoteSequences` in `args`. If not provided, the `totalTime` /
+ * `totalQuantizedSteps` of each sequence will be used. Specifying durations is
+ * useful if the sequences to be concatenated are effectively longer than
+ * their `totalTime` (e.g., a sequence that ends with a rest).
+ *
+ * @returns A new sequence that is the result of concatenating the input
+ * sequences.
+ */
+export function concatenate(
+    concatenateSequences: INoteSequence[],
+    sequenceDurations?: number[]): NoteSequence {
+  if (sequenceDurations &&
+      sequenceDurations.length !== concatenateSequences.length) {
+    throw new Error(`Number of sequences to concatenate and their individual
+ durations does not match.`);
+  }
+
+  if (isQuantizedSequence(concatenateSequences[0])) {
+    // Check that all the sequences are quantized, and that their quantization
+    // info matches.
+    for (let i = 0; i < concatenateSequences.length; ++i) {
+      assertIsQuantizedSequence(concatenateSequences[i]);
+      if (concatenateSequences[i].quantizationInfo.stepsPerQuarter !==
+          concatenateSequences[0].quantizationInfo.stepsPerQuarter) {
+        throw new Error('Not all sequences have the same quantizationInfo');
+      }
+    }
+    return concatenateHelper(
+        concatenateSequences, 'totalQuantizedSteps', 'quantizedStartStep',
+        'quantizedEndStep', sequenceDurations);
+  } else {
+    return concatenateHelper(
+        concatenateSequences, 'totalTime', 'startTime', 'endTime',
+        sequenceDurations);
+  }
+}
+
+/**
+ * Trim notes from a NoteSequence to lie within a specified time range.
+ * Notes starting before `start` are not included. Notes ending after
+ * `end` are not included, unless `truncateEndNotes` is true.
+ * @param ns The NoteSequence for which to trim notes.
+ * @param start The time after which all notes should begin. This should be
+ * either seconds (if ns is unquantized), or a quantized step (if ns is
+ * quantized).
+ * @param end The time before which all notes should end. This should be
+ * either seconds (if ns is unquantized), or a quantized step (if ns is
+ * quantized).
+ * @param truncateEndNotes Optional. If true, then notes starting before
+ * the end time but ending after it will be included and truncated.
+ * @returns A new NoteSequence with all notes trimmed to lie between `start`
+ * and `end`, and time-shifted to begin at 0.
+ */
+export function trim(
+    ns: INoteSequence, start: number, end: number, truncateEndNotes?: boolean) {
+  return isQuantizedSequence(ns) ?
+      trimHelper(
+          ns, start, end, 'totalQuantizedSteps', 'quantizedStartStep',
+          'quantizedEndStep', truncateEndNotes) :
+      trimHelper(
+          ns, start, end, 'totalTime', 'startTime', 'endTime',
+          truncateEndNotes);
+}
+
+function concatenateHelper(
+    seqs: INoteSequence[], totalKey: 'totalQuantizedSteps'|'totalTime',
+    startKey: 'startTime'|'quantizedStartStep',
+    endKey: 'endTime'|'quantizedEndStep',
+    sequenceDurations?: number[]): NoteSequence {
+  let concatSeq: NoteSequence;
+  let totalDuration = 0;
+
+  for (let i = 0; i < seqs.length; ++i) {
+    const seqDuration =
+        sequenceDurations ? sequenceDurations[i] : seqs[i][totalKey];
+    if (seqDuration === 0) {
+      throw Error(`Sequence ${seqs[i].id} has no ${
+          totalKey}, and no individual duration was provided.`);
+    }
+
+    if (i === 0) {
+      concatSeq = clone(seqs[0]);
+    } else {
+      Array.prototype.push.apply(concatSeq.notes, seqs[i].notes.map(n => {
+        const newN: NoteSequence.INote = NoteSequence.Note.create(n);
+        newN[startKey] += totalDuration;
+        newN[endKey] += totalDuration;
+        return newN;
+      }));
+    }
+
+    totalDuration += seqDuration;
+  }
+
+  concatSeq[totalKey] = totalDuration;
+  return concatSeq;
+}
+
+function trimHelper(
+    ns: INoteSequence, start: number, end: number,
+    totalKey: 'totalQuantizedSteps'|'totalTime',
+    startKey: 'startTime'|'quantizedStartStep',
+    endKey: 'endTime'|'quantizedEndStep', truncateEndNotes?: boolean) {
+  const result = clone(ns);
+  result[totalKey] = end;
+  result.notes = result.notes.filter(
+      n => n[startKey] >= start && n[startKey] <= end &&
+          (truncateEndNotes || n[endKey] <= end));
+
+  // Shift the sequence to start at 0.
+  for (let i = 0; i < result.notes.length; i++) {
+    result.notes[i][startKey] -= start;
+    result.notes[i][endKey] -= start;
+
+    if (truncateEndNotes) {
+      result.notes[i][endKey] = Math.min(result.notes[i][endKey], end);
+    }
+  }
+  result[totalKey] = Math.min(ns[totalKey] - start, end);
+  return result;
+}
+
+/**
+ * Splits an unquantized `NoteSequence` into smaller `NoteSequences` of
+ * equal chunks. If a note splits across a chunk boundary, then it will be
+ * split between the two chunks.
+ *
+ * Silent padding may be added to the final chunk to make it `chunkSize`.
+ *
+ * @param ns The `NoteSequence` to split.
+ * @param chunkSize The number of steps per chunk. For example, if you want to
+ * split the sequence into 2 bar chunks, then if the sequence has 4
+ * steps/quarter, that will be 32 steps for each 2 bars (so a chunkSize of 32).
+ *
+ * @returns An array of `NoteSequences` each of which are at most `chunkSize`
+ * steps.
+ */
+export function split(seq: INoteSequence, chunkSize: number): NoteSequence[] {
+  assertIsQuantizedSequence(seq);
+
+  // Make a clone so that we don't destroy the input.
+  const ns = clone(seq);
+
+  // Sort notes first.
+  const notesBystartStep =
+      ns.notes.sort((a, b) => a.quantizedStartStep - b.quantizedStartStep);
+
+  const chunks = [];
+  let startStep = 0;
+  let currentNotes = [];
+
+  for (let i = 0; i < notesBystartStep.length; i++) {
+    const note = notesBystartStep[i];
+
+    const originalStartStep = note.quantizedStartStep;
+    const originalEndStep = note.quantizedEndStep;
+
+    // Rebase this note on the current chunk.
+    note.quantizedStartStep -= startStep;
+    note.quantizedEndStep -= startStep;
+
+    if (note.quantizedStartStep < 0) {
+      continue;
+    }
+    // If this note fits in the chunk, add it to the current sequence.
+    if (note.quantizedEndStep <= chunkSize) {
+      currentNotes.push(note);
+    } else {
+      // If this note spills over, truncate it and add it to this sequence.
+      if (note.quantizedStartStep < chunkSize) {
+        const newNote = NoteSequence.Note.create(note);
+        newNote.quantizedEndStep = chunkSize;
+        // Clear any absolute times since they're not valid.
+        newNote.startTime = newNote.endTime = undefined;
+        currentNotes.push(newNote);
+
+        // Keep the rest of this note, and make sure that next loop still deals
+        // with it, and reset it for the next loop.
+        note.quantizedStartStep = startStep + chunkSize;
+        note.quantizedEndStep = originalEndStep;
+      } else {
+        // We didn't truncate this note at all, so reset it for the next loop.
+        note.quantizedStartStep = originalStartStep;
+        note.quantizedEndStep = originalEndStep;
+      }
+
+      // Do we need to look at this note again?
+      if (note.quantizedEndStep > chunkSize ||
+          note.quantizedStartStep > chunkSize) {
+        i = i - 1;
+      }
+      // Save this chunk if it isn't empty.
+      if (currentNotes.length !== 0) {
+        const newSequence = clone(ns);
+        newSequence.notes = currentNotes;
+        newSequence.totalQuantizedSteps = chunkSize;
+        chunks.push(newSequence);
+      }
+
+      // Start a new chunk.
+      currentNotes = [];
+      startStep += chunkSize;
+    }
+  }
+
+  // Deal with the leftover notes we have in the last chunk.
+  if (currentNotes.length !== 0) {
+    const newSequence = clone(ns);
+    newSequence.notes = currentNotes;
+    newSequence.totalQuantizedSteps = chunkSize;
+    chunks.push(newSequence);
+  }
+  return chunks;
+}

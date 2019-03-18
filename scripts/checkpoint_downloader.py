@@ -24,43 +24,49 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from future.moves.urllib.request import urlopen, Request
+from future.moves.urllib.error import HTTPError
+
 import argparse
 import json
 import os
-import urllib2
+
 
 MANIFEST_FNAME = 'weights_manifest.json'
 CONFIG_FNAME = 'config.json'
 
+def _join_url(*parts):
+  return '/'.join(parts)
+
 def download_checkpoint(checkpoint_url, output_dir):
   try:
-    response = urllib2.urlopen(
-        os.path.join(checkpoint_url, MANIFEST_FNAME))
-  except urllib2.HTTPError as e:
+    response = urlopen(_join_url(checkpoint_url, MANIFEST_FNAME))
+  except HTTPError as e:
+    print(_join_url(checkpoint_url, MANIFEST_FNAME))
     print('Invalid checkpoint URL: ' + e.msg)
     return
 
   print('Downloaded weights manifest.')
   raw_manifest = response.read()
-  file(os.path.join(output_dir, MANIFEST_FNAME), 'w').write(raw_manifest)
+  open(os.path.join(output_dir, MANIFEST_FNAME), 'wb').write(raw_manifest)
 
   manifest = json.loads(raw_manifest)
   for p in manifest[0]['paths']:
     print('Downloading weights: `%s`.' % p)
     try:
-      response = urllib2.urlopen(os.path.join(checkpoint_url, p))
-    except urllib2.HTTPError as e:
+      response = urlopen(_join_url(checkpoint_url, p))
+    except HTTPError as e:
       print('Download failed, quitting: ' + e.msg)
-    file(os.path.join(output_dir, p), 'wb').write(response.read())
+    open(os.path.join(output_dir, p), 'wb').write(response.read())
 
   print('Downloading config.')
   try:
-    response = urllib2.urlopen(os.path.join(checkpoint_url, CONFIG_FNAME))
-  except urllib2.HTTPError as e:
+    response = urlopen(_join_url(checkpoint_url, CONFIG_FNAME))
+  except HTTPError as e:
     # The config is not always needed.
     print('No config present.')
   else:
-    file(os.path.join(output_dir, CONFIG_FNAME), 'w').write(response.read())
+    open(os.path.join(output_dir, CONFIG_FNAME), 'wb').write(response.read())
 
   print('Done.')
 
