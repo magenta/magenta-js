@@ -122,6 +122,7 @@
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#quantizenotesequence" class="tsd-kind-icon">quantize<wbr>Note<wbr>Sequence</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported"><a href="_core_sequences_.html#quantizenotesandevents" class="tsd-kind-icon">quantize<wbr>Notes<wbr>And<wbr>Events</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#quantizetostep" class="tsd-kind-icon">quantize<wbr>ToStep</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#split" class="tsd-kind-icon">split</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#stepsperquartertostepspersecond" class="tsd-kind-icon">steps<wbr>Per<wbr>Quarter<wbr>ToSteps<wbr>Per<wbr>Second</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#unquantizesequence" class="tsd-kind-icon">unquantize<wbr>Sequence</a></li>
 							</ul>
@@ -603,6 +604,47 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
+					<a name="split" class="tsd-anchor"></a>
+					<h3>split</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
+						<li class="tsd-signature tsd-kind-icon">split<span class="tsd-signature-symbol">(</span>seq<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span>, chunkSize<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">NoteSequence</span><span class="tsd-signature-symbol">[]</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L443">core/sequences.ts:443</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Splits an unquantized <code>NoteSequence</code> into smaller <code>NoteSequences</code> of
+										equal chunks. If a note splits across a chunk boundary, then it will be
+									split between the two chunks.</p>
+								</div>
+								<p>Silent padding may be added to the final chunk to make it <code>chunkSize</code>.</p>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>seq: <span class="tsd-signature-type">INoteSequence</span></h5>
+								</li>
+								<li>
+									<h5>chunkSize: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The number of steps per chunk. For example, if you want to
+											split the sequence into 2 bar chunks, then if the sequence has 4
+										steps/quarter, that will be 32 steps for each 2 bars (so a chunkSize of 32).</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">NoteSequence</span><span class="tsd-signature-symbol">[]</span></h4>
+							<p>An array of <code>NoteSequences</code> each of which are at most <code>chunkSize</code>
+							steps.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
 					<a name="stepsperquartertostepspersecond" class="tsd-anchor"></a>
 					<h3>steps<wbr>Per<wbr>Quarter<wbr>ToSteps<wbr>Per<wbr>Second</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
@@ -679,65 +721,8 @@
 					<li class="globals  ">
 						<a href="../globals.html"><em>Globals</em></a>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_aux_inputs_.html">"core/aux_<wbr>inputs"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_chords_.html">"core/chords"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_constants_.html">"core/constants"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_data_.html">"core/data"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_logging_.html">"core/logging"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_midi_io_.html">"core/midi_<wbr>io"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_performance_.html">"core/performance"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_player_.html">"core/player"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_recorder_.html">"core/recorder"</a>
-					</li>
 					<li class="current tsd-kind-external-module">
 						<a href="_core_sequences_.html">"core/sequences"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_soundfont_.html">"core/soundfont"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_visualizer_.html">"core/visualizer"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_music_rnn_attention_.html">"music_<wbr>rnn/attention"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_music_rnn_model_.html">"music_<wbr>rnn/model"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_music_vae_model_.html">"music_<wbr>vae/model"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_piano_genie_model_.html">"piano_<wbr>genie/model"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_transcription_audio_utils_.html">"transcription/audio_<wbr>utils"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_transcription_constants_.html">"transcription/constants"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_transcription_model_.html">"transcription/model"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_transcription_transcription_utils_.html">"transcription/transcription_<wbr>utils"</a>
 					</li>
 				</ul>
 			</nav>
@@ -802,6 +787,9 @@
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
 						<a href="_core_sequences_.html#quantizetostep" class="tsd-kind-icon">quantize<wbr>ToStep</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="_core_sequences_.html#split" class="tsd-kind-icon">split</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
 						<a href="_core_sequences_.html#stepsperquartertostepspersecond" class="tsd-kind-icon">steps<wbr>Per<wbr>Quarter<wbr>ToSteps<wbr>Per<wbr>Second</a>
