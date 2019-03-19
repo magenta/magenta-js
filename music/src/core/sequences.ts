@@ -426,6 +426,115 @@ export function mergeInstruments(ns: INoteSequence) {
 }
 
 /**
+ * Replaces all the notes in an input sequence that match the instruments in
+ * a second sequence. For example, if `replaceSequence` has notes that all have
+ * either `instrument=0` or `instrument=1`, then any notes in `originalSequence`
+ * with instruments 0 or 1 will be removed and replaced with the notes in
+ * `replaceSequence`. If there are instruments in `replaceSequence` that are
+ * *not* in `originalSequence`, they will not be added.
+ * @param originalSequence The `NoteSequence` to be changed.
+ * @param replaceSequence The `NoteSequence` that will replace the notes in
+ * `sequence` with the same instrument.
+ * @return a new `NoteSequence` with the instruments replaced.
+ */
+export function replaceInstruments(
+    originalSequence: INoteSequence,
+    replaceSequence: INoteSequence): NoteSequence {
+  const instrumentsInOriginal =
+      new Set(originalSequence.notes.map(n => n.instrument));
+  const instrumentsInReplace =
+      new Set(replaceSequence.notes.map(n => n.instrument));
+
+  const newNotes: NoteSequence.Note[] = [];
+  // Go through the original sequence, and only keep the notes for instruments
+  // *not* in the second sequence.
+  originalSequence.notes.forEach(n => {
+    if (!instrumentsInReplace.has(n.instrument)) {
+      newNotes.push(NoteSequence.Note.create(n));
+    }
+  });
+  // Go through the second sequence and add all the notes for instruments in the
+  // first sequence.
+  replaceSequence.notes.forEach(n => {
+    if (instrumentsInOriginal.has(n.instrument)) {
+      newNotes.push(NoteSequence.Note.create(n));
+    }
+  });
+
+  // Sort the notes by instrument, and then by time.
+  const output = clone(originalSequence);
+  output.notes = newNotes.sort((a, b) => {
+    const voiceCompare = a.instrument - b.instrument;
+    if (voiceCompare) {
+      return voiceCompare;
+    }
+    return a.quantizedStartStep - b.quantizedStartStep;
+  });
+  return output;
+}
+
+/**
+ * Any consecutive notes of the same pitch are merged into a sustained note.
+ * Does not merge notes that connect on a measure boundary. This process
+ * also rearranges the order of the notes - notes are grouped by instrument,
+ * then ordered by timestamp.
+ *
+ * @param sequence A quantized `NoteSequence` to be merged.
+ * @return a new `NoteSequence` with sustained notes merged.
+ */
+export function mergeConsecutiveNotes(sequence: INoteSequence) {
+  assertIsQuantizedSequence(sequence);
+
+  const output = clone(sequence);
+  output.notes = [];
+
+  // Sort the input notes.
+  const newNotes = sequence.notes.sort((a, b) => {
+    const voiceCompare = a.instrument - b.instrument;
+    if (voiceCompare) {
+      return voiceCompare;
+    }
+    return a.quantizedStartStep - b.quantizedStartStep;
+  });
+
+  // Start with the first note.
+  const note = new NoteSequence.Note();
+  note.pitch = newNotes[0].pitch;
+  note.instrument = newNotes[0].instrument;
+  note.quantizedStartStep = newNotes[0].quantizedStartStep;
+  note.quantizedEndStep = newNotes[0].quantizedEndStep;
+  output.notes.push(note);
+  let o = 0;
+
+  for (let i = 1; i < newNotes.length; i++) {
+    const thisNote = newNotes[i];
+    const previousNote = output.notes[o];
+    // Compare next note's start time with previous note's end time.
+    if (previousNote.instrument === thisNote.instrument &&
+        previousNote.pitch === thisNote.pitch &&
+        thisNote.quantizedStartStep === previousNote.quantizedEndStep &&
+        // Doesn't start on the measure boundary.
+        thisNote.quantizedStartStep % 16 !== 0) {
+      // If the next note has the same pitch as this note and starts at the
+      // same time as the previous note ends, absorb the next note into the
+      // previous output note.
+      output.notes[o].quantizedEndStep +=
+          thisNote.quantizedEndStep - thisNote.quantizedStartStep;
+    } else {
+      // Otherwise, append the next note to the output notes.
+      const note = new NoteSequence.Note();
+      note.pitch = newNotes[i].pitch;
+      note.instrument = newNotes[i].instrument;
+      note.quantizedStartStep = newNotes[i].quantizedStartStep;
+      note.quantizedEndStep = newNotes[i].quantizedEndStep;
+      output.notes.push(note);
+      o++;
+    }
+  }
+  return output;
+}
+
+/*
  * Concatenate a series of NoteSequences together.
  *
  * Individual sequences will be shifted and then merged together.
