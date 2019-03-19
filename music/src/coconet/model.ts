@@ -253,7 +253,7 @@ class ConvNet {
           'same';
       conv = tf.conv2d(x, weights, [stride, stride], padding, 'NHWC', [1, 1]);
     }
-    return this.applyBatchnorm(conv, i) as tf.Tensor4D;
+    return this.applyBatchnorm(conv as tf.Tensor4D, i) as tf.Tensor4D;
   }
 
   private applyBatchnorm(x: tf.Tensor4D, i: number): tf.Tensor {
@@ -478,12 +478,13 @@ class Coconet {
       for (let i = 0; i < masks.length; i++) {
         buffer.set(1, masks[i].step, masks[i].voice);
       }
-
       // Expand that buffer to the right shape.
-      return buffer.toTensor()
-                 .expandDims(1)
-                 .tile([1, NUM_PITCHES, 1])
-                 .expandDims(0) as tf.Tensor4D;
+      return tf.tidy(() => {
+        return buffer.toTensor()
+                   .expandDims(1)
+                   .tile([1, NUM_PITCHES, 1])
+                   .expandDims(0) as tf.Tensor4D;
+      });
     }
   }
 
@@ -516,6 +517,7 @@ class Coconet {
         pianoroll.dispose();
         predictions.dispose();
         innerMasks.dispose();
+        pm.dispose();
         return updatedPianorolls;
       });
       await tf.nextFrame();

@@ -107,6 +107,7 @@ async function infillSection() {
   writeTimer('time-3', start);
   model.dispose();
 }
+
 try {
   Promise.all([infillFirstVoice(), infillSecondVoice(), infillSection()])
       .then(() => {
