@@ -473,13 +473,13 @@ class Coconet {
     if (!masks) {
       return this.getCompletionMask(pianorolls);
     } else {
+      // Create a buffer to store the input.
+      const buffer = tf.buffer([pianorolls.shape[1], 4]);
+      for (let i = 0; i < masks.length; i++) {
+        buffer.set(1, masks[i].step, masks[i].voice);
+      }
+      // Expand that buffer to the right shape.
       return tf.tidy(() => {
-        // Create a buffer to store the input.
-        const buffer = tf.buffer([pianorolls.shape[1], 4]);
-        for (let i = 0; i < masks.length; i++) {
-          buffer.set(1, masks[i].step, masks[i].voice);
-        }
-        // Expand that buffer to the right shape.
         return buffer.toTensor()
                    .expandDims(1)
                    .tile([1, NUM_PITCHES, 1])
