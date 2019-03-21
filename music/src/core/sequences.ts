@@ -426,6 +426,243 @@ export function mergeInstruments(ns: INoteSequence) {
 }
 
 /**
+ * Replaces all the notes in an input sequence that match the instruments in
+ * a second sequence. For example, if `replaceSequence` has notes that all have
+ * either `instrument=0` or `instrument=1`, then any notes in `originalSequence`
+ * with instruments 0 or 1 will be removed and replaced with the notes in
+ * `replaceSequence`. If there are instruments in `replaceSequence` that are
+ * *not* in `originalSequence`, they will not be added.
+ * @param originalSequence The `NoteSequence` to be changed.
+ * @param replaceSequence The `NoteSequence` that will replace the notes in
+ * `sequence` with the same instrument.
+ * @return a new `NoteSequence` with the instruments replaced.
+ */
+export function replaceInstruments(
+    originalSequence: INoteSequence,
+    replaceSequence: INoteSequence): NoteSequence {
+  const instrumentsInOriginal =
+      new Set(originalSequence.notes.map(n => n.instrument));
+  const instrumentsInReplace =
+      new Set(replaceSequence.notes.map(n => n.instrument));
+
+  const newNotes: NoteSequence.Note[] = [];
+  // Go through the original sequence, and only keep the notes for instruments
+  // *not* in the second sequence.
+  originalSequence.notes.forEach(n => {
+    if (!instrumentsInReplace.has(n.instrument)) {
+      newNotes.push(NoteSequence.Note.create(n));
+    }
+  });
+  // Go through the second sequence and add all the notes for instruments in the
+  // first sequence.
+  replaceSequence.notes.forEach(n => {
+    if (instrumentsInOriginal.has(n.instrument)) {
+      newNotes.push(NoteSequence.Note.create(n));
+    }
+  });
+
+  // Sort the notes by instrument, and then by time.
+  const output = clone(originalSequence);
+  output.notes = newNotes.sort((a, b) => {
+    const voiceCompare = a.instrument - b.instrument;
+    if (voiceCompare) {
+      return voiceCompare;
+    }
+    return a.quantizedStartStep - b.quantizedStartStep;
+  });
+  return output;
+}
+
+/**
+ * Any consecutive notes of the same pitch are merged into a sustained note.
+ * Does not merge notes that connect on a measure boundary. This process
+ * also rearranges the order of the notes - notes are grouped by instrument,
+ * then ordered by timestamp.
+ *
+ * @param sequence A quantized `NoteSequence` to be merged.
+ * @return a new `NoteSequence` with sustained notes merged.
+ */
+export function mergeConsecutiveNotes(sequence: INoteSequence) {
+  assertIsQuantizedSequence(sequence);
+
+  const output = clone(sequence);
+  output.notes = [];
+
+  // Sort the input notes.
+  const newNotes = sequence.notes.sort((a, b) => {
+    const voiceCompare = a.instrument - b.instrument;
+    if (voiceCompare) {
+      return voiceCompare;
+    }
+    return a.quantizedStartStep - b.quantizedStartStep;
+  });
+
+  // Start with the first note.
+  const note = new NoteSequence.Note();
+  note.pitch = newNotes[0].pitch;
+  note.instrument = newNotes[0].instrument;
+  note.quantizedStartStep = newNotes[0].quantizedStartStep;
+  note.quantizedEndStep = newNotes[0].quantizedEndStep;
+  output.notes.push(note);
+  let o = 0;
+
+  for (let i = 1; i < newNotes.length; i++) {
+    const thisNote = newNotes[i];
+    const previousNote = output.notes[o];
+    // Compare next note's start time with previous note's end time.
+    if (previousNote.instrument === thisNote.instrument &&
+        previousNote.pitch === thisNote.pitch &&
+        thisNote.quantizedStartStep === previousNote.quantizedEndStep &&
+        // Doesn't start on the measure boundary.
+        thisNote.quantizedStartStep % 16 !== 0) {
+      // If the next note has the same pitch as this note and starts at the
+      // same time as the previous note ends, absorb the next note into the
+      // previous output note.
+      output.notes[o].quantizedEndStep +=
+          thisNote.quantizedEndStep - thisNote.quantizedStartStep;
+    } else {
+      // Otherwise, append the next note to the output notes.
+      const note = new NoteSequence.Note();
+      note.pitch = newNotes[i].pitch;
+      note.instrument = newNotes[i].instrument;
+      note.quantizedStartStep = newNotes[i].quantizedStartStep;
+      note.quantizedEndStep = newNotes[i].quantizedEndStep;
+      output.notes.push(note);
+      o++;
+    }
+  }
+  return output;
+}
+
+/*
+ * Concatenate a series of NoteSequences together.
+ *
+ * Individual sequences will be shifted and then merged together.
+ * @param concatenateSequences An array of `NoteSequences` to be concatenated.
+ * @param sequenceDurations (Optional) An array of durations for each of the
+ * `NoteSequences` in `args`. If not provided, the `totalTime` /
+ * `totalQuantizedSteps` of each sequence will be used. Specifying durations is
+ * useful if the sequences to be concatenated are effectively longer than
+ * their `totalTime` (e.g., a sequence that ends with a rest).
+ *
+ * @returns A new sequence that is the result of concatenating the input
+ * sequences.
+ */
+export function concatenate(
+    concatenateSequences: INoteSequence[],
+    sequenceDurations?: number[]): NoteSequence {
+  if (sequenceDurations &&
+      sequenceDurations.length !== concatenateSequences.length) {
+    throw new Error(`Number of sequences to concatenate and their individual
+ durations does not match.`);
+  }
+
+  if (isQuantizedSequence(concatenateSequences[0])) {
+    // Check that all the sequences are quantized, and that their quantization
+    // info matches.
+    for (let i = 0; i < concatenateSequences.length; ++i) {
+      assertIsQuantizedSequence(concatenateSequences[i]);
+      if (concatenateSequences[i].quantizationInfo.stepsPerQuarter !==
+          concatenateSequences[0].quantizationInfo.stepsPerQuarter) {
+        throw new Error('Not all sequences have the same quantizationInfo');
+      }
+    }
+    return concatenateHelper(
+        concatenateSequences, 'totalQuantizedSteps', 'quantizedStartStep',
+        'quantizedEndStep', sequenceDurations);
+  } else {
+    return concatenateHelper(
+        concatenateSequences, 'totalTime', 'startTime', 'endTime',
+        sequenceDurations);
+  }
+}
+
+/**
+ * Trim notes from a NoteSequence to lie within a specified time range.
+ * Notes starting before `start` are not included. Notes ending after
+ * `end` are not included, unless `truncateEndNotes` is true.
+ * @param ns The NoteSequence for which to trim notes.
+ * @param start The time after which all notes should begin. This should be
+ * either seconds (if ns is unquantized), or a quantized step (if ns is
+ * quantized).
+ * @param end The time before which all notes should end. This should be
+ * either seconds (if ns is unquantized), or a quantized step (if ns is
+ * quantized).
+ * @param truncateEndNotes Optional. If true, then notes starting before
+ * the end time but ending after it will be included and truncated.
+ * @returns A new NoteSequence with all notes trimmed to lie between `start`
+ * and `end`, and time-shifted to begin at 0.
+ */
+export function trim(
+    ns: INoteSequence, start: number, end: number, truncateEndNotes?: boolean) {
+  return isQuantizedSequence(ns) ?
+      trimHelper(
+          ns, start, end, 'totalQuantizedSteps', 'quantizedStartStep',
+          'quantizedEndStep', truncateEndNotes) :
+      trimHelper(
+          ns, start, end, 'totalTime', 'startTime', 'endTime',
+          truncateEndNotes);
+}
+
+function concatenateHelper(
+    seqs: INoteSequence[], totalKey: 'totalQuantizedSteps'|'totalTime',
+    startKey: 'startTime'|'quantizedStartStep',
+    endKey: 'endTime'|'quantizedEndStep',
+    sequenceDurations?: number[]): NoteSequence {
+  let concatSeq: NoteSequence;
+  let totalDuration = 0;
+
+  for (let i = 0; i < seqs.length; ++i) {
+    const seqDuration =
+        sequenceDurations ? sequenceDurations[i] : seqs[i][totalKey];
+    if (seqDuration === 0) {
+      throw Error(`Sequence ${seqs[i].id} has no ${
+          totalKey}, and no individual duration was provided.`);
+    }
+
+    if (i === 0) {
+      concatSeq = clone(seqs[0]);
+    } else {
+      Array.prototype.push.apply(concatSeq.notes, seqs[i].notes.map(n => {
+        const newN: NoteSequence.INote = NoteSequence.Note.create(n);
+        newN[startKey] += totalDuration;
+        newN[endKey] += totalDuration;
+        return newN;
+      }));
+    }
+
+    totalDuration += seqDuration;
+  }
+
+  concatSeq[totalKey] = totalDuration;
+  return concatSeq;
+}
+
+function trimHelper(
+    ns: INoteSequence, start: number, end: number,
+    totalKey: 'totalQuantizedSteps'|'totalTime',
+    startKey: 'startTime'|'quantizedStartStep',
+    endKey: 'endTime'|'quantizedEndStep', truncateEndNotes?: boolean) {
+  const result = clone(ns);
+  result[totalKey] = end;
+  result.notes = result.notes.filter(
+      n => n[startKey] >= start && n[startKey] <= end &&
+          (truncateEndNotes || n[endKey] <= end));
+
+  // Shift the sequence to start at 0.
+  for (let i = 0; i < result.notes.length; i++) {
+    result.notes[i][startKey] -= start;
+    result.notes[i][endKey] -= start;
+
+    if (truncateEndNotes) {
+      result.notes[i][endKey] = Math.min(result.notes[i][endKey], end);
+    }
+  }
+  result[totalKey] = Math.min(ns[totalKey] - start, end);
+  return result;
+}
+
+/**
  * Splits an unquantized `NoteSequence` into smaller `NoteSequences` of
  * equal chunks. If a note splits across a chunk boundary, then it will be
  * split between the two chunks.
