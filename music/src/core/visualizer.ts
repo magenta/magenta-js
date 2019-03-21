@@ -361,14 +361,14 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
     }
 
     // Remove the current active note, if one exists.
-    let el = this.svg.querySelector('rect.active');
-    while (el) {
+    const els = this.svg.querySelectorAll('rect.active');
+    for (let i = 0; i < els.length; ++i) {
+      const el = els[i];
       const fill = this.getNoteFillColor(
           this.noteSequence.notes[parseInt(el.getAttribute('data-index'), 10)],
           false);
       el.setAttribute('fill', fill);
       el.removeAttribute('class');
-      el = this.svg.querySelector('rect.active');
     }
 
     let activeNotePosition;
