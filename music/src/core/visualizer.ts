@@ -85,15 +85,7 @@ export abstract class BaseVisualizer {
     this.noteSequence = sequence;
     this.sequenceIsQuantized = sequences.isQuantizedSequence(this.noteSequence);
 
-    // Quantized sequences appear "longer" because there's usually more
-    // quantized per note (vs seconds), so pick a better default by using
-    // the steps per quarter.
-    let defaultPixelsPerTimeStep = 30;
-    if (this.sequenceIsQuantized) {
-      const spq = sequence.quantizationInfo.stepsPerQuarter;
-      defaultPixelsPerTimeStep = spq ? defaultPixelsPerTimeStep / spq : 7;
-    }
-
+    const defaultPixelsPerTimeStep = 30;
     this.config = {
       noteHeight: config.noteHeight || 6,
       noteSpacing: config.noteSpacing || 1,
@@ -103,6 +95,15 @@ export abstract class BaseVisualizer {
       minPitch: config.minPitch,
       maxPitch: config.maxPitch,
     };
+
+    // Quantized sequences appear "longer" because there's usually more
+    // quantized per note (vs seconds), so pick a better default by using
+    // the steps per quarter.
+    if (this.sequenceIsQuantized) {
+      const spq = sequence.quantizationInfo.stepsPerQuarter;
+      this.config.pixelsPerTimeStep = spq ? 
+          this.config.pixelsPerTimeStep / spq : 7;
+    }
 
     const size = this.getSize();
     this.width = size.width;
@@ -134,13 +135,11 @@ export abstract class BaseVisualizer {
 
     // Calculate a nice width based on the length of the sequence we're
     // playing.
-    const numNotes = this.noteSequence.notes.length;
     const endTime = this.sequenceIsQuantized ?
         this.noteSequence.totalQuantizedSteps :
         this.noteSequence.totalTime;
 
-    const width = (numNotes * this.config.noteSpacing) +
-        (endTime * this.config.pixelsPerTimeStep);
+    const width = (endTime * this.config.pixelsPerTimeStep);
 
     return {width, height};
   }
@@ -170,11 +169,13 @@ export abstract class BaseVisualizer {
   }
 
   protected getNoteStartTime(note: NoteSequence.INote) {
-    return this.sequenceIsQuantized ? note.quantizedStartStep : note.startTime;
+    return this.sequenceIsQuantized ? note.quantizedStartStep : 
+        Math.round(note.startTime * 100000000) / 100000000;
   }
 
   protected getNoteEndTime(note: NoteSequence.INote) {
-    return this.sequenceIsQuantized ? note.quantizedEndStep : note.endTime;
+    return this.sequenceIsQuantized ? note.quantizedEndStep : 
+        Math.round(note.endTime * 100000000) / 100000000;
   }
 
   protected isPaintingActiveNote(
@@ -186,7 +187,6 @@ export abstract class BaseVisualizer {
     const heldDownDuringPlayedNote =
         this.getNoteStartTime(note) <= this.getNoteStartTime(playedNote) &&
         this.getNoteEndTime(note) >= this.getNoteEndTime(playedNote);
-
     return isPlayedNote || heldDownDuringPlayedNote;
   }
 }
@@ -266,7 +266,7 @@ export class PianoRollCanvasVisualizer extends BaseVisualizer {
 
       this.redrawNote(size.x, size.y, size.w, size.h, fill);
 
-      if (isActive) {
+      if (isActive && note === activeNote) {
         activeNotePosition = size.x;
       }
     }
@@ -361,13 +361,14 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
     }
 
     // Remove the current active note, if one exists.
-    const el = this.svg.querySelector('rect.active');
-    if (el) {
+    let el = this.svg.querySelector('rect.active');
+    while (el) {
       const fill = this.getNoteFillColor(
           this.noteSequence.notes[parseInt(el.getAttribute('data-index'), 10)],
           false);
       el.setAttribute('fill', fill);
       el.removeAttribute('class');
+      el = this.svg.querySelector('rect.active');
     }
 
     let activeNotePosition;
@@ -384,7 +385,9 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
       const fill = this.getNoteFillColor(note, true);
       el.setAttribute('fill', fill);
       el.setAttribute('class', 'active');
-      activeNotePosition = parseFloat(el.getAttribute('x'));
+      if (note === activeNote) {
+        activeNotePosition = parseFloat(el.getAttribute('x'));
+      }
     }
 
     this.scrollIntoViewIfNeeded(scrollIntoView, activeNotePosition);
@@ -611,6 +614,8 @@ const REST_PATHS: {[index: number]: string} = {
   0.0625: sixtyFourthPath
 };
 
+const MIN_RESOLUTION = 0.0625;
+
 const STEM_WIDTH = 15;
 
 const CLEF_PATHS: {
@@ -741,7 +746,9 @@ export class StaffSVGVisualizer extends BaseVisualizer {
   private staffOffset: number; // Vertical SVG distance to middle staff line
   private blockDetailsMap: Map<number, BlockDetails>; // Translated blocks
   private playingNotes: NoteSequence.INote[]; // Highlited ones
+  private instruments: number[]; // NoteSequence track filter
   private scrollOnBars: boolean; // Wether to pack scrolling or not
+  private lastQ: number; // Last drawn block start time in quarters
 
 /**
  * `StaffSVGVisualizer` constructor.
@@ -756,20 +763,16 @@ export class StaffSVGVisualizer extends BaseVisualizer {
     config: AdvancedVisualizerConfig = {}
   ) {
     super(sequence, config);
-    const instruments = config.instruments || [];
+    this.div = div;
+    this.instruments = config.instruments || [];
     this.key = config.defaultKey || 0;
     this.scrollOnBars = config.scrollOnBars || false;
-
-    this.div = div;
-    this.blockDetailsMap = new Map<number, BlockDetails>();
-    this.barScale = {};
-    this.setDetails(instruments);
     this.scale = this.config.noteHeight/PATH_SCALE;
     if (config.pixelsPerTimeStep === 0) { // Compact visualization
       this.config.pixelsPerTimeStep = 0;
       this.config.noteSpacing = COMPACT_SPACING * this.scale;
     }
-    this.playingNotes = [];
+    this.clear();
     this.redraw();
   }
 
@@ -778,9 +781,10 @@ export class StaffSVGVisualizer extends BaseVisualizer {
    * highlighting on and off the appropriate notes otherwise.
    * 
    * @param activeNote (Optional) If specified, this `Note` will be painted
-   * in the active color. If provided, there won't be an actual redrawing, but
-   * a re-colouring of the involved note heads, accidentals, dots and ties 
-   * (activated and de-activated ones).
+   * in the active color and there won't be an actual redrawing, but a 
+   * re-colouring of the involved note heads, accidentals, dots and ties 
+   * (activated and de-activated ones). Otherwise, all musical symbols which 
+   * were not processed yet will be drawn to complete the score.
    * @param scrollIntoView (Optional) If specified and the note being highlited
    * is not in the center of the parent container, the later will be scrolled 
    * so that the note is in viewed in the right place. This can be altered by
@@ -814,7 +818,7 @@ export class StaffSVGVisualizer extends BaseVisualizer {
           this.staffSvg.getBoundingClientRect().left;
         const time = this.getNoteStartTime(activeNote);
         const quarters = this.timeToQuarters(time);
-        if (!this.scrollOnBars || this.barBeginning(quarters)) {
+        if (!this.scrollOnBars || this.isBarBeginning(quarters)) {
           this.scrollIntoViewIfNeeded(scrollIntoView, activeNotePosition);
         }
         if (quarters >= this.signaturesQuarters && this.signaturesBlinking) {
@@ -828,24 +832,46 @@ export class StaffSVGVisualizer extends BaseVisualizer {
       }
     }
     else { // No activeNote given means redrawing it all from scratch
-      this.clear();
+      this.setDetails();
+      const isFirstRedraw = (this.lastQ === -1);
+      const isCompact = (this.config.pixelsPerTimeStep === 0);
       let x = 0;
-      let width = this.drawSignatures(x); // Clef+Key+Time signatures
-      // First padding if compacted. Following are placed after drawings
-      width += this.config.pixelsPerTimeStep > 0 ? 0 : this.config.noteSpacing;
+      let width = 0;
+      if (isFirstRedraw) {
+        width = this.drawSignatures(x); // Clef+Key+Time signatures
+        if (isCompact) {
+          this.width = 0;
+          // First padding if compacted. Following are placed after drawings
+          width += this.config.noteSpacing;
+        }
+      }
+      else {
+        x = this.width;
+      }
       this.blockDetailsMap.forEach ( // Music Blocks
         (blockDetails, quarters) => {
-          x = this.config.pixelsPerTimeStep > 0 ? 
-            this.quartersToTime(quarters) * this.hStepSize : 0;
-          width += this.drawMusicBlock(blockDetails, x + width);
+          if (quarters > this.lastQ) {
+            if (!isCompact) {
+              x = this.quartersToTime(quarters) * this.hStepSize;
+            } 
+            width += this.drawMusicBlock(blockDetails, x + width);
+            this.lastQ = quarters;
+          }
         }
       );
-      if (this.config.pixelsPerTimeStep === 0) { // Compact staff resizing
-        this.width = width;
+      console.log(this.height, this.musicG.getBoundingClientRect().height);
+      if (isCompact) { // Compact staff resizing
+        this.width += width;
+      }
+      else {
+        const endTime = this.sequenceIsQuantized ?
+          this.noteSequence.totalQuantizedSteps :
+          this.noteSequence.totalTime;
+        this.width = endTime * this.config.pixelsPerTimeStep;
       }
       this.staffSvg.setAttributeNS(null, 'width', `${this.width}`);
-        this.staffSvg.setAttributeNS(null, 'height', `${this.height}`);  
-      this.drawStaff(this.linesG, 0, this.width);
+      this.staffSvg.setAttributeNS(null, 'height', `${this.height}`); // TODO: ???
+      this.redrawStaff(this.linesG, 0, this.width);
     }
     return activeNotePosition;
   }
@@ -879,6 +905,46 @@ export class StaffSVGVisualizer extends BaseVisualizer {
     this.setFill(this.musicG);
     this.setStroke(this.musicG, 0);
     this.staffSvg.appendChild(this.musicG);
+
+    this.blockDetailsMap = new Map<number, BlockDetails>();
+    this.playingNotes = [];
+    this.barScale = {};
+    this.lastQ = -1;
+    let pitchSum = 0;
+    let countSum = 0;
+    this.noteSequence.notes.forEach(
+      note => {
+        if (this.isNoteInInstruments(note, this.instruments)) {
+          pitchSum += note.pitch;
+          ++countSum;
+        }
+      }
+    );
+    const averagePitch = pitchSum / countSum;
+    this.clef = averagePitch >= 60? 71: 50;
+    // Over C4 -> G clef, otherwise F clef (numbers are MIDI pitch values)
+
+    // TODO: accept multiple key signatures
+    if (this.noteSequence.keySignatures) { 
+      if (this.noteSequence.keySignatures.length) {
+        this.key = this.noteSequence.keySignatures[0].key;
+      }
+    }
+
+    // TODO: accept multiple time signatures
+    if (this.noteSequence.timeSignatures) { 
+      this.timeSignatureNumerator = 
+        this.noteSequence.timeSignatures[0].numerator;
+      this.timeSignatureDenominator = 
+        this.noteSequence.timeSignatures[0].denominator;
+    }
+    else {
+      this.timeSignatureNumerator = 4;
+      this.timeSignatureDenominator = 4;
+    }
+
+    this.vStepSize = this.config.noteHeight / 2;
+    this.hStepSize = this.config.pixelsPerTimeStep;
   }
 
   private drawSignatures(x: number): number {
@@ -890,10 +956,12 @@ export class StaffSVGVisualizer extends BaseVisualizer {
       document.defaultView.getComputedStyle(this.div.parentElement);
     this.setFillColor(background, 
       upperStyle.getPropertyValue('background-color'));
+
     const clef = drawSVGPath(this.signaturesG, CLEF_PATHS[this.clef].path, 
       x + width, this.staffOffset*this.vStepSize, this.scale, this.scale);
     this.setFill(clef);
     width += 3 * spacing;
+
     const accidental = KEY_ACCIDENTALS[this.key].accidental;
     const offset = (this.clef === 71) ? 0 : 14;
     KEY_ACCIDENTALS[this.key].pitches.forEach(
@@ -906,6 +974,7 @@ export class StaffSVGVisualizer extends BaseVisualizer {
         width += p.getBoundingClientRect().width;
       }
     );
+
     const timeKey = createSVGGroupChild(this.signaturesG, 'time-key');
     drawSVGText(timeKey, `${this.timeSignatureNumerator}`, 
       x + width, this.staffOffset*this.vStepSize-0.5, 
@@ -916,7 +985,7 @@ export class StaffSVGVisualizer extends BaseVisualizer {
     this.setFill(timeKey);
     width += timeKey.getBoundingClientRect().width + spacing;
     
-    const staff = this.drawStaff(this.signaturesG, x, width);
+    const staff = this.redrawStaff(this.signaturesG, x, width);
     this.setStroke(staff);
     this.signaturesSvg.setAttributeNS(null, 'width', `${width + 5}`);
     this.signaturesSvg.setAttributeNS(null, 'height', `${this.height}`);
@@ -942,7 +1011,7 @@ export class StaffSVGVisualizer extends BaseVisualizer {
   private drawMusicBlock(blockDetails: BlockDetails, x: number): number {
     let width = this.drawBarIfNeeded(blockDetails.notes[0].start, x);
     let headIndex = 0;
-    for (let i = 4; i>=0.0625 && !headIndex; i/=2) {
+    for (let i = 4; i >= MIN_RESOLUTION && !headIndex; i/=2) {
       if (i <= blockDetails.notes[0].length) { // All 
         headIndex = i;
       }
@@ -1035,7 +1104,7 @@ export class StaffSVGVisualizer extends BaseVisualizer {
 
   private drawBarIfNeeded(quarters: number, x: number): number {
     let width = 0;
-    if (quarters !== 0 && this.barBeginning(quarters)) { // No 1st bar needed
+    if (quarters !== 0 && this.isBarBeginning(quarters)) { // No 1st bar needed
       if (this.config.pixelsPerTimeStep > 0) { // Proportional visualization
         x -= this.config.noteSpacing; // Negative to avoid touching note head
       }
@@ -1048,7 +1117,7 @@ export class StaffSVGVisualizer extends BaseVisualizer {
     return width;
   }
 
-  private barBeginning(quarters: number): boolean {
+  private isBarBeginning(quarters: number): boolean {
     const barStep = 4 * this.timeSignatureNumerator / 
       this.timeSignatureDenominator;
     return (quarters%barStep === 0);
@@ -1062,7 +1131,7 @@ export class StaffSVGVisualizer extends BaseVisualizer {
     const y = this.staffOffset * this.vStepSize;
     let width = 0;
     let remainingLength = blockDetails.restToNextLength;
-    for (let l = 4; remainingLength > 0 && l >= 0.0625; l /= 2) {
+    for (let l = 4; remainingLength > 0 && l >= MIN_RESOLUTION; l /= 2) {
       if (l <= remainingLength) { // A rest of length l must be drawn
         width += this.drawBarIfNeeded(quarters, x);
         const rest = drawSVGPath(
@@ -1080,11 +1149,19 @@ export class StaffSVGVisualizer extends BaseVisualizer {
     return width;
   }
 
-  private drawStaff(e: SVGElement, x: number, width: number) {
-    const staff = createSVGGroupChild(e, 'staff-five-lines');
-    const y = this.staffOffset * this.vStepSize;
-    for (let i=-4; i<=4; i+=2) { // Draw five line staff
-      drawSVGPath(staff, staffLinePath, x, y + i*this.vStepSize, width/100, 1);
+  private redrawStaff(e: SVGElement, x: number, width: number) {
+    let staff = e.querySelector('g[staff-five-lines]') as SVGElement;
+    if (staff) { // Already drawn
+      staff.setAttributeNS(
+        null, 'transform', `scale(${width/100}, 1)`
+      );
+    }
+    else {
+      staff = createSVGGroupChild(e, 'staff-five-lines');
+      const y = this.staffOffset * this.vStepSize;
+      for (let i=-4; i<=4; i+=2) { // Draw five line staff
+        drawSVGPath(staff, staffLinePath, x, y + i*this.vStepSize, width/100, 1);
+      }
     }
     return staff;
   }
@@ -1161,53 +1238,13 @@ private timeToQuarters(timeLength: number): number {
     }
   }
 
-  private setDetails(instruments: number[]) {
-    let pitchSum = 0;
-    let countSum = 0;
-    this.noteSequence.notes.forEach(
-      note => {
-        if (this.isNoteInInstruments(note, instruments)) {
-          pitchSum += note.pitch;
-          ++countSum;
-        }
-      }
-    );
-    const averagePitch = pitchSum / countSum;
-    this.clef = averagePitch >= 60? 71: 50;
-    // Over C4 -> G clef, otherwise F clef 
-
-    // TODO: accept multiple key signatures
-    if (this.noteSequence.keySignatures) { 
-      if (this.noteSequence.keySignatures.length) {
-        this.key = this.noteSequence.keySignatures[0].key;
-      }
-    }
-
-    // TODO: accept multiple time signatures
-    if (this.noteSequence.timeSignatures) { 
-      this.timeSignatureNumerator = 
-        this.noteSequence.timeSignatures[0].numerator;
-      this.timeSignatureDenominator = 
-        this.noteSequence.timeSignatures[0].denominator;
-    }
-    else {
-      this.timeSignatureNumerator = 4;
-      this.timeSignatureDenominator = 4;
-    }
-    const qPerBar = this.timeSignatureNumerator * 4 / 
-      this.timeSignatureDenominator;
-
-    this.vStepSize = this.config.noteHeight / 2;
-    this.hStepSize = this.config.pixelsPerTimeStep *
-      (this.sequenceIsQuantized ? 
-        this.noteSequence.quantizationInfo.stepsPerQuarter : 1);
-
+  private setDetails() {
     let blocks = new Map<number, QNote[]>();
     const splites = new Set<number>();
     let lastQ = 0;
     this.noteSequence.notes.forEach( 
       note => { // First pass to translate all notes to quarters
-        if (this.isNoteInInstruments(note, instruments)) {
+        if (this.isNoteInInstruments(note, this.instruments)) {
           const qNote = this.getQNote(note);
           splites.add(qNote.start);
           const end = qNote.start + qNote.length;
@@ -1222,7 +1259,9 @@ private timeToQuarters(timeLength: number): number {
         }
       }
     );
-    lastQ = Math.floor(lastQ);
+    const qPerBar = this.timeSignatureNumerator * 4 / 
+      this.timeSignatureDenominator;
+    lastQ = Math.floor(lastQ); // Remove wrong javascript decimal quarters
     for (let i = qPerBar; i < lastQ; i+=qPerBar) {
       splites.add(i); // Bars are split points too
     }
@@ -1259,7 +1298,7 @@ private timeToQuarters(timeLength: number): number {
     let lastBlockEnd = 0;
     blocks.forEach(
       (block: QNote[], quarters: number) => {
-        if (this.barBeginning(quarters)) {
+        if (this.isBarBeginning(quarters)) {
           this.barScale = {}; // Reset
         }
         const d0 = block[0];
@@ -1283,7 +1322,7 @@ private timeToQuarters(timeLength: number): number {
         upperBound = Math.min(blockDetails.maxVStep - 1, upperBound);
         if (blockDetails.notes[0].length < 4) { // Consider stems height
           let stemVSteps: number;
-          for (let l = 4; !stemVSteps && l >= 0.0625; l /= 2) {
+          for (let l = 4; !stemVSteps && l >= MIN_RESOLUTION; l /= 2) {
             if (l <= blockDetails.notes[0].length) {
               stemVSteps = NOTE_PATHS[l].stemVSteps;
             } // Quantized to the lower length note
@@ -1310,12 +1349,6 @@ private timeToQuarters(timeLength: number): number {
       Math.min(CLEF_PATHS[this.clef].upper, Math.min(-4, upperBound));
     this.staffOffset = 1 - higher; // Add 1 for upper beams and accidentals
     this.height = (2 + this.staffOffset + lower) * this.vStepSize;
-
-    // Calculate a nice width based on the length of the sequence we're playing.
-    const endTime = this.sequenceIsQuantized ?
-        this.noteSequence.totalQuantizedSteps :
-        this.noteSequence.totalTime;
-    this.width = endTime * this.config.pixelsPerTimeStep;
   }
 
   private getQNote(note: NoteSequence.INote): QNote {

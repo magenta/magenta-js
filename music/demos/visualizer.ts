@@ -110,7 +110,7 @@ const UNIFORM_TIME_SIZE = 200;
 
 let visualizerRight: mm.StaffSVGVisualizer;
 let visualizerLeft: mm.StaffSVGVisualizer;
-let sequence: mm.NoteSequence;
+let sequence2: mm.NoteSequence;
 
 const player2 = new mm.Player(false, {
   run: (note: mm.NoteSequence.Note) => {
@@ -121,7 +121,7 @@ const player2 = new mm.Player(false, {
 });
 
 // UI elements
-const visualization = document.getElementById('visualization') as HTMLInputElement;
+const visualization2 = document.getElementById('visualization2') as HTMLInputElement;
 const playBtn2 = document.getElementById('playBtn2') as HTMLButtonElement;
 const tempoInput2 = document.getElementById('tempoInput2') as HTMLInputElement;
 const tempoValue2 = document.getElementById('tempoValue2') as HTMLDivElement;
@@ -145,24 +145,24 @@ let configLeft = {
 }
 
 // Set up some event listeners
-visualization.addEventListener('change', changeVisualization);
+visualization2.addEventListener('change', changeVisualization2);
 playBtn2.addEventListener('click', () => startOrStop2());
 tempoInput2.addEventListener('input', () => {
   player2.setTempo(parseInt(tempoInput2.value, 10));
   tempoValue2.textContent = tempoInput2.value;
 });
 
-function changeVisualization() {
-  configRight.pixelsPerTimeStep = visualization.checked ? 0 : UNIFORM_TIME_SIZE;
-  configLeft.pixelsPerTimeStep = visualization.checked ? 0 : UNIFORM_TIME_SIZE;
-  initPlayerAndVisualizer2(sequence);
+function changeVisualization2() {
+  configRight.pixelsPerTimeStep = visualization2.checked ? 0 : UNIFORM_TIME_SIZE;
+  configLeft.pixelsPerTimeStep = visualization2.checked ? 0 : UNIFORM_TIME_SIZE;
+  initPlayerAndVisualizer2(sequence2);
 }
 
 function fetchMidi2(url: string) {
   urlToNoteSequence(url).then(
     (seq) => {
-      sequence = seq;
-      initPlayerAndVisualizer2(sequence);
+      sequence2 = seq;
+      initPlayerAndVisualizer2(sequence2);
     }
   );
 }
@@ -194,4 +194,150 @@ function startOrStop2() {
   }
 }
 
+// Section 3 ******
+
+const DOUBLE_SCALE: mm.INoteSequence = {
+  notes: [
+    {pitch: 60, quantizedStartStep: 0, quantizedEndStep: 1, program: 0},
+    {pitch: 61, quantizedStartStep: 1, quantizedEndStep: 2, program: 0},
+    {pitch: 62, quantizedStartStep: 2, quantizedEndStep: 3, program: 0},
+    {pitch: 63, quantizedStartStep: 3, quantizedEndStep: 4, program: 0},
+    {pitch: 64, quantizedStartStep: 4, quantizedEndStep: 5, program: 0},
+    {pitch: 65, quantizedStartStep: 5, quantizedEndStep: 6, program: 0},
+    {pitch: 66, quantizedStartStep: 6, quantizedEndStep: 7, program: 0},
+    {pitch: 67, quantizedStartStep: 7, quantizedEndStep: 8, program: 0},
+    {pitch: 68, quantizedStartStep: 8, quantizedEndStep: 9, program: 0},
+    {pitch: 69, quantizedStartStep: 9, quantizedEndStep: 10, program: 0},
+    {pitch: 70, quantizedStartStep: 10, quantizedEndStep: 11, program: 0},
+    {pitch: 71, quantizedStartStep: 11, quantizedEndStep: 12, program: 0},
+    {pitch: 72, quantizedStartStep: 12, quantizedEndStep: 13, program: 0},
+    {pitch: 73, quantizedStartStep: 13, quantizedEndStep: 14, program: 0},
+    {pitch: 74, quantizedStartStep: 14, quantizedEndStep: 15, program: 0},
+    {pitch: 75, quantizedStartStep: 15, quantizedEndStep: 16, program: 0},
+    {pitch: 76, quantizedStartStep: 16, quantizedEndStep: 17, program: 0},
+    {pitch: 77, quantizedStartStep: 17, quantizedEndStep: 18, program: 0},
+    {pitch: 78, quantizedStartStep: 18, quantizedEndStep: 19, program: 0},
+    {pitch: 79, quantizedStartStep: 19, quantizedEndStep: 20, program: 0},
+    {pitch: 80, quantizedStartStep: 20, quantizedEndStep: 21, program: 0},
+    {pitch: 81, quantizedStartStep: 21, quantizedEndStep: 22, program: 0},
+    {pitch: 82, quantizedStartStep: 22, quantizedEndStep: 23, program: 0},
+    {pitch: 83, quantizedStartStep: 23, quantizedEndStep: 24, program: 0}
+  ],
+  tempos: [{time: 0, qpm: 120}],
+  keySignatures: [{time: 0, key: 0}],
+  timeSignatures: [{time: 0, numerator: 2, denominator: 4}],
+  totalQuantizedSteps: 24,
+  quantizationInfo: {stepsPerQuarter: 2}
+};
+let visualizer3: mm.StaffSVGVisualizer;
+let sequence3 = DOUBLE_SCALE;
+
+const player3 = new mm.Player(false, {
+  run: (note: mm.NoteSequence.Note) => {
+    visualizer3.redraw(note, true);
+  },
+  stop: () => {}
+});
+
+// UI elements
+const visualization3 = document.getElementById('visualization3') as HTMLInputElement;
+const playBtn3 = document.getElementById('playBtn3') as HTMLButtonElement;
+const growBtn = document.getElementById('growBtn') as HTMLButtonElement;
+const tempoInput3 = document.getElementById('tempoInput3') as HTMLInputElement;
+const tempoValue3 = document.getElementById('tempoValue3') as HTMLDivElement;
+const signatures = document.getElementById('signatures') as HTMLDivElement;
+
+let configSignatures = {
+  noteHeight: 15,
+  pixelsPerTimeStep: UNIFORM_TIME_SIZE,
+};
+
+// Set up some event listeners
+visualization3.addEventListener('change', changeVisualization3);
+playBtn3.addEventListener('click', () => startOrStop3());
+growBtn.addEventListener('click', 
+  () => {
+    ++DOUBLE_SCALE.keySignatures[0].key; 
+    if(DOUBLE_SCALE.keySignatures[0].key == 12) {
+      DOUBLE_SCALE.keySignatures[0].key = 0;
+    };
+    ++DOUBLE_SCALE.timeSignatures[0].numerator; 
+    if(DOUBLE_SCALE.timeSignatures[0].numerator == 5) {
+      DOUBLE_SCALE.timeSignatures[0].numerator = 2;
+    };
+    appendQuantized(sequence3, DOUBLE_SCALE, 16);
+    visualizer3.redraw();
+  }
+);
+tempoInput3.addEventListener('input', () => {
+  player3.setTempo(parseInt(tempoInput3.value, 10));
+  tempoValue3.textContent = tempoInput3.value;
+});
+
+function changeVisualization3() {
+  configSignatures.pixelsPerTimeStep = visualization3.checked ? 0 : UNIFORM_TIME_SIZE;
+  initPlayerAndVisualizer3(sequence3);
+}
+
+function initPlayerAndVisualizer3(seq: mm.INoteSequence) {
+  // Disable the UI
+  playBtn3.disabled = false;
+  playBtn3.textContent = 'Loading';
+
+  visualizer3 = new mm.StaffSVGVisualizer(seq, signatures, configSignatures);
+
+  const tempo = seq.tempos[0].qpm;
+  player3.setTempo(tempo);
+  tempoValue3.textContent = tempoInput3.value = '' + tempo;
+
+  // Enable the UI
+  playBtn3.disabled = false;
+  playBtn3.textContent = 'Play';
+}
+
+function startOrStop3() {
+  if (player3.isPlaying()) {
+    player3.stop();
+    playBtn3.textContent = 'Play';
+  } else {
+    player3.start(visualizer3.noteSequence);
+    playBtn3.textContent = 'Stop';
+  }
+}
+
+function appendQuantized(
+  sequence: mm.INoteSequence, 
+  appended: mm.INoteSequence, 
+  stepsPerQuarter: number
+): mm.INoteSequence {
+  mm.sequences.assertIsQuantizedSequence(sequence);
+  sequence = mm.sequences.isQuantizedSequence(sequence) ?
+    sequence : 
+    mm.sequences.quantizeNoteSequence(sequence, stepsPerQuarter);
+  appended = mm.sequences.isQuantizedSequence(appended) ?
+    mm.sequences.clone(appended) : 
+    mm.sequences.quantizeNoteSequence(appended, stepsPerQuarter);
+  const offset = sequence.totalQuantizedSteps;
+  appended.notes.forEach(
+    note => {
+      note.quantizedStartStep += offset;
+      note.quantizedEndStep += offset;
+      sequence.notes.push(note);
+    }
+  );
+  appended.keySignatures.forEach(
+    k => { sequence.keySignatures.push({time: k.time + offset, key:k.key}); }
+  );
+  appended.timeSignatures.forEach(
+    t => {
+      sequence.timeSignatures.push(
+        {time: t.time + offset, numerator: t.numerator, denominator: t.denominator}
+      ); 
+    }
+  );
+  sequence.totalQuantizedSteps += appended.totalQuantizedSteps;
+  return sequence;
+}
+
 fetchMidi2(ADVANCED_MIDI_URL);
+initPlayerAndVisualizer3(sequence3);
