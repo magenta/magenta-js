@@ -113,16 +113,23 @@
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#assertisrelativequantizedsequence" class="tsd-kind-icon">assert<wbr>IsRelative<wbr>Quantized<wbr>Sequence</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported"><a href="_core_sequences_.html#assertsingletempo" class="tsd-kind-icon">assert<wbr>Single<wbr>Tempo</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#clone" class="tsd-kind-icon">clone</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#concatenate" class="tsd-kind-icon">concatenate</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported"><a href="_core_sequences_.html#concatenatehelper" class="tsd-kind-icon">concatenate<wbr>Helper</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported"><a href="_core_sequences_.html#getquantizedtimeevents" class="tsd-kind-icon">get<wbr>Quantized<wbr>Time<wbr>Events</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#isabsolutequantizedsequence" class="tsd-kind-icon">is<wbr>Absolute<wbr>Quantized<wbr>Sequence</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported"><a href="_core_sequences_.html#ispowerof2" class="tsd-kind-icon">is<wbr>Power<wbr>Of2</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#isquantizedsequence" class="tsd-kind-icon">is<wbr>Quantized<wbr>Sequence</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#isrelativequantizedsequence" class="tsd-kind-icon">is<wbr>Relative<wbr>Quantized<wbr>Sequence</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#mergeconsecutivenotes" class="tsd-kind-icon">merge<wbr>Consecutive<wbr>Notes</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#mergeinstruments" class="tsd-kind-icon">merge<wbr>Instruments</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#quantizenotesequence" class="tsd-kind-icon">quantize<wbr>Note<wbr>Sequence</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported"><a href="_core_sequences_.html#quantizenotesandevents" class="tsd-kind-icon">quantize<wbr>Notes<wbr>And<wbr>Events</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#quantizetostep" class="tsd-kind-icon">quantize<wbr>ToStep</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#replaceinstruments" class="tsd-kind-icon">replace<wbr>Instruments</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#split" class="tsd-kind-icon">split</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#stepsperquartertostepspersecond" class="tsd-kind-icon">steps<wbr>Per<wbr>Quarter<wbr>ToSteps<wbr>Per<wbr>Second</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#trim" class="tsd-kind-icon">trim</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported"><a href="_core_sequences_.html#trimhelper" class="tsd-kind-icon">trim<wbr>Helper</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#unquantizesequence" class="tsd-kind-icon">unquantize<wbr>Sequence</a></li>
 							</ul>
 						</section>
@@ -279,6 +286,67 @@
 						</li>
 					</ul>
 				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
+					<a name="concatenate" class="tsd-anchor"></a>
+					<h3>concatenate</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
+						<li class="tsd-signature tsd-kind-icon">concatenate<span class="tsd-signature-symbol">(</span>concatenateSequences<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span>, sequenceDurations<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">NoteSequence</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L551">core/sequences.ts:551</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>concatenateSequences: <span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span></h5>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> sequenceDurations: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">NoteSequence</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
+					<a name="concatenatehelper" class="tsd-anchor"></a>
+					<h3>concatenate<wbr>Helper</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
+						<li class="tsd-signature tsd-kind-icon">concatenate<wbr>Helper<span class="tsd-signature-symbol">(</span>seqs<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span>, totalKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">"totalQuantizedSteps"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"totalTime"</span>, startKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">"startTime"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"quantizedStartStep"</span>, endKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">"endTime"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"quantizedEndStep"</span>, sequenceDurations<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">NoteSequence</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L607">core/sequences.ts:607</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>seqs: <span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span></h5>
+								</li>
+								<li>
+									<h5>totalKey: <span class="tsd-signature-type">"totalQuantizedSteps"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"totalTime"</span></h5>
+								</li>
+								<li>
+									<h5>startKey: <span class="tsd-signature-type">"startTime"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"quantizedStartStep"</span></h5>
+								</li>
+								<li>
+									<h5>endKey: <span class="tsd-signature-type">"endTime"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"quantizedEndStep"</span></h5>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> sequenceDurations: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">NoteSequence</span></h4>
+						</li>
+					</ul>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
 					<a name="getquantizedtimeevents" class="tsd-anchor"></a>
 					<h3>get<wbr>Quantized<wbr>Time<wbr>Events</h3>
@@ -411,6 +479,41 @@
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
+					<a name="mergeconsecutivenotes" class="tsd-anchor"></a>
+					<h3>merge<wbr>Consecutive<wbr>Notes</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
+						<li class="tsd-signature tsd-kind-icon">merge<wbr>Consecutive<wbr>Notes<span class="tsd-signature-symbol">(</span>sequence<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">NoteSequence</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L485">core/sequences.ts:485</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Any consecutive notes of the same pitch are merged into a sustained note.
+										Does not merge notes that connect on a measure boundary. This process
+										also rearranges the order of the notes - notes are grouped by instrument,
+									then ordered by timestamp.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>sequence: <span class="tsd-signature-type">INoteSequence</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>A quantized <code>NoteSequence</code> to be merged.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">NoteSequence</span></h4>
+							<p>a new <code>NoteSequence</code> with sustained notes merged.</p>
 						</li>
 					</ul>
 				</section>
@@ -603,6 +706,91 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
+					<a name="replaceinstruments" class="tsd-anchor"></a>
+					<h3>replace<wbr>Instruments</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
+						<li class="tsd-signature tsd-kind-icon">replace<wbr>Instruments<span class="tsd-signature-symbol">(</span>originalSequence<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span>, replaceSequence<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">NoteSequence</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L440">core/sequences.ts:440</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Replaces all the notes in an input sequence that match the instruments in
+										a second sequence. For example, if <code>replaceSequence</code> has notes that all have
+										either <code>instrument=0</code> or <code>instrument=1</code>, then any notes in <code>originalSequence</code>
+										with instruments 0 or 1 will be removed and replaced with the notes in
+										<code>replaceSequence</code>. If there are instruments in <code>replaceSequence</code> that are
+									<em>not</em> in <code>originalSequence</code>, they will not be added.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>originalSequence: <span class="tsd-signature-type">INoteSequence</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The <code>NoteSequence</code> to be changed.</p>
+									</div>
+								</li>
+								<li>
+									<h5>replaceSequence: <span class="tsd-signature-type">INoteSequence</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The <code>NoteSequence</code> that will replace the notes in
+										<code>sequence</code> with the same instrument.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">NoteSequence</span></h4>
+							<p>a new <code>NoteSequence</code> with the instruments replaced.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
+					<a name="split" class="tsd-anchor"></a>
+					<h3>split</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
+						<li class="tsd-signature tsd-kind-icon">split<span class="tsd-signature-symbol">(</span>seq<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span>, chunkSize<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">NoteSequence</span><span class="tsd-signature-symbol">[]</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L680">core/sequences.ts:680</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Splits an unquantized <code>NoteSequence</code> into smaller <code>NoteSequences</code> of
+										equal chunks. If a note splits across a chunk boundary, then it will be
+									split between the two chunks.</p>
+								</div>
+								<p>Silent padding may be added to the final chunk to make it <code>chunkSize</code>.</p>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>seq: <span class="tsd-signature-type">INoteSequence</span></h5>
+								</li>
+								<li>
+									<h5>chunkSize: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The number of steps per chunk. For example, if you want to
+											split the sequence into 2 bar chunks, then if the sequence has 4
+										steps/quarter, that will be 32 steps for each 2 bars (so a chunkSize of 32).</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">NoteSequence</span><span class="tsd-signature-symbol">[]</span></h4>
+							<p>An array of <code>NoteSequences</code> each of which are at most <code>chunkSize</code>
+							steps.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
 					<a name="stepsperquartertostepspersecond" class="tsd-anchor"></a>
 					<h3>steps<wbr>Per<wbr>Quarter<wbr>ToSteps<wbr>Per<wbr>Second</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
@@ -630,6 +818,105 @@
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
+					<a name="trim" class="tsd-anchor"></a>
+					<h3>trim</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
+						<li class="tsd-signature tsd-kind-icon">trim<span class="tsd-signature-symbol">(</span>ns<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span>, start<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, end<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, truncateEndNotes<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">NoteSequence</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L596">core/sequences.ts:596</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Trim notes from a NoteSequence to lie within a specified time range.
+										Notes starting before <code>start</code> are not included. Notes ending after
+									<code>end</code> are not included, unless <code>truncateEndNotes</code> is true.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>ns: <span class="tsd-signature-type">INoteSequence</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The NoteSequence for which to trim notes.</p>
+									</div>
+								</li>
+								<li>
+									<h5>start: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The time after which all notes should begin. This should be
+											either seconds (if ns is unquantized), or a quantized step (if ns is
+										quantized).</p>
+									</div>
+								</li>
+								<li>
+									<h5>end: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The time before which all notes should end. This should be
+											either seconds (if ns is unquantized), or a quantized step (if ns is
+										quantized).</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> truncateEndNotes: <span class="tsd-signature-type">boolean</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Optional. If true, then notes starting before
+										the end time but ending after it will be included and truncated.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">NoteSequence</span></h4>
+							<p>A new NoteSequence with all notes trimmed to lie between <code>start</code>
+							and <code>end</code>, and time-shifted to begin at 0.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
+					<a name="trimhelper" class="tsd-anchor"></a>
+					<h3>trim<wbr>Helper</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
+						<li class="tsd-signature tsd-kind-icon">trim<wbr>Helper<span class="tsd-signature-symbol">(</span>ns<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span>, start<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, end<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, totalKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">"totalQuantizedSteps"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"totalTime"</span>, startKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">"startTime"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"quantizedStartStep"</span>, endKey<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">"endTime"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"quantizedEndStep"</span>, truncateEndNotes<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">NoteSequence</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L641">core/sequences.ts:641</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>ns: <span class="tsd-signature-type">INoteSequence</span></h5>
+								</li>
+								<li>
+									<h5>start: <span class="tsd-signature-type">number</span></h5>
+								</li>
+								<li>
+									<h5>end: <span class="tsd-signature-type">number</span></h5>
+								</li>
+								<li>
+									<h5>totalKey: <span class="tsd-signature-type">"totalQuantizedSteps"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"totalTime"</span></h5>
+								</li>
+								<li>
+									<h5>startKey: <span class="tsd-signature-type">"startTime"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"quantizedStartStep"</span></h5>
+								</li>
+								<li>
+									<h5>endKey: <span class="tsd-signature-type">"endTime"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"quantizedEndStep"</span></h5>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> truncateEndNotes: <span class="tsd-signature-type">boolean</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">NoteSequence</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -679,65 +966,8 @@
 					<li class="globals  ">
 						<a href="../globals.html"><em>Globals</em></a>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_aux_inputs_.html">"core/aux_<wbr>inputs"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_chords_.html">"core/chords"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_constants_.html">"core/constants"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_data_.html">"core/data"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_logging_.html">"core/logging"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_midi_io_.html">"core/midi_<wbr>io"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_performance_.html">"core/performance"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_player_.html">"core/player"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_recorder_.html">"core/recorder"</a>
-					</li>
 					<li class="current tsd-kind-external-module">
 						<a href="_core_sequences_.html">"core/sequences"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_soundfont_.html">"core/soundfont"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_core_visualizer_.html">"core/visualizer"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_music_rnn_attention_.html">"music_<wbr>rnn/attention"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_music_rnn_model_.html">"music_<wbr>rnn/model"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_music_vae_model_.html">"music_<wbr>vae/model"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_piano_genie_model_.html">"piano_<wbr>genie/model"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_transcription_audio_utils_.html">"transcription/audio_<wbr>utils"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_transcription_constants_.html">"transcription/constants"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_transcription_model_.html">"transcription/model"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_transcription_transcription_utils_.html">"transcription/transcription_<wbr>utils"</a>
 					</li>
 				</ul>
 			</nav>
@@ -776,6 +1006,12 @@
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
 						<a href="_core_sequences_.html#clone" class="tsd-kind-icon">clone</a>
 					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="_core_sequences_.html#concatenate" class="tsd-kind-icon">concatenate</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="_core_sequences_.html#concatenatehelper" class="tsd-kind-icon">concatenate<wbr>Helper</a>
+					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_core_sequences_.html#getquantizedtimeevents" class="tsd-kind-icon">get<wbr>Quantized<wbr>Time<wbr>Events</a>
 					</li>
@@ -792,6 +1028,9 @@
 						<a href="_core_sequences_.html#isrelativequantizedsequence" class="tsd-kind-icon">is<wbr>Relative<wbr>Quantized<wbr>Sequence</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="_core_sequences_.html#mergeconsecutivenotes" class="tsd-kind-icon">merge<wbr>Consecutive<wbr>Notes</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
 						<a href="_core_sequences_.html#mergeinstruments" class="tsd-kind-icon">merge<wbr>Instruments</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
@@ -804,7 +1043,19 @@
 						<a href="_core_sequences_.html#quantizetostep" class="tsd-kind-icon">quantize<wbr>ToStep</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="_core_sequences_.html#replaceinstruments" class="tsd-kind-icon">replace<wbr>Instruments</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="_core_sequences_.html#split" class="tsd-kind-icon">split</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
 						<a href="_core_sequences_.html#stepsperquartertostepspersecond" class="tsd-kind-icon">steps<wbr>Per<wbr>Quarter<wbr>ToSteps<wbr>Per<wbr>Second</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="_core_sequences_.html#trim" class="tsd-kind-icon">trim</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="_core_sequences_.html#trimhelper" class="tsd-kind-icon">trim<wbr>Helper</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
 						<a href="_core_sequences_.html#unquantizesequence" class="tsd-kind-icon">unquantize<wbr>Sequence</a>

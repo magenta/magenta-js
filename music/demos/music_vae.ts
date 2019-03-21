@@ -16,8 +16,6 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
-import * as clone from 'clone';
-
 import * as mm from '../src/index';
 
 import {CHECKPOINTS_DIR, writeMemory} from './common';
@@ -33,43 +31,32 @@ const MEL_CHORDS_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_chords`;
 const MEL_16_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_16bar_small_q2`;
 const TRIO_CKPT = `${CHECKPOINTS_DIR}/music_vae/trio_4bar`;
 
-// TODO(adarob): Switch to magenta/core function once implemented.
-function concatNoteSequences(
-    seqs: mm.INoteSequence[], individualDuration: number) {
-  const concatSeq: mm.INoteSequence = clone(seqs[0]);
-  for (let i = 1; i < seqs.length; ++i) {
-    Array.prototype.push.apply(concatSeq.notes, seqs[i].notes.map(n => {
-      const newN = clone(n);
-      newN.quantizedStartStep += individualDuration * i;
-      newN.quantizedEndStep += individualDuration * i;
-      return newN;
-    }));
-  }
-  return concatSeq;
-}
-
 const TRIO_EXAMPLE: mm.INoteSequence = {
   notes: [],
   quantizationInfo: {stepsPerQuarter: 4}
 };
-concatNoteSequences([MEL_TWINKLE, MEL_TWINKLE], 32).notes.map(n => {
-  const m = clone(n);
+
+mm.sequences.concatenate([MEL_TWINKLE, MEL_TWINKLE], [32, 32]).notes.map(n => {
+  const m = mm.NoteSequence.Note.create(n);
   m.program = 0;
   m.instrument = 0;
   TRIO_EXAMPLE.notes.push(m);
 });
-concatNoteSequences([MEL_TWINKLE, MEL_TWINKLE], 32).notes.map(n => {
-  const m = clone(n);
+
+mm.sequences.concatenate([MEL_TWINKLE, MEL_TWINKLE], [32, 32]).notes.map(n => {
+  const m = mm.NoteSequence.Note.create(n);
   m.pitch -= 36;
   m.program = 32;
   m.instrument = 1;
   TRIO_EXAMPLE.notes.push(m);
 });
-concatNoteSequences([DRUM_SEQS[0], DRUM_SEQS[0]], 32).notes.map(n => {
-  const m = clone(n);
-  m.instrument = 2;
-  TRIO_EXAMPLE.notes.push(m);
-});
+
+mm.sequences.concatenate([DRUM_SEQS[0], DRUM_SEQS[0]], [32, 32])
+    .notes.map(n => {
+      const m = mm.NoteSequence.Note.create(n);
+      m.instrument = 2;
+      TRIO_EXAMPLE.notes.push(m);
+    });
 
 async function runDrums() {
   writeNoteSeqs('drums-inputs', DRUM_SEQS);
@@ -151,18 +138,18 @@ async function runMelChords() {
 
 async function runMel16() {
   const inputs: mm.INoteSequence[] = [
-    concatNoteSequences(
+    mm.sequences.concatenate(
         [
           MEL_TEAPOT, MEL_TWINKLE, MEL_TEAPOT, MEL_TWINKLE, MEL_TEAPOT,
           MEL_TWINKLE, MEL_TEAPOT, MEL_TWINKLE
         ],
-        32),
-    concatNoteSequences(
+        [32, 32]),
+    mm.sequences.concatenate(
         [
           MEL_TWINKLE, MEL_TEAPOT, MEL_TWINKLE, MEL_TEAPOT, MEL_TWINKLE,
           MEL_TEAPOT, MEL_TWINKLE, MEL_TEAPOT
         ],
-        32)
+        [32, 32])
   ];
 
   writeNoteSeqs('mel16-inputs', inputs);
