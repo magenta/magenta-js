@@ -84,9 +84,9 @@ class MidiMe {
   // Model configuration.
   public config: MidiMeConfig;
   // Main model and submodels.
-  public vae: tf.Model;
-  public encoder: tf.Model;
-  public decoder: tf.Model;
+  public vae: tf.LayersModel;
+  public encoder: tf.LayersModel;
+  public decoder: tf.LayersModel;
 
   trained = false;
   initialized = false;
@@ -104,7 +104,7 @@ class MidiMe {
       output_size: config.output_size || 4,
       beta: config.beta || 1,
       batch_size: config.batch_size || 32,
-      epochs: config.epochs || 10,
+      epochs: config.epochs === undefined ? 10 : config.epochs,
     };
   }
 
@@ -165,8 +165,7 @@ class MidiMe {
     const startTime = performance.now();
     this.trained = false;
 
-    // TODO(notwaldorf): need to batch this data.
-    // const xTrain = data;
+    // TODO(notwaldorf): If there's a ton of data we should consider batching.
     const optimizer = tf.train.adam();
 
     for (let e = 0; e < this.config['epochs']; e++) {
@@ -181,12 +180,10 @@ class MidiMe {
           if (callback) {
             callback(e, {
               y,
-              total: loss.totalLoss.get(),
-              losses: [loss.reconLoss.get(), loss.latentLoss.get()]
+              total: loss.totalLoss.arraySync(),
+              losses: [loss.reconLoss.arraySync(), loss.latentLoss.arraySync()]
             });
           }
-          loss.reconLoss.dispose();
-          loss.latentLoss.dispose();
           return loss.totalLoss;
         });
       });
@@ -197,6 +194,7 @@ class MidiMe {
 
     logging.logWithDuration('Training finished', startTime, 'MidiMe');
     this.trained = true;
+    optimizer.dispose();
   }
 
   /**

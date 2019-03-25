@@ -620,7 +620,7 @@ export class MultitrackConverter extends DataConverter {
 
   private trackToTensor(track?: performance.Performance) {
     const maxEventsPerTrack = this.numSteps / this.numSegments;
-    let tokens: tf.TensorBuffer<tf.Rank.R1> = undefined;
+    let tokens: tf.TensorBuffer<tf.Rank.R1, 'int32'> = undefined;
 
     if (track) {
       // Drop events from track until we have the maximum number of events
