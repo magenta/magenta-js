@@ -40,7 +40,7 @@ async function doTheThing(mel: NoteSequence) {
 
   // 2. Use that z as input to train MidiMe.
   // Reconstruction before training.
-  const z1 = model.vae.predict(z) as mm.tf.Tensor2D;
+  const z1 = model.predict(z) as mm.tf.Tensor2D;
   const ns1 = await mvae.decode(z1);
   visualizeNoteSeqs('pre-training', [mm.sequences.concatenate(ns1)]);
   z1.dispose();
@@ -55,7 +55,7 @@ async function doTheThing(mel: NoteSequence) {
   });
 
   // 4. Check reconstruction after training.
-  const z2 = model.vae.predict(z) as mm.tf.Tensor2D;
+  const z2 = model.predict(z) as mm.tf.Tensor2D;
   const ns2 = await mvae.decode(z2);
   visualizeNoteSeqs('post-training', [mm.sequences.concatenate(ns2)]);
   z2.dispose();

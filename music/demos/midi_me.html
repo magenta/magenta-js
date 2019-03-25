@@ -29,9 +29,14 @@ limitations under the License.
 </head>
 <body>
   <h1>MidiME</h1>
-
-  <h2>Input</h2>
+  <p><code>MidiME</code> is a variational autoencoder that lets you personalize
+    your own <code>MusicVAE</code> model with just a little data, so that samples
+    from <code>MidiME</code> sound closer to your provided data.</p>
+  <h2>Input data</h2>
   <section>
+    <p>This is what you want the samples to sound like. Note that MusicVAE is a
+      monophonic model, so if you use a polyphonic MIDI file, you're not
+      guaranteed to reconstruct the "main" melody.</p>
     <label class="button" id="fileBtn" disabled>
       Load midi file
       <input type="file" id="fileInput">
@@ -40,6 +45,9 @@ limitations under the License.
   </section>
 
   <h2>Training</h2>
+  <p>The MidiMe model works by training a variational autoencoder in the
+    browser. The more you train for, the better the input reconstruction will be.
+  </p>
   <section>
     <svg id="graph"></svg>
   </section>
@@ -52,6 +60,10 @@ limitations under the License.
   </section>
 
   <h2>Random samples</h2>
+  <p>You can now sample from MidiMe. If you trained for long enough, then
+    these samples will be very similar to the input data. Contrast this with
+    random samples from MusicVAE, which do not sound like the input data.
+  </p>
   <section>
     <p><b>From MusicVAE</b> <code id="sample-musicvae"></code></p>
     <p><b>From trained MidiMe</b> <code id="sample-midime"></code></p>
