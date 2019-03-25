@@ -210,8 +210,8 @@ export class DrumsConverter extends DataConverter {
   toTensor(noteSequence: INoteSequence): tf.Tensor2D {
     sequences.assertIsQuantizedSequence(noteSequence);
     const numSteps = this.numSteps || noteSequence.totalQuantizedSteps;
-    const drumRoll =
-        tf.buffer([numSteps, this.pitchClasses.length + 1], 'int32');
+    const drumRoll = tf.buffer([numSteps, this.pitchClasses.length + 1],
+        'int32');
     // Set final values to 1 and change to 0 later if the column gets a note.
     for (let i = 0; i < numSteps; ++i) {
       drumRoll.set(1, i, -1);
@@ -315,9 +315,8 @@ export class DrumsOneHotConverter extends DrumsConverter {
     for (const {pitch, quantizedStartStep} of noteSequence.notes) {
       labels[quantizedStartStep] += Math.pow(2, this.pitchToClass.get(pitch));
     }
-    return tf.tidy(
-        () =>
-            tf.oneHot(tf.tensor1d(labels, 'int32'), this.depth) as tf.Tensor2D);
+    return tf.tidy(() =>
+        tf.oneHot(tf.tensor1d(labels, 'int32'), this.depth) as tf.Tensor2D);
   }
 }
 
@@ -405,9 +404,8 @@ export class MelodyConverter extends DataConverter {
       mel.set(this.NOTE_OFF, n.quantizedEndStep);
       lastStart = n.quantizedStartStep;
     });
-    return tf.tidy(
-        () => tf.oneHot(mel.toTensor() as tf.Tensor1D, this.depth) as
-            tf.Tensor2D);
+    return tf.tidy(() =>
+        tf.oneHot(mel.toTensor() as tf.Tensor1D, this.depth) as tf.Tensor2D);
   }
 
   async toNoteSequence(
@@ -715,10 +713,8 @@ export class MultitrackConverter extends DataConverter {
     }
 
     // Convert tracks to tensors then concatenate.
-    return tf.tidy(
-        () => tf.concat(
-                  sortedTracks.map((track) => this.trackToTensor(track)), 0) as
-            tf.Tensor2D);
+    return tf.tidy(() => tf.concat(sortedTracks.map((track) =>
+        this.trackToTensor(track)), 0) as tf.Tensor2D);
   }
 
   private tokensToTrack(tokens: Int32Array) {
