@@ -1,4 +1,6 @@
+import * as tf from '@tensorflow/tfjs';
 import * as mm from '../src';
+
 import {blobToNoteSequence, NoteSequence} from '../src';
 import {quantizeNoteSequence} from '../src/core/sequences';
 
@@ -32,15 +34,14 @@ async function doTheThing(mel: NoteSequence) {
   // 1. Encode the input into MusicVAE, get back a z.
   const quantizedMel = quantizeNoteSequence(mel, 4);
 
-  // 1b. Split this sequence into bar chunks:
-  // 4 steps/quarter, 4 quarters/bar => 16 steps / bar
+  // 1b. Split this sequence into 32 bar chunks.
   const chunks =
       mm.sequences.split(mm.sequences.clone(quantizedMel), 16 * BARS);
   const z = await mvae.encode(chunks);  // shape of z is [chunks, 256]
 
   // 2. Use that z as input to train MidiMe.
   // Reconstruction before training.
-  const z1 = model.predict(z) as mm.tf.Tensor2D;
+  const z1 = model.predict(z) as tf.Tensor2D;
   const ns1 = await mvae.decode(z1);
   visualizeNoteSeqs('pre-training', [mm.sequences.concatenate(ns1)]);
   z1.dispose();
@@ -55,7 +56,7 @@ async function doTheThing(mel: NoteSequence) {
   });
 
   // 4. Check reconstruction after training.
-  const z2 = model.predict(z) as mm.tf.Tensor2D;
+  const z2 = model.predict(z) as tf.Tensor2D;
   const ns2 = await mvae.decode(z2);
   visualizeNoteSeqs('post-training', [mm.sequences.concatenate(ns2)]);
   z2.dispose();
@@ -63,11 +64,11 @@ async function doTheThing(mel: NoteSequence) {
   writeTimer('training-time', start);
 
   // 5. Sample from MidiMe
-  const sample11 = await model.sample(4) as mm.tf.Tensor2D;
-  const sample12 = await model.sample(4) as mm.tf.Tensor2D;
-  const sample13 = await model.sample(4) as mm.tf.Tensor2D;
-  const sample14 = await model.sample(4) as mm.tf.Tensor2D;
-  const sample15 = await model.sample(4) as mm.tf.Tensor2D;
+  const sample11 = await model.sample(4) as tf.Tensor2D;
+  const sample12 = await model.sample(4) as tf.Tensor2D;
+  const sample13 = await model.sample(4) as tf.Tensor2D;
+  const sample14 = await model.sample(4) as tf.Tensor2D;
+  const sample15 = await model.sample(4) as tf.Tensor2D;
 
   const ns31 = await mvae.decode(sample11);
   const ns32 = await mvae.decode(sample12);
@@ -97,5 +98,5 @@ async function doTheThing(mel: NoteSequence) {
 function dispose() {
   mvae.dispose();
   model.dispose();
-  writeMemory(mm.tf.memory().numBytes);
+  writeMemory(tf.memory().numBytes);
 }

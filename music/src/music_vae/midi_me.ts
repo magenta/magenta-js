@@ -30,12 +30,13 @@ class SamplingLayer extends tf.layers.Layer {
  * An interface for providing configurable properties to the MidiMe model.
  * @param input_size The shape of the VAE input. Since the inputs to this
  * VAE are actually latent vectors from MusicVAE, then this number should be
- * equal to the number of latent variables used by MusicVAE (`zDims`).
- * @param output_size The size of the output.
+ * equal to the number of latent variables used by MusicVAE (`zDims`). The
+ * default is 256.
+ * @param output_size The size of the output. The default is 4.
  * @param encoder_layers The shape of the layers in the Encoder network.
  * @param decoder_layers The shape of the layers in the Decoder network.
- * @param beta Weight of the latent loss in the VAE loss.
- * @param epochs Number of epochs to train for
+ * @param beta Weight of the latent loss in the total VAE loss. Default is 1.
+ * @param epochs Number of epochs to train for. Default is 10.
  */
 interface MidiMeConfig {
   input_size?: number;
@@ -79,7 +80,7 @@ class MidiMe {
       input_size: config.input_size || 256,
       output_size: config.output_size || 4,
       beta: config.beta || 1,
-      epochs: config.epochs === undefined ? 10 : config.epochs,
+      epochs: config.epochs || 10
     };
   }
 
@@ -166,7 +167,6 @@ class MidiMe {
    * Samples sequences from the model prior.
    *
    * @param numSamples The number of samples to return.
-   *
    * @returns A latent vector representing a `NoteSequence`. You can pass
    * this latent vector to a `MusicVAE`s `decode` method to convert it to a
    * `NoteSequence`.
@@ -176,10 +176,25 @@ class MidiMe {
       await this.initialize();
     }
     return tf.tidy(() => {
-      const randZs: tf.Tensor2D =
-          tf.randomNormal([numSamples, this.config['output_size']]);
+      const randZs = tf.randomNormal([numSamples, this.config['output_size']]);
       return this.decoder.predict(randZs);
     });
+  }
+
+  /**
+   * Decodes a batch of latent vectors.
+   *
+   * @param z The batch of latent vectors, of shape `[numSamples,
+   *     this.config['output_size']]`.
+   * @returns A latent vector representing a `NoteSequence`. You can pass
+   * this latent vector to a `MusicVAE`s `decode` method to convert it to a
+   * `NoteSequence`.
+   */
+  async decode(z: tf.Tensor2D) {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+    return this.decoder.predict(z);
   }
 
   /**
