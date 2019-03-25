@@ -162,9 +162,13 @@ export abstract class BaseVisualizer {
 
   protected scrollIntoViewIfNeeded(
       scrollIntoView: boolean, activeNotePosition: number) {
-    if (scrollIntoView) {
+    if (scrollIntoView && this.parentElement) {
+      // See if we need to scroll the container.
       const containerWidth = this.parentElement.getBoundingClientRect().width;
-      this.parentElement.scrollLeft = activeNotePosition - containerWidth * 0.5;
+      if (activeNotePosition >
+          (this.parentElement.scrollLeft + containerWidth)) {
+        this.parentElement.scrollLeft = activeNotePosition - 20;
+      }
     }
   }
 
