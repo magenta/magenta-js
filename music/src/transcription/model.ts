@@ -356,7 +356,7 @@ class AcousticCnn {
  * efficient in tfjs due to memory management and shader caching.
  */
 class Lstm {
-  private readonly lstm: tf.Model;
+  private readonly lstm: tf.LayersModel;
   private readonly dense = tf.sequential();
   private readonly units: number;
 
@@ -419,7 +419,7 @@ class Lstm {
 
     const LSTM_PREFIX =
         'cudnn_lstm/rnn/multi_rnn_cell/cell_0/cudnn_compatible_lstm_cell';
-    const setLstmWeights = (lstm: tf.Model) => lstm.setWeights(
+    const setLstmWeights = (lstm: tf.LayersModel) => lstm.setWeights(
         splitAndReorderKernel(
             getVar(`${scope}/${LSTM_PREFIX}/kernel`) as tf.Tensor2D)
             .concat(
