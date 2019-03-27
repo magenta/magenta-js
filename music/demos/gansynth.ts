@@ -27,17 +27,21 @@ mm.logging.verbosity = mm.logging.Level.DEBUG;
 
 async function plotSpectra(
     spectra: tf.Tensor4D, canvasId: string, channel: number) {
-  // Slice a single example.
-  const spectraSlice = tf.slice(spectra, [0, 0, 0, channel], [
-                           1, -1, -1, 1
-                         ]).reshape([128, 1024]);
-  let spectraPlot = spectraSlice as tf.Tensor3D;
-  // Scale to [0, 1].
-  spectraPlot = tf.sub(spectraPlot, tf.min(spectraPlot));
-  spectraPlot = tf.div(spectraPlot, tf.max(spectraPlot));
+  const spectraPlot = tf.tidy(() => {
+    // Slice a single example.
+    const spectraSlice = tf.slice(spectra, [0, 0, 0, channel], [
+                             1, -1, -1, 1
+                           ]).reshape([128, 1024]);
+    let spectraPlot = spectraSlice as tf.Tensor3D;
+    // Scale to [0, 1].
+    spectraPlot = tf.sub(spectraPlot, tf.min(spectraPlot));
+    spectraPlot = tf.div(spectraPlot, tf.max(spectraPlot));
+    return spectraPlot;
+  });
   // Plot on canvas.
   const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
   await tf.browser.toPixels(spectraPlot, canvas);
+  spectraPlot.dispose();
 }
 
 async function runGANSynth() {
@@ -59,8 +63,10 @@ async function runGANSynth() {
   const player = new Tone.Player(options).toMaster();
 
   // Plotting.
-  plotSpectra(specgrams, 'mag-canvas', 0);
-  plotSpectra(specgrams, 'ifreq-canvas', 1);
+  await Promise.all([
+    plotSpectra(specgrams, 'mag-canvas', 0),
+    plotSpectra(specgrams, 'ifreq-canvas', 1)
+  ]);
 
   // Connect GUI actions.
   document.getElementById('start-button').addEventListener('click', () => {
