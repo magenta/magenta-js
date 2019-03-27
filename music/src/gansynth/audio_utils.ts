@@ -83,6 +83,7 @@ function interleaveReIm(real: tf.Tensor, imag: tf.Tensor) {
   for (let i = 0; i < 128; i++) {
     reIm[i] = reImArray.slice(i * 4096, (i + 1) * 4096) as Float32Array;
   }
+  reImInterleave.dispose();
   return reIm;
 }
 
@@ -137,8 +138,10 @@ export async function specgramsToAudio(specgrams: tf.Tensor4D) {
     imag = tf.concat([imag, tf.mul(mirrorImag, -1.0)], 2);
     return [real, imag];
   });
+
   const reIm = await interleaveReIm(reImArray[0], reImArray[1]);
   const audio = await reImToAudio(reIm);
+  reImArray.forEach(t => t.dispose());
   return audio;
 }
 
