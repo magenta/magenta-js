@@ -162,9 +162,13 @@ export abstract class BaseVisualizer {
 
   protected scrollIntoViewIfNeeded(
       scrollIntoView: boolean, activeNotePosition: number) {
-    if (scrollIntoView) {
+    if (scrollIntoView && this.parentElement) {
+      // See if we need to scroll the container.
       const containerWidth = this.parentElement.getBoundingClientRect().width;
-      this.parentElement.scrollLeft = activeNotePosition - containerWidth * 0.5;
+      if (activeNotePosition >
+          (this.parentElement.scrollLeft + containerWidth)) {
+        this.parentElement.scrollLeft = activeNotePosition - 20;
+      }
     }
   }
 
@@ -361,14 +365,14 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
     }
 
     // Remove the current active note, if one exists.
-    let el = this.svg.querySelector('rect.active');
-    while (el) {
+    const els = this.svg.querySelectorAll('rect.active');
+    for (let i = 0; i < els.length; ++i) {
+      const el = els[i];
       const fill = this.getNoteFillColor(
           this.noteSequence.notes[parseInt(el.getAttribute('data-index'), 10)],
           false);
       el.setAttribute('fill', fill);
       el.removeAttribute('class');
-      el = this.svg.querySelector('rect.active');
     }
 
     let activeNotePosition;
@@ -689,21 +693,30 @@ interface BlockDetails {
     notes: QNote[];
 }
 
+export enum ScrollType {
+  PAGE = 0,
+  NOTE = 1,
+  BAR = 2
+}
+
 /**
  * An interface for providing extra configurable properties to a Visualizer
  * extending the basic configurable properties of `VisualizerConfig`.
- * @param instruments The subset of the `NoteSequence` instrument track numbers 
- * which should be displayed.
  * @param defaultKey The musical key the score must use to adapt the score to 
  * the right accidentals. It can be overwritten with 
- * `NoteSequence.keySignatures` first value (no multiple values support yet).
- * @param scrollOnBars Sets scrolling to follow scoreplaying in packed chunks 
- * by doing scroll just on bar starting.
+ * `NoteSequence.keySignatures` value at second or step 0. If not assigned it 
+ * will be asumed C key.
+ * @param instruments The subset of the `NoteSequence` instrument track numbers 
+ * which should be merged and displayed. If not assigned or equal to [] it will 
+ * be used all instruments altogether.
+ * @param scrollType Sets scrolling to follow scoreplaying in different ways 
+ * like paginaged (PAGE is default value), note by note (NOTE) or in packed 
+ * chunks by doing scroll just on bar starting (BAR).
  */
-interface AdvancedVisualizerConfig extends VisualizerConfig {
-  instruments?: number[];
+export interface AdvancedVisualizerConfig extends VisualizerConfig {
   defaultKey?: number;
-  scrollOnBars?: boolean;
+  instruments?: number[];
+  scrollType?: ScrollType;
 }
 
 /**
@@ -729,10 +742,11 @@ interface AdvancedVisualizerConfig extends VisualizerConfig {
 export class StaffSVGVisualizer extends BaseVisualizer {
   private div: HTMLDivElement; // Overall staff container
   private staffSvg: SVGSVGElement; // Overall drawing area 
-  private linesG: SVGElement; // Acting as underground layer 
-  private musicG: SVGElement; // Acting as foreground layer
-  private signaturesSvg: SVGSVGElement; // Overlay container
-  private signaturesG: SVGElement; // Acting as overlay layer
+  private linesG: SVGElement; // Acting as background layer 
+  private musicG: SVGElement; // Acting as middle plane layer
+  private signaturesG: SVGElement; // Acting as foreground layer
+  private signatures0Svg: SVGSVGElement; // Overlay container
+  private signatures0G: SVGElement; // Acting as overlay layer
   private signaturesQuarters: number; // When to stop blinking
   private signaturesBlinking: boolean; // Signatures displaying mode switch 
   private scale: number; // General scale appliable to all SVG elements
@@ -747,8 +761,16 @@ export class StaffSVGVisualizer extends BaseVisualizer {
   private blockDetailsMap: Map<number, BlockDetails>; // Translated blocks
   private playingNotes: NoteSequence.INote[]; // Highlited ones
   private instruments: number[]; // NoteSequence track filter
-  private scrollOnBars: boolean; // Wether to pack scrolling or not
+  private scrollType: ScrollType; // Kind of scrolling if any
   private lastQ: number; // Last drawn block start time in quarters
+
+  private ticking: boolean;
+  private lastKnownScrollLeft: number;
+//  private signaturesMap: Map<number, number>;
+
+  private signaturesList: {x: number; quarter: number}[]; // TODO: initialize
+  private signatureCurrent: number;
+  private signatureNext: number;
 
 /**
  * `StaffSVGVisualizer` constructor.
@@ -764,15 +786,19 @@ export class StaffSVGVisualizer extends BaseVisualizer {
   ) {
     super(sequence, config);
     this.div = div;
-    this.instruments = config.instruments || [];
+    this.timeSignatureNumerator = 4;
+    this.timeSignatureDenominator = 4;
     this.key = config.defaultKey || 0;
-    this.scrollOnBars = config.scrollOnBars || false;
+    this.instruments = config.instruments || [];
+    this.scrollType = config.scrollType || ScrollType.PAGE;
     this.scale = this.config.noteHeight/PATH_SCALE;
     if (config.pixelsPerTimeStep === 0) { // Compact visualization
       this.config.pixelsPerTimeStep = 0;
       this.config.noteSpacing = COMPACT_SPACING * this.scale;
     }
-    this.clear();
+    this.ticking = false;
+    this.lastKnownScrollLeft = 0;
+    this.clear(); // This will end up rest of member values initialization.
     this.redraw();
   }
 
@@ -787,8 +813,8 @@ export class StaffSVGVisualizer extends BaseVisualizer {
    * were not processed yet will be drawn to complete the score.
    * @param scrollIntoView (Optional) If specified and the note being highlited
    * is not in the center of the parent container, the later will be scrolled 
-   * so that the note is in viewed in the right place. This can be altered by
-   * `AdvancedVisualizerConfig.scrollOnBars`.
+   * so that the note is viewed in the right place. This can be altered by
+   * `AdvancedVisualizerConfig.scrollType`.
    * @returns The x position of the painted active note. Useful for
    * automatically advancing the visualization if needed.
    */
@@ -797,6 +823,7 @@ export class StaffSVGVisualizer extends BaseVisualizer {
     scrollIntoView?: boolean 
   ): number {
     let activeNotePosition = -1;
+    const isCompact = (this.config.pixelsPerTimeStep === 0);
     if (activeNote) { // Given activeNote means highliting it
       const keepOnPlayingNotes: NoteSequence.INote[] = [];
       this.playingNotes.forEach( // Revert non playing notes highliting
@@ -818,27 +845,28 @@ export class StaffSVGVisualizer extends BaseVisualizer {
           this.staffSvg.getBoundingClientRect().left;
         const time = this.getNoteStartTime(activeNote);
         const quarters = this.timeToQuarters(time);
-        if (!this.scrollOnBars || this.isBarBeginning(quarters)) {
+        if (
+          this.scrollType !== ScrollType.BAR || this.isBarBeginning(quarters)
+        ) {
           this.scrollIntoViewIfNeeded(scrollIntoView, activeNotePosition);
         }
-        if (quarters >= this.signaturesQuarters && this.signaturesBlinking) {
+        if (
+          !isCompact && this.signaturesBlinking &&
+          quarters >= this.signaturesQuarters
+        ) {
           this.signaturesBlinking = false;
-          setFade(this.signaturesG, this.signaturesBlinking);
-        }
-        if (!(quarters >= this.signaturesQuarters)&&!this.signaturesBlinking) {
-          this.signaturesBlinking = true;
-          setFade(this.signaturesG, this.signaturesBlinking);
+          setFade(this.signatures0G, this.signaturesBlinking);
         }
       }
     }
     else { // No activeNote given means redrawing it all from scratch
       this.setDetails();
       const isFirstRedraw = (this.lastQ === -1);
-      const isCompact = (this.config.pixelsPerTimeStep === 0);
       let x = 0;
       let width = 0;
       if (isFirstRedraw) {
-        width = this.drawSignatures(x); // Clef+Key+Time signatures
+        // Clef+Key+Time signatures
+        width = this.drawSignatures(this.signatures0G, x, true, true, true);
         if (isCompact) {
           this.width = 0;
           // First padding if compacted. Following are placed after drawings
@@ -870,11 +898,24 @@ export class StaffSVGVisualizer extends BaseVisualizer {
         this.width = endTime * this.config.pixelsPerTimeStep;
       }
       this.staffSvg.setAttributeNS(null, 'width', `${this.width}`);
-      this.staffSvg.setAttributeNS(null, 'height', `${this.height}`); // TODO: ???
+      this.staffSvg.setAttributeNS(null, 'height', `${this.height}`); // TODO: ???????????
       this.redrawStaff(this.linesG, 0, this.width);
     }
     return activeNotePosition;
   }
+
+  private handleScrollEvent = (_event: UIEvent) => {
+    this.lastKnownScrollLeft = this.parentElement.scrollLeft;
+    if (!this.ticking) {
+      window.requestAnimationFrame(
+        () => {
+          this.changeSignaturesIfNeeded(this.lastKnownScrollLeft);
+          this.ticking = false;
+        }
+      );
+    }
+    this.ticking = true;
+  };
 
   protected clear() {
     while (this.div.lastChild) { // Empty previous existing SVG elements
@@ -882,31 +923,40 @@ export class StaffSVGVisualizer extends BaseVisualizer {
     }
     this.div.style.overflow = 'visible';
     this.div.style.position = 'relative';
-     // Signatures overlay
-    this.signaturesSvg = document.createElementNS(SVGNS, 'svg');
-    this.signaturesSvg.style.position = 'absolute';
-    this.div.appendChild(this.signaturesSvg);
-    this.signaturesG = createSVGGroupChild(this.signaturesSvg, 'signatures');
+    // Signatures overlay
+    this.signatures0Svg = document.createElementNS(SVGNS, 'svg');
+    this.signatures0Svg.style.position = 'absolute';
+    this.div.appendChild(this.signatures0Svg);
+    this.signatures0G = createSVGGroupChild(this.signatures0Svg, 'signatures');
     this.signaturesBlinking = false;
     this.signaturesQuarters = 0;
-     // Inner scrolleable Container
+    // Inner scrolleable Container
     this.parentElement = document.createElement('div');
     this.parentElement.style.overflow = 'auto';
     this.div.appendChild(this.parentElement);
-     // Staff drawing area
+    this.parentElement.addEventListener('scroll', this.handleScrollEvent);
+    // Staff drawing area
     this.staffSvg = document.createElementNS(SVGNS, 'svg');
     this.parentElement.appendChild(this.staffSvg);
-     // Background lines
+    // Background lines
     this.linesG = createSVGGroupChild(this.staffSvg, 'staff');
     this.setStroke(this.linesG);
     this.staffSvg.appendChild(this.linesG);
-     // Foreground symbols
+    // Middle plane symbols
     this.musicG = createSVGGroupChild(this.staffSvg, 'music');
     this.setFill(this.musicG);
     this.setStroke(this.musicG, 0);
     this.staffSvg.appendChild(this.musicG);
+    // Foreground signatures
+    this.signaturesG = createSVGGroupChild(this.staffSvg, 'signatures');
+//    this.setFill(this.signaturesG);
+//    this.setStroke(this.signaturesG, 0);
+    this.staffSvg.appendChild(this.signaturesG);
 
     this.blockDetailsMap = new Map<number, BlockDetails>();
+    this.signaturesList = [{x: 0, quarter: 0}];
+    this.signatureCurrent = 0;
+    this.signatureNext = 0; // To reset blinking if scrolled
     this.playingNotes = [];
     this.barScale = {};
     this.lastQ = -1;
@@ -924,83 +974,80 @@ export class StaffSVGVisualizer extends BaseVisualizer {
     this.clef = averagePitch >= 60? 71: 50;
     // Over C4 -> G clef, otherwise F clef (numbers are MIDI pitch values)
 
-    // TODO: accept multiple key signatures
-    if (this.noteSequence.keySignatures) { 
-      if (this.noteSequence.keySignatures.length) {
-        this.key = this.noteSequence.keySignatures[0].key;
-      }
-    }
-
-    // TODO: accept multiple time signatures
-    if (this.noteSequence.timeSignatures) { 
-      this.timeSignatureNumerator = 
-        this.noteSequence.timeSignatures[0].numerator;
-      this.timeSignatureDenominator = 
-        this.noteSequence.timeSignatures[0].denominator;
-    }
-    else {
-      this.timeSignatureNumerator = 4;
-      this.timeSignatureDenominator = 4;
-    }
+    this.changeKeySignatureIfNeeded(0);
+    this.changeTimeSignatureIfNeeded(0);
 
     this.vStepSize = this.config.noteHeight / 2;
     this.hStepSize = this.config.pixelsPerTimeStep;
   }
 
-  private drawSignatures(x: number): number {
+  private drawSignatures(
+    e: SVGElement, x: number, 
+    drawClef: boolean, drawKey: boolean, drawTime: boolean
+  ): number {
     const spacing = COMPACT_SPACING * this.scale;
     let width = spacing;
-    const background = drawSVGPath(this.signaturesG, clefBackgroundPath, 
+    const background = drawSVGPath(e, clefBackgroundPath, 
       0, 0, width/100, this.height/100);
     const upperStyle = 
       document.defaultView.getComputedStyle(this.div.parentElement);
     this.setFillColor(background, 
       upperStyle.getPropertyValue('background-color'));
 
-    const clef = drawSVGPath(this.signaturesG, CLEF_PATHS[this.clef].path, 
-      x + width, this.staffOffset*this.vStepSize, this.scale, this.scale);
-    this.setFill(clef);
-    width += 3 * spacing;
-
-    const accidental = KEY_ACCIDENTALS[this.key].accidental;
-    const offset = (this.clef === 71) ? 0 : 14;
-    KEY_ACCIDENTALS[this.key].pitches.forEach(
-      pitch => {
-        const steps = this.getPitchDetails(pitch).vSteps;
-        const p = drawSVGPath(this.signaturesG, ACCIDENTAL_PATHS[accidental], 
-          x + width, (this.staffOffset+offset+steps)*this.vStepSize, 
-          this.scale, this.scale);
-        this.setFill(p);
-        width += p.getBoundingClientRect().width;
-      }
-    );
-
-    const timeKey = createSVGGroupChild(this.signaturesG, 'time-key');
-    drawSVGText(timeKey, `${this.timeSignatureNumerator}`, 
-      x + width, this.staffOffset*this.vStepSize-0.5, 
-      `${2.85*this.config.noteHeight}px`, true);
-    drawSVGText(timeKey, `${this.timeSignatureDenominator}`, 
-      x + width, (this.staffOffset+4)*this.vStepSize-0.5, 
-      `${2.85*this.config.noteHeight}px`, true);
-    this.setFill(timeKey);
-    width += timeKey.getBoundingClientRect().width + spacing;
-    
-    const staff = this.redrawStaff(this.signaturesG, x, width);
-    this.setStroke(staff);
-    this.signaturesSvg.setAttributeNS(null, 'width', `${width + 5}`);
-    this.signaturesSvg.setAttributeNS(null, 'height', `${this.height}`);
-    background.setAttributeNS(null, 'transform', 
-      `scale(${width/100}, ${this.height/100})`);
-  
-    for (let i = 0; i < 5; ++i) { // Gradient
-      const grad = drawSVGPath(this.signaturesG, stemPath, 
-        width+i, i*i, 1/STEM_WIDTH, (this.height - 2*i*i)/100, (i-5)*(i-5)/50);
-      this.setFill(grad);
+    if (drawClef) {
+      const clef = drawSVGPath(e, CLEF_PATHS[this.clef].path, 
+        x + width, this.staffOffset*this.vStepSize, this.scale, this.scale);
+      this.setFill(clef);
+      width += 3 * spacing;
     }
-    if (this.config.pixelsPerTimeStep > 0) { // Proportional visualization
-      this.signaturesQuarters = this.timeToQuarters(width/this.hStepSize);
+    if (drawKey) {
+      const accidental = KEY_ACCIDENTALS[this.key].accidental;
+      const offset = (this.clef === 71) ? 0 : 14; // Measured in vStep
+      KEY_ACCIDENTALS[this.key].pitches.forEach(
+        pitch => {
+          const steps = this.getPitchDetails(pitch).vSteps;
+          const p = drawSVGPath(e, ACCIDENTAL_PATHS[accidental], 
+            x + width, (this.staffOffset+offset+steps)*this.vStepSize, 
+            this.scale, this.scale);
+          this.setFill(p);
+          width += p.getBoundingClientRect().width;
+        }
+      );
+    }
+    if (drawTime) {
+      const timeKey = createSVGGroupChild(e, 'time-key');
+      drawSVGText(timeKey, `${this.timeSignatureNumerator}`, 
+        x + width, this.staffOffset*this.vStepSize-0.5, 
+        `${2.85*this.config.noteHeight}px`, true);
+      drawSVGText(timeKey, `${this.timeSignatureDenominator}`, 
+        x + width, (this.staffOffset+4)*this.vStepSize-0.5, 
+        `${2.85*this.config.noteHeight}px`, true);
+      this.setFill(timeKey);
+      width += timeKey.getBoundingClientRect().width + spacing;
+    }    
+    const staff = this.redrawStaff(e, x, width);
+    this.setStroke(staff);
+    if (e === this.signatures0G) {
+      this.signatures0Svg.setAttributeNS(null, 'width', `${width + 5}`);
+      this.signatures0Svg.setAttributeNS(null, 'height', `${this.height}`);
+    }
+    background.setAttributeNS(null, 'transform', 
+      `translate(${x}, 0) scale(${width/100}, ${this.height/100})`);
+    if (drawClef) { // Overlapping Gradient only applies if Clef is drawn
+      for (let i = 0; i < 5; ++i) {
+        const grad = drawSVGPath(e, stemPath, 
+          width+i, i*i, 1/STEM_WIDTH, (this.height - 2*i*i)/100, (i-5)*(i-5)/50);
+        this.setFill(grad);
+      }
+    }
+    const firstOverlay = this.signaturesQuarters === 0;
+    this.signaturesQuarters = this.timeToQuarters(width/this.hStepSize);
+    if (
+      this.config.pixelsPerTimeStep > 0 && // Proportional visualization
+      (x > 0 || firstOverlay) // 1st overlay and any other in score
+    ) {
       this.signaturesBlinking = true;
-      setFade(this.signaturesG, this.signaturesBlinking);
+      setFade(e, this.signaturesBlinking);
       return 0;
     } 
     else { // Compact visualization
@@ -1009,7 +1056,28 @@ export class StaffSVGVisualizer extends BaseVisualizer {
   }
 
   private drawMusicBlock(blockDetails: BlockDetails, x: number): number {
-    let width = this.drawBarIfNeeded(blockDetails.notes[0].start, x);
+    const quarter = blockDetails.notes[0].start;
+
+    // Preceding bar
+    let width = this.drawBarIfNeeded(quarter, x);
+
+    // Signature change
+    const signatures = quarter > 0 ? 
+      createSVGGroupChild(this.signaturesG, 'signatures') : this.signatures0G;
+    const keyChanged = this.changeKeySignatureIfNeeded(quarter);
+    const timeChanged = this.changeTimeSignatureIfNeeded(quarter);
+    if (keyChanged || timeChanged) {
+      const clefSpacing = COMPACT_SPACING * this.scale * 
+        (this.config.pixelsPerTimeStep > 0 ? 3 : 2);
+      this.signaturesList.push({x: x - clefSpacing , quarter: quarter});
+      if (this.signatureNext === null) {
+        this.signatureNext = x;
+      }
+      width += this.drawSignatures(
+        signatures, x + width, false, keyChanged, timeChanged
+      );
+    }
+    // Kind of note selection (all block notes have same aspect, some are tied)
     let headIndex = 0;
     for (let i = 4; i >= MIN_RESOLUTION && !headIndex; i/=2) {
       if (i <= blockDetails.notes[0].length) { // All 
@@ -1017,10 +1085,12 @@ export class StaffSVGVisualizer extends BaseVisualizer {
       }
     }
     const noteHead = NOTE_PATHS[headIndex];
+    // Stem placeholder created beforehand as a lower layer
     let stemG: SVGElement;
-    if (noteHead.stemAnchor) { // Created beforehand as a lower layer
+    if (noteHead.stemAnchor) {
       stemG = createSVGGroupChild(this.musicG, 'stem');
     }
+    // Polyphonic block notes pitch part (all but stem and flags)
     blockDetails.notes.forEach(
       note => {
         const y = (this.staffOffset + note.vSteps) * this.vStepSize;
@@ -1032,7 +1102,7 @@ export class StaffSVGVisualizer extends BaseVisualizer {
           drawSVGPath(this.linesG, extraLinePath, 
             x + width, (this.staffOffset + i) * this.vStepSize, this.scale, 1);
         }
-        // Grouping placeholder
+        // Highlightable overall grouping placeholder
         if (note.tiedFrom) {
           note.g = note.tiedFrom.g;
         }
@@ -1052,12 +1122,14 @@ export class StaffSVGVisualizer extends BaseVisualizer {
         drawSVGPath(note.g, noteHead.path, 
           x + width, y, this.scale, this.scale, note.opacity);
         note.xHeadRight = x + width + noteHead.width*this.scale;
-        if (headIndex * 1.5 <= note.length) { // Dotted note
+        // Dotted note
+        if (headIndex * 1.5 <= note.length) {
           drawSVGPath(note.g, dotPath, 
             x + width + noteHead.width*this.scale + this.vStepSize/2, 
             y - this.vStepSize/2, this.scale, this.scale, note.opacity);
         }
-        if (note.accidental !== 0) { // Accidentals
+        // Accidentals
+        if (note.accidental !== 0) {
           drawSVGPath(note.g, ACCIDENTAL_PATHS[note.accidental],
             x + width, y, this.scale, this.scale, note.opacity);
         }
@@ -1068,26 +1140,26 @@ export class StaffSVGVisualizer extends BaseVisualizer {
       let y1: number, y2: number;
       const anchor = noteHead.stemAnchor*this.scale;
       const downwards = blockDetails.minVStep + blockDetails.maxVStep < 0;
-      const multiple = (noteHead.flags > 2)? 2*(noteHead.flags-2): 0;
+      const multiple = (noteHead.flags > 2) ? 2 * (noteHead.flags-2) : 0;
       if (downwards) { // Downwards
         y1 = (this.staffOffset+blockDetails.maxVStep)*this.vStepSize - anchor;
-        y2 = (this.staffOffset+blockDetails.minVStep+7-multiple)*this.vStepSize;
+        y2 = (this.staffOffset+blockDetails.minVStep+7+multiple)*this.vStepSize;
       }
       else { // Upwards
         xStem += (noteHead.width - STEM_WIDTH) * this.scale;
         y1 = (this.staffOffset+blockDetails.minVStep)*this.vStepSize + anchor;
-        y2 = (this.staffOffset+blockDetails.maxVStep-7+multiple)*this.vStepSize;
+        y2 = (this.staffOffset+blockDetails.maxVStep-7-multiple)*this.vStepSize;
       }
-      drawSVGPath(stemG, stemPath, xStem, y1, this.scale, (y2-y1)/100);
+      drawSVGPath(stemG, stemPath, xStem, y1, this.scale, (y2 - y1) / 100);
       if (noteHead.flags === 1) { // Single flag
         drawSVGPath(stemG, singleFlagPath, xStem, y2, 
-          this.scale, this.scale*(downwards?-1:1), 1);
+          this.scale, this.scale * (downwards ? -1 : 1), 1);
       }
       else if (noteHead.flags > 1) { // Multiple flag
-        for (let i = 0; i<noteHead.flags; ++i) {
+        for (let i = 0; i < noteHead.flags; ++i) {
           drawSVGPath(stemG, multiFlagPath, xStem, y2, 
-            this.scale, this.scale*(downwards?-1:1), 1);
-          y2 += (downwards? -2: 2) * this.vStepSize;
+            this.scale, this.scale * (downwards ? -1 : 1), 1);
+          y2 += (downwards ? -2 : 2) * this.vStepSize;
         }
       }
     }
@@ -1098,6 +1170,9 @@ export class StaffSVGVisualizer extends BaseVisualizer {
       }
       width += this.config.noteSpacing; // Post
     }
+/*
+Height = f(stemG.getBoundingClientRect(), N*note.g*vHeight)
+*/
     width += this.drawRests(blockDetails, x + width);
     return width;
   }
@@ -1150,7 +1225,7 @@ export class StaffSVGVisualizer extends BaseVisualizer {
   }
 
   private redrawStaff(e: SVGElement, x: number, width: number) {
-    let staff = e.querySelector('g[staff-five-lines]') as SVGElement;
+    let staff = e.querySelector('g[data-id="staff-five-lines"]') as SVGElement;
     if (staff) { // Already drawn
       staff.setAttributeNS(
         null, 'transform', `scale(${width/100}, 1)`
@@ -1160,7 +1235,9 @@ export class StaffSVGVisualizer extends BaseVisualizer {
       staff = createSVGGroupChild(e, 'staff-five-lines');
       const y = this.staffOffset * this.vStepSize;
       for (let i=-4; i<=4; i+=2) { // Draw five line staff
-        drawSVGPath(staff, staffLinePath, x, y + i*this.vStepSize, width/100, 1);
+        drawSVGPath(
+          staff, staffLinePath, x, y + i * this.vStepSize, width/100, 1
+        );
       }
     }
     return staff;
@@ -1177,7 +1254,132 @@ export class StaffSVGVisualizer extends BaseVisualizer {
     return (a <= c && c < b);
   }
 
-private timeToQuarters(timeLength: number): number {
+  protected scrollIntoViewIfNeeded(
+    scrollIntoView: boolean, activeNotePosition: number) {
+    if (scrollIntoView) {
+      if (this.scrollType === ScrollType.PAGE) {
+        super.scrollIntoViewIfNeeded(scrollIntoView, activeNotePosition);
+      } 
+      else { // Valid for both ScrollType.NOTE & ScrollType.BAR
+        const containerWidth = this.parentElement.getBoundingClientRect().width;
+        this.parentElement.scrollLeft = 
+          activeNotePosition - containerWidth * 0.5;
+      }
+    }
+  }
+
+  // TODO: Update when ProtocolBuffer cover a quantizedStep version
+  protected changeKeySignatureIfNeeded(quarter: number): boolean {
+    if (this.noteSequence.keySignatures) {
+      let candidateKey = this.key;
+      for (let i = 0; i < this.noteSequence.keySignatures.length; ++i) {
+        if (
+          this.timeToQuarters(this.noteSequence.keySignatures[i].time) <= 
+          quarter
+        ) {
+          candidateKey = this.noteSequence.keySignatures[i].key;
+        }
+        else {
+          break;
+        }
+      }
+      if (candidateKey !== this.key) {
+        this.key = candidateKey;
+        return true;
+      }
+    }
+    return false;
+  } 
+
+  // TODO: Update when ProtocolBuffer cover a quantizedStep version
+  protected changeTimeSignatureIfNeeded(quarter: number): boolean {
+    if (this.noteSequence.timeSignatures) {
+      let altNumerator = this.timeSignatureNumerator;
+      let altDenominator = this.timeSignatureDenominator;
+      for (let i = 0; i < this.noteSequence.timeSignatures.length; ++i) {
+        if (
+          this.timeToQuarters(this.noteSequence.timeSignatures[i].time) <= 
+          quarter
+        ) {
+          altNumerator = this.noteSequence.timeSignatures[i].numerator;
+          altDenominator = this.noteSequence.timeSignatures[i].denominator;
+        }
+        else {
+          break;
+        }
+      }
+      if (
+        altNumerator !== this.timeSignatureNumerator ||
+        altDenominator !== this.timeSignatureDenominator
+      ) {
+        this.timeSignatureNumerator = altNumerator;
+        this.timeSignatureDenominator = altDenominator;
+        return true;
+      }
+    }
+    return false;
+  }
+
+/*
+                x
+                |
+                v
+  [0        )[1      )[2        )null
+             |        |
+             current  |
+                      next
+
+[ {x: 0, q: A}, {x: 1, q: B}, {x: 2, q: C} ]
+
+*/
+
+  private changeSignaturesIfNeeded(x: number) {
+    let quarter: number;
+    if (
+      x < this.signatureCurrent || 
+      (this.signatureNext !== null && this.signatureNext <= x)
+    ) {
+      quarter = this.signaturesList[0].quarter;
+      this.signatureNext = null;
+      for (let i = 0; i < this.signaturesList.length; ++i) {
+        if (x < this.signaturesList[i].x) {
+          this.signatureNext = this.signaturesList[i].x;
+          break;
+        }
+        else {
+          this.signatureCurrent = this.signaturesList[i].x;
+          quarter = this.signaturesList[i].quarter;
+        }
+      }
+    }
+
+    if (quarter !== undefined) {
+      const key = this.key;
+      const timeSignatureNumerator = this.timeSignatureNumerator;
+      const timeSignatureDenominator = this.timeSignatureDenominator;
+      this.changeKeySignatureIfNeeded(quarter);
+      this.changeTimeSignatureIfNeeded(quarter);
+      this.clearSignatureOverlay();
+      this.drawSignatures(this.signatures0G, 0, true, true, true);
+      this.key = key;
+      this.timeSignatureNumerator = timeSignatureNumerator;
+      this.timeSignatureDenominator = timeSignatureDenominator;
+    }
+
+    if (this.config.pixelsPerTimeStep > 0 && x === 0) {
+      this.signatureNext = 0; // To reset blinking if scrolled
+      this.signaturesBlinking = true;
+      setFade(this.signatures0G, this.signaturesBlinking);
+    }
+  }
+
+  protected clearSignatureOverlay() {
+    while (this.signatures0G.lastChild) {
+      this.signatures0G.removeChild(this.signatures0G.lastChild);
+    }
+  }
+
+  private timeToQuarters(timeLength: number): number {
     const q = this.sequenceIsQuantized ?
       timeLength / this.noteSequence.quantizationInfo.stepsPerQuarter : 
       timeLength * this.noteSequence.tempos[0].qpm / 60;
@@ -1241,10 +1443,14 @@ private timeToQuarters(timeLength: number): number {
   private setDetails() {
     let blocks = new Map<number, QNote[]>();
     const splites = new Set<number>();
+    const initialKey = this.key;
     let lastQ = 0;
     this.noteSequence.notes.forEach( 
       note => { // First pass to translate all notes to quarters
         if (this.isNoteInInstruments(note, this.instruments)) {
+          this.changeKeySignatureIfNeeded(
+            this.timeToQuarters(this.getNoteStartTime(note))
+          );
           const qNote = this.getQNote(note);
           splites.add(qNote.start);
           const end = qNote.start + qNote.length;
@@ -1259,6 +1465,7 @@ private timeToQuarters(timeLength: number): number {
         }
       }
     );
+    this.key = initialKey;
     const qPerBar = this.timeSignatureNumerator * 4 / 
       this.timeSignatureDenominator;
     lastQ = Math.floor(lastQ); // Remove wrong javascript decimal quarters

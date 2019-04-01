@@ -133,7 +133,7 @@ let configRight = {
   pixelsPerTimeStep: UNIFORM_TIME_SIZE,
   instruments: [0],
   defaultKey: 7,
-  scrollOnBars: true
+  scrollType: mm.ScrollType.BAR
 };
 
 let configLeft = {
@@ -141,7 +141,7 @@ let configLeft = {
   pixelsPerTimeStep: UNIFORM_TIME_SIZE,
   instruments: [1],
   defaultKey: 7,
-  scrollOnBars: true
+  scrollType: mm.ScrollType.BAR
 }
 
 // Set up some event listeners
@@ -223,14 +223,14 @@ const DOUBLE_SCALE: mm.INoteSequence = {
     {pitch: 82, quantizedStartStep: 22, quantizedEndStep: 23, program: 0},
     {pitch: 83, quantizedStartStep: 23, quantizedEndStep: 24, program: 0}
   ],
-  tempos: [{time: 0, qpm: 120}],
+  tempos: [{time: 0, qpm: 140}],
   keySignatures: [{time: 0, key: 0}],
-  timeSignatures: [{time: 0, numerator: 2, denominator: 4}],
+  timeSignatures: [{time: 0, numerator: 3, denominator: 4}],
   totalQuantizedSteps: 24,
   quantizationInfo: {stepsPerQuarter: 2}
 };
 let visualizer3: mm.StaffSVGVisualizer;
-let sequence3 = DOUBLE_SCALE;
+let sequence3 = mm.sequences.clone(DOUBLE_SCALE);
 
 const player3 = new mm.Player(false, {
   run: (note: mm.NoteSequence.Note) => {
@@ -247,16 +247,17 @@ const tempoInput3 = document.getElementById('tempoInput3') as HTMLInputElement;
 const tempoValue3 = document.getElementById('tempoValue3') as HTMLDivElement;
 const signatures = document.getElementById('signatures') as HTMLDivElement;
 
-let configSignatures = {
+let configSignatures:mm.AdvancedVisualizerConfig = {
   noteHeight: 15,
-  pixelsPerTimeStep: UNIFORM_TIME_SIZE,
+  pixelsPerTimeStep: 100,
+  scrollType: mm.ScrollType.NOTE
 };
 
 // Set up some event listeners
 visualization3.addEventListener('change', changeVisualization3);
 playBtn3.addEventListener('click', () => startOrStop3());
 growBtn.addEventListener('click', 
-  () => {
+  () => { //
     ++DOUBLE_SCALE.keySignatures[0].key; 
     if(DOUBLE_SCALE.keySignatures[0].key == 12) {
       DOUBLE_SCALE.keySignatures[0].key = 0;

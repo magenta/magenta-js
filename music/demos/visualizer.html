@@ -80,14 +80,20 @@ limitations under the License.
         </li>
         <li><b>Default Key declaration</b> to adapt the score to the right accidentals.</li>
         <li><b>Instrument Filtering</b> to draw a subset of the NoteSequence tracks.</li>
-        <li>Follow scoreplaying in packed chunks by doing <b>Scroll on Bar</b> starting.</li>
+        <li>
+          Follow scoreplaying with two added scroll modes, besides default pagination  
+          (<b>ScrollType.PAGE</b> or void), as centering active note in a note by note 
+          basis (<b>ScrollType.NOTE</b>) or in bar sized packed chunks (<b>ScrollType.BAR</b>).
+        </li>
         <li>
           Multiple <b>key signature</b> and <b>time signature</b> are supported (but notice 
           mm.urlToNoteSequence does not translate them from MIDI files yet).
         </li>
       </ul>
     </p>
-    <h3>Compact / Proportional visualization, Default Key, Instrument filtering and Scroll on Bar</h3>
+    <h3>
+      Compact / Proportional visualization, Default Key, Instrument filtering and Scroll on Bar
+    </h3>
     Changing visualization makes same score on different mm.StaffSVGVisualizer instances
     draw musical symbols leftmost side in the horizontal position where there should start
     their piano-roll equivalent rectangle (ideal for multiple piled up visualizers). 
