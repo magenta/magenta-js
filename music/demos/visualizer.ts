@@ -19,6 +19,8 @@ import * as mm from '../src/index';
 import {blobToNoteSequence, urlToNoteSequence} from '../src/index';
 
 import {FULL_TWINKLE_UNQUANTIZED} from './common';
+import {ANNA_MAGDALENA_BACH, DOUBLE_SCALE, STAFF_USE_CASES} 
+  from './staff_svg_scores';
 
 // Section 1 *****
 
@@ -102,15 +104,13 @@ function startOrStop() {
   }
 }
 
-
 // Section 2 ******
 
-const ADVANCED_MIDI_URL = './anna-magdalena-bach.mid';
 const UNIFORM_TIME_SIZE = 200;
 
 let visualizerRight: mm.StaffSVGVisualizer;
 let visualizerLeft: mm.StaffSVGVisualizer;
-let sequence2: mm.NoteSequence;
+const sequence2 = ANNA_MAGDALENA_BACH;
 
 const player2 = new mm.Player(false, {
   run: (note: mm.NoteSequence.Note) => {
@@ -158,15 +158,6 @@ function changeVisualization2() {
   initPlayerAndVisualizer2(sequence2);
 }
 
-function fetchMidi2(url: string) {
-  urlToNoteSequence(url).then(
-    (seq) => {
-      sequence2 = seq;
-      initPlayerAndVisualizer2(sequence2);
-    }
-  );
-}
-
 function initPlayerAndVisualizer2(seq: mm.INoteSequence) {
   // Disable the UI
   playBtn2.disabled = false;
@@ -196,41 +187,8 @@ function startOrStop2() {
 
 // Section 3 ******
 
-const DOUBLE_SCALE: mm.INoteSequence = {
-  notes: [
-    {pitch: 60, quantizedStartStep: 0, quantizedEndStep: 1, program: 0},
-    {pitch: 61, quantizedStartStep: 1, quantizedEndStep: 2, program: 0},
-    {pitch: 62, quantizedStartStep: 2, quantizedEndStep: 3, program: 0},
-    {pitch: 63, quantizedStartStep: 3, quantizedEndStep: 4, program: 0},
-    {pitch: 64, quantizedStartStep: 4, quantizedEndStep: 5, program: 0},
-    {pitch: 65, quantizedStartStep: 5, quantizedEndStep: 6, program: 0},
-    {pitch: 66, quantizedStartStep: 6, quantizedEndStep: 7, program: 0},
-    {pitch: 67, quantizedStartStep: 7, quantizedEndStep: 8, program: 0},
-    {pitch: 68, quantizedStartStep: 8, quantizedEndStep: 9, program: 0},
-    {pitch: 69, quantizedStartStep: 9, quantizedEndStep: 10, program: 0},
-    {pitch: 70, quantizedStartStep: 10, quantizedEndStep: 11, program: 0},
-    {pitch: 71, quantizedStartStep: 11, quantizedEndStep: 12, program: 0},
-    {pitch: 72, quantizedStartStep: 12, quantizedEndStep: 13, program: 0},
-    {pitch: 73, quantizedStartStep: 13, quantizedEndStep: 14, program: 0},
-    {pitch: 74, quantizedStartStep: 14, quantizedEndStep: 15, program: 0},
-    {pitch: 75, quantizedStartStep: 15, quantizedEndStep: 16, program: 0},
-    {pitch: 76, quantizedStartStep: 16, quantizedEndStep: 17, program: 0},
-    {pitch: 77, quantizedStartStep: 17, quantizedEndStep: 18, program: 0},
-    {pitch: 78, quantizedStartStep: 18, quantizedEndStep: 19, program: 0},
-    {pitch: 79, quantizedStartStep: 19, quantizedEndStep: 20, program: 0},
-    {pitch: 80, quantizedStartStep: 20, quantizedEndStep: 21, program: 0},
-    {pitch: 81, quantizedStartStep: 21, quantizedEndStep: 22, program: 0},
-    {pitch: 82, quantizedStartStep: 22, quantizedEndStep: 23, program: 0},
-    {pitch: 83, quantizedStartStep: 23, quantizedEndStep: 24, program: 0}
-  ],
-  tempos: [{time: 0, qpm: 140}],
-  keySignatures: [{time: 0, key: 0}],
-  timeSignatures: [{time: 0, numerator: 3, denominator: 4}],
-  totalQuantizedSteps: 24,
-  quantizationInfo: {stepsPerQuarter: 2}
-};
 let visualizer3: mm.StaffSVGVisualizer;
-let sequence3 = mm.sequences.clone(DOUBLE_SCALE);
+const sequence3 = mm.sequences.clone(DOUBLE_SCALE);
 
 const player3 = new mm.Player(false, {
   run: (note: mm.NoteSequence.Note) => {
@@ -245,7 +203,7 @@ const playBtn3 = document.getElementById('playBtn3') as HTMLButtonElement;
 const growBtn = document.getElementById('growBtn') as HTMLButtonElement;
 const tempoInput3 = document.getElementById('tempoInput3') as HTMLInputElement;
 const tempoValue3 = document.getElementById('tempoValue3') as HTMLDivElement;
-const signatures = document.getElementById('signatures') as HTMLDivElement;
+const signatures = document.getElementById('multiple-signatures') as HTMLDivElement;
 
 let configSignatures:mm.AdvancedVisualizerConfig = {
   noteHeight: 15,
@@ -340,5 +298,71 @@ function appendQuantized(
   return sequence;
 }
 
-fetchMidi2(ADVANCED_MIDI_URL);
+// Section 4 ******
+
+let visualizer4: mm.StaffSVGVisualizer;
+const sequence4 = STAFF_USE_CASES;
+
+const player4 = new mm.Player(false, {
+  run: (note: mm.NoteSequence.Note) => {
+    visualizer4.redraw(note, true);
+  },
+  stop: () => {}
+});
+
+// UI elements
+const visualization4 = document.getElementById('visualization4') as HTMLInputElement;
+const playBtn4 = document.getElementById('playBtn4') as HTMLButtonElement;
+const tempoInput4 = document.getElementById('tempoInput4') as HTMLInputElement;
+const tempoValue4 = document.getElementById('tempoValue4') as HTMLDivElement;
+const catalog = document.getElementById('catalog') as HTMLDivElement;
+
+let configCatalog:mm.AdvancedVisualizerConfig = {
+  noteHeight: 15,
+  pixelsPerTimeStep: 0,
+  scrollType: mm.ScrollType.NOTE
+};
+
+// Set up some event listeners
+visualization4.checked = true;
+visualization4.addEventListener('change', changeVisualization4);
+playBtn4.addEventListener('click', () => startOrStop4());
+tempoInput4.addEventListener('input', () => {
+  player4.setTempo(parseInt(tempoInput4.value, 10));
+  tempoValue4.textContent = tempoInput4.value;
+});
+
+function changeVisualization4() {
+  configCatalog.pixelsPerTimeStep = visualization4.checked ? 0 : 4 * UNIFORM_TIME_SIZE;
+  initPlayerAndVisualizer4(sequence4);
+}
+
+function initPlayerAndVisualizer4(seq: mm.INoteSequence) {
+  // Disable the UI
+  playBtn4.disabled = false;
+  playBtn4.textContent = 'Loading';
+
+  visualizer4 = new mm.StaffSVGVisualizer(seq, catalog, configCatalog);
+
+  const tempo = seq.tempos[0].qpm;
+  player4.setTempo(tempo);
+  tempoValue4.textContent = tempoInput4.value = '' + tempo;
+
+  // Enable the UI
+  playBtn4.disabled = false;
+  playBtn4.textContent = 'Play';
+}
+
+function startOrStop4() {
+  if (player4.isPlaying()) {
+    player4.stop();
+    playBtn4.textContent = 'Play';
+  } else {
+    player4.start(visualizer4.noteSequence);
+    playBtn4.textContent = 'Stop';
+  }
+}
+
+initPlayerAndVisualizer2(sequence2);
 initPlayerAndVisualizer3(sequence3);
+initPlayerAndVisualizer4(sequence4);
