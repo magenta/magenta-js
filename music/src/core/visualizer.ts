@@ -492,7 +492,7 @@ function setFade(
     animation.setAttributeNS(null, 'dur', '4s');
     animation.setAttributeNS(null, 'fill', 'freeze');
     animation.setAttributeNS(null, 'keyTimes', '0; 0.25; 0.5; 0.75; 1');
-    const easyIn = (from + 3 * to) / 4
+    const easyIn = (from + 3 * to) / 4;
     animation.setAttributeNS(
       null, 'values', `${from}; ${easyIn}; ${to}; ${easyIn}; ${from}`
     );
@@ -769,7 +769,7 @@ export class StaffSVGVisualizer extends BaseVisualizer {
   private barAccidentals: {[pitch: number]: number}; // Temporal accidentals
   private timeSignatureNumerator: number; // like 3 in 3/4
   private timeSignatureDenominator: number; // like 4 in 3/4
-  private signaturesList: {x: number; quarter: number}[]; // Change positions
+  private signaturesList: Array<{x: number; q: number}>; // x positions
   private signatureCurrent: number; // Current signature beginning x position
   private signatureNext: number; // Current signature end x position
   private blockDetailsMap: Map<number, BlockDetails>; // Music sorted blocks
@@ -860,7 +860,7 @@ export class StaffSVGVisualizer extends BaseVisualizer {
     const averagePitch = pitchSum / countSum;
     this.clef = averagePitch < 60 ? 50 : 71; // Numbers are MIDI pitch values
     // Signatures values
-    this.signaturesList = [{x: 0, quarter: 0}];
+    this.signaturesList = [{x: 0, q: 0}];
     this.signatureCurrent = 0;
     this.signatureNext = 0; // To reset blinking if scrolled
     this.changeKeySignatureIfNeeded(0);
@@ -1004,7 +1004,7 @@ export class StaffSVGVisualizer extends BaseVisualizer {
     if (keyChanged || timeChanged) {
       const clefSpacing = COMPACT_SPACING * this.scale * 
         (this.config.pixelsPerTimeStep > 0 ? 3 : 2);
-      this.signaturesList.push({x: x - clefSpacing , quarter: quarter});
+      this.signaturesList.push({x: x - clefSpacing , q: quarter});
       if (this.signatureNext === null) {
         this.signatureNext = x;
       }
@@ -1135,7 +1135,7 @@ export class StaffSVGVisualizer extends BaseVisualizer {
 
   // TODO: Update when ProtocolBuffer cover a quantizedStep version
   private fillBars(lastQ: number) {
-    let timeSignatures = (this.noteSequence.timeSignatures) ?
+    const timeSignatures = (this.noteSequence.timeSignatures) ?
       this.noteSequence.timeSignatures.slice(0) : 
       [{time: 0, numerator: 4, denominator: 4}];
     timeSignatures.sort((x, y) => x.time - y.time);
@@ -1389,7 +1389,7 @@ export class StaffSVGVisualizer extends BaseVisualizer {
       x < this.signatureCurrent || 
       (this.signatureNext !== null && this.signatureNext <= x)
     ) {
-      quarter = this.signaturesList[0].quarter;
+      quarter = this.signaturesList[0].q;
       this.signatureNext = null;
       for (let i = 0; i < this.signaturesList.length; ++i) {
         if (x < this.signaturesList[i].x) {
@@ -1398,7 +1398,7 @@ export class StaffSVGVisualizer extends BaseVisualizer {
         }
         else {
           this.signatureCurrent = this.signaturesList[i].x;
-          quarter = this.signaturesList[i].quarter;
+          quarter = this.signaturesList[i].q;
         }
       }
     }
@@ -1542,7 +1542,7 @@ export class StaffSVGVisualizer extends BaseVisualizer {
       note => {
         if (this.isNoteInInstruments(note, this.instruments)) {
           const quarters = this.timeToQuarters(this.getNoteStartTime(note));
-          if (quarters != lastQ) { // Once per polyphonic set
+          if (quarters !== lastQ) { // Once per polyphonic set
             this.changeKeySignatureIfNeeded(quarters);
             if (this.barBeginnings.has(quarters)) {
               this.barAccidentals = {}; // Reset bar accidentals 
@@ -1622,12 +1622,21 @@ export class StaffSVGVisualizer extends BaseVisualizer {
   private getQNote(note: NoteSequence.INote): QNote {
     const pitchDetails = this.getPitchDetails(note.pitch);
     if (pitchDetails.vSteps in this.barAccidentals) { // Previous occurrence
-      if (pitchDetails.accidental === this.barAccidentals[pitchDetails.vSteps]) {
+      if (
+        pitchDetails.accidental === this.barAccidentals[pitchDetails.vSteps]
+      ) {
         pitchDetails.accidental = 0; // Ignore repetitions
       }
       else { // Replace with the new one
         if (pitchDetails.accidental === 0) {
-          pitchDetails.accidental = 3; // Force normal if it has no accidental
+          if (this.barAccidentals[pitchDetails.vSteps] === 3) {
+            // If changing from normal accidental, force key accidental
+            pitchDetails.accidental = KEY_ACCIDENTALS[this.key].accidental;
+          }
+          else {
+            // Otherwise, coming from sharp or flat, force normal
+            pitchDetails.accidental = 3;
+          }
         }
         this.barAccidentals[pitchDetails.vSteps] = pitchDetails.accidental;
       }
