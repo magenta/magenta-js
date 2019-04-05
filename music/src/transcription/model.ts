@@ -22,13 +22,14 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
+import {loadAudioFromFile, loadAudioFromUrl} from '../core/audio_utils';
 import * as logging from '../core/logging';
-// tslint:disable-next-line:max-line-length
-import {loadAudioFromFile, loadAudioFromUrl, preprocessAudio} from './audio_utils';
+import {INoteSequence} from '../protobuf';
+
+import {preprocessAudio} from './audio_utils';
 import {MEL_SPEC_BINS, MIDI_PITCHES} from './constants';
 // tslint:disable-next-line:max-line-length
 import {batchInput, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
-import { INoteSequence } from '../protobuf';
 
 /**
  * Main "Onsets And Frames" piano transcription model class.
@@ -109,8 +110,8 @@ class OnsetsAndFrames {
    * @returns A `NoteSequence` containing the transcribed piano performance.
    */
   // tslint:enable:max-line-length
-  async transcribeFromMelSpec(melSpec: number[][], parallelBatches = 4)
-      : Promise<INoteSequence> {
+  async transcribeFromMelSpec(melSpec: number[][], parallelBatches = 4):
+      Promise<INoteSequence> {
     if (!this.isInitialized()) {
       this.initialize();
     }
@@ -259,8 +260,8 @@ class AcousticCnn {
 
   // Activation types come from here, which isn't exported:
   // tfjs-layers/blob/master/src/keras_format/activation_config.ts#L16
-  constructor(finalDenseActivation?:'elu'|'hardSigmoid'|'linear'|'relu'
-      |'relu6'|'selu'|'sigmoid'|'softmax'|'softplus'|'softsign'|'tanh') {
+  constructor(finalDenseActivation?: 'elu'|'hardSigmoid'|'linear'|'relu'|
+              'relu6'|'selu'|'sigmoid'|'softmax'|'softplus'|'softsign'|'tanh') {
     // tslint:disable-next-line:no-any
     const convConfig: any = {
       filters: 48,
@@ -355,7 +356,7 @@ class AcousticCnn {
  * efficient in tfjs due to memory management and shader caching.
  */
 class Lstm {
-  private readonly lstm: tf.Model;
+  private readonly lstm: tf.LayersModel;
   private readonly dense = tf.sequential();
   private readonly units: number;
 
@@ -418,7 +419,7 @@ class Lstm {
 
     const LSTM_PREFIX =
         'cudnn_lstm/rnn/multi_rnn_cell/cell_0/cudnn_compatible_lstm_cell';
-    const setLstmWeights = (lstm: tf.Model) => lstm.setWeights(
+    const setLstmWeights = (lstm: tf.LayersModel) => lstm.setWeights(
         splitAndReorderKernel(
             getVar(`${scope}/${LSTM_PREFIX}/kernel`) as tf.Tensor2D)
             .concat(

@@ -35,6 +35,7 @@ const ORIGINAL_AUDIO_URL =
     `${CKPT_URL}/MAPS_MUS-mz_331_3_ENSTDkCl.250frames.wav`;
 
 // Transcription from a file.
+// tslint:disable-next-line
 document.getElementById('fileInput').addEventListener('change', (e: any) => {
   const file = e.target.files[0];
   transcribeFromFile(file);

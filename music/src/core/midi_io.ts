@@ -220,7 +220,7 @@ export function blobToNoteSequence(blob: Blob): Promise<NoteSequence> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
-      resolve(midiToSequenceProto(reader.result));
+      resolve(midiToSequenceProto(reader.result as string));
     };
     reader.onerror = (e) => reject(e);
     reader.readAsBinaryString(blob);
