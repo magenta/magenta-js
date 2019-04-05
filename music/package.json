@@ -1,13 +1,13 @@
 {
   "name": "@magenta/music",
-  "version": "1.5.0",
+  "version": "1.7.0",
   "description": "Make music with machine learning, in the browser.",
   "main": "es5/index.js",
   "types": "es5/index.d.ts",
   "jsdelivr": "dist/magentamusic.js",
   "unpkg": "dist/magentamusic.js",
   "dependencies": {
-    "@tensorflow/tfjs": "^0.15.3",
+    "@tensorflow/tfjs": "^1.0.2",
     "fft.js": "^4.0.3",
     "midiconvert": "^0.4.7",
     "ndarray-resample": "^1.0.1",
@@ -35,9 +35,9 @@
     "ts-node": "^5.0.1",
     "tsify": "^3.0.4",
     "tslint": "^5.9.1",
-    "typedoc": "^0.11.1",
+    "typedoc": "^0.14.2",
     "typedoc-plugin-sourcefile-url": "^1.0.3",
-    "typescript": "^2.7.2",
+    "typescript": "^3.3.3333",
     "webpack": "^4.24.0",
     "webpack-cli": "^3.1.2",
     "webpack-dev-server": "^3.1.14"
