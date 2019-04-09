@@ -2,7 +2,7 @@
  * Core implementation for Piano Genie model.
  *
  * @license
- * Copyright 2018 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -59,6 +59,42 @@ function disposeState(state: LSTMState) {
     state.h[i].dispose();
   }
 }
+
+/**
+ * Root note of chord for chord-conditioned model.
+ */
+enum ChordRoot {
+  None = 0,
+  C,
+  Cs,
+  D,
+  Eb,
+  E,
+  F,
+  Fs,
+  G,
+  Ab,
+  A,
+  Bb,
+  B
+}
+
+/**
+ * Chord family for chord-conditioned model.
+ */
+enum ChordFamily {
+  None = 0,
+  Maj,
+  Min,
+  Aug,
+  Dim,
+  Seven,
+  Maj7,
+  Min7,
+  Min7b5
+}
+
+type Chord = [ChordRoot, ChordFamily];
 
 /**
  * Samples logits with temperature.
