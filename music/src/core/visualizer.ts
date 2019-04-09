@@ -1023,8 +1023,8 @@ export class StaffSVGVisualizer extends BaseVisualizer {
     }
     // Fallback for notes shorter than MIN_RESOLUTION. It will be warned on 
     // console and MIN_RESOLUTION note will be drawn.
-    if (headIndex == 0) {
-      let noteLength = blockDetails.notes[0].length === 0 ? '[infinite]' : 
+    if (headIndex === 0) {
+      const noteLength = blockDetails.notes[0].length === 0 ? '[infinite]' : 
         `${4 / blockDetails.notes[0].length}`;
       logging.log(
         'mm.StaffSVGVisualizer does not handle notes shorther than ' +
