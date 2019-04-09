@@ -1021,6 +1021,19 @@ export class StaffSVGVisualizer extends BaseVisualizer {
         headIndex = i;
       }
     }
+    // Fallback for notes shorter than MIN_RESOLUTION. It will be warned on 
+    // console and MIN_RESOLUTION note will be drawn.
+    if (headIndex == 0) {
+      let noteLength = blockDetails.notes[0].length === 0 ? '[infinite]' : 
+        `${4 / blockDetails.notes[0].length}`;
+      logging.log(
+        'mm.StaffSVGVisualizer does not handle notes shorther than ' +
+        `1/${4 / MIN_RESOLUTION}th, and this score tries to draw a ` +
+        `1/${noteLength}th. Shortest possible note will be drawn instead.`, 
+        'mm.StaffSVGVisualizer', logging.Level.WARN
+      );
+      headIndex = MIN_RESOLUTION;
+    }
     const noteHead = NOTE_PATHS[headIndex];
     // Stem placeholder created beforehand as a lower layer
     let stemG: SVGElement;
