@@ -331,9 +331,9 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
       config: VisualizerConfig = {}) {
     super(sequence, config);
         
-    //Return error if element isn't svg
     if (!(svg instanceof SVGSVGElement)) {
-      throw new Error('mm.PianoRollSVGVisualizer requires an <svg> element to display the visualization');
+      throw new Error('mm.PianoRollSVGVisualizer requires an <svg> ' +
+                      'element to display the visualization');
     } 
     this.svg = svg;
     this.parentElement = svg.parentElement;
