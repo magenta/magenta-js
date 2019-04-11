@@ -28,7 +28,7 @@ import * as fs from 'fs';
 import * as test from 'tape';
 import * as tf from '@tensorflow/tfjs';
 
-import {PianoGenie} from './model';
+import {PianoGenie, NOCHORD} from './model';
 
 function loadJSONModelWeights(fp: string) {
   const rawVars = JSON.parse(fs.readFileSync(fp, 'utf8'));
@@ -64,17 +64,17 @@ test('Piano Genie Model Correctness', async (t: test.Test) => {
     // Ascending pattern with sampling.
     for (let i = 0; i < 8; ++i) {
       genie.overrideDeltaTime(0.1);
-      keys.push(genie.next(i, 1., 1337));
+      keys.push(genie.next(i, NOCHORD, 1., 1337));
     }
     // Descending pattern with argmax.
     for (let i = 7; i >= 0; --i) {
       genie.overrideDeltaTime(0.1);
-      keys.push(genie.next(i, 0.));
+      keys.push(genie.next(i, NOCHORD, 0.));
     }
     // Fast trill with temperature 0.5.
     for (let i = 0; i < 8; ++i) {
       genie.overrideDeltaTime(0.05);
-      keys.push(genie.next(3 + (i % 2), 0.5, 1337));
+      keys.push(genie.next(3 + (i % 2), NOCHORD, 0.5, 1337));
     }
 
     const expectedKeys = [
@@ -103,18 +103,20 @@ test('Piano Genie Model Correctness', async (t: test.Test) => {
     // Ascending pattern with sampling.
     for (let i = 0; i < 8; ++i) {
       genie.overrideDeltaTime(0.1);
-      keys.push(genie.nextFromKeyWhitelist(i, gMajTwoOctaves, 1., 1337));
+      keys.push(
+        genie.nextFromKeyWhitelist(i, NOCHORD, gMajTwoOctaves, 1., 1337));
     }
     // Descending pattern with argmax.
     for (let i = 7; i >= 0; --i) {
       genie.overrideDeltaTime(0.1);
-      keys.push(genie.nextFromKeyWhitelist(i, gMajTwoOctaves, 0.));
+      keys.push(genie.nextFromKeyWhitelist(i, NOCHORD, gMajTwoOctaves, 0.));
     }
     // Fast trill with temperature 0.5.
     for (let i = 0; i < 8; ++i) {
       genie.overrideDeltaTime(0.05);
       keys.push(
-        genie.nextFromKeyWhitelist(3 + (i % 2), gMajTwoOctaves, 0.5, 1337));
+        genie.nextFromKeyWhitelist(
+          3 + (i % 2), NOCHORD, gMajTwoOctaves, 0.5, 1337));
     }
 
     const expectedKeys = [
@@ -148,11 +150,11 @@ test('Piano Genie Model Correctness', async (t: test.Test) => {
   // Ensures that JavaScript model outputs match test outputs from Python.
   tf.tidy(() => {
     genie.overrideDeltaTime(0.);
-    genie.next(0);
+    genie.next(0, NOCHORD);
 
     genie.overrideDeltaTime(0.125);
     genie.overrideLastOutput(43);
-    genie.next(1);
+    genie.next(1, NOCHORD);
 
     const sampleFunc = testSampleFuncFactory([
       [39, 0.12285],
@@ -161,7 +163,7 @@ test('Piano Genie Model Correctness', async (t: test.Test) => {
     ]);
     genie.overrideDeltaTime(1.);
     genie.overrideLastOutput(45);
-    genie.nextWithCustomSamplingFunction(2, sampleFunc);
+    genie.nextWithCustomSamplingFunction(2, NOCHORD, sampleFunc);
   });
 
   // Reset model.
@@ -170,11 +172,11 @@ test('Piano Genie Model Correctness', async (t: test.Test) => {
   // Ensures that JavaScript model outputs match test outputs from Python.
   tf.tidy(() => {
     genie.overrideDeltaTime(0.125);
-    genie.next(1);
+    genie.next(1, NOCHORD);
 
     genie.overrideDeltaTime(0.25);
     genie.overrideLastOutput(44);
-    genie.next(2);
+    genie.next(2, NOCHORD);
 
     const sampleFunc = testSampleFuncFactory([
       [43, 0.18577],
@@ -183,7 +185,7 @@ test('Piano Genie Model Correctness', async (t: test.Test) => {
     ]);
     genie.overrideDeltaTime(1.5);
     genie.overrideLastOutput(46);
-    genie.nextWithCustomSamplingFunction(3, sampleFunc);
+    genie.nextWithCustomSamplingFunction(3, NOCHORD, sampleFunc);
   });
 
   // Dispose model.

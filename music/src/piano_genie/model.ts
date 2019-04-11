@@ -63,7 +63,7 @@ function disposeState(state: LSTMState) {
 /**
  * Root note of chord for chord-conditioned model.
  */
-enum ChordRoot {
+enum PitchClass {
   None = 0,
   C,
   Cs,
@@ -94,7 +94,8 @@ enum ChordFamily {
   Min7b5
 }
 
-type Chord = [ChordRoot, ChordFamily];
+type Chord = {root: PitchClass, family: ChordFamily};
+const NOCHORD: Chord = {root: PitchClass.None, family: ChordFamily.None};
 
 /**
  * Samples logits with temperature.
@@ -211,7 +212,7 @@ class PianoGenie {
     // This runs the model once to force Tensorflow JS to allocate necessary
     // memory. Otherwise the prediction will take a long time when the user
     // presses a button for the first time.
-    this.next(0);
+    this.next(0, NOCHORD);
     this.resetState();
   }
 
@@ -222,14 +223,15 @@ class PianoGenie {
    * application in real time (it keeps track of time internally).
    *
    * @param button Button number (one of {0, 1, 2, 3, 4, 5, 6, 7}).
+   * @param chord Chord type.
    * @param temperature Temperature. From 0 to 1, goes from argmax to random.
    * @param seed Random seed. Use a fixed number to get reproducible output.
    */
-  next(button: number, temperature?: number, seed?: number) {
+  next(button: number, chord: Chord, temperature?: number, seed?: number) {
     const sampleFunc = (logits: tf.Tensor1D) => {
       return sampleLogits(logits, temperature, seed);
     };
-    return this.nextWithCustomSamplingFunction(button, sampleFunc);
+    return this.nextWithCustomSamplingFunction(button, chord, sampleFunc);
   }
 
   /**
@@ -247,6 +249,7 @@ class PianoGenie {
    */
   nextFromKeyWhitelist(
     button: number,
+    chord: Chord,
     keyWhitelist: number[],
     temperature?: number,
     seed?: number) {
@@ -261,7 +264,7 @@ class PianoGenie {
       result = tf.reshape(result1d, []) as tf.Scalar;
       return result;
     };
-    return this.nextWithCustomSamplingFunction(button, sampleFunc);
+    return this.nextWithCustomSamplingFunction(button, chord, sampleFunc);
   }
 
   /**
@@ -276,6 +279,7 @@ class PianoGenie {
    */
   nextWithCustomSamplingFunction(
     button: number,
+    chord: Chord,
     sampleFunc: (logits: tf.Tensor1D) => tf.Scalar) {
       const lastState = this.lastState;
       const lastOutput = this.lastOutput;
@@ -291,7 +295,7 @@ class PianoGenie {
       }
 
       const [state, output] = this.evaluateModelAndSample(
-        button, lastState, lastOutput, deltaTime, sampleFunc);
+        button, chord, lastState, lastOutput, deltaTime, sampleFunc);
 
       disposeState(this.lastState);
       this.lastState = state;
@@ -364,6 +368,7 @@ class PianoGenie {
    */
   private evaluateModelAndSample(
     button: number,
+    chord: Chord,
     lastState: LSTMState,
     lastOutput: number,
     deltaTime: number,
@@ -418,6 +423,24 @@ class PianoGenie {
       const deltaTimeOhFloat = tf.cast(deltaTimeOh, 'float32') as tf.Tensor2D;
       decFeatsArr.push(deltaTimeOhFloat);
 
+      // Add chord root to decoder feats.
+      const chordRootTensor = tf.tensor1d([chord.root], 'int32');
+      const chordRootTensorSubOne =
+        tf.sub(chordRootTensor, tf.scalar(1, 'int32')) as tf.Tensor1D;
+      const chordRootTensorOh = tf.cast(
+        tf.oneHot(chordRootTensorSubOne, 12), 'float32') as tf.Tensor2D;
+      console.log(chordRootTensorOh.dataSync());
+      decFeatsArr.push(chordRootTensorOh);
+
+      // Add chord family to decoder feats.
+      const chordFamilyTensor = tf.tensor1d([chord.family], 'int32');
+      const chordFamilyTensorSubOne =
+        tf.sub(chordFamilyTensor, tf.scalar(1, 'int32')) as tf.Tensor1D;
+      const chordFamilyTensorOh = tf.cast(
+        tf.oneHot(chordFamilyTensorSubOne, 8), 'float32') as tf.Tensor2D;
+      console.log(chordFamilyTensorOh.dataSync());
+      decFeatsArr.push(chordFamilyTensorOh);
+
       // Project feats array through RNN input matrix.
       let rnnInput: tf.Tensor2D = tf.concat(decFeatsArr, 1);
       rnnInput = tf.matMul(
@@ -458,4 +481,4 @@ class PianoGenie {
   }
 }
 
-export {PianoGenie};
+export {PianoGenie, Chord, NOCHORD};

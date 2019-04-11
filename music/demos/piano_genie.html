@@ -22,8 +22,40 @@ limitations under the License.
 
   <p>Implements Magenta's <a href="https://magenta.tensorflow.org/pianogenie"><i>Piano Genie</i></a> model.</p>
   <p>Piano Genie expands novice performances on a miniature piano keyboard (8 keys) to performances on full pianos (88 keys) in real-time.</p>
-  <p id="loading">Loading model weights...</p>
-  <p id="loaded" hidden>Press keyboard keys 1-8 to hear sound.</p>
+  <div id="loading"><p>Loading model weights...</p></div>
+  <div id="loaded" hidden>
+    <p>Press keyboard keys 1-8 to hear sound.</p>
+
+    <label>Chord root</label>
+    <select id="chordroot">
+      <option value="0">Unspecified</option>
+      <option value="1">C</option>
+      <option value="2">C#/Db</option>
+      <option value="3">D</option>
+      <option value="4">D#/Eb</option>
+      <option value="5">E</option>
+      <option value="6">F</option>
+      <option value="7">F#/Gb</option>
+      <option value="8">G</option>
+      <option value="9">G#/Ab</option>
+      <option value="10">A</option>
+      <option value="11">A#/Bb</option>
+      <option value="12">B</option>
+    </select>
+
+    <label>Chord family</label>
+    <select id="chordfamily">
+      <option value="0">Unspecified</option>
+      <option value="1">Major</option>
+      <option value="2">Minor</option>
+      <option value="3">Augmented</option>
+      <option value="4">Diminished</option>
+      <option value="5">Dominant Seventh</option>
+      <option value="6">Major Seventh</option>
+      <option value="7">Minor Seventh</option>
+      <option value="8">Minor Seventh Flat Five</option>
+    </select>
+  </div>
 
   <script src="piano_genie_bundle.js"></script>
 </body>

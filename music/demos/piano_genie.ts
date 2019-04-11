@@ -17,10 +17,11 @@
 
 import * as Tone from 'tone';
 import * as mm from '../src/index';
-import {CHECKPOINTS_DIR} from './common';
+//import {CHECKPOINTS_DIR} from './common';
 
 // tslint:disable-next-line:max-line-length
-const GENIE_CHECKPOINT = `${CHECKPOINTS_DIR}/piano_genie/model/epiano/stp_iq_auto_contour_dt_166006`;
+//const GENIE_CHECKPOINT = 'https://storage.cloud.google.com/fruitgenie-data/models/js/02_chordsplit_keephalf_204538';
+const GENIE_CHECKPOINT = '02_chordsplit_keephalf_204538';
 const NUM_BUTTONS = 8;
 const LOWEST_PIANO_KEY_MIDI_NOTE = 21;
 const TEMPERATURE = 0.25;
@@ -43,7 +44,14 @@ function initControlsAndAudio () {
         return;
       }
 
-      const output = genie.next(button, TEMPERATURE);
+      const crs = document.getElementById('chordroot') as HTMLSelectElement;
+      const cr = parseInt(crs.options[crs.selectedIndex].value, 10);
+      const cfs = document.getElementById('chordfamily') as HTMLSelectElement;
+      const cf = parseInt(cfs.options[cfs.selectedIndex].value, 10);
+
+      const chord = {root: cr, family: cf};
+
+      const output = genie.next(button, chord, TEMPERATURE);
       const note = output + LOWEST_PIANO_KEY_MIDI_NOTE;
 
       synth.triggerAttack(Tone.Frequency(note, 'midi'));
