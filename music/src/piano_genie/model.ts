@@ -429,7 +429,6 @@ class PianoGenie {
         tf.sub(chordRootTensor, tf.scalar(1, 'int32')) as tf.Tensor1D;
       const chordRootTensorOh = tf.cast(
         tf.oneHot(chordRootTensorSubOne, 12), 'float32') as tf.Tensor2D;
-      console.log(chordRootTensorOh.dataSync());
       decFeatsArr.push(chordRootTensorOh);
 
       // Add chord family to decoder feats.
@@ -438,7 +437,6 @@ class PianoGenie {
         tf.sub(chordFamilyTensor, tf.scalar(1, 'int32')) as tf.Tensor1D;
       const chordFamilyTensorOh = tf.cast(
         tf.oneHot(chordFamilyTensorSubOne, 8), 'float32') as tf.Tensor2D;
-      console.log(chordFamilyTensorOh.dataSync());
       decFeatsArr.push(chordFamilyTensorOh);
 
       // Project feats array through RNN input matrix.
