@@ -330,7 +330,11 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
       sequence: INoteSequence, svg: SVGSVGElement,
       config: VisualizerConfig = {}) {
     super(sequence, config);
-
+        
+    if (!(svg instanceof SVGSVGElement)) {
+      throw new Error('mm.PianoRollSVGVisualizer requires an <svg> ' +
+                      'element to display the visualization');
+    } 
     this.svg = svg;
     this.parentElement = svg.parentElement;
     this.drawn = false;
