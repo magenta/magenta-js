@@ -53,7 +53,6 @@ class GANSynth {
    * Loads variables from the checkpoint and builds the model graph.
    */
   async initialize() {
-    this.dispose();
     const startTime = performance.now();
     const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
                      .then((response) => response.json())
@@ -68,15 +67,18 @@ class GANSynth {
       for (const v in vars) {
         if (v.includes('kernel')) {
           const fanIn = vars[v].shape[0] * vars[v].shape[1] * vars[v].shape[2];
-          vars[v] = tf.mul(vars[v], tf.sqrt(2 / fanIn));
+          const tmp = vars[v];
+          vars[v].dispose();
+          vars[v] = tf.mul(tmp, tf.sqrt(2 / fanIn));
         }
       }
 
       this.build(vars);
-      Object.keys(vars).map(name => vars[name].dispose());
       this.initialized = true;
       logging.logWithDuration('Initialized model', startTime, 'GANSynth');
     });
+
+    Object.keys(vars).map(name => vars[name].dispose());
   }
 
   /**

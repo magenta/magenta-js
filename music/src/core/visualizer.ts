@@ -85,15 +85,7 @@ export abstract class BaseVisualizer {
     this.noteSequence = sequence;
     this.sequenceIsQuantized = sequences.isQuantizedSequence(this.noteSequence);
 
-    // Quantized sequences appear "longer" because there's usually more
-    // quantized per note (vs seconds), so pick a better default by using
-    // the steps per quarter.
-    let defaultPixelsPerTimeStep = 30;
-    if (this.sequenceIsQuantized) {
-      const spq = sequence.quantizationInfo.stepsPerQuarter;
-      defaultPixelsPerTimeStep = spq ? defaultPixelsPerTimeStep / spq : 7;
-    }
-
+    const defaultPixelsPerTimeStep = 30;
     this.config = {
       noteHeight: config.noteHeight || 6,
       noteSpacing: config.noteSpacing || 1,
@@ -103,6 +95,15 @@ export abstract class BaseVisualizer {
       minPitch: config.minPitch,
       maxPitch: config.maxPitch,
     };
+
+    // Quantized sequences appear "longer" because there's usually more
+    // quantized per note (vs seconds), so pick a better default by using
+    // the steps per quarter.
+    if (this.sequenceIsQuantized) {
+      const spq = sequence.quantizationInfo.stepsPerQuarter;
+      this.config.pixelsPerTimeStep = spq ? 
+          this.config.pixelsPerTimeStep / spq : 7;
+    }
 
     const size = this.getSize();
     this.width = size.width;
@@ -134,13 +135,11 @@ export abstract class BaseVisualizer {
 
     // Calculate a nice width based on the length of the sequence we're
     // playing.
-    const numNotes = this.noteSequence.notes.length;
     const endTime = this.sequenceIsQuantized ?
         this.noteSequence.totalQuantizedSteps :
         this.noteSequence.totalTime;
 
-    const width = (numNotes * this.config.noteSpacing) +
-        (endTime * this.config.pixelsPerTimeStep);
+    const width = (endTime * this.config.pixelsPerTimeStep);
 
     return {width, height};
   }
@@ -174,11 +173,13 @@ export abstract class BaseVisualizer {
   }
 
   protected getNoteStartTime(note: NoteSequence.INote) {
-    return this.sequenceIsQuantized ? note.quantizedStartStep : note.startTime;
+    return this.sequenceIsQuantized ? note.quantizedStartStep : 
+        Math.round(note.startTime * 100000000) / 100000000;
   }
 
   protected getNoteEndTime(note: NoteSequence.INote) {
-    return this.sequenceIsQuantized ? note.quantizedEndStep : note.endTime;
+    return this.sequenceIsQuantized ? note.quantizedEndStep : 
+        Math.round(note.endTime * 100000000) / 100000000;
   }
 
   protected isPaintingActiveNote(
@@ -190,7 +191,6 @@ export abstract class BaseVisualizer {
     const heldDownDuringPlayedNote =
         this.getNoteStartTime(note) <= this.getNoteStartTime(playedNote) &&
         this.getNoteEndTime(note) >= this.getNoteEndTime(playedNote);
-
     return isPlayedNote || heldDownDuringPlayedNote;
   }
 }
@@ -270,7 +270,7 @@ export class PianoRollCanvasVisualizer extends BaseVisualizer {
 
       this.redrawNote(size.x, size.y, size.w, size.h, fill);
 
-      if (isActive) {
+      if (isActive && note === activeNote) {
         activeNotePosition = size.x;
       }
     }
@@ -330,7 +330,11 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
       sequence: INoteSequence, svg: SVGSVGElement,
       config: VisualizerConfig = {}) {
     super(sequence, config);
-
+        
+    if (!(svg instanceof SVGSVGElement)) {
+      throw new Error('mm.PianoRollSVGVisualizer requires an <svg> ' +
+                      'element to display the visualization');
+    } 
     this.svg = svg;
     this.parentElement = svg.parentElement;
     this.drawn = false;
@@ -365,8 +369,9 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
     }
 
     // Remove the current active note, if one exists.
-    const el = this.svg.querySelector('rect.active');
-    if (el) {
+    const els = this.svg.querySelectorAll('rect.active');
+    for (let i = 0; i < els.length; ++i) {
+      const el = els[i];
       const fill = this.getNoteFillColor(
           this.noteSequence.notes[parseInt(el.getAttribute('data-index'), 10)],
           false);
@@ -388,7 +393,9 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
       const fill = this.getNoteFillColor(note, true);
       el.setAttribute('fill', fill);
       el.setAttribute('class', 'active');
-      activeNotePosition = parseFloat(el.getAttribute('x'));
+      if (note === activeNote) {
+        activeNotePosition = parseFloat(el.getAttribute('x'));
+      }
     }
 
     this.scrollIntoViewIfNeeded(scrollIntoView, activeNotePosition);
