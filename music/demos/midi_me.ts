@@ -41,19 +41,30 @@ const model = new mm.MidiMe({epochs: 100});
 model.initialize();
 
 function loadFile(e: Event) {
-  blobToNoteSequence(fileInput.files[0]).then(doTheThing);
+  document.getElementById('fileBtn').setAttribute('disabled', '');
+  const promises = [];
+  for (let i = 0; i < fileInput.files.length; i++) {
+    promises.push(blobToNoteSequence(fileInput.files[i]));
+  }
+  Promise
+      .all(promises)
+      .then(doTheThing);
 }
 
-async function doTheThing(mel: NoteSequence) {
-  visualizeNoteSeqs('input', [mel]);
+async function doTheThing(mel: NoteSequence[]) {
+  visualizeNoteSeqs('input', mel);
   const start = performance.now();
 
   // 1. Encode the input into MusicVAE, get back a z.
-  const quantizedMel = quantizeNoteSequence(mel, 4);
+  const quantizedMels:NoteSequence[] = [];
+  mel.forEach((m) => quantizedMels.push(quantizeNoteSequence(m, 4)));
 
   // 1b. Split this sequence into 32 bar chunks.
-  const chunks =
-      mm.sequences.split(mm.sequences.clone(quantizedMel), 16 * BARS);
+  let chunks:NoteSequence[] = [];
+  quantizedMels.forEach((m) => {
+    const melChunks = mm.sequences.split(mm.sequences.clone(m), 16 * BARS);
+    chunks = chunks.concat(melChunks);
+  });
   const z = await mvae.encode(chunks);  // shape of z is [chunks, 256]
 
   // 2. Use that z as input to train MidiMe.
