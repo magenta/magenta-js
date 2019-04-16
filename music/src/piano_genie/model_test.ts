@@ -44,6 +44,8 @@ function loadJSONModelWeights(fp: string) {
 const TOLERANCE = 1e-6;
 
 test('Piano Genie Model Correctness', async (t: test.Test) => {
+  const initialMemory = tf.memory();
+
   const modelWeightsFp = 'src/piano_genie/test_data/stp_iq_auto_dt.json';
   if (!fs.existsSync(modelWeightsFp)) {
     console.log('Piano Genie model weights not found. Provisional pass.');
@@ -54,6 +56,8 @@ test('Piano Genie Model Correctness', async (t: test.Test) => {
 
   const genie = new PianoGenie(undefined);
   await genie.initialize(vars);
+
+  const memoryPostInitialize = tf.memory();
 
   /**
    * Tests simple usage of PianoGenie.
@@ -83,6 +87,7 @@ test('Piano Genie Model Correctness', async (t: test.Test) => {
       35, 36, 36, 38, 36, 38, 36, 38
     ];
 
+    t.equal(tf.memory().numBytes, memoryPostInitialize.numBytes);
     t.deepEqual(keys, expectedKeys);
   });
 
@@ -188,6 +193,9 @@ test('Piano Genie Model Correctness', async (t: test.Test) => {
 
   // Dispose model.
   genie.dispose();
+
+  // Ensure no memory leaks from PianoGenie
+  t.equal(tf.memory().numBytes, initialMemory.numBytes);
 
   t.end();
 });
