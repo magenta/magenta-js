@@ -63,18 +63,20 @@ export const STAFF_USE_CASES: mm.INoteSequence = {
     {pitch: 77, startTime: 15.875, endTime: 16.0625, program: 0},
     {pitch: 65, startTime: 20, endTime: 22, program: 0},
     {pitch: 77, startTime: 21, endTime: 23, program: 0},
-    {pitch: 65, startTime: 25, endTime: 26, program: 0},
+    {pitch: 65, startTime: 25, endTime: 25.5, program: 0},
+    {pitch: 66, startTime: 25.5, endTime: 26, program: 0},
     {pitch: 66, startTime: 26, endTime: 26.5, program: 0},
-    {pitch: 66, startTime: 26.5, endTime: 27, program: 0},
+    {pitch: 65, startTime: 26.5, endTime: 27, program: 0},
     {pitch: 65, startTime: 27, endTime: 27.5, program: 0},
     {pitch: 66, startTime: 27.5, endTime: 28, program: 0},
-    {pitch: 66, startTime: 28, endTime: 29, program: 0},
-    {pitch: 66, startTime: 29, endTime: 32, program: 0},
+    {pitch: 66, startTime: 28, endTime: 32.5, program: 0},
+    {pitch: 66, startTime: 32.5, endTime: 33, program: 0},
+    {pitch: 66, startTime: 33, endTime: 36, program: 0},
   ],
   tempos: [{time: 0, qpm: 60}],
   keySignatures: [{time: 0, key: 0}],
   timeSignatures: [{time: 0, numerator: 4, denominator: 4}],
-  totalTime: 32
+  totalTime: 36
 };
 
 export const ANNA_MAGDALENA_BACH: mm.INoteSequence = {

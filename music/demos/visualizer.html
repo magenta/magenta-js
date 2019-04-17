@@ -36,7 +36,6 @@ limitations under the License.
   </p>
 
   <section>
-    <h2>Three visualizers linked to one single player</h2>
     <p>Load a melody in any of these formats:</p>
     <button id="urlBtn">Load URL</button>
     <button id="seqBtn">Load NoteSequence</button>
@@ -51,148 +50,28 @@ limitations under the License.
       <input id="tempoInput" value="100" type="range" min="20" max="240" value="120" step="1">
       <span id="tempoValue"></span>
     </span>
+  </section>
 
-    <h3>mm.PianoRollSVGVisualizer</h3>
-    <div class="visualizer-container" id="container1">
-      <svg id="piano-roll-svg-viewer"></svg>
-    </div>
-
-    <h3>mm.StaffSVGVisualizer</h3>
+  <h2>mm.PianoRollSVGVisualizer</h2>
+  <section>
     <div class="visualizer-container" id="container2">
-      <div id="staff-svg-viewer"></div>
-    </div>
-
-    <h3>mm.PianoRollCanvasVisualizer</h3>
-    <div class="visualizer-container" id="container3">
-      <canvas id="piano-roll-canvas-viewer"></canvas>
+      <svg id="svg"></svg>
     </div>
   </section>
 
+  <h2>mm.StaffSVGVisualizer</h3>
+    <section>
+      <div class="visualizer-container" id="container3">
+        <div id="staff-svg-viewer"></div>
+      </div>
+    </section>
+
+  <h2>mm.PianoRollCanvasVisualizer</h2>
   <section>
-    <h2>mm.StaffSVGVisualizer advanced usage</h2>
-    <p>
-      mm.StaffSVGVisualizer extends the basic configuration capabilities to add:
-      <ul>
-        <li>
-          Displaying the score in a <b>compact visualization</b> way, just like paper printed 
-          scores, by setting config.pixelsPerTimeStep to zero. Otherwise <b>proportional 
-          visualization</b> mode will be used like in mm.PianoRollSVGVisualizer, where notes 
-          are separated according with their duration from pixel 0 at leftmost side. In order
-          to get staff context information, proportional visualization makes music signatures 
-          blink sometimes to show hidden musical symbols. You will notice bar lines are pretty
-          close to first bar note, because there is where bar begins. You can enjoy padding bars 
-          in compact visualization mode.
-        </li>
-        <li>
-          <b>Automatic Clef detection</b> will be done according to the average note, being it 
-          F clef if it is under middle C and G clef in any other case. 
-        </li>
-        <li>
-          <b>Default Key declaration</b> to adapt the score to the right accidentals in case 
-          key is not stated for time 0 on the NoteSequence (otherwise, NoteSequence will 
-          overwrite it).
-        </li>
-        <li>
-          <b>Instrument Filtering</b> to draw a subset of the NoteSequence tracks in one single 
-          score. No filter will draw all tracks altogether in one score.
-        </li>
-        <li>
-          Follow scoreplaying with two added auto-scroll modes, besides default pagination  
-          (<b>ScrollType.PAGE</b> or void), like centering active note on the middle of the 
-          score in a note by note basis (<b>ScrollType.NOTE</b>) or centering it in bar sized 
-          packed chunks (<b>ScrollType.BAR</b>) every time activeNote is the first one of a
-          bar.
-        </li>
-        <li>
-          Multiple <b>key signature</b> and <b>time signature</b> are supported (but notice 
-          mm.urlToNoteSequence does not translate them from MIDI files yet).
-        </li>
-      </ul>
-    </p>
-    <h3>
-      Mixing it all
-    </h3>
-    In next example you can relize several combined features. Two tracks of a single score have 
-    been filtered in two staffs (left and right hand) which automatically adapt to the appropriate
-    clef according to their note range. Switching Compact visualization mode makes same score be 
-    drawn on different mm.StaffSVGVisualizer instances, from compact mode (like a printed staff), 
-    to proportional mode (placing note heads in x axis similarly to piano-roll rectangles, ideal 
-    for multiple piled up visualizers). Musical symbols have been scaled up according with the 
-    defined 'noteHeight' config value. Visualization mode can be changed during playing, but 
-    given there will be a new instance you can experience a fast rewind before scrolling to the 
-    next active note. Finally G Key has been forced as default key given provided score doesn't 
-    handle any key information.
-    <br>
-    <br>
-
-    <button id="playBtn2" disabled>wait...</button>
-    <span class="input">
-      <b>Compact visualization mode:</b>
-      <input type="checkbox" id="visualization2">
-      <b>Tempo:</b>
-      <input id="tempoInput2" value="100" type="range" min="20" max="240" value="120" step="1">
-      <span id="tempoValue2"></span>
-    </span>
-    <br>
-    <br>
-
-    <div class="visualizer-container" id="container4">
-      <div id="right-hand"></div>
-      <div id="left-hand"></div>
+    <div class="visualizer-container" id="container">
+      <canvas id="canvas"></canvas>
     </div>
-    <br>
-
-    <h3>Multiple Key and Time signatures</h3>
-    Next example adds more notes to the score (+) changing through all keys and the time signatures
-    subset [2/4, 3/4, 4/4] to see how the staff grows and adapts to it. Please notice  mm.Player 
-    does not handle incremental NoteSequence modifications once it has started to play.
-    <br>
-    <br>
-
-    <button id="playBtn3" disabled>wait...</button>
-    <button id="growBtn">+</button>
-    <span class="input">
-      <b>Compact visualization mode:</b>
-      <input type="checkbox" id="visualization3">
-      <b>Tempo:</b>
-      <input id="tempoInput3" value="100" type="range" min="20" max="240" value="120" step="1">
-      <span id="tempoValue3"></span>
-    </span>
-    <br>
-    <br>
-    <div class="visualizer-container" id="container5">
-      <div id="multiple-signatures"></div>
-    </div>
-
-    <h3>Musical symbol catalog and managed use cases</h3>
-    Next score shows all musical symbols (but F clef). In a G clef score, C key and 4/4 time signature, 
-    all notes (all F) and rests from whole to sixty-fourth are shown in first four bars. Following use 
-    cases are: a splitted note between two bars (thirty-second tied to sixty-fourth), rest completion 
-    by a sequence of lowering rests (half to sisty-fourth), polyphonic overlapping notes splitted and 
-    tied, bar splitted rests, accidentals repetition avoiding (F#), accidental re-activation (normal F), 
-    accidental re-activation (F#), accidental reset after bar (F#), and dotted note. F clef, Key and 
-    time changes have been shown in previous scores.
-    <br>
-    <br>
-    Known issues are: No note beams are shown (flagged notes are used instead), and no triplets nor 
-    quintuplets are managed yet.
-    <br>
-    <br>
-
-    <button id="playBtn4" disabled>wait...</button>
-    <span class="input">
-      <b>Compact visualization mode:</b>
-      <input type="checkbox" id="visualization4">
-      <b>Tempo:</b>
-      <input id="tempoInput4" value="100" type="range" min="20" max="240" value="120" step="1">
-      <span id="tempoValue4"></span>
-    </span>
-    <br>
-    <br>
-    <div class="visualizer-container" id="container6">
-      <div id="catalog"></div>
-    </div>
-
+  </section>
   <script src="visualizer_bundle.js"></script>
 </body>
 </html>
