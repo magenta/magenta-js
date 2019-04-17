@@ -663,7 +663,7 @@ function trimHelper(
 }
 
 /**
- * Splits an unquantized `NoteSequence` into smaller `NoteSequences` of
+ * Splits a quantized `NoteSequence` into smaller `NoteSequences` of
  * equal chunks. If a note splits across a chunk boundary, then it will be
  * split between the two chunks.
  *
