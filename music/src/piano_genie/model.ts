@@ -669,16 +669,16 @@ class PianoGenieAutoDtChordKeysig extends PianoGenieAutoDtKeysig {
 /**
  * Simplify public API names and preserve original API.
  */
-class PianoGenie extends PianoGenieAutoDt {}
-class PianoGenieChord extends PianoGenieAutoDtChord {}
-class PianoGenieKeysig extends PianoGenieAutoDtKeysig {}
-class PianoGenieChordKeysig extends PianoGenieAutoDtChordKeysig {}
+class PianoGenie extends PianoGenieAutoDt { }
+class PianoGenieChord extends PianoGenieAutoDtChord { }
+class PianoGenieKeysig extends PianoGenieAutoDtKeysig { }
+class PianoGenieChordKeysig extends PianoGenieAutoDtChordKeysig { }
 
-export { 
-  PianoGenie, 
-  PianoGenieChord, 
-  PianoGenieKeysig, 
-  PianoGenieChordKeysig, 
-  PitchClass, 
-  ChordFamily 
+export {
+  PianoGenie,
+  PianoGenieChord,
+  PianoGenieKeysig,
+  PianoGenieChordKeysig,
+  PitchClass,
+  ChordFamily
 };
