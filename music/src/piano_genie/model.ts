@@ -366,14 +366,13 @@ class PianoGenieBase {
 /**
  * Original Piano Genie config with autoregression and delta time features.
  */
-class PianoGenieAutoDt extends PianoGenieBase {
+class PianoGenieAutoregressiveDeltaTime extends PianoGenieBase {
   // Execution state.
   private lastOutput: number;
   private lastTime: Date;
   private time: Date;
   private deltaTimeOverride: number;
 
-  // Inherits parent docstring.
   protected getRnnInputFeats() {
     // Initialize decoder feats array.
     const feats: tf.Tensor1D = tf.tidy(() => {
@@ -420,7 +419,6 @@ class PianoGenieAutoDt extends PianoGenieBase {
     return feats;
   }
 
-  // Inherits parent docstring.
   nextWithCustomSamplingFunction(
     button: number,
     sampleFunc: (logits: tf.Tensor1D) => tf.Scalar) {
@@ -452,7 +450,6 @@ class PianoGenieAutoDt extends PianoGenieBase {
     this.deltaTimeOverride = deltaTime;
   }
 
-  // Inherits parent docstring.
   resetState() {
     super.resetState();
     this.lastOutput = -1;
@@ -499,11 +496,11 @@ enum ChordFamily {
 /**
  * Piano Genie conditioned on chords.
  */
-class PianoGenieAutoDtChord extends PianoGenieAutoDt {
+class PianoGenieAutoregressiveDeltaTimeChord 
+extends PianoGenieAutoregressiveDeltaTime {
   private chordRoot: PitchClass;
   private chordFamily: ChordFamily;
 
-  // Inherits parent docstring.
   protected getRnnInputFeats() {
     // Initialize decoder feats array.
     const feats: tf.Tensor1D = tf.tidy(() => {
@@ -551,7 +548,6 @@ class PianoGenieAutoDtChord extends PianoGenieAutoDt {
     this.chordFamily = chordFamily;
   }
 
-  // Inherits parent docstring.
   resetState() {
     super.resetState();
     this.chordRoot = PitchClass.None;
@@ -562,7 +558,8 @@ class PianoGenieAutoDtChord extends PianoGenieAutoDt {
 /**
  * Piano Genie conditioned on key signature.
  */
-class PianoGenieAutoDtKeysig extends PianoGenieAutoDt {
+class PianoGenieAutoregressiveDeltaTimeKeysig 
+extends PianoGenieAutoregressiveDeltaTime {
   private keySignature: PitchClass;
 
   protected getRnnInputFeats() {
@@ -595,22 +592,21 @@ class PianoGenieAutoDtKeysig extends PianoGenieAutoDt {
     this.keySignature = keySignature;
   }
 
-  // Inherits parent docstring.
   resetState() {
     super.resetState();
     this.keySignature = PitchClass.None;
   }
 }
 
+// TypeScript does not support multiple inheritance.
 /**
- * Piano Genie conditioned on chord and key signature. Unfortunately multiple 
- * inheritance is not supported in TypeScript so we have to do this manually.
+ * Piano Genie conditioned on chord and key signature.
  */
-class PianoGenieAutoDtChordKeysig extends PianoGenieAutoDtKeysig {
+class PianoGenieAutoregressiveDeltaTimeChordKeysig 
+extends PianoGenieAutoregressiveDeltaTimeKeysig {
   private chordRoot: PitchClass;
   private chordFamily: ChordFamily;
 
-  // Inherits parent docstring.
   protected getRnnInputFeats() {
     // Initialize decoder feats array.
     const feats: tf.Tensor1D = tf.tidy(() => {
@@ -658,7 +654,6 @@ class PianoGenieAutoDtChordKeysig extends PianoGenieAutoDtKeysig {
     this.chordFamily = chordFamily;
   }
 
-  // Inherits parent docstring.
   resetState() {
     super.resetState();
     this.chordRoot = PitchClass.None;
@@ -669,10 +664,11 @@ class PianoGenieAutoDtChordKeysig extends PianoGenieAutoDtKeysig {
 /**
  * Simplify public API names and preserve original API.
  */
-class PianoGenie extends PianoGenieAutoDt { }
-class PianoGenieChord extends PianoGenieAutoDtChord { }
-class PianoGenieKeysig extends PianoGenieAutoDtKeysig { }
-class PianoGenieChordKeysig extends PianoGenieAutoDtChordKeysig { }
+class PianoGenie extends PianoGenieAutoregressiveDeltaTime { }
+class PianoGenieChord extends PianoGenieAutoregressiveDeltaTimeChord { }
+class PianoGenieKeysig extends PianoGenieAutoregressiveDeltaTimeKeysig { }
+class PianoGenieChordKeysig extends 
+PianoGenieAutoregressiveDeltaTimeChordKeysig { }
 
 export {
   PianoGenie,
