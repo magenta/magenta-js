@@ -205,7 +205,7 @@ function initModelSelector() {
     const condtype = GENIE_CHECKPOINTS[i][1];
     const option = document.createElement('option') as HTMLOptionElement;
     option.text = text;
-    if (condtype === 'dt_only') {
+    if (i === 0) {
       option.selected = true;
     }
     modelSelector.add(option);
