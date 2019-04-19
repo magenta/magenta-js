@@ -19,12 +19,12 @@ import * as mm from '../src/index';
 import { CHECKPOINTS_DIR } from './common';
 
 /*
-In addition to these recommended checkpoints, there are a number of alternative
-checkpoints for each conditioning configurations. Depending on your application,
-you may find that a different checkpoint is preferrable to our recommendations.
+In addition to the recommended checkpoints below, there are a number of
+alternative checkpoints for each conditioning configuration. Depending on your
+application, you may find one of the alternatives preferrable.
 
 Each checkpoint is named as "COND_TYPE/encA_kpBB_CCCCCC". If none of the
-following explanation of this naming convention means anything to you, you might
+following explanation of this naming convention means anything to you, you can
 simply consider the other checkpoints as alternatives and try out their behavior
 in your application. In all likelihood, the performance of all the checkpoints
 for a given conditioning configuration will be quite similar.
