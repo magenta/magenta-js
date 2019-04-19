@@ -15,54 +15,82 @@
  * limitations under the License.
  */
 
-import * as Tone from 'tone';
 import * as mm from '../src/index';
 import { CHECKPOINTS_DIR } from './common';
 
+/*
+In addition to these recommended checkpoints, there are a number of alternative
+checkpoints for each conditioning configurations. Depending on your application,
+you may find that a different checkpoint is preferrable to our recommendations.
+
+Each checkpoint is named as "COND_TYPE/encA_kpBB_CCCCCC". If none of the
+following explanation of this naming convention means anything to you, you might
+simply consider the other checkpoints as alternatives and try out their behavior
+in your application. In all likelihood, the performance of all the checkpoints
+for a given conditioning configuration will be quite similar.
+
+COND_TYPE is the type of conditioning information for that model: one of
+["dt_only", "keysig", "chord", "keysig_chordfamily", "keysig_chord"].
+
+A=0 means that the Piano Genie encoder did not receive the conditioning features
+during training. A=1 means that the encoder *did* receive the features. While we
+only use the decoder for performance, the inclusion of conditioning features in
+the encoder during training may alter the performance mechanics of the decoder.
+
+BB=05 means that half of the conditioning information was randomly discarded
+during training, so those models can be safely played with or without specifying
+conditioning information. BB=10 means that the conditioning information was
+never discarded, so playing those models *without* specifying conditioning
+information may lead to unspecified behavior.
+
+CCCCCC refers to the number of minibatches the model saw during training (these
+numbers differ because we use early stopping).
+
+dt_only
+- ${GENIE_DIR}/epiano/stp_iq_auto_contour_dt_166006 (original Piano Genie)
+- ${GENIE_DIR}/maestro/dt_only/enc0_kp10_110114
+- ${GENIE_DIR}/maestro/dt_only/enc1_kp10_135091
+
+keysig
+- ${GENIE_DIR}/maestro/keysig/enc0_kp05_114087
+- ${GENIE_DIR}/maestro/keysig/enc1_kp05_159962
+
+chord
+- ${GENIE_DIR}/maestro/chord/enc0_kp05_111680
+- ${GENIE_DIR}/maestro/chord/enc0_kp05_132241
+- ${GENIE_DIR}/maestro/chord/enc0_kp10_099645
+- ${GENIE_DIR}/maestro/chord/enc1_kp05_152860
+- ${GENIE_DIR}/maestro/chord/enc1_kp05_153966
+- ${GENIE_DIR}/maestro/chord/enc1_kp10_121447
+
+keysig_chordfamily
+- ${GENIE_DIR}/maestro/keysig_chordfamily/enc0_kp05_126711
+- ${GENIE_DIR}/maestro/keysig_chordfamily/enc1_kp05_172469
+
+keysig_chord
+- ${GENIE_DIR}/maestro/keysig_chord/enc0_kp05_192822
+- ${GENIE_DIR}/maestro/keysig_chord/enc1_kp05_159786
+*/
 const GENIE_DIR = `${CHECKPOINTS_DIR}/piano_genie/model`;
-const GENIE_CHECKPOINTS: {[key:string]: {[key:string]: string}} = {
-  // Models conditioned on performance timing features
-  dt_only: {
-    // Original Piano Genie trained on an older version of the MAESTRO dataset.
-    v1: `${GENIE_DIR}/epiano/stp_iq_auto_contour_dt_166006`,
-    // Trained on MAESTRO without timing in encoder.
-    enc0_kp10: `${GENIE_DIR}/maestro/dt_only/enc0_kp10_110114`,
-    // Trained on MAESTRO with timing in encoder.
-    enc1_kp10: `${GENIE_DIR}/maestro/dt_only/enc1_kp10_135091`,
-  },
-  // Models conditioned on timing and key signature.
-  keysig: {
-    // Conditioning features *not* in encoder.
-    enc0_kp05: `${GENIE_DIR}/maestro/keysig/enc0_kp05_114087`,
-    // Conditioning features in encoder.
-    enc1_kp05: `${GENIE_DIR}/maestro/keysig/enc1_kp05_159962`,
-  },
-  // Models conditioned on timing, chord root, and chord family.
-  chord: {
-    // Conditioning features not in encoder and optional dropout.
-    enc0_kp05_a: `${GENIE_DIR}/maestro/chord/enc0_kp05_111680`,
-    enc0_kp05_b: `${GENIE_DIR}/maestro/chord/enc0_kp05_132241`,
-    enc0_kp10: `${GENIE_DIR}/maestro/chord/enc0_kp10_099645`,
-    // Conditioning features in encoder and optional dropout.
-    enc1_kp05_a: `${GENIE_DIR}/maestro/chord/enc1_kp05_152860`,
-    enc1_kp05_b: `${GENIE_DIR}/maestro/chord/enc1_kp05_153966`,
-    enc1_kp10: `${GENIE_DIR}/maestro/chord/enc1_kp10_121447`,
-  },
-  // Models conditioned on timing, key signature, and chord family.
-  keysig_chordfamily: {
-    // Conditioning features *not* in encoder.
-    enc0_kp05: `${GENIE_DIR}/maestro/keysig_chordfamily/enc0_kp05_126711`,
-    // Conditioning features in encoder.
-    enc1_kp05: `${GENIE_DIR}/maestro/keysig_chordfamily/enc0_kp05_126711`,
-  },
-  // Models conditioned on timing, key signature, chord root, and chord family.
-  keysig_chord: {
-    // Conditioning features *not* in encoder.
-    enc0_kp05: `${GENIE_DIR}/maestro/keysig_chord/enc0_kp05_192822`,
-    // Conditioning features in encoder.
-    enc1_kp05: `${GENIE_DIR}/maestro/keysig_chord/enc1_kp05_159786`,
-  },
-};
+const GENIE_CHECKPOINTS: Array<[string, string, string]> = [
+  [
+    'No conditioning', 'dt_only',
+    `${GENIE_DIR}/epiano/stp_iq_auto_contour_dt_166006`],
+  [
+    'Key signature', 'keysig',
+    `${GENIE_DIR}/maestro/keysig/enc1_kp05_159962`],
+  [
+    'Chord', 'chord',
+    `${GENIE_DIR}/maestro/chord/enc1_kp05_153966`],
+  [
+    'Key signature and chord family', 'keysig_chordfamily',
+    `${GENIE_DIR}/maestro/keysig_chordfamily/enc1_kp05_172469`],
+  [
+    'Key signature and chord', 'keysig_chord',
+    `${GENIE_DIR}/maestro/keysig_chord/enc1_kp05_159786`],
+];
+const COND_TYPES = [
+  'dt_only', 'keysig', 'chord', 'keysig_chordfamily', 'keysig_chord'];
 
 const NUM_BUTTONS = 8;
 const LOWEST_PIANO_KEY_MIDI_NOTE = 21;
@@ -77,44 +105,51 @@ function resetConditioningSelectors() {
   }
 }
 
-function selectModel(condtype: string, model: string) {
+function selectModel(n: number) {
   document.getElementById('loading').style.display = 'block';
   document.getElementById('loaded').style.display = 'none';
 
   resetConditioningSelectors();
 
-  const ckpt = GENIE_CHECKPOINTS[condtype][model];
+  const condtype = GENIE_CHECKPOINTS[n][1];
+  const ckpt = GENIE_CHECKPOINTS[n][2];
 
   if (genie !== undefined) {
     genie.dispose();
   }
   genie = undefined;
 
-  if (condtype === 'dt_only') {
-    genie = new mm.PianoGenie(ckpt);
-  } else if (condtype === 'keysig') {
-    genie = new mm.PianoGenieKeysig(ckpt);
-  } else if (condtype === 'chord') {
-    genie = new mm.PianoGenieChord(ckpt);
-  } else if (condtype === 'keysig_chordfamily') {
-    genie = new mm.PianoGenieKeysigChordFamily(ckpt);
-  } else if (condtype === 'keysig_chord') {
-    genie = new mm.PianoGenieKeysigChord(ckpt);
-  } else {
-    throw new Error();
+  switch (condtype) {
+    case 'dt_only':
+      genie = new mm.PianoGenie(ckpt);
+      break;
+    case 'keysig':
+      genie = new mm.PianoGenieKeysig(ckpt);
+      break;
+    case 'chord':
+      genie = new mm.PianoGenieChord(ckpt);
+      break;
+    case 'keysig_chordfamily':
+      genie = new mm.PianoGenieKeysigChordFamily(ckpt);
+      break;
+    case 'keysig_chord':
+      genie = new mm.PianoGenieKeysigChord(ckpt);
+      break;
+    default:
+      throw new Error();
   }
 
   genie.initialize().then(() => {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('loaded').style.display = 'block';
 
-    for (const c in GENIE_CHECKPOINTS) {
+    COND_TYPES.forEach((c) => {
       if (c === condtype) {
         document.getElementById(c).style.display = 'block';
       } else {
         document.getElementById(c).style.display = 'none';
       }
-    }
+    });
   });
 }
 
@@ -165,34 +200,33 @@ function initModelControls() {
 
 function initModelSelector() {
   const modelSelector = document.getElementById('models') as HTMLSelectElement;
-  for (const c in GENIE_CHECKPOINTS) {
-    for (const n in GENIE_CHECKPOINTS[c]) {
-      const option = document.createElement('option') as HTMLOptionElement;
-      option.text = c + ' ' + n;
-      if (c === 'dt_only' && n === 'v1') {
-        option.selected = true;
-      }
-      modelSelector.add(option);
+  for (let i = 0; i < GENIE_CHECKPOINTS.length; ++i) {
+    const text = GENIE_CHECKPOINTS[i][0];
+    const condtype = GENIE_CHECKPOINTS[i][1];
+    const option = document.createElement('option') as HTMLOptionElement;
+    option.text = text;
+    if (condtype === 'dt_only') {
+      option.selected = true;
     }
+    modelSelector.add(option);
   }
   modelSelector.onchange = () => {
-    const cn = modelSelector.options[modelSelector.selectedIndex].text;
-    const [c, n] = cn.split(' ');
-    selectModel(c, n);
+    selectModel(modelSelector.selectedIndex);
   };
 }
 
 function initGlobalControlsAndAudio() {
   const heldButtonToMidiNote = new Map<number, number>();
-  const synth = new Tone.PolySynth(NUM_BUTTONS, Tone.FMSynth).toMaster();
+  const tone = mm.Player.tone;
+  const synth = new tone.PolySynth(NUM_BUTTONS, tone.FMSynth).toMaster();
 
   // Bind keyboard controls
   document.onkeydown = (evt: KeyboardEvent) => {
     if (genie === undefined) {
       return;
     }
-    if (Tone.context.state !== 'running') {
-      Tone.context.resume();
+    if (tone.context.state !== 'running') {
+      tone.context.resume();
     }
     const key = evt.keyCode;
     const button = key - 49;
@@ -204,7 +238,7 @@ function initGlobalControlsAndAudio() {
       const output = genie.next(button, temperature);
       const note = output + LOWEST_PIANO_KEY_MIDI_NOTE;
 
-      synth.triggerAttack(Tone.Frequency(note, 'midi'));
+      synth.triggerAttack(tone.Frequency(note, 'midi'));
       heldButtonToMidiNote.set(button, note);
     }
   };
@@ -219,7 +253,7 @@ function initGlobalControlsAndAudio() {
       if (heldButtonToMidiNote.has(button)) {
         const note = heldButtonToMidiNote.get(button);
 
-        synth.triggerRelease(Tone.Frequency(note, 'midi'));
+        synth.triggerRelease(tone.Frequency(note, 'midi'));
         heldButtonToMidiNote.delete(button);
       }
     }
@@ -240,5 +274,5 @@ function initGlobalControlsAndAudio() {
 
 initModelControls();
 initModelSelector();
-selectModel('dt_only', 'v1');
+selectModel(0);
 initGlobalControlsAndAudio();
