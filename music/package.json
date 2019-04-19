@@ -49,6 +49,7 @@
     "lint": "tslint -c ../tslint.json -p . -t verbose",
     "test": "ts-node node_modules/tape/bin/tape src/**/*_test.ts",
     "build-demos": "webpack --config ./webpack/demo.config.ts",
+    "genie": "webpack --config ./webpack/demo.config.ts --demos=piano_genie_conditioned",
     "publish-demos": "yarn build-demos && mkdir -p ../docs/music/demos && cp demos/*.{js,html,mid,css} ../docs/music/demos",
     "run-demos": "webpack-dev-server --config ./webpack/demo.config.ts",
     "serve-demos": "http-server demos/",

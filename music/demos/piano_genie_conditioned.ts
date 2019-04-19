@@ -16,20 +16,10 @@
  */
 
 import * as Tone from 'tone';
-//import * as mm from '../src/index';
+import * as mm from '../src/index';
 import { CHECKPOINTS_DIR } from './common';
-import {
-  PianoGenie,
-  PianoGenieChord,
-  PianoGenieKeysig,
-  PianoGenieKeysigChordFamily,
-  PianoGenieKeysigChord,
-//  PitchClass,
-//  ChordFamily,
-} from '../src/piano_genie/model';
 
 const GENIE_DIR = `${CHECKPOINTS_DIR}/piano_genie/model`;
-// tslint:disable:max-line-length
 const GENIE_CHECKPOINTS: {[key:string]: {[key:string]: string}} = {
   // Models conditioned on performance timing features
   dt_only: {
@@ -73,12 +63,11 @@ const GENIE_CHECKPOINTS: {[key:string]: {[key:string]: string}} = {
     enc1_kp05: `${GENIE_DIR}/maestro/keysig_chord/enc1_kp05_159786`,
   },
 };
-// tslint:enable:max-line-length
 
 const NUM_BUTTONS = 8;
 const LOWEST_PIANO_KEY_MIDI_NOTE = 21;
 
-let genie: PianoGenie;
+let genie: mm.PianoGenie;
 let temperature = 0.25;
 
 function resetConditioningSelectors() {
@@ -102,15 +91,15 @@ function selectModel(condtype: string, model: string) {
   genie = undefined;
 
   if (condtype === 'dt_only') {
-    genie = new PianoGenie(ckpt);
+    genie = new mm.PianoGenie(ckpt);
   } else if (condtype === 'keysig') {
-    genie = new PianoGenieKeysig(ckpt);
+    genie = new mm.PianoGenieKeysig(ckpt);
   } else if (condtype === 'chord') {
-    genie = new PianoGenieChord(ckpt);
+    genie = new mm.PianoGenieChord(ckpt);
   } else if (condtype === 'keysig_chordfamily') {
-    genie = new PianoGenieKeysigChordFamily(ckpt);
+    genie = new mm.PianoGenieKeysigChordFamily(ckpt);
   } else if (condtype === 'keysig_chord') {
-    genie = new PianoGenieKeysigChord(ckpt);
+    genie = new mm.PianoGenieKeysigChord(ckpt);
   } else {
     throw new Error();
   }
@@ -132,16 +121,16 @@ function selectModel(condtype: string, model: string) {
 function initModelControls() {
   const kk = document.getElementById('keysig_keysig') as HTMLSelectElement;
   kk.onchange = () => {
-    (genie as PianoGenieKeysig).setKeySignature(Number(kk.value));
+    (genie as mm.PianoGenieKeysig).setKeySignature(Number(kk.value));
   };
 
   const ccr = document.getElementById('chord_chordroot') as HTMLSelectElement;
   const ccf = document.getElementById('chord_chordfamily') as HTMLSelectElement;
   ccr.onchange = () => {
-    (genie as PianoGenieChord).setChordRoot(Number(ccr.value));
+    (genie as mm.PianoGenieChord).setChordRoot(Number(ccr.value));
   };
   ccf.onchange = () => {
-    (genie as PianoGenieChord).setChordFamily(Number(ccf.value));
+    (genie as mm.PianoGenieChord).setChordFamily(Number(ccf.value));
   };
 
   const kcfk = document.getElementById(
@@ -149,10 +138,12 @@ function initModelControls() {
   const kcfcf = document.getElementById(
     'keysig_chordfamily_chordfamily') as HTMLSelectElement;
   kcfk.onchange = () => {
-    (genie as PianoGenieKeysigChordFamily).setKeySignature(Number(kcfk.value));
+    (genie as mm.PianoGenieKeysigChordFamily).setKeySignature(
+      Number(kcfk.value));
   };
   kcfcf.onchange = () => {
-    (genie as PianoGenieKeysigChordFamily).setChordFamily(Number(kcfcf.value));
+    (genie as mm.PianoGenieKeysigChordFamily).setChordFamily(
+      Number(kcfcf.value));
   };
 
   const kck = document.getElementById(
@@ -162,13 +153,13 @@ function initModelControls() {
   const kccf = document.getElementById(
     'keysig_chord_chordfamily') as HTMLSelectElement;
   kck.onchange = () => {
-    (genie as PianoGenieKeysigChord).setKeySignature(Number(kck.value));
+    (genie as mm.PianoGenieKeysigChord).setKeySignature(Number(kck.value));
   };
   kccr.onchange = () => {
-    (genie as PianoGenieKeysigChord).setChordRoot(Number(kccr.value));
+    (genie as mm.PianoGenieKeysigChord).setChordRoot(Number(kccr.value));
   };
   kccf.onchange = () => {
-    (genie as PianoGenieKeysigChord).setChordFamily(Number(kccf.value));
+    (genie as mm.PianoGenieKeysigChord).setChordFamily(Number(kccf.value));
   };
 }
 
