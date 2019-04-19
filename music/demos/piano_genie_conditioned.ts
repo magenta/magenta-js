@@ -202,7 +202,6 @@ function initModelSelector() {
   const modelSelector = document.getElementById('models') as HTMLSelectElement;
   for (let i = 0; i < GENIE_CHECKPOINTS.length; ++i) {
     const text = GENIE_CHECKPOINTS[i][0];
-    const condtype = GENIE_CHECKPOINTS[i][1];
     const option = document.createElement('option') as HTMLOptionElement;
     option.text = text;
     if (i === 0) {
