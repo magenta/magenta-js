@@ -128,6 +128,7 @@
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-not-exported"><a href="_gansynth_custom_layers_.boxupscale.html#supportsmasking" class="tsd-kind-icon">supports<wbr>Masking</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-not-exported"><a href="_gansynth_custom_layers_.boxupscale.html#trainable" class="tsd-kind-icon">trainable</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-not-exported"><a href="_gansynth_custom_layers_.boxupscale.html#trainableweights" class="tsd-kind-icon">trainable<wbr>Weights</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected tsd-is-not-exported"><a href="_gansynth_custom_layers_.boxupscale.html#trainable_" class="tsd-kind-icon">trainable_</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-not-exported"><a href="_gansynth_custom_layers_.boxupscale.html#updatable" class="tsd-kind-icon">updatable</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-not-exported"><a href="_gansynth_custom_layers_.boxupscale.html#updates" class="tsd-kind-icon">updates</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-not-exported"><a href="_gansynth_custom_layers_.boxupscale.html#weights" class="tsd-kind-icon">weights</a></li>
@@ -317,6 +318,22 @@
 							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Retrieves the input tensor(s) of a layer.</p>
+						</div>
+						<p>Only applicable if the layer has exactly one inbound node,
+						i.e. if it is connected to one incoming layer.</p>
+						<dl class="tsd-comment-tags">
+							<dt>returns</dt>
+							<dd><p>Input tensor or list of input tensors.</p>
+							</dd>
+							<dt>exception</dt>
+							<dd><p>AttributeError if the layer is connected to more than one
+								incoming layers.</p>
+							</dd>
+						</dl>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-not-exported">
 					<a name="inputspec" class="tsd-anchor"></a>
@@ -328,6 +345,17 @@
 							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>List of InputSpec class instances.</p>
+						</div>
+						<p>Each entry describes one required input:</p>
+						<ul>
+							<li>ndim</li>
+							<li>dtype
+							A layer with <code>n</code> input tensors must have an <code>inputSpec</code> of length <code>n</code>.</li>
+						</ul>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-not-exported">
 					<a name="losses" class="tsd-anchor"></a>
@@ -350,6 +378,11 @@
 							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Name for this layer. Must be unique within a model.</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-not-exported">
 					<a name="nontrainableweights" class="tsd-anchor"></a>
@@ -383,6 +416,22 @@
 							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Retrieves the output tensor(s) of a layer.</p>
+						</div>
+						<p>Only applicable if the layer has exactly one inbound node,
+						i.e. if it is connected to one incoming layer.</p>
+						<dl class="tsd-comment-tags">
+							<dt>returns</dt>
+							<dd><p>Output tensor or list of output tensors.</p>
+							</dd>
+							<dt>exception</dt>
+							<dd><p>AttributeError if the layer is connected to more than one
+								incoming layers.</p>
+							</dd>
+						</dl>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-not-exported">
 					<a name="outputshape" class="tsd-anchor"></a>
@@ -394,6 +443,13 @@
 							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<dl class="tsd-comment-tags">
+							<dt>doc</dt>
+							<dd><p>{heading: &#39;Models&#39;, &#39;subheading&#39;: &#39;Classes&#39;}</p>
+							</dd>
+						</dl>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-not-exported">
 					<a name="scale" class="tsd-anchor"></a>
@@ -449,6 +505,22 @@
 						</ul>
 					</aside>
 				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected tsd-is-not-exported">
+					<a name="trainable_" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagProtected">Protected</span> trainable_</h3>
+					<div class="tsd-signature tsd-kind-icon">trainable_<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<aside class="tsd-sources">
+						<p>Inherited from Layer.trainable_</p>
+						<ul>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Whether the layer weights will be updated during training.</p>
+						</div>
+					</div>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-not-exported">
 					<a name="updatable" class="tsd-anchor"></a>
 					<h3>updatable</h3>
@@ -481,6 +553,12 @@
 							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>The concatenation of the lists trainableWeights and nonTrainableWeights
+							(in this order).</p>
+						</div>
+					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group tsd-is-not-exported">
@@ -499,6 +577,13 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<dl class="tsd-comment-tags">
+									<dt>doc</dt>
+									<dd><p>{heading: &#39;Models&#39;, &#39;subheading&#39;: &#39;Classes&#39;}</p>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -523,6 +608,13 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<dl class="tsd-comment-tags">
+									<dt>doc</dt>
+									<dd><p>{heading: &#39;Models&#39;, &#39;subheading&#39;: &#39;Classes&#39;}</p>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -565,6 +657,13 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<dl class="tsd-comment-tags">
+									<dt>doc</dt>
+									<dd><p>{heading: &#39;Models&#39;, &#39;subheading&#39;: &#39;Classes&#39;}</p>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -599,10 +698,27 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Checks compatibility between the layer and provided inputs.</p>
+								</div>
+								<p>This checks that the tensor(s) <code>input</code>
+									verify the input assumptions of the layer
+								(if any). If not, exceptions are raised.</p>
+								<dl class="tsd-comment-tags">
+									<dt>exception</dt>
+									<dd><p>ValueError in case of mismatch between
+										the provided inputs and the expectations of the layer.</p>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>inputs: <span class="tsd-signature-type">Tensor</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Tensor</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">SymbolicTensor</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">SymbolicTensor</span><span class="tsd-signature-symbol">[]</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Input tensor or list of input tensors.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -641,6 +757,13 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<dl class="tsd-comment-tags">
+									<dt>doc</dt>
+									<dd><p>{heading: &#39;Models&#39;, &#39;subheading&#39;: &#39;Classes&#39;}</p>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -665,6 +788,12 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Retrieves the Layer&#39;s current loss values.</p>
+								</div>
+								<p>Used for regularizers during training.</p>
+							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Scalar</span><span class="tsd-signature-symbol">[]</span></h4>
 						</li>
 					</ul>
@@ -713,6 +842,12 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Clear call hook.
+									This is currently used for testing only.</p>
+								</div>
+							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 						</li>
 					</ul>
@@ -731,19 +866,32 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Computes an output mask tensor.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>inputs: <span class="tsd-signature-type">Tensor</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Tensor</span><span class="tsd-signature-symbol">[]</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Tensor or list of tensors.</p>
+									</div>
 								</li>
 								<li>
 									<h5><span class="tsd-flag ts-flagOptional">Optional</span> mask: <span class="tsd-signature-type">Tensor</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Tensor</span><span class="tsd-signature-symbol">[]</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Tensor or list of tensors.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Tensor</span>
 								<span class="tsd-signature-symbol"> | </span>
 								<span class="tsd-signature-type">Tensor</span><span class="tsd-signature-symbol">[]</span>
 							</h4>
+							<p>null or a tensor (or list of tensors, one per output tensor of the
+							layer).</p>
 						</li>
 					</ul>
 				</section>
@@ -787,6 +935,13 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<dl class="tsd-comment-tags">
+									<dt>doc</dt>
+									<dd><p>{heading: &#39;Models&#39;, &#39;subheading&#39;: &#39;Classes&#39;}</p>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
 						</li>
 					</ul>
@@ -805,6 +960,13 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<dl class="tsd-comment-tags">
+									<dt>doc</dt>
+									<dd><p>{heading: &#39;Models&#39;, &#39;subheading&#39;: &#39;Classes&#39;}</p>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">DisposeResult</span></h4>
 						</li>
 					</ul>
@@ -823,7 +985,13 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Dispose the weight variables that this Layer instance holds.</p>
+								</div>
+							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+							<p>Number of disposed variables.</p>
 						</li>
 					</ul>
 				</section>
@@ -865,6 +1033,13 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<dl class="tsd-comment-tags">
+									<dt>doc</dt>
+									<dd><p>{heading: &#39;Models&#39;, &#39;subheading&#39;: &#39;Classes&#39;}</p>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ConfigDict</span></h4>
 						</li>
 					</ul>
@@ -883,16 +1058,27 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Retrieves the input tensor(s) of a layer at a given node.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>nodeIndex: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Integer, index of the node from which to retrieve the
+											attribute. E.g. <code>nodeIndex=0</code> will correspond to the first time the layer
+										was called.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">SymbolicTensor</span>
 								<span class="tsd-signature-symbol"> | </span>
 								<span class="tsd-signature-type">SymbolicTensor</span><span class="tsd-signature-symbol">[]</span>
 							</h4>
+							<p>A tensor (or list of tensors if the layer has multiple inputs).</p>
 						</li>
 					</ul>
 				</section>
@@ -910,16 +1096,27 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Retrieves the output tensor(s) of a layer at a given node.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>nodeIndex: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Integer, index of the node from which to retrieve the
+											attribute. E.g. <code>nodeIndex=0</code> will correspond to the first time the layer
+										was called.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">SymbolicTensor</span>
 								<span class="tsd-signature-symbol"> | </span>
 								<span class="tsd-signature-type">SymbolicTensor</span><span class="tsd-signature-symbol">[]</span>
 							</h4>
+							<p>A tensor (or list of tensors if the layer has multiple outputs).</p>
 						</li>
 					</ul>
 				</section>
@@ -937,6 +1134,13 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<dl class="tsd-comment-tags">
+									<dt>doc</dt>
+									<dd><p>{heading: &#39;Models&#39;, &#39;subheading&#39;: &#39;Classes&#39;}</p>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -988,6 +1192,14 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Reset the states of the layer.</p>
+								</div>
+								<p>This method of the base Layer class is essentially a no-op.
+									Subclasses that are stateful (e.g., stateful RNNs) should override this
+								method.</p>
+							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 						</li>
 					</ul>
@@ -1006,10 +1218,18 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Set call hook.
+									This is currently used for testing only.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>callHook: <span class="tsd-signature-type">CallHook</span></h5>
+									<div class="tsd-comment tsd-typography">
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -1030,10 +1250,22 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Set the fast-weight-initialization flag.</p>
+								</div>
+								<p>In cases where the initialized weight values will be immediately
+									overwritten by loaded weight values during model loading, setting
+									the flag to <code>true</code> saves unnecessary calls to potentially expensive
+								initializers and speeds up the loading process.</p>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>value: <span class="tsd-signature-type">boolean</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Target value of the flag.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -1054,6 +1286,13 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<dl class="tsd-comment-tags">
+									<dt>doc</dt>
+									<dd><p>{heading: &#39;Models&#39;, &#39;subheading&#39;: &#39;Classes&#39;}</p>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -1078,10 +1317,19 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Check compatibility between input shape and this layer&#39;s batchInputShape.</p>
+								</div>
+								<p>Print warning if any incompatibility is found.</p>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>inputShape: <span class="tsd-signature-type">Shape</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Input shape to be checked.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -1102,6 +1350,12 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<dl class="tsd-comment-tags">
+									<dt>nocollapse</dt>
+									<dd></dd>
+								</dl>
+							</div>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
 							<ul class="tsd-type-parameters">
 								<li>
@@ -1135,16 +1389,30 @@
 									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/gansynth_custom/layers.ts">gansynth_custom/layers.ts</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Converts a layer and its index to a unique (immutable type) name.
+									This function is used internally with <code>this.containerNodes</code>.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>layer: <span class="tsd-signature-type">Layer</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The layer.</p>
+									</div>
 								</li>
 								<li>
 									<h5>nodeIndex: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The layer&#39;s position (e.g. via enumerate) in a list of
+										nodes.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+							<p>The unique name.</p>
 						</li>
 					</ul>
 				</section>
@@ -1239,6 +1507,9 @@
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-not-exported">
 								<a href="_gansynth_custom_layers_.boxupscale.html#trainableweights" class="tsd-kind-icon">trainable<wbr>Weights</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected tsd-is-not-exported">
+								<a href="_gansynth_custom_layers_.boxupscale.html#trainable_" class="tsd-kind-icon">trainable_</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-not-exported">
 								<a href="_gansynth_custom_layers_.boxupscale.html#updatable" class="tsd-kind-icon">updatable</a>
