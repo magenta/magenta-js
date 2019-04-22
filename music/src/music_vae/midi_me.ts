@@ -220,6 +220,22 @@ class MidiMe {
   }
 
   /**
+   * Encodes a batch of latent vectors.
+   *
+   * @param z The batch of latent vectors, of shape `[numSamples,
+   * this.config['input_size']]`. This is the vector that you would get from
+   * passing a `NoteSequence` to a `MusicVAE`s `encode` method.
+   * @returns A latent vector of size this.config['output_size'].
+   */
+  async encode(z: tf.Tensor2D) {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+    const [z_, , ] = this.encoder.predict(z) as tf.Tensor[];
+    return z_;
+  }
+
+  /**
    * Reconstructs an input latent vector.
    *
    * @param z The input latent vector
