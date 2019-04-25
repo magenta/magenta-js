@@ -23,8 +23,7 @@ import * as logging from '../core/logging';
 export {MidiMe};
 
 /**
- * Class for transforming a single variable Gaussian distribution into a
- * multivariate one.
+ * Class for sampling from a multivariate Gaussian distribution.
  */
 class SamplingLayer extends tf.layers.Layer {
   constructor() {
@@ -48,21 +47,22 @@ class SamplingLayer extends tf.layers.Layer {
 
 /**
  * An interface for providing configurable properties to the MidiMe model.
- * @param input_size The shape of the VAE input. Since the inputs to this
+ * @param input_size The size of the VAE input. Since the inputs to this
  * VAE are actually latent vectors from MusicVAE, then this number should be
  * equal to the number of latent variables used by MusicVAE (`zDims`). The
  * default is 256.
- * @param output_size The size of the output. The default is 4.
+ * @param latent_size The size of the model's latent vector. The default is 4.
  * @param encoder_layers The shape of the layers in the Encoder network. The
  * default is [1024, 256, 64].
  * @param decoder_layers The shape of the layers in the Decoder network. The
  * default is [64, 256, 1024].
- * @param beta Weight of the latent loss in the total VAE loss. Default is 1.
+ * @param beta Weight of the variational loss in the total VAE loss. Default
+ *     is 1.
  * @param epochs Number of epochs to train for. Default is 10.
  */
 interface MidiMeConfig {
   input_size?: number;
-  output_size?: number;
+  latent_size?: number;
   encoder_layers?: number[];
   decoder_layers?: number[];
   beta?: number;
@@ -100,7 +100,7 @@ class MidiMe {
       encoder_layers: config.encoder_layers || [1024, 256, 64],
       decoder_layers: config.decoder_layers || [64, 256, 1024],
       input_size: config.input_size || 256,
-      output_size: config.output_size || 4,
+      latent_size: config.latent_size || 4,
       beta: config.beta || 1,
       epochs: config.epochs || 10
     };
@@ -145,7 +145,7 @@ class MidiMe {
   /**
    * Trains the `VAE` on the provided data. The number of epochs to train for
    * is taken from the model's configuration.
-   * @param data A `Tensor` of shape `[_, this.config['output_size']]`.
+   * @param data A `Tensor` of shape `[_, this.config['latent_size']]`.
    * @param callback A function to be called at the end of every
    * training epoch, containing the training errors for that epoch.
    */
@@ -198,7 +198,7 @@ class MidiMe {
       await this.initialize();
     }
     return tf.tidy(() => {
-      const randZs = tf.randomNormal([numSamples, this.config['output_size']]);
+      const randZs = tf.randomNormal([numSamples, this.config['latent_size']]);
       return this.decoder.predict(randZs);
     });
   }
@@ -207,7 +207,7 @@ class MidiMe {
    * Decodes a batch of latent vectors.
    *
    * @param z The batch of latent vectors, of shape `[numSamples,
-   *     this.config['output_size']]`.
+   *     this.config['latent_size']]`.
    * @returns A latent vector representing a `NoteSequence`. You can pass
    * this latent vector to a `MusicVAE`s `decode` method to convert it to a
    * `NoteSequence`.
@@ -225,7 +225,7 @@ class MidiMe {
    * @param z The batch of latent vectors, of shape `[numSamples,
    * this.config['input_size']]`. This is the vector that you would get from
    * passing a `NoteSequence` to a `MusicVAE`s `encode` method.
-   * @returns A latent vector of size this.config['output_size'].
+   * @returns A latent vector of size this.config['latent_size'].
    */
   async encode(z: tf.Tensor2D) {
     if (!this.initialized) {
@@ -256,11 +256,11 @@ class MidiMe {
               .apply(x) as tf.SymbolicTensor;
     }
     const mu =
-        this.getAffineLayers(x, this.config['output_size'], input, false) as
+        this.getAffineLayers(x, this.config['latent_size'], input, false) as
         tf.SymbolicTensor;
 
     const sigma =
-        this.getAffineLayers(x, this.config['output_size'], input, true) as
+        this.getAffineLayers(x, this.config['latent_size'], input, true) as
         tf.SymbolicTensor;
 
     const z = new SamplingLayer().apply([mu, sigma]) as tf.SymbolicTensor;
