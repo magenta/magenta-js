@@ -129,12 +129,12 @@ export function sequenceProtoToMidi(ns: INoteSequence) {
     ns.timeSignatures = [{time: 0, numerator: 4, denominator: 4}];
   }
 
-  if (ns.tempos.length !== 1 || isZeroOrUndefined(ns.tempos[0].time)) {
+  if (ns.tempos.length !== 1 || !isZeroOrUndefined(ns.tempos[0].time)) {
     throw new MidiConversionError(
         'NoteSequence must have exactly 1 tempo at time 0');
   }
   if (ns.timeSignatures.length !== 1 ||
-      isZeroOrUndefined(ns.timeSignatures[0].time)) {
+      !isZeroOrUndefined(ns.timeSignatures[0].time)) {
     throw new MidiConversionError(
         'NoteSequence must have exactly 1 time signature at time 0');
   }
