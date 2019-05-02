@@ -48,7 +48,7 @@ missing, or feel free to submit a Pull Request!
 
 ### MusicVAE
 
-[MusicVAE](https://tensorflow.github.io/magenta-js/music/classes/_music_vae_model_.musicvae.html) implements several configurations of Magenta's variational autoencoder model called [MusicVAE][music-vae] including melody and drum "loop" models, 4- and 16-bar "trio" models, chord-conditioned [multi-track](https://g.co/magenta/multitrack) models, and drum performance "humanizations" with GrooVAE.
+[MusicVAE](https://tensorflow.github.io/magenta-js/music/classes/_music_vae_model_.musicvae.html) implements several configurations of Magenta's variational autoencoder model called [MusicVAE][music-vae] including melody and drum "loop" models, 4- and 16-bar "trio" models, chord-conditioned [multi-track](https://g.co/magenta/multitrack) models, and drum performance "humanizations" with [GrooVAE][https://g.co/magenta/groovae].
 
 **Demo Application:** [Endless Trios](https://goo.gl/magenta/endless-trios)
 
