@@ -43,7 +43,7 @@
     "webpack-dev-server": "^3.1.14"
   },
   "scripts": {
-    "prepublish": "in-publish && yarn lint && yarn test && yarn build && yarn docs && yarn bundle || not-in-publish",
+    "prepublish": "in-publish && yarn lint && yarn build && yarn docs && yarn bundle || not-in-publish",
     "build": "tsc && cp src/protobuf/proto.* es5/protobuf",
     "bundle": "webpack --config ./webpack/lib.config.ts",
     "lint": "tslint -c ../tslint.json -p . -t verbose",
