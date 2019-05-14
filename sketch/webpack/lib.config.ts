@@ -6,7 +6,7 @@ module.exports = {
   ...baseConfig,
   mode: 'production',
   entry: {
-    magentasketch: './src/index.ts',
+    magentasketch: './src/lib.ts',
   },
   output:
       {filename: 'magentasketch.js', path: path.resolve(__dirname, '../dist')},
