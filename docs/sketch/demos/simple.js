@@ -14,9 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import * as ms from '../src/index';
-
 const sketch = function(p) {
   let modelState; // Store the hidden states of rnn's neurons.
   const temperature = 0.45; // Controls the amount of uncertainty of the model.
