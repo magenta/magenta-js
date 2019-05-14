@@ -7,28 +7,39 @@
     "jsdelivr": "dist/magentaimage.js",
     "unpkg": "dist/magentaimage.js",
     "dependencies": {
-        "@tensorflow/tfjs": "^0.14.1"
+        "@tensorflow/tfjs": "^1.0.2"
     },
     "devDependencies": {
-        "browserify": "^14.4.0",
+        "@types/file-saver": "^1.3.0",
         "clang-format": "^1.2.3",
+        "file-saver": "^1.3.8",
+        "file-saver-typescript": "^1.0.1",
         "http-server": "^0.11.1",
+        "in-publish": "^2.0.0",
+        "minimist": "^1.2.0",
+        "path": "^0.12.7",
         "ts-node": "^5.0.1",
+        "ts-loader": "^5.3.0",
         "tsify": "^3.0.4",
         "tslint": "^5.9.1",
-        "typedoc": "^0.13.0",
+        "typedoc": "^0.14.2",
         "typedoc-plugin-sourcefile-url": "^1.0.3",
-        "typescript": "^2.7.2"
+        "typescript": "^3.3.3333",
+        "webpack": "^4.24.0",
+        "webpack-cli": "^3.1.2",
+        "webpack-dev-server": "^3.1.14"
     },
     "scripts": {
-        "prepublish": "yarn lint && yarn build && yarn bundle",
+        "prepublish": "in-publish && yarn lint && yarn build && yarn docs && yarn bundle || not-in-publish",
         "build": "tsc",
-        "bundle": "browserify --standalone mi src/index.ts -p [tsify] > dist/magentaimage.js",
+        "bundle": "webpack --config ./webpack/lib.config.ts",
         "lint": "tslint -c ../tslint.json -p . -t verbose",
-        "build-demos": "cd demos && ./build-demos.sh",
+        "build-demos": "webpack --config ./webpack/demo.config.ts",
         "run-demos": "yarn build-demos && http-server demos/",
         "publish-demos": "yarn build-demos && mkdir -p ../docs/image/demos && cp demos/*.{js,html,css,jpg} ../docs/image/demos",
-        "doc": "typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/image/src/arbitrary_stylization/' --out ../docs/image src --mode file --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals && yarn publish-demos"
+        "serve-demos": "http-server demos/",
+        "serve-dist": "http-server dist/",
+        "docs": "sh ./scripts/generate-docs.sh && yarn publish-demos"
     },
     "author": "Magenta",
     "license": "Apache-2.0",

@@ -37,8 +37,8 @@ export class ArbitraryStyleTransferNetwork {
 
   private initialized = false;
 
-  private styleNet: tf.FrozenModel;
-  private transformNet: tf.FrozenModel;
+  private styleNet: tf.GraphModel;
+  private transformNet: tf.GraphModel;
 
   /**
    * `ArbitraryStyleTransferNetwork` constructor.
@@ -68,12 +68,8 @@ export class ArbitraryStyleTransferNetwork {
     this.dispose();
 
     [this.styleNet, this.transformNet] = await Promise.all([
-      tf.loadFrozenModel(
-          this.styleCheckpointURL + '/tensorflowjs_model.pb',
-          this.styleCheckpointURL + '/weights_manifest.json'),
-      tf.loadFrozenModel(
-          this.transformCheckpointURL + '/tensorflowjs_model.pb',
-          this.transformCheckpointURL + '/weights_manifest.json'),
+      tf.loadGraphModel(this.styleCheckpointURL + '/weights_manifest.json'),
+      tf.loadGraphModel(this.transformCheckpointURL + '/weights_manifest.json'),
     ]);
 
     this.initialized = true;
@@ -101,8 +97,10 @@ export class ArbitraryStyleTransferNetwork {
                                  HTMLCanvasElement|
                                  HTMLVideoElement): tf.Tensor4D {
     return tf.tidy(() => {
-      return this.styleNet.predict(
-          tf.fromPixels(style).toFloat().div(tf.scalar(255)).expandDims());
+      return this.styleNet.predict(tf.browser.fromPixels(style)
+                                       .toFloat()
+                                       .div(tf.scalar(255))
+                                       .expandDims());
     }) as tf.Tensor4D;
   }
 
@@ -118,7 +116,10 @@ export class ArbitraryStyleTransferNetwork {
       bottleneck: tf.Tensor4D): tf.Tensor3D {
     return tf.tidy(() => {
       const image: tf.Tensor4D = this.transformNet.predict([
-        tf.fromPixels(content).toFloat().div(tf.scalar(255)).expandDims(),
+        tf.browser.fromPixels(content)
+            .toFloat()
+            .div(tf.scalar(255))
+            .expandDims(),
         bottleneck
       ]) as tf.Tensor4D;
       return image.squeeze();
@@ -149,7 +150,7 @@ export class ArbitraryStyleTransferNetwork {
                                       tf.scalar(1.0 - strength)));
       }
       const stylized = this.produceStylized(content, styleRepresentation);
-      return tf.toPixels(stylized).then((bytes) => {
+      return tf.browser.toPixels(stylized).then((bytes) => {
         const imageData =
             new ImageData(bytes, stylized.shape[1], stylized.shape[0]);
         styleRepresentation.dispose();

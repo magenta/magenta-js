@@ -25,11 +25,11 @@ const styleImg = document.getElementById('style') as HTMLImageElement;
 
 function clearCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.font="36px Roboto";
-  ctx.textAlign="center";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = "#000000";
-  ctx.fillText("...", canvas.width / 2, canvas.height / 2);
+  ctx.font = '36px Roboto';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#000000';
+  ctx.fillText('...', canvas.width / 2, canvas.height / 2);
 }
 
 function stylize() {
