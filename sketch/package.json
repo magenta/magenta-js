@@ -48,7 +48,7 @@
     "run-demos": "yarn build-demos && http-server demos/",
     "serve-demos": "http-server demos/",
     "serve-dist": "http-server dist/",
-    "publish-demos": "yarn build-demos && mkdir -p ../docs/sketch/demos && cp demos/*.{js,html,mid,css} ../docs/sketch/demos",
+    "publish-demos": "yarn build-demos && mkdir -p ../docs/sketch/demos && cp demos/*.{js,html,css} ../docs/sketch/demos",
     "generate-docs": "typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/sketch/src/' --out ../docs/sketch src --mode modules --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals",
     "docs": "sh ./scripts/generate-docs.sh && yarn publish-demos"
   },
