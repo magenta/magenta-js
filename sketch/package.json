@@ -7,11 +7,7 @@
   "jsdelivr": "dist/magentasketch.js",
   "unpkg": "dist/magentasketch.js",
   "dependencies": {
-    "@tensorflow/tfjs": "^1.0.2",
-    "@types/node": "^12.0.1",
-    "fs": "0.0.1-security",
-    "minimist": "^1.2.0",
-    "path": "^0.12.7"
+    "@tensorflow/tfjs": "^1.0.2"
   },
   "devDependencies": {
     "@types/clone": "^0.1.30",
@@ -26,6 +22,9 @@
     "http-server": "^0.11.1",
     "in-publish": "^2.0.0",
     "minimist": "^1.2.0",
+    "@types/node": "^12.0.1",
+    "fs": "0.0.1-security",
+    "path": "^0.12.7",
     "tape": "^4.9.0",
     "ts-loader": "^5.3.0",
     "ts-node": "^5.0.1",
