@@ -43,13 +43,14 @@
     "build": "tsc",
     "bundle": "webpack --config ./webpack/lib.config.ts",
     "lint": "tslint -c ../tslint.json -p . -t verbose",
+    "test": "ts-node node_modules/tape/bin/tape src/**/*_test.ts",
     "build-demos": "webpack --config ./webpack/demo.config.ts",
     "run-demos": "yarn build-demos && http-server demos/",
     "serve-demos": "http-server demos/",
     "serve-dist": "http-server dist/",
     "publish-demos": "yarn build-demos && mkdir -p ../docs/sketch/demos && cp demos/*.{js,html,mid,css} ../docs/sketch/demos",
     "generate-docs": "typedoc --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/sketch/src/' --out ../docs/sketch src --mode modules --excludePrivate --exclude '**/*+(index|test).ts' --excludeExternals",
-    "doc": "yarn generate-docs && yarn publish-demos"
+    "docs": "sh ./scripts/generate-docs.sh && yarn publish-demos"
   },
   "author": "Magenta",
   "license": "Apache-2.0",

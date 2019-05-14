@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import * as ms from './src/index';
+import * as ms from '../src/index';
 
 const sketch = function(p) {
   let modelState; // Store the hidden states of rnn's neurons.
