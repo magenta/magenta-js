@@ -16,9 +16,10 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
+
 import * as mm from '../src/index';
 
-import {CHECKPOINTS_DIR, writeMemory} from './common';
+import {CHECKPOINTS_DIR, TRIO_EXAMPLE, writeMemory} from './common';
 import {DRUM_SEQS, MEL_A_QUARTERS, MEL_TEAPOT, MEL_TWINKLE} from './common';
 import {writeNoteSeqs, writeTimer} from './common';
 
@@ -30,33 +31,6 @@ const MEL_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_2bar_small`;
 const MEL_CHORDS_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_chords`;
 const MEL_16_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_16bar_small_q2`;
 const TRIO_CKPT = `${CHECKPOINTS_DIR}/music_vae/trio_4bar`;
-
-const TRIO_EXAMPLE: mm.INoteSequence = {
-  notes: [],
-  quantizationInfo: {stepsPerQuarter: 4}
-};
-
-mm.sequences.concatenate([MEL_TWINKLE, MEL_TWINKLE], [32, 32]).notes.map(n => {
-  const m = mm.NoteSequence.Note.create(n);
-  m.program = 0;
-  m.instrument = 0;
-  TRIO_EXAMPLE.notes.push(m);
-});
-
-mm.sequences.concatenate([MEL_TWINKLE, MEL_TWINKLE], [32, 32]).notes.map(n => {
-  const m = mm.NoteSequence.Note.create(n);
-  m.pitch -= 36;
-  m.program = 32;
-  m.instrument = 1;
-  TRIO_EXAMPLE.notes.push(m);
-});
-
-mm.sequences.concatenate([DRUM_SEQS[0], DRUM_SEQS[0]], [32, 32])
-    .notes.map(n => {
-      const m = mm.NoteSequence.Note.create(n);
-      m.instrument = 2;
-      TRIO_EXAMPLE.notes.push(m);
-    });
 
 async function runDrums() {
   writeNoteSeqs('drums-inputs', DRUM_SEQS);
