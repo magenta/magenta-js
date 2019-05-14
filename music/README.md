@@ -178,7 +178,7 @@ This configuration corresponds to a chord-conditioned melody MusicRNN model.
 There are several SoundFonts that you can use with the `mm.SoundFontPlayer`,
 for more realistic sounding instruments:
 
-| Instrument  | URL | Notes  |
+| Instrument  | URL | License  |
 |---|---|---|---|
 | Piano | [salamander](https://storage.googleapis.com/magentadata/js/soundfonts/salamander) |Audio samples from [Salamander Grand Piano](https://archive.org/details/SalamanderGrandPianoV3)|
 | Multi | [sgm_plus](https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus) | Audio samples based on [SGM](https://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01) with modifications by [John Nebauer](https://sites.google.com/site/soundfonts4u/)|
