@@ -18,8 +18,7 @@
     "pretty": true,
     "noFallthroughCasesInSwitch": true,
     "allowUnreachableCode": false,
-    "experimentalDecorators": true,
-    "skipLibCheck": true
+    "experimentalDecorators": true
   },
   "include": [ "src/" ]
 }
