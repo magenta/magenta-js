@@ -44,7 +44,7 @@
     "bundle": "webpack --config ./webpack/lib.config.ts",
     "lint": "tslint -c ../tslint.json -p . -t verbose",
     "build-demos": "webpack --config ./webpack/demo.config.ts",
-    "run-demos": " yarn build-demos && http-server demos/",
+    "run-demos": "yarn build-demos && http-server demos/",
     "serve-demos": "http-server demos/",
     "serve-dist": "http-server dist/",
     "publish-demos": "yarn build-demos && mkdir -p ../docs/sketch/demos && cp demos/*.{js,html,mid,css} ../docs/sketch/demos",
