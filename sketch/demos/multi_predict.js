@@ -21,6 +21,7 @@
  * endings automatically.
  */
 
+import * as ms from '../src/index';
 const sketch = function(p) {
   // Available SketchRNN models.
   const BASE_URL = 'https://storage.googleapis.com/quickdraw-models/sketchRNN/models/';

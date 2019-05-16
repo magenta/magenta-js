@@ -395,6 +395,33 @@ export const FULL_TWINKLE_UNQUANTIZED: mm.INoteSequence = {
   totalTime: 24
 };
 
+export const TRIO_EXAMPLE: mm.INoteSequence = {
+  notes: [],
+  quantizationInfo: {stepsPerQuarter: 4}
+};
+
+mm.sequences.concatenate([MEL_TWINKLE, MEL_TWINKLE], [32, 32]).notes.map(n => {
+  const m = mm.NoteSequence.Note.create(n);
+  m.program = 0;
+  m.instrument = 0;
+  TRIO_EXAMPLE.notes.push(m);
+});
+
+mm.sequences.concatenate([MEL_TWINKLE, MEL_TWINKLE], [32, 32]).notes.map(n => {
+  const m = mm.NoteSequence.Note.create(n);
+  m.pitch -= 36;
+  m.program = 32;
+  m.instrument = 1;
+  TRIO_EXAMPLE.notes.push(m);
+});
+
+mm.sequences.concatenate([DRUM_SEQS[0], DRUM_SEQS[0]], [32, 32])
+    .notes.map(n => {
+      const m = mm.NoteSequence.Note.create(n);
+      m.instrument = 2;
+      TRIO_EXAMPLE.notes.push(m);
+    });
+
 export function writeTimer(elementId: string, startTime: number) {
   document.getElementById(elementId).innerHTML =
       ((performance.now() - startTime) / 1000).toString() + 's';

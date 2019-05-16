@@ -17,17 +17,10 @@
 import * as mm from '../src/index';
 
 // tslint:disable-next-line:max-line-length
-import {DRUM_SEQ_WITH_VELOCITIES, DRUM_SEQS, FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED, MEL_TWINKLE_WITH_VELOCITIES, SOUNDFONT_URL, writeNoteSeqs} from './common';
+import {DRUM_SEQ_WITH_VELOCITIES, DRUM_SEQS, FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED, MEL_TWINKLE_WITH_VELOCITIES, SOUNDFONT_URL, TRIO_EXAMPLE, writeNoteSeqs} from './common';
 
-async function testLoadAllSamples() {
-  const p = new mm.SoundFontPlayer(SOUNDFONT_URL);
-  let start = performance.now();
-  await p.loadAllSamples();
-  console.log('load all piano samples: ', performance.now() - start);
-  start = performance.now();
-  await p.loadAllSamples(0, true);
-  console.log('load all drum samples: ', performance.now() - start);
-}
+const soundFontPlayers: mm.SoundFontPlayer[] = [];
+const soundFontMelodies: mm.INoteSequence[] = [];
 
 function setupPlayerControlsDemo() {
   const playBtn = document.getElementById('play') as HTMLButtonElement;
@@ -159,13 +152,52 @@ function generateVelocityPlayers() {
   writeNoteSeqs('s-v-player', [MEL_TWINKLE_WITH_VELOCITIES], true);
 }
 
+function generateSoundFontPlayers() {
+  const baseUrl = 'https://storage.googleapis.com/magentadata/js/soundfonts/';
+  soundFontPlayers.push(new mm.SoundFontPlayer(baseUrl + 'salamander'));
+  soundFontPlayers.push(new mm.SoundFontPlayer(baseUrl + 'sgm_plus'));
+  soundFontPlayers.push(new mm.SoundFontPlayer(baseUrl + 'jazz_kit'));
+
+  soundFontMelodies.push(FULL_TWINKLE);
+  soundFontMelodies.push(TRIO_EXAMPLE);
+  soundFontMelodies.push(DRUM_SEQS[1]);
+
+  // Preload the samples.
+  for (let i = 0; i < soundFontPlayers.length; i++) {
+    soundFontPlayers[i].loadSamples(soundFontMelodies[i]).then(() => {
+      const el = document.getElementById('playSF_' + i) as HTMLButtonElement;
+      el.removeAttribute('disabled');
+      el.textContent = 'Play';
+    });
+  }
+
+  document.getElementById('playSF_0')
+      .addEventListener('click', (event) => playSoundFont(event, 0));
+  document.getElementById('playSF_1')
+      .addEventListener('click', (event) => playSoundFont(event, 1));
+  document.getElementById('playSF_2')
+      .addEventListener('click', (event) => playSoundFont(event, 2));
+}
+
+async function playSoundFont(event: MouseEvent, index: number) {
+  const player = soundFontPlayers[index];
+  const button = event.target as HTMLElement;
+  if (player.isPlaying()) {
+    player.stop();
+    button.textContent = 'Play';
+  } else {
+    button.textContent = 'Stop';
+    player.start(soundFontMelodies[index]);
+  }
+}
 try {
-  testLoadAllSamples();
   setupPlayerControlsDemo();
   setupAttackReleaseDemo();
   setupMIDIPlayerDemo();
-  Promise.all(
-      [generatePlayers(), generateTempoPlayer(), generateVelocityPlayers()]);
+  Promise.all([
+    generatePlayers(), generateTempoPlayer(), generateVelocityPlayers(),
+    generateSoundFontPlayers()
+  ]);
 } catch (err) {
   console.error(err);
 }

@@ -200,9 +200,13 @@ export class MusicRNN {
    * @param sequence The sequence to continue. Must be quantized.
    * @param steps How many steps to continue.
    * @param temperature (Optional) The softmax temperature to use when sampling
-   * from the logits. Argmax is used if not provided.
+   * from the logits. Argmax is used if not provided. Temperature can be any
+   * number value above 0, however, anything above 1.5 will essentially result
+   * in random results.
    * @param chordProgression (Optional) Chord progression to use as
-   * conditioning.
+   * conditioning.  A chord progression param is an array of chords that are
+   * passed to the [tonal package](https://github.com/danigb/tonal) for parsing,
+   * so they're in that format. Example: ["G", "Em", "C", "D"]
    */
   async continueSequence(
       sequence: INoteSequence, steps: number, temperature?: number,

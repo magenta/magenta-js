@@ -48,7 +48,7 @@ missing, or feel free to submit a Pull Request!
 
 ### MusicVAE
 
-[MusicVAE](https://tensorflow.github.io/magenta-js/music/classes/_music_vae_model_.musicvae.html) implements several configurations of Magenta's variational autoencoder model called [MusicVAE][music-vae] including melody and drum "loop" models, 4- and 16-bar "trio" models, chord-conditioned [multi-track](https://g.co/magenta/multitrack) models, and drum performance "humanizations" with GrooVAE.
+[MusicVAE](https://tensorflow.github.io/magenta-js/music/classes/_music_vae_model_.musicvae.html) implements several configurations of Magenta's variational autoencoder model called [MusicVAE][music-vae] including melody and drum "loop" models, 4- and 16-bar "trio" models, chord-conditioned [multi-track](https://g.co/magenta/multitrack) models, and drum performance "humanizations" with [GrooVAE][https://g.co/magenta/groovae].
 
 **Demo Application:** [Endless Trios](https://goo.gl/magenta/endless-trios)
 
@@ -173,6 +173,16 @@ The model configuration should be placed in a JSON file named `config.json` in t
 ```
 
 This configuration corresponds to a chord-conditioned melody MusicRNN model.
+
+## SoundFonts
+There are several SoundFonts that you can use with the `mm.SoundFontPlayer`,
+for more realistic sounding instruments:
+
+| Instrument  | URL | License  |
+|---|---|---|---|
+| Piano | [salamander](https://storage.googleapis.com/magentadata/js/soundfonts/salamander) |Audio samples from [Salamander Grand Piano](https://archive.org/details/SalamanderGrandPianoV3)|
+| Multi | [sgm_plus](https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus) | Audio samples based on [SGM](https://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01) with modifications by [John Nebauer](https://sites.google.com/site/soundfonts4u/)|
+| Percussion | [jazz_kit](https://storage.googleapis.com/magentadata/js/soundfonts/jazz_kit) | Audio samples from [Jazz Kit (EXS)](https://musical-artifacts.com/artifacts/686) by Lithalean |
 
 <!-- links -->
 

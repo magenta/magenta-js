@@ -17,8 +17,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {NoteSequence} from '../protobuf';
 import * as Tone from 'tone';
+
+import {NoteSequence} from '../protobuf';
+
 import {DEFAULT_QUARTERS_PER_MINUTE} from './constants';
 
 /**
@@ -56,8 +58,12 @@ export abstract class BaseRecorderCallback {
    * @param velocity The velocity of the midi event received.
    * @param device The device the midi event was received from.
    */
+<<<<<<< HEAD
   abstract noteOn(pitch: number, velocity: number,
                   device: EventTarget): void;
+=======
+  abstract noteOn(pitch: number, velocity: number, device: EventTarget): void;
+>>>>>>> master
   /**
    * Will be called for each time a note off event is observed.
    *
@@ -65,8 +71,12 @@ export abstract class BaseRecorderCallback {
    * @param velocity The velocity of the midi event received.
    * @param device The device the midi event was received from.
    */
+<<<<<<< HEAD
   abstract noteOff(pitch: number, velocity: number,
                    device: EventTarget): void;
+=======
+  abstract noteOff(pitch: number, velocity: number, device: EventTarget): void;
+>>>>>>> master
 }
 
 /**
@@ -84,17 +94,17 @@ export class Recorder {
   private startRecordingAtFirstNote: boolean;
 
   private loClick = new Tone
-      .MembraneSynth({
-        pitchDecay: 0.008,
-        envelope: {attack: 0.001, decay: 0.3, sustain: 0}
-      })
-      .toMaster();
+                        .MembraneSynth({
+                          pitchDecay: 0.008,
+                          envelope: {attack: 0.001, decay: 0.3, sustain: 0}
+                        })
+                        .toMaster();
   private hiClick = new Tone
-      .MembraneSynth({
-        pitchDecay: 0.008,
-        envelope: {attack: 0.001, decay: 0.3, sustain: 0}
-      })
-      .toMaster();
+                        .MembraneSynth({
+                          pitchDecay: 0.008,
+                          envelope: {attack: 0.001, decay: 0.3, sustain: 0}
+                        })
+                        .toMaster();
   // tslint:disable-next-line:no-any
   private clickLoop: any;
 
@@ -105,8 +115,8 @@ export class Recorder {
    * object that contains run() and stop() methods to invode during
    * playback.
    */
-  constructor(config = {} as RecorderConfig,
-              callbackObject?: BaseRecorderCallback) {
+  constructor(
+      config = {} as RecorderConfig, callbackObject?: BaseRecorderCallback) {
     this.config = {
       playClick: config.playClick,
       qpm: config.qpm || DEFAULT_QUARTERS_PER_MINUTE,
@@ -181,7 +191,7 @@ export class Recorder {
 
   private initClickLoop() {
     let clickStep = 0;
-    this.clickLoop = new Tone.Loop((time:number) => {
+    this.clickLoop = new Tone.Loop((time: number) => {
       // TODO(notwaldorf): It would be nice if this took into account a
       // time signature.
       if (clickStep % 4 === 0) {
@@ -236,10 +246,10 @@ export class Recorder {
     this.notes = [];
     this.onNotes = new Map<number, NoteSequence.Note>();
 
-   if (!this.startRecordingAtFirstNote) {
-    const timeStamp: number = Date.now();
-    this.firstNoteTimestamp = timeStamp;
-   }
+    if (!this.startRecordingAtFirstNote) {
+      const timeStamp: number = Date.now();
+      this.firstNoteTimestamp = timeStamp;
+    }
   }
 
   /**
