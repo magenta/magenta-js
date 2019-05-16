@@ -159,7 +159,7 @@ class MidiMe {
         tf.ENV.get('WEBGL_DOWNLOAD_FLOAT_ENABLED') === false &&
         tf.ENV.get('WEBGL_VERSION') === 1) {
       // This is a float16 device!
-      learningRate = 0.0001;
+      learningRate = 0.00005;
     }
     const optimizer = tf.train.adam(learningRate);
 
