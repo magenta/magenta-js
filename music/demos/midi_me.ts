@@ -46,9 +46,7 @@ function loadFile(e: Event) {
   for (let i = 0; i < fileInput.files.length; i++) {
     promises.push(blobToNoteSequence(fileInput.files[i]));
   }
-  Promise
-      .all(promises)
-      .then(doTheThing);
+  Promise.all(promises).then(doTheThing);
 }
 
 async function doTheThing(mel: NoteSequence[]) {
@@ -56,11 +54,11 @@ async function doTheThing(mel: NoteSequence[]) {
   const start = performance.now();
 
   // 1. Encode the input into MusicVAE, get back a z.
-  const quantizedMels:NoteSequence[] = [];
+  const quantizedMels: NoteSequence[] = [];
   mel.forEach((m) => quantizedMels.push(quantizeNoteSequence(m, 4)));
 
   // 1b. Split this sequence into 32 bar chunks.
-  let chunks:NoteSequence[] = [];
+  let chunks: NoteSequence[] = [];
   quantizedMels.forEach((m) => {
     const melChunks = mm.sequences.split(mm.sequences.clone(m), 16 * BARS);
     chunks = chunks.concat(melChunks);

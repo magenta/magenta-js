@@ -153,9 +153,17 @@ class MidiMe {
     const startTime = performance.now();
     this.trained = false;
 
-    // TODO(notwaldorf): If there's a ton of data we should consider batching.
-    const optimizer = tf.train.adam();
+    // On float16 devices, use a smaller learning rate to avoid NaNs.
+    let learningRate = 0.001;  // The default tf.train.adam rate.
+    if (tf.ENV.get('WEBGL_RENDER_FLOAT32_ENABLED') === false &&
+        tf.ENV.get('WEBGL_DOWNLOAD_FLOAT_ENABLED') === false &&
+        tf.ENV.get('WEBGL_VERSION') === 1) {
+      // This is a float16 device!
+      learningRate = 0.0001;
+    }
+    const optimizer = tf.train.adam(learningRate);
 
+    // TODO(notwaldorf): If there's a ton of data we should consider batching.
     for (let e = 0; e < this.config.epochs; e++) {
       await tf.nextFrame();
 
