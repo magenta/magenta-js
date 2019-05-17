@@ -16,41 +16,75 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
-import * as mm from '../src';
 
-import {blobToNoteSequence, NoteSequence} from '../src';
+import * as mm from '../src';
+import {blobToNoteSequence, MidiMe, MusicVAE, NoteSequence} from '../src';
 import {quantizeNoteSequence} from '../src/core/sequences';
 
 // tslint:disable-next-line:max-line-length
-import {CHECKPOINTS_DIR, visualizeNoteSeqs, writeMemory, writeTimer} from './common';
+import {CHECKPOINTS_DIR, visualizeNoteSeqs, writeTimer} from './common';
 import {updateGraph} from './common_graph';
 
 const MEL_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_2bar_small`;
-const BARS = 2;
+const TRIO_CKPT = `${CHECKPOINTS_DIR}/music_vae/trio_4bar`;
+const BARS = 4;
 
-const fileInput = document.getElementById('fileInput') as HTMLInputElement;
-fileInput.addEventListener('change', loadFile);
+// Event listeners.
+const melFileInput =
+    document.getElementById('mel_fileInput') as HTMLInputElement;
+melFileInput.addEventListener('change', () => loadFile(melFileInput, 'mel'));
+const trioFileInput =
+    document.getElementById('trio_fileInput') as HTMLInputElement;
+trioFileInput.addEventListener('change', () => loadFile(trioFileInput, 'trio'));
+
+document.getElementById('mel_train').addEventListener('click', trainMelody);
+document.getElementById('trio_train').addEventListener('click', trainTrio);
 
 // Initialize models.
 const mvae = new mm.MusicVAE(MEL_CKPT);
 mvae.initialize().then(() => {
-  document.getElementById('fileBtn').removeAttribute('disabled');
+  document.getElementById('mel_fileBtn').removeAttribute('disabled');
+});
+const triovae = new mm.MusicVAE(TRIO_CKPT);
+mvae.initialize().then(() => {
+  document.getElementById('trio_fileBtn').removeAttribute('disabled');
 });
 
-const model = new mm.MidiMe({epochs: 100});
-model.initialize();
+const melModel = new mm.MidiMe({epochs: 100});
+melModel.initialize();
+const trioModel = new mm.MidiMe({epochs: 300});
+trioModel.initialize();
 
-function loadFile(e: Event) {
-  document.getElementById('fileBtn').setAttribute('disabled', '');
+// Where we will store the loaded input so that we can train on it.
+let inputMelodies: NoteSequence[] = [];
+let inputTrios: NoteSequence[] = [];
+
+function loadFile(inputElement: HTMLInputElement, prefix: string) {
+  document.getElementById(`${prefix}_fileBtn`).setAttribute('disabled', '');
   const promises = [];
-  for (let i = 0; i < fileInput.files.length; i++) {
-    promises.push(blobToNoteSequence(fileInput.files[i]));
+  for (let i = 0; i < inputElement.files.length; i++) {
+    promises.push(blobToNoteSequence(inputElement.files[i]));
   }
-  Promise.all(promises).then(doTheThing);
+  Promise.all(promises).then((mels) => {
+    if (prefix === 'mel') {
+      inputMelodies = mels;
+    } else {
+      inputTrios = mels;
+    }
+    document.getElementById(`${prefix}_train`).removeAttribute('disabled');
+  });
 }
 
-async function doTheThing(mel: NoteSequence[]) {
-  visualizeNoteSeqs('input', mel);
+function trainMelody() {
+  train(inputMelodies, mvae, melModel, 'mel');
+}
+function trainTrio() {
+  train(inputTrios, triovae, trioModel, 'trio');
+}
+
+async function train(
+    mel: NoteSequence[], vae: MusicVAE, midime: MidiMe, prefix: string) {
+  visualizeNoteSeqs(`${prefix}_input`, mel, true);
   const start = performance.now();
 
   // 1. Encode the input into MusicVAE, get back a z.
@@ -63,50 +97,55 @@ async function doTheThing(mel: NoteSequence[]) {
     const melChunks = mm.sequences.split(mm.sequences.clone(m), 16 * BARS);
     chunks = chunks.concat(melChunks);
   });
-  const z = await mvae.encode(chunks);  // shape of z is [chunks, 256]
+  const z = await vae.encode(chunks);  // shape of z is [chunks, 256]
 
   // 2. Use that z as input to train MidiMe.
   // Reconstruction before training.
-  const z1 = model.predict(z) as tf.Tensor2D;
-  const ns1 = await mvae.decode(z1);
-  visualizeNoteSeqs('pre-training', [mm.sequences.concatenate(ns1)]);
+  const z1 = midime.predict(z) as tf.Tensor2D;
+  const ns1 = await vae.decode(z1);
+  visualizeNoteSeqs(
+      `${prefix}_pre-training`, [mm.sequences.concatenate(ns1)], true);
   z1.dispose();
 
   // 3. Train!
   const losses: number[] = [];
 
   // tslint:disable-next-line:no-any
-  await model.train(z, async (epoch: number, logs: any) => {
+  await midime.train(z, async (epoch: number, logs: any) => {
     losses.push(logs.total);
-    updateGraph(losses, 'graph');
+    updateGraph(losses, `${prefix}_graph`);
   });
 
   // 4. Check reconstruction after training.
-  const z2 = model.predict(z) as tf.Tensor2D;
-  const ns2 = await mvae.decode(z2);
-  visualizeNoteSeqs('post-training', [mm.sequences.concatenate(ns2)]);
+  const z2 = midime.predict(z) as tf.Tensor2D;
+  const ns2 = await vae.decode(z2);
+  visualizeNoteSeqs(
+      `${prefix}_post-training`, [mm.sequences.concatenate(ns2)], true);
   z2.dispose();
 
-  writeTimer('training-time', start);
+  writeTimer(`${prefix}_training-time`, start);
 
   // 5. Sample from MidiMe
-  const sample11 = await model.sample(4) as tf.Tensor2D;
-  const sample12 = await model.sample(4) as tf.Tensor2D;
-  const sample13 = await model.sample(4) as tf.Tensor2D;
-  const sample14 = await model.sample(4) as tf.Tensor2D;
-  const sample15 = await model.sample(4) as tf.Tensor2D;
+  const sample11 = await midime.sample(4) as tf.Tensor2D;
+  const sample12 = await midime.sample(4) as tf.Tensor2D;
+  const sample13 = await midime.sample(4) as tf.Tensor2D;
+  const sample14 = await midime.sample(4) as tf.Tensor2D;
+  const sample15 = await midime.sample(4) as tf.Tensor2D;
 
-  const ns31 = await mvae.decode(sample11);
-  const ns32 = await mvae.decode(sample12);
-  const ns33 = await mvae.decode(sample13);
-  const ns34 = await mvae.decode(sample14);
-  const ns35 = await mvae.decode(sample15);
+  const ns31 = await vae.decode(sample11);
+  const ns32 = await vae.decode(sample12);
+  const ns33 = await vae.decode(sample13);
+  const ns34 = await vae.decode(sample14);
+  const ns35 = await vae.decode(sample15);
 
-  visualizeNoteSeqs('sample-midime', [
-    mm.sequences.concatenate(ns31), mm.sequences.concatenate(ns32),
-    mm.sequences.concatenate(ns33), mm.sequences.concatenate(ns34),
-    mm.sequences.concatenate(ns35)
-  ]);
+  visualizeNoteSeqs(
+      `${prefix}_sample-midime`,
+      [
+        mm.sequences.concatenate(ns31), mm.sequences.concatenate(ns32),
+        mm.sequences.concatenate(ns33), mm.sequences.concatenate(ns34),
+        mm.sequences.concatenate(ns35)
+      ],
+      true);
   sample11.dispose();
   sample12.dispose();
   sample13.dispose();
@@ -114,15 +153,11 @@ async function doTheThing(mel: NoteSequence[]) {
   sample15.dispose();
 
   // 5. Sample from MusicVAE.
-  const sample2 = await mvae.sample(4);
-  visualizeNoteSeqs('sample-musicvae', [mm.sequences.concatenate(sample2)]);
+  const sample2 = await vae.sample(4);
+  visualizeNoteSeqs(
+      `${prefix}_sample-musicvae`, [mm.sequences.concatenate(sample2)], true);
 
   z.dispose();
-  dispose();
-}
-
-function dispose() {
-  mvae.dispose();
-  model.dispose();
-  writeMemory(tf.memory().numBytes);
+  vae.dispose();
+  midime.dispose();
 }
