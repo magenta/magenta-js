@@ -27,7 +27,8 @@ import {updateGraph} from './common_graph';
 
 const MEL_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_2bar_small`;
 const TRIO_CKPT = `${CHECKPOINTS_DIR}/music_vae/trio_4bar`;
-const BARS = 4;
+const MEL_BARS = 2;
+const TRIO_BARS = 4;
 
 // Event listeners.
 const melFileInput =
@@ -71,6 +72,7 @@ function loadFile(inputElement: HTMLInputElement, prefix: string) {
     } else {
       inputTrios = mels;
     }
+    visualizeNoteSeqs(`${prefix}_input`, mels, true);
     document.getElementById(`${prefix}_train`).removeAttribute('disabled');
   });
 }
@@ -84,7 +86,6 @@ function trainTrio() {
 
 async function train(
     mel: NoteSequence[], vae: MusicVAE, midime: MidiMe, prefix: string) {
-  visualizeNoteSeqs(`${prefix}_input`, mel, true);
   const start = performance.now();
 
   // 1. Encode the input into MusicVAE, get back a z.
@@ -94,7 +95,8 @@ async function train(
   // 1b. Split this sequence into 32 bar chunks.
   let chunks: NoteSequence[] = [];
   quantizedMels.forEach((m) => {
-    const melChunks = mm.sequences.split(mm.sequences.clone(m), 16 * BARS);
+    const length = prefix === 'mel' ? 16 * MEL_BARS : 16 * TRIO_BARS;
+    const melChunks = mm.sequences.split(mm.sequences.clone(m), length);
     chunks = chunks.concat(melChunks);
   });
   const z = await vae.encode(chunks);  // shape of z is [chunks, 256]
@@ -126,11 +128,11 @@ async function train(
   writeTimer(`${prefix}_training-time`, start);
 
   // 5. Sample from MidiMe
-  const sample11 = await midime.sample(4) as tf.Tensor2D;
-  const sample12 = await midime.sample(4) as tf.Tensor2D;
-  const sample13 = await midime.sample(4) as tf.Tensor2D;
-  const sample14 = await midime.sample(4) as tf.Tensor2D;
-  const sample15 = await midime.sample(4) as tf.Tensor2D;
+  const sample11 = await midime.sample(1) as tf.Tensor2D;
+  const sample12 = await midime.sample(1) as tf.Tensor2D;
+  const sample13 = await midime.sample(1) as tf.Tensor2D;
+  const sample14 = await midime.sample(1) as tf.Tensor2D;
+  const sample15 = await midime.sample(1) as tf.Tensor2D;
 
   const ns31 = await vae.decode(sample11);
   const ns32 = await vae.decode(sample12);
@@ -153,7 +155,7 @@ async function train(
   sample15.dispose();
 
   // 5. Sample from MusicVAE.
-  const sample2 = await vae.sample(4);
+  const sample2 = await vae.sample(1);
   visualizeNoteSeqs(
       `${prefix}_sample-musicvae`, [mm.sequences.concatenate(sample2)], true);
 
