@@ -141,10 +141,11 @@ export abstract class BaseVisualizer {
         this.noteSequence.totalQuantizedSteps :
         this.noteSequence.totalTime;
     if (!endTime) {
-      throw new Error(`The sequence you are using with the \
-mm.PianoRollSVGVisualizer does not have a ${
-          this.sequenceIsQuantized ? 'totalQuantizedSteps' : 'totalTime'} \
-field set, so the visualizer can\'t be horizontally sized correctly.`);
+      throw new Error('The sequence you are using with the ' +
+          'mm.PianoRollSVGVisualizer does not have a ' +
+          (this.sequenceIsQuantized ? 'totalQuantizedSteps' : 'totalTime') +
+          ' field set, so the visualizer can\'t be horizontally ' +
+          'sized correctly.');
     }
 
     const width = (endTime * this.config.pixelsPerTimeStep);
