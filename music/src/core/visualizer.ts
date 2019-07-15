@@ -101,8 +101,8 @@ export abstract class BaseVisualizer {
     // the steps per quarter.
     if (this.sequenceIsQuantized) {
       const spq = sequence.quantizationInfo.stepsPerQuarter;
-      this.config.pixelsPerTimeStep = spq ? 
-          this.config.pixelsPerTimeStep / spq : 7;
+      this.config.pixelsPerTimeStep =
+          spq ? this.config.pixelsPerTimeStep / spq : 7;
     }
 
     const size = this.getSize();
@@ -135,12 +135,20 @@ export abstract class BaseVisualizer {
 
     // Calculate a nice width based on the length of the sequence we're
     // playing.
+    // Warn if there's no totalTime or quantized steps set, since it leads
+    // to a bad size.
     const endTime = this.sequenceIsQuantized ?
         this.noteSequence.totalQuantizedSteps :
         this.noteSequence.totalTime;
+    if (!endTime) {
+      throw new Error('The sequence you are using with the ' +
+          'mm.PianoRollSVGVisualizer does not have a ' +
+          (this.sequenceIsQuantized ? 'totalQuantizedSteps' : 'totalTime') +
+          ' field set, so the visualizer can\'t be horizontally ' +
+          'sized correctly.');
+    }
 
     const width = (endTime * this.config.pixelsPerTimeStep);
-
     return {width, height};
   }
 
@@ -173,12 +181,14 @@ export abstract class BaseVisualizer {
   }
 
   protected getNoteStartTime(note: NoteSequence.INote) {
-    return this.sequenceIsQuantized ? note.quantizedStartStep : 
+    return this.sequenceIsQuantized ?
+        note.quantizedStartStep :
         Math.round(note.startTime * 100000000) / 100000000;
   }
 
   protected getNoteEndTime(note: NoteSequence.INote) {
-    return this.sequenceIsQuantized ? note.quantizedEndStep : 
+    return this.sequenceIsQuantized ?
+        note.quantizedEndStep :
         Math.round(note.endTime * 100000000) / 100000000;
   }
 
@@ -330,11 +340,12 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
       sequence: INoteSequence, svg: SVGSVGElement,
       config: VisualizerConfig = {}) {
     super(sequence, config);
-        
+
     if (!(svg instanceof SVGSVGElement)) {
-      throw new Error('mm.PianoRollSVGVisualizer requires an <svg> ' +
-                      'element to display the visualization');
-    } 
+      throw new Error(
+          'mm.PianoRollSVGVisualizer requires an <svg> ' +
+          'element to display the visualization');
+    }
     this.svg = svg;
     this.parentElement = svg.parentElement;
     this.drawn = false;
