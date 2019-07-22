@@ -6,6 +6,11 @@
   <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
   <link rel="stylesheet" href="./style.css">
   <title>mm.Player</title>
+  <style>
+    td {
+      min-width: 100px;
+    }
+  </style>
 </head>
 
 <body>
@@ -22,6 +27,41 @@
     <button id="resume" disabled>Resume</button>
     <b>Play state: </b><span id="playState"></span>
   </section>
+
+  <h2>SoundFonts</h2>
+  <section>
+    <p>There are several SoundFonts that you can use with the
+      <code>mm.SoundFontPlayer</code>, for more realistic sounding instruments:</p>
+    <table>
+      <thead>
+        <td><b>Instrument</b></td>
+        <td><b>Name</b></td>
+        <td></td>
+        <td>License</td>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Piano</td>
+          <td>salamander</td>
+          <td><button id="playSF_0">Play</button></td>
+          <td>Audio samples from <a href="https://archive.org/details/SalamanderGrandPianoV3">Salamander Grand Piano</a></td>
+        </tr>
+        <tr>
+          <td>Multi</td>
+          <td>sgm_plus</td>
+          <td><button id="playSF_1">Play</button></td>
+          <td>Audio samples from <a href="https://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01">SGM</a> by Shan</td>
+        </tr>
+        <tr>
+          <td>Percussion</td>
+          <td>jazz_kit</td>
+          <td><button id="playSF_2">Play</button></td>
+          <td>Audio samples from <a href="https://musical-artifacts.com/artifacts/686">Jazz Kit (EXS)</a> by Lithalean</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
 
   <h2>Unquantized NoteSequences</h2>
   <section>
