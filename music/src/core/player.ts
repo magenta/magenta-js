@@ -368,6 +368,7 @@ class DrumKit {
  * A `NoteSequence` player based on Tone.js.
  */
 export class Player extends BasePlayer {
+  private DEFAULT_SYNTH_INSTRUMENT = 0;
   private synths = new Map<number, any>();  // tslint:disable-line:no-any
   private drumKit = DrumKit.getInstance();
 
@@ -375,6 +376,22 @@ export class Player extends BasePlayer {
    * The Tone module being used.
    */
   static readonly tone = Tone;  // tslint:disable-line:no-any
+
+  /**
+   *   `Player` constructor
+   *
+   *   @param playClick A boolean, determines whether the click will be played.
+   *   @param callbackObject An optional BasePlayerCallback, specifies an
+   *     object that contains run() and stop() methods to invode during
+   *     playback.
+   */
+  constructor(playClick = false, callbackObject?: BasePlayerCallback) {
+    super(playClick, callbackObject);
+    // Initialize the default polysynth in the constructor, to guarantee that
+    // glitches don't occur during playback immediately after instantiation.
+    const defaultSynth = new Tone.PolySynth(10).toMaster();
+    this.synths.set(this.DEFAULT_SYNTH_INSTRUMENT, defaultSynth);
+  }
 
   protected playNote(time: number, note: NoteSequence.INote) {
     // If there's a velocity, use it.
@@ -400,7 +417,10 @@ export class Player extends BasePlayer {
       bass.volume.value = 5;
       this.synths.set(instrument, bass);
     } else {
-      this.synths.set(instrument, new Tone.PolySynth(10).toMaster());
+      // If no synth is present for the proviced voice, set the voice to the
+      // default synth instrument.
+      const defaultSynth = this.synths.get(this.DEFAULT_SYNTH_INSTRUMENT);
+      this.synths.set(instrument, defaultSynth);
     }
     return this.synths.get(instrument);
   }
