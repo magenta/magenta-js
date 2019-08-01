@@ -69,6 +69,16 @@ export abstract class BasePlayer {
   protected callbackObject: BasePlayerCallback;
   protected desiredQPM: number;
 
+  /**
+   * We need to initialize any voices that may be needed to play in the sequence
+   * before the play method is called. This protected method is to be used by
+   * derived classes to instantiate any necessary voices before the actual calls
+   * to playNote are made. See Player.ininitializeVoices for the canonical
+   * example.
+   */
+  protected initializeVoices(sequence: INoteSequence) {}
+  protected areVoicesInitialized = false;
+
   protected abstract playNote(time: number, note: NoteSequence.INote): void;
 
   /**
@@ -141,7 +151,6 @@ export abstract class BasePlayer {
    */
 
   start(seq: INoteSequence, qpm?: number): Promise<void> {
-    this.resumeContext();
     const isQuantized = sequences.isQuantizedSequence(seq);
     if (this.playClick && isQuantized) {
       seq = this.makeClickSequence(seq);
@@ -159,6 +168,12 @@ export abstract class BasePlayer {
       throw new Error('Cannot specify a `qpm` for a non-quantized sequence.');
     }
 
+    if (!this.areVoicesInitialized) {
+      this.initializeVoices(seq);
+      this.areVoicesInitialized = true;
+    }
+
+    this.resumeContext();
     this.currentPart = new Tone.Part((t: number, n: NoteSequence.INote) => {
       if (this.playClick ||
           (n.pitch !== constants.LO_CLICK_PITCH &&
@@ -174,6 +189,7 @@ export abstract class BasePlayer {
     if (this.desiredQPM) {
       Tone.Transport.bpm.value = this.desiredQPM;
     }
+
     this.currentPart.start();
     if (Tone.Transport.state !== 'started') {
       Tone.Transport.start();
@@ -368,6 +384,7 @@ class DrumKit {
  * A `NoteSequence` player based on Tone.js.
  */
 export class Player extends BasePlayer {
+  private bassSynth = this.makeBassSynth();
   private synths = new Map<number, any>();  // tslint:disable-line:no-any
   private drumKit = DrumKit.getInstance();
 
@@ -375,6 +392,39 @@ export class Player extends BasePlayer {
    * The Tone module being used.
    */
   static readonly tone = Tone;  // tslint:disable-line:no-any
+
+  /**
+   * We need to initialize the PolySynth voices for each instrument in the
+   * note sequence that is to be played.
+   *
+   * @param sequence The note sequence that's about to be played.
+   */
+  protected initializeVoices(sequence: INoteSequence) {
+    const voices = new Set<number>();
+    for (const note of sequence.notes) {
+      voices.add(note.voice);
+    }
+    voices.forEach(voice => {
+      if (!this.synths.has(voice)) {
+        const polySynth = this.makePolySynth();
+        this.synths.set(voice, polySynth);
+      }
+    });
+  }
+
+  makePolySynth() {
+    const polySynth = new Tone.PolySynth(10, Tone.Synth).toMaster();
+    return polySynth;
+  }
+
+  makeBassSynth() {
+    return new Tone
+        .Synth({
+          oscillator: {type: 'triangle'},
+          volume: 5,
+        })
+        .toMaster();
+  }
 
   protected playNote(time: number, note: NoteSequence.INote) {
     // If there's a velocity, use it.
@@ -386,21 +436,17 @@ export class Player extends BasePlayer {
       this.drumKit.playNote(note.pitch, time, velocity);
     } else {
       const freq = new Tone.Frequency(note.pitch, 'midi');
-      const dur = note.endTime - note.startTime;
-      this.getSynth(note.instrument, note.program)
-          .triggerAttackRelease(freq, dur, time, velocity);
+      const dur = (note.endTime - note.startTime) * 0.9;
+      const synth = this.getSynth(note.instrument, note.program);
+      if (synth) {
+        synth.triggerAttackRelease(freq, dur, time, velocity);
+      }
     }
   }
 
   private getSynth(instrument: number, program?: number) {
-    if (this.synths.has(instrument)) {
-      return this.synths.get(instrument);
-    } else if (program !== undefined && program >= 32 && program <= 39) {
-      const bass = new Tone.Synth({oscillator: {type: 'triangle'}}).toMaster();
-      bass.volume.value = 5;
-      this.synths.set(instrument, bass);
-    } else {
-      this.synths.set(instrument, new Tone.PolySynth(10).toMaster());
+    if (program !== undefined && program >= 32 && program <= 39) {
+      return this.bassSynth;
     }
     return this.synths.get(instrument);
   }

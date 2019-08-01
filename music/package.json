@@ -13,7 +13,7 @@
     "ndarray-resample": "^1.0.1",
     "protobufjs": "^6.8.6",
     "tonal": "^2.0.0",
-    "tone": "^0.12.80"
+    "tone": "13.4.9"
   },
   "devDependencies": {
     "@types/clone": "^0.1.30",
