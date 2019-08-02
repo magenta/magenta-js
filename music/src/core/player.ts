@@ -375,11 +375,7 @@ export class Player extends BasePlayer {
     oscillator: { type: 'triangle' }
   }).toMaster();
 
-  private polySynth = new Tone.PolySynth(10, Tone.Synth, {
-	  envelope : {
-		  attack: 0.001
-	  }
-  }).toMaster();
+  private polySynth = new Tone.PolySynth(10).toMaster();
 
   /**
    * The Tone module being used.
