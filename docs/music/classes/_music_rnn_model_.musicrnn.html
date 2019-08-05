@@ -163,7 +163,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_rnn/model.ts#L207">music_rnn/model.ts:207</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_rnn/model.ts#L211">music_rnn/model.ts:211</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -189,14 +189,18 @@
 									<h5><span class="tsd-flag ts-flagOptional">Optional</span> temperature: <span class="tsd-signature-type">number</span></h5>
 									<div class="tsd-comment tsd-typography">
 										<p>(Optional) The softmax temperature to use when sampling
-										from the logits. Argmax is used if not provided.</p>
+											from the logits. Argmax is used if not provided. Temperature can be any
+											number value above 0, however, anything above 1.5 will essentially result
+										in random results.</p>
 									</div>
 								</li>
 								<li>
 									<h5><span class="tsd-flag ts-flagOptional">Optional</span> chordProgression: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
 									<div class="tsd-comment tsd-typography">
 										<p>(Optional) Chord progression to use as
-										conditioning.</p>
+											conditioning.  A chord progression param is an array of chords that are
+											passed to the <a href="https://github.com/danigb/tonal">tonal package</a> for parsing,
+										so they&#39;re in that format. Example: [&quot;G&quot;, &quot;Em&quot;, &quot;C&quot;, &quot;D&quot;]</p>
 									</div>
 								</li>
 							</ul>
@@ -214,7 +218,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_rnn/model.ts#L226">music_rnn/model.ts:226</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_rnn/model.ts#L230">music_rnn/model.ts:230</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">

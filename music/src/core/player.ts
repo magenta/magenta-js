@@ -368,8 +368,14 @@ class DrumKit {
  * A `NoteSequence` player based on Tone.js.
  */
 export class Player extends BasePlayer {
-  private synths = new Map<number, any>();  // tslint:disable-line:no-any
   private drumKit = DrumKit.getInstance();
+
+  private bassSynth = new Tone.Synth({
+    volume: 5,
+    oscillator: { type: 'triangle' }
+  }).toMaster();
+
+  private polySynth = new Tone.PolySynth(10).toMaster();
 
   /**
    * The Tone module being used.
@@ -393,16 +399,11 @@ export class Player extends BasePlayer {
   }
 
   private getSynth(instrument: number, program?: number) {
-    if (this.synths.has(instrument)) {
-      return this.synths.get(instrument);
-    } else if (program !== undefined && program >= 32 && program <= 39) {
-      const bass = new Tone.Synth({oscillator: {type: 'triangle'}}).toMaster();
-      bass.volume.value = 5;
-      this.synths.set(instrument, bass);
+    if (program !== undefined && program >= 32 && program <= 39) {
+      return this.bassSynth;
     } else {
-      this.synths.set(instrument, new Tone.PolySynth(10).toMaster());
+      return this.polySynth;
     }
-    return this.synths.get(instrument);
   }
 }
 
