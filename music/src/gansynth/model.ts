@@ -68,8 +68,8 @@ class GANSynth {
         if (v.includes('kernel')) {
           const fanIn = vars[v].shape[0] * vars[v].shape[1] * vars[v].shape[2];
           const tmp = vars[v];
-          vars[v].dispose();
           vars[v] = tf.mul(tmp, tf.sqrt(2 / fanIn));
+          tmp.dispose();
         }
       }
 
