@@ -217,12 +217,17 @@ export class Instrument {
           duration} > ${this.durationSeconds}`);
     }
 
-    const source = new Tone.BufferSource(buffer).connect(output);
+    const source = new Tone
+                       .BufferSource({
+                         buffer,
+                         fadeOut: this.FADE_SECONDS,
+                       })
+                       .connect(output);
     source.start(startTime, 0, undefined, 1, 0);
     if (!this.percussive && duration < this.durationSeconds) {
       // Fade to the note release.
       const releaseSource = new Tone.BufferSource(buffer).connect(output);
-      source.stop(startTime + duration + this.FADE_SECONDS, this.FADE_SECONDS);
+      source.stop(startTime + duration + this.FADE_SECONDS);
       releaseSource.start(
           startTime + duration, this.durationSeconds, undefined, 1,
           this.FADE_SECONDS);
