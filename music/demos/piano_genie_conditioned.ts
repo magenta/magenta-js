@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-import * as mm from '../src/index';
-import { CHECKPOINTS_DIR } from './common';
+import * as mm from '../src/index.js';
+import { CHECKPOINTS_DIR } from './common.js';
 
 /*
 In addition to the recommended checkpoints below, there are a number of

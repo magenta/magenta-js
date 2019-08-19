@@ -19,11 +19,11 @@ import * as tf from '@tensorflow/tfjs';
 //@ts-ignore
 import * as FFT from 'fft.js';
 
-import {applyWindow, hannWindow, padCenterToLength} from '../core/audio_utils';
+import {applyWindow, hannWindow, padCenterToLength} from '../core/audio_utils.js';
 
 // tslint:disable-next-line:max-line-length
-import {MAG_DESCALE_A, MAG_DESCALE_B, N_FFT, N_HOP, PHASE_DESCALE_A, PHASE_DESCALE_B, SAMPLE_LENGTH, SAMPLE_RATE} from './constants';
-import {MEL_SPARSE_COEFFS} from './mel_sparse_coeffs';
+import {MAG_DESCALE_A, MAG_DESCALE_B, N_FFT, N_HOP, PHASE_DESCALE_A, PHASE_DESCALE_B, SAMPLE_LENGTH, SAMPLE_RATE} from './constants.js';
+import {MEL_SPARSE_COEFFS} from './mel_sparse_coeffs.js';
 
 export function melToLinearMatrix() {
   const m2l = tf.buffer([1024, 1024]);

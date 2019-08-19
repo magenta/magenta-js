@@ -28,7 +28,7 @@ import * as fs from 'fs';
 import * as test from 'tape';
 import * as tf from '@tensorflow/tfjs';
 
-import {PianoGenie} from './model';
+import {PianoGenie} from './model.js';
 
 function loadJSONModelWeights(fp: string) {
   const rawVars = JSON.parse(fs.readFileSync(fp, 'utf8'));

@@ -20,9 +20,9 @@
 /**
  * Imports
  */
-import {INoteSequence, NoteSequence} from '../protobuf/index';
+import {INoteSequence, NoteSequence} from '../protobuf/index.js';
 
-import * as constants from './constants';
+import * as constants from './constants.js';
 
 // Set the quantization cutoff.
 // Note events before this cutoff are rounded down to nearest step. Notes

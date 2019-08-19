@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-import {INoteSequence, NoteSequence} from '../protobuf';
+import {INoteSequence, NoteSequence} from '../protobuf/index.js';
 
 import {logging, sequences} from '.';
-import {MAX_MIDI_PITCH, MIN_MIDI_PITCH} from './constants';
+import {MAX_MIDI_PITCH, MIN_MIDI_PITCH} from './constants.js';
 
 /**
  * An interface for providing configurable properties to a Visualizer.
@@ -141,7 +141,8 @@ export abstract class BaseVisualizer {
         this.noteSequence.totalQuantizedSteps :
         this.noteSequence.totalTime;
     if (!endTime) {
-      throw new Error('The sequence you are using with the ' +
+      throw new Error(
+          'The sequence you are using with the ' +
           'mm.PianoRollSVGVisualizer does not have a ' +
           (this.sequenceIsQuantized ? 'totalQuantizedSteps' : 'totalTime') +
           ' field set, so the visualizer can\'t be horizontally ' +

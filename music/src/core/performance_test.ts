@@ -16,8 +16,8 @@
  */
 
 import * as test from 'tape';
-import {NoteSequence} from '../protobuf/index';
-import {Performance, PerformanceEvent} from './performance';
+import {NoteSequence} from '../protobuf/index.js';
+import {Performance, PerformanceEvent} from './performance.js';
 
 test('From NoteSequence', (t: test.Test) => {
   const noteSequence = NoteSequence.create({
