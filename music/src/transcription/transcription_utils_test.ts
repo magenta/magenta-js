@@ -17,11 +17,11 @@
 import * as tf from '@tensorflow/tfjs';
 import * as test from 'tape';
 
-import {NoteSequence} from '../protobuf';
+import {NoteSequence} from '../protobuf/index.js';
 
-import {FRAME_LENGTH_SECONDS, MIDI_PITCHES, MIN_MIDI_PITCH} from './constants';
+import {FRAME_LENGTH_SECONDS, MIDI_PITCHES, MIN_MIDI_PITCH} from './constants.js';
 // tslint:disable-next-line:max-line-length
-import {batchInput, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
+import {batchInput, pianorollToNoteSequence, unbatchOutput} from './transcription_utils.js';
 
 const OVER_THRESHOLD_PROB = 0.6;
 

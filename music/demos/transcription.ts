@@ -18,11 +18,11 @@ import * as tf from '@tensorflow/tfjs';
 //@ts-ignore
 import * as MediaRecorder from 'audio-recorder-polyfill';
 
-import * as mm from '../src/index';
-import {INoteSequence} from '../src/index';
+import * as mm from '../src/index.js';
+import {INoteSequence} from '../src/index.js';
 
 // tslint:disable-next-line:max-line-length
-import {CHECKPOINTS_DIR, notesMatch, writeMemory, writeNoteSeqs, writeTimer} from './common';
+import {CHECKPOINTS_DIR, notesMatch, writeMemory, writeNoteSeqs, writeTimer} from './common.js';
 
 mm.logging.verbosity = mm.logging.Level.DEBUG;
 

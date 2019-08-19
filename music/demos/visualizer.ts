@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-import * as mm from '../src/index';
-import {blobToNoteSequence, urlToNoteSequence} from '../src/index';
+import * as mm from '../src/index.js';
+import {blobToNoteSequence, urlToNoteSequence} from '../src/index.js';
 
-import {FULL_TWINKLE_UNQUANTIZED} from './common';
+import {FULL_TWINKLE_UNQUANTIZED} from './common.js';
 
 const MIDI_URL = './melody.mid';
 

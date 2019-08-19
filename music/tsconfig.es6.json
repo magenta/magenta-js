@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "module": "esnext",
+  "target": "esnext",
+  "outDir": "es6",
+  "moduleResolution": "node"
+}

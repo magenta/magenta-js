@@ -17,10 +17,10 @@
 
 import * as tf from '@tensorflow/tfjs';
 
-import * as mm from '../src/index';
+import * as mm from '../src/index.js';
 
-import {CHECKPOINTS_DIR} from './common';
-import {writeMemory, writeNoteSeqs, writeTimer} from './common';
+import {CHECKPOINTS_DIR} from './common.js';
+import {writeMemory, writeNoteSeqs, writeTimer} from './common.js';
 
 mm.logging.verbosity = mm.logging.Level.DEBUG;
 

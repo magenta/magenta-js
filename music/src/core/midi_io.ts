@@ -23,10 +23,10 @@
  */
 import * as midiconvert from 'midiconvert';
 
-import {INoteSequence, NoteSequence} from '../protobuf';
+import {INoteSequence, NoteSequence} from '../protobuf/index.js';
 
-import * as constants from './constants';
-import * as sequences from './sequences';
+import * as constants from './constants.js';
+import * as sequences from './sequences.js';
 
 export class MidiConversionError extends Error {
   constructor(message?: string) {

@@ -21,12 +21,12 @@
  */
 import * as Tone from 'tone';
 
-import {INoteSequence, NoteSequence} from '../protobuf';
+import {INoteSequence, NoteSequence} from '../protobuf/index.js';
 
 import {sequences} from '.';
-import * as constants from './constants';
-import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
-import * as soundfont from './soundfont';
+import * as constants from './constants.js';
+import {DEFAULT_DRUM_PITCH_CLASSES} from './data.js';
+import * as soundfont from './soundfont.js';
 
 function compareQuantizedNotes(a: NoteSequence.INote, b: NoteSequence.INote) {
   if (a.quantizedStartStep < b.quantizedStartStep) {
@@ -370,10 +370,8 @@ class DrumKit {
 export class Player extends BasePlayer {
   private drumKit = DrumKit.getInstance();
 
-  private bassSynth = new Tone.Synth({
-    volume: 5,
-    oscillator: { type: 'triangle' }
-  }).toMaster();
+  private bassSynth =
+      new Tone.Synth({volume: 5, oscillator: {type: 'triangle'}}).toMaster();
 
   private polySynth = new Tone.PolySynth(10).toMaster();
 

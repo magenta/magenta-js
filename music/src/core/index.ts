@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-import * as aux_inputs from './aux_inputs';
-import * as chords from './chords';
-import * as constants from './constants';
-import * as data from './data';
-import * as logging from './logging';
-import * as performance from './performance';
-import * as sequences from './sequences';
+import * as aux_inputs from './aux_inputs.js';
+import * as chords from './chords.js';
+import * as constants from './constants.js';
+import * as data from './data.js';
+import * as logging from './logging.js';
+import * as performance from './performance.js';
+import * as sequences from './sequences.js';
 
 export {aux_inputs, chords, constants, data, logging, performance, sequences};
 

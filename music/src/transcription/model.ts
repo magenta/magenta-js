@@ -22,14 +22,14 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
-import {loadAudioFromFile, loadAudioFromUrl} from '../core/audio_utils';
-import * as logging from '../core/logging';
-import {INoteSequence} from '../protobuf';
+import {loadAudioFromFile, loadAudioFromUrl} from '../core/audio_utils.js';
+import * as logging from '../core/logging.js';
+import {INoteSequence} from '../protobuf/index.js';
 
-import {preprocessAudio} from './audio_utils';
-import {MEL_SPEC_BINS, MIDI_PITCHES} from './constants';
+import {preprocessAudio} from './audio_utils.js';
+import {MEL_SPEC_BINS, MIDI_PITCHES} from './constants.js';
 // tslint:disable-next-line:max-line-length
-import {batchInput, pianorollToNoteSequence, unbatchOutput} from './transcription_utils';
+import {batchInput, pianorollToNoteSequence, unbatchOutput} from './transcription_utils.js';
 
 /**
  * Main "Onsets And Frames" piano transcription model class.

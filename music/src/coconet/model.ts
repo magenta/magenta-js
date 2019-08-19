@@ -20,10 +20,10 @@
  */
 import * as tf from '@tensorflow/tfjs-core';
 
-import {logging, sequences} from '..';
-import {INoteSequence} from '../protobuf';
+import {logging, sequences} from '../index.js';
+import {INoteSequence} from '../protobuf/index.js';
 
-import {IS_IOS, NUM_PITCHES, pianorollToSequence, sequenceToPianoroll} from './coconet_utils';
+import {IS_IOS, NUM_PITCHES, pianorollToSequence, sequenceToPianoroll} from './coconet_utils.js';
 
 /**
  * An interface for providing an infilling mask.

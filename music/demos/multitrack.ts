@@ -18,10 +18,10 @@
 import * as tf from '@tensorflow/tfjs';
 import * as clone from 'clone';
 
-import * as mm from '../src/index';
+import * as mm from '../src/index.js';
 
-import {CHECKPOINTS_DIR, DRUM_SEQS, MEL_TWINKLE, writeMemory} from './common';
-import {writeNoteSeqs, writeTimer} from './common';
+import {CHECKPOINTS_DIR, DRUM_SEQS, MEL_TWINKLE, writeMemory} from './common.js';
+import {writeNoteSeqs, writeTimer} from './common.js';
 
 const MULTITRACK_CKPT = `${CHECKPOINTS_DIR}/music_vae/multitrack`;
 const MULTITRACK_CHORDS_CKPT = `${CHECKPOINTS_DIR}/music_vae/multitrack_chords`;

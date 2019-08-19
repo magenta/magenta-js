@@ -19,7 +19,7 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
-import * as logging from '../core/logging';
+import * as logging from '../core/logging.js';
 export {MidiMe};
 
 /**

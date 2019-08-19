@@ -21,7 +21,7 @@
  * Imports
  */
 import * as Tone from 'tone';
-import * as constants from './constants';
+import * as constants from './constants.js';
 
 /**
  * Instrument sample pitch and velocity.

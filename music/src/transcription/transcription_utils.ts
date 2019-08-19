@@ -22,9 +22,9 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
-import {NoteSequence} from '../protobuf';
+import {NoteSequence} from '../protobuf/index.js';
 
-import {FRAME_LENGTH_SECONDS, MIDI_PITCHES, MIN_MIDI_PITCH} from './constants';
+import {FRAME_LENGTH_SECONDS, MIDI_PITCHES, MIN_MIDI_PITCH} from './constants.js';
 
 // The number of frames of padding needed on each side when splitting into
 // batches to account for the receptive field (which is a total of 7 for this

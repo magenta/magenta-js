@@ -22,11 +22,11 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
-import * as chords from '../core/chords';
-import * as constants from '../core/constants';
-import * as data from '../core/data';
-import * as logging from '../core/logging';
-import {INoteSequence} from '../protobuf';
+import * as chords from '../core/chords.js';
+import * as constants from '../core/constants.js';
+import * as data from '../core/data.js';
+import * as logging from '../core/logging.js';
+import {INoteSequence} from '../protobuf/index.js';
 
 /**
  * A class for keeping track of the parameters of an affine transformation.

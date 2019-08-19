@@ -21,8 +21,8 @@
  */
 import * as tf from '@tensorflow/tfjs-core';
 
-import {logging} from '..';
-import {INoteSequence, NoteSequence} from '../protobuf';
+import {logging} from '../index.js';
+import {INoteSequence, NoteSequence} from '../protobuf/index.js';
 
 export const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 

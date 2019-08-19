@@ -19,9 +19,9 @@
  */
 import * as Tone from 'tone';
 
-import {NoteSequence} from '../protobuf';
+import {NoteSequence} from '../protobuf/index.js';
 
-import {DEFAULT_QUARTERS_PER_MINUTE} from './constants';
+import {DEFAULT_QUARTERS_PER_MINUTE} from './constants.js';
 
 /**
  * An interface for providing configurable properties to a Recorder.
