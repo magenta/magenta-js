@@ -1,5 +1,4 @@
 import * as $protobuf from "protobufjs";
-
 /** Namespace tensorflow. */
 export namespace tensorflow {
 
@@ -71,6 +70,9 @@ export namespace tensorflow {
 
             /** NoteSequence sequenceMetadata */
             sequenceMetadata?: (tensorflow.magenta.ISequenceMetadata|null);
+
+            /** NoteSequence instrumentInfos */
+            instrumentInfos?: (tensorflow.magenta.NoteSequence.IInstrumentInfo[]|null);
         }
 
         /** Represents a NoteSequence. */
@@ -144,6 +146,9 @@ export namespace tensorflow {
 
             /** NoteSequence sequenceMetadata. */
             public sequenceMetadata?: (tensorflow.magenta.ISequenceMetadata|null);
+
+            /** NoteSequence instrumentInfos. */
+            public instrumentInfos: tensorflow.magenta.NoteSequence.IInstrumentInfo[];
 
             /**
              * Creates a new NoteSequence instance using the specified properties.
@@ -1093,6 +1098,102 @@ export namespace tensorflow {
 
                 /**
                  * Converts this PartInfo to JSON.
+                 * @returns JSON object
+                 */
+                public toJSON(): { [k: string]: any };
+            }
+
+            /** Properties of an InstrumentInfo. */
+            interface IInstrumentInfo {
+
+                /** InstrumentInfo instrument */
+                instrument?: (number|null);
+
+                /** InstrumentInfo name */
+                name?: (string|null);
+            }
+
+            /** Represents an InstrumentInfo. */
+            class InstrumentInfo implements IInstrumentInfo {
+
+                /**
+                 * Constructs a new InstrumentInfo.
+                 * @param [properties] Properties to set
+                 */
+                constructor(properties?: tensorflow.magenta.NoteSequence.IInstrumentInfo);
+
+                /** InstrumentInfo instrument. */
+                public instrument: number;
+
+                /** InstrumentInfo name. */
+                public name: string;
+
+                /**
+                 * Creates a new InstrumentInfo instance using the specified properties.
+                 * @param [properties] Properties to set
+                 * @returns InstrumentInfo instance
+                 */
+                public static create(properties?: tensorflow.magenta.NoteSequence.IInstrumentInfo): tensorflow.magenta.NoteSequence.InstrumentInfo;
+
+                /**
+                 * Encodes the specified InstrumentInfo message. Does not implicitly {@link tensorflow.magenta.NoteSequence.InstrumentInfo.verify|verify} messages.
+                 * @param message InstrumentInfo message or plain object to encode
+                 * @param [writer] Writer to encode to
+                 * @returns Writer
+                 */
+                public static encode(message: tensorflow.magenta.NoteSequence.IInstrumentInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+                /**
+                 * Encodes the specified InstrumentInfo message, length delimited. Does not implicitly {@link tensorflow.magenta.NoteSequence.InstrumentInfo.verify|verify} messages.
+                 * @param message InstrumentInfo message or plain object to encode
+                 * @param [writer] Writer to encode to
+                 * @returns Writer
+                 */
+                public static encodeDelimited(message: tensorflow.magenta.NoteSequence.IInstrumentInfo, writer?: $protobuf.Writer): $protobuf.Writer;
+
+                /**
+                 * Decodes an InstrumentInfo message from the specified reader or buffer.
+                 * @param reader Reader or buffer to decode from
+                 * @param [length] Message length if known beforehand
+                 * @returns InstrumentInfo
+                 * @throws {Error} If the payload is not a reader or valid buffer
+                 * @throws {$protobuf.util.ProtocolError} If required fields are missing
+                 */
+                public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): tensorflow.magenta.NoteSequence.InstrumentInfo;
+
+                /**
+                 * Decodes an InstrumentInfo message from the specified reader or buffer, length delimited.
+                 * @param reader Reader or buffer to decode from
+                 * @returns InstrumentInfo
+                 * @throws {Error} If the payload is not a reader or valid buffer
+                 * @throws {$protobuf.util.ProtocolError} If required fields are missing
+                 */
+                public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): tensorflow.magenta.NoteSequence.InstrumentInfo;
+
+                /**
+                 * Verifies an InstrumentInfo message.
+                 * @param message Plain object to verify
+                 * @returns `null` if valid, otherwise the reason why it is not
+                 */
+                public static verify(message: { [k: string]: any }): (string|null);
+
+                /**
+                 * Creates an InstrumentInfo message from a plain object. Also converts values to their respective internal types.
+                 * @param object Plain object
+                 * @returns InstrumentInfo
+                 */
+                public static fromObject(object: { [k: string]: any }): tensorflow.magenta.NoteSequence.InstrumentInfo;
+
+                /**
+                 * Creates a plain object from an InstrumentInfo message. Also converts values to other types if specified.
+                 * @param message InstrumentInfo
+                 * @param [options] Conversion options
+                 * @returns Plain object
+                 */
+                public static toObject(message: tensorflow.magenta.NoteSequence.InstrumentInfo, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+                /**
+                 * Converts this InstrumentInfo to JSON.
                  * @returns JSON object
                  */
                 public toJSON(): { [k: string]: any };

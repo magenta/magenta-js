@@ -25,7 +25,7 @@ import * as sequences from './sequences.js';
 
 export {aux_inputs, chords, constants, data, logging, performance, sequences};
 
-export * from './midi_io';
-export * from './player';
-export * from './recorder';
-export * from './visualizer';
+export * from './midi_io.js';
+export * from './player.js';
+export * from './recorder.js';
+export * from './visualizer.js';

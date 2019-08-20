@@ -15,10 +15,4 @@
  * =============================================================================
  */
 
-export {
-    PianoGenie,
-    PianoGenieKeysig,
-    PianoGenieChord,
-    PianoGenieKeysigChordFamily,
-    PianoGenieKeysigChord
-} from './model';
+export {PianoGenie, PianoGenieChord, PianoGenieKeysig, PianoGenieKeysigChord, PianoGenieKeysigChordFamily} from './model.js';
