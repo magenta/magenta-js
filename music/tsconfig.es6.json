@@ -5,7 +5,7 @@
   "outDir": "./es6",
   "moduleResolution": "node",
   "exclude": [
-    "src/**/*_test.ts",
-    "src/**/*_test_jas.ts",
+    "./src/**/*_test.ts",
+    "./src/**/*_test_jas.ts",
   ]
 }
