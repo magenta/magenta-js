@@ -105,7 +105,7 @@ export class ChordSymbols {
 
     const intervals = Chord.intervals(chord);
     const qualities = CHORD_QUALITY_INTERVALS.map(
-        cqis => cqis.every(cqi => intervals.includes(cqi)));
+        cqis => cqis.every(cqi => intervals.indexOf(cqi) !== -1));
 
     const i = qualities.indexOf(true);
     const j = qualities.lastIndexOf(true);

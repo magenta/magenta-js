@@ -19,6 +19,7 @@
 /**
  * Imports
  */
+// @ts-ignore
 import * as Tone from 'tone';
 
 import {INoteSequence, NoteSequence} from '../protobuf/index.js';
