@@ -1,5 +1,4 @@
 node_modules/
 es5/
 es6/
-src/**/*.js
 yarn-error.log

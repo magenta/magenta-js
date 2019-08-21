@@ -49,8 +49,8 @@
   },
   "scripts": {
     "prepublish": "in-publish && yarn lint && yarn test && yarn build && yarn docs && yarn bundle || not-in-publish",
-    "build:es5": "tsc && cp src/protobuf/proto.* es5/protobuf",
-    "build:es6": "tsc -p tsconfig.es6.json && cp src/protobuf/proto.* es6/protobuf",
+    "build:es5": "tsc --outdir es5 && cp src/protobuf/proto.* es5/protobuf",
+    "build:es6": "tsc -p tsconfig.es6.json --outdir es6 && cp src/protobuf/proto.* es6/protobuf",
     "build": "npm run build:es5 && npm run build:es6",
     "bundle": "webpack --config ./webpack/lib.config.ts",
     "lint": "tslint -c ../tslint.json -p . -t verbose",
