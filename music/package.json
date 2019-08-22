@@ -1,6 +1,6 @@
 {
   "name": "@magenta/music",
-  "version": "1.9.0",
+  "version": "1.10.1",
   "description": "Make music with machine learning, in the browser.",
   "main": "es5/index.js",
   "types": "es5/index.d.ts",
@@ -32,6 +32,7 @@
     "http-server": "^0.11.1",
     "in-publish": "^2.0.0",
     "minimist": "^1.2.0",
+    "node-fetch": "^2.6.0",
     "tape": "^4.9.0",
     "ts-loader": "^5.3.0",
     "ts-node": "^5.0.1",
