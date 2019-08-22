@@ -3,8 +3,7 @@
     "noImplicitAny": true,
     "removeComments": true,
     "preserveConstEnums": true,
-    "declaration": true,
-    "allowJs": false,
+    "allowJs": true,
     "sourceMap": true,
     "lib": ["es2015", "dom"],
     "types": ["webmidi", "d3", "jasmine"],
@@ -18,8 +17,9 @@
     "allowUnreachableCode": false,
     "experimentalDecorators": true,
     "skipLibCheck": true,
-    "module": "commonjs",
-    "target": "es5"
+    "module": "esnext",
+    "target": "esnext",
+    "moduleResolution": "node"
   },
   "include": [ "src/" ]
 }

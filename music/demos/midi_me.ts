@@ -17,8 +17,8 @@
 
 import * as tf from '@tensorflow/tfjs';
 
-import * as mm from '../src.js';
-import {blobToNoteSequence, MidiMe, MusicVAE, NoteSequence} from '../src.js';
+import * as mm from '../src/index.js';
+import {blobToNoteSequence, MidiMe, MusicVAE, NoteSequence} from '../src/index.js';
 import {quantizeNoteSequence} from '../src/core/sequences.js';
 
 // tslint:disable-next-line:max-line-length

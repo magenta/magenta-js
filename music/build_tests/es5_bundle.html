@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <script src="../dist/magentamusic.js"></script>
+</head>
+<body>
+  <h1>Testing dist/magentamusic.js</h1>
+  <div>does mm.Player work? <b id="player">loading...</b></div>
+  <div>does MusicVAE work? <b id="musicvae">loading...</b></div>
+</body>
+<script>
+  const player = new mm.Player();
+  document.getElementById('player').textContent = player.drumKit ? 'yes' : 'no';
+
+  const mvae = new mm.MusicVAE('https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_2bar_small');
+  mvae.initialize().then(() => {
+    document.getElementById('musicvae').textContent = mvae.isInitialized ? 'yes' : 'no';
+  });
+</script>
+</html>

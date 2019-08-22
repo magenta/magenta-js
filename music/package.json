@@ -16,6 +16,7 @@
     "tone": "^13.8.21"
   },
   "devDependencies": {
+    "@babel/core": "^7.5.5",
     "@types/clone": "^0.1.30",
     "@types/d3": "^5.7.0",
     "@types/file-saver": "^1.3.0",
@@ -24,6 +25,8 @@
     "@types/tape": "^4.2.32",
     "@types/webmidi": "^2.0.2",
     "audio-recorder-polyfill": "^0.1.2",
+    "awesome-typescript-loader": "^5.2.1",
+    "babel-loader": "^8.0.6",
     "browserify": "^14.4.0",
     "clang-format": "^1.2.3",
     "clone": "^1.0.4",
@@ -49,8 +52,8 @@
   },
   "scripts": {
     "prepublish": "in-publish && yarn lint && yarn test && yarn build && yarn docs && yarn bundle || not-in-publish",
-    "build:es5": "tsc --outdir es5 && cp src/protobuf/proto.* es5/protobuf",
-    "build:es6": "tsc -p tsconfig.es6.json --outdir es6 && cp src/protobuf/proto.* es6/protobuf",
+    "build:es5": "tsc --outdir es5 --module commonjs --target es5 && cp src/protobuf/proto.* es5/protobuf",
+    "build:es6": "tsc --outdir es6 && cp src/protobuf/proto.* es6/protobuf",
     "build": "npm run build:es5 && npm run build:es6",
     "bundle": "webpack --config ./webpack/lib.config.ts",
     "lint": "tslint -c ../tslint.json -p . -t verbose",
