@@ -3,7 +3,7 @@
     "noImplicitAny": true,
     "removeComments": true,
     "preserveConstEnums": true,
-    "allowJs": true,
+    "allowJs": false,
     "sourceMap": true,
     "lib": ["es2015", "dom"],
     "types": ["webmidi", "d3", "jasmine"],
