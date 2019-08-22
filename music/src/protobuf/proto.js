@@ -6,10 +6,8 @@ var $protobuf = require("protobufjs/minimal");
 // Common aliases
 var $Reader = $protobuf.Reader, $Writer = $protobuf.Writer, $util = $protobuf.util;
 
-// Exported root namespace
-var $root = $protobuf.roots["default"] || ($protobuf.roots["default"] = {});
-
-$root.tensorflow = (function() {
+// NOTE: I HAD TO HAND-EDIT THIS TO BE ES MODULES
+export const tensorflow = (function() {
 
     /**
      * Namespace tensorflow.
@@ -5958,5 +5956,3 @@ $root.tensorflow = (function() {
 
     return tensorflow;
 })();
-
-module.exports = $root;

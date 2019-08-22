@@ -37,6 +37,7 @@
     "in-publish": "^2.0.0",
     "jasmine": "^3.4.0",
     "jasmine-ts": "^0.3.0",
+    "microbundle": "^0.11.0",
     "minimist": "^1.2.0",
     "tape": "^4.9.0",
     "ts-loader": "^5.3.0",
@@ -53,7 +54,7 @@
   "scripts": {
     "prepublish": "in-publish && yarn lint && yarn test && yarn build && yarn docs && yarn bundle || not-in-publish",
     "build:es5": "tsc --outdir es5 --module commonjs --target es5 && cp src/protobuf/proto.* es5/protobuf",
-    "build:es6": "tsc --outdir es6 && cp src/protobuf/proto.* es6/protobuf",
+    "build:es6": "microbundle -f es --out es6/index.js src/*/index.ts && cp src/protobuf/proto.* es6/protobuf",
     "build": "npm run build:es5 && npm run build:es6",
     "bundle": "webpack --config ./webpack/lib.config.ts",
     "lint": "tslint -c ../tslint.json -p . -t verbose",

@@ -15,8 +15,8 @@
  * =============================================================================
  */
 
-import {tensorflow} from './proto.js';
+import { tensorflow } from './proto.js';
 import NoteSequence = tensorflow.magenta.NoteSequence;
 import INoteSequence = tensorflow.magenta.INoteSequence;
 
-export {NoteSequence, INoteSequence};
+export { NoteSequence, INoteSequence };
