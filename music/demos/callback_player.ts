@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-import * as mm from '../src/index.js';
-import {DRUM_SEQS, MEL_TEAPOT, MEL_TWINKLE} from './common.js';
+import * as mm from '../src/index';
+import {DRUM_SEQS, MEL_TEAPOT, MEL_TWINKLE} from './common';
 
 class MetronomeCallback extends mm.BasePlayerCallback {
   private drumClickDivs: HTMLElement[];

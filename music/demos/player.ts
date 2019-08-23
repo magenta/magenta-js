@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as mm from '../src/index.js';
+import * as mm from '../src/index';
 
 // tslint:disable-next-line:max-line-length
-import {DRUM_SEQ_WITH_VELOCITIES, DRUM_SEQS, FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED, MEL_TWINKLE_WITH_VELOCITIES, SOUNDFONT_URL, TRIO_EXAMPLE, writeNoteSeqs} from './common.js';
+import {DRUM_SEQ_WITH_VELOCITIES, DRUM_SEQS, FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED, MEL_TWINKLE_WITH_VELOCITIES, SOUNDFONT_URL, TRIO_EXAMPLE, writeNoteSeqs} from './common';
 
 const soundFontPlayers: mm.SoundFontPlayer[] = [];
 const soundFontMelodies: mm.INoteSequence[] = [];

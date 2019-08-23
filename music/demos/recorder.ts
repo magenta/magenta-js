@@ -1,5 +1,5 @@
-import * as mm from '../src/index.js';
-import {writeNoteSeqs} from './common.js';
+import * as mm from '../src/index';
+import {writeNoteSeqs} from './common';
 
 const recorder = new mm.Recorder();
 const recordBtn = document.getElementById('record') as HTMLButtonElement;

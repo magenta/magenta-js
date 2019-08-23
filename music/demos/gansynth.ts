@@ -17,9 +17,9 @@
 import * as tf from '@tensorflow/tfjs';
 import * as Tone from 'tone';
 
-import * as mm from '../src/index.js';
+import * as mm from '../src/index';
 
-import {CHECKPOINTS_DIR, writeMemory, writeTimer} from './common.js';
+import {CHECKPOINTS_DIR, writeMemory, writeTimer} from './common';
 
 const GANSYNTH_CHECKPOINT = `${CHECKPOINTS_DIR}/gansynth/acoustic_only`;
 

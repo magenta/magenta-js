@@ -17,12 +17,12 @@
 
 import * as tf from '@tensorflow/tfjs-core';
 
-import {mergeConsecutiveNotes, replaceInstruments} from '../src/core/sequences.js';
-import * as mm from '../src/index.js';
-import {NoteSequence} from '../src/index.js';
+import {mergeConsecutiveNotes, replaceInstruments} from '../src/core/sequences';
+import * as mm from '../src/index';
+import {NoteSequence} from '../src/index';
 
 // tslint:disable-next-line:max-line-length
-import {CHECKPOINTS_DIR, MEL_TWINKLE, writeMemory, writeNoteSeqs, writeTimer} from './common.js';
+import {CHECKPOINTS_DIR, MEL_TWINKLE, writeMemory, writeNoteSeqs, writeTimer} from './common';
 
 async function infillFirstVoice() {
   const model = new mm.Coconet(`${CHECKPOINTS_DIR}/coconet/bach`);
