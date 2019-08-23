@@ -17,13 +17,13 @@
 
 import * as tf from '@tensorflow/tfjs';
 
-import * as mm from '../src';
-import {blobToNoteSequence, MidiMe, MusicVAE, NoteSequence} from '../src';
-import {quantizeNoteSequence} from '../src/core/sequences';
+import * as mm from '../src/index.js';
+import {blobToNoteSequence, MidiMe, MusicVAE, NoteSequence} from '../src/index.js';
+import {quantizeNoteSequence} from '../src/core/sequences.js';
 
 // tslint:disable-next-line:max-line-length
-import {CHECKPOINTS_DIR, visualizeNoteSeqs, writeTimer} from './common';
-import {updateGraph} from './common_graph';
+import {CHECKPOINTS_DIR, visualizeNoteSeqs, writeTimer} from './common.js';
+import {updateGraph} from './common_graph.js';
 
 const MEL_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_2bar_small`;
 const TRIO_CKPT = `${CHECKPOINTS_DIR}/music_vae/trio_4bar`;

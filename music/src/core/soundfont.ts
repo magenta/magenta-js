@@ -20,6 +20,7 @@
 /**
  * Imports
  */
+// @ts-ignore
 import * as Tone from 'tone';
 import * as constants from './constants';
 

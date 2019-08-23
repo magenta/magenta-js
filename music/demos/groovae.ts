@@ -17,10 +17,10 @@
 
 import * as tf from '@tensorflow/tfjs';
 
-import * as mm from '../src/index';
+import * as mm from '../src/index.js';
 
-import {CHECKPOINTS_DIR, DRUM_SEQS, writeMemory} from './common';
-import {writeNoteSeqs, writeTimer} from './common';
+import {CHECKPOINTS_DIR, DRUM_SEQS, writeMemory} from './common.js';
+import {writeNoteSeqs, writeTimer} from './common.js';
 
 const HUMANIZE_CKPT = `${CHECKPOINTS_DIR}/music_vae/groovae_unquantize_4bar`;
 const TAP2DRUM_CKPT = `${CHECKPOINTS_DIR}/music_vae/groovae_tap2drum_2bar`;

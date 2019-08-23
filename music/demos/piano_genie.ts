@@ -16,8 +16,8 @@
  */
 
 import * as Tone from 'tone';
-import * as mm from '../src/index';
-import {CHECKPOINTS_DIR} from './common';
+import * as mm from '../src/index.js';
+import {CHECKPOINTS_DIR} from './common.js';
 
 // tslint:disable-next-line:max-line-length
 const GENIE_CHECKPOINT = `${CHECKPOINTS_DIR}/piano_genie/model/epiano/stp_iq_auto_contour_dt_166006`;

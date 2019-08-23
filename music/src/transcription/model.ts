@@ -24,7 +24,7 @@ import * as tf from '@tensorflow/tfjs';
 
 import {loadAudioFromFile, loadAudioFromUrl} from '../core/audio_utils';
 import * as logging from '../core/logging';
-import {INoteSequence} from '../protobuf';
+import {INoteSequence} from '../protobuf/index';
 
 import {preprocessAudio} from './audio_utils';
 import {MEL_SPEC_BINS, MIDI_PITCHES} from './constants';

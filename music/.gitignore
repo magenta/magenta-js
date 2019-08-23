@@ -1,3 +1,5 @@
 node_modules/
 es5/
+es6/
+.rts2_cache_es
 yarn-error.log

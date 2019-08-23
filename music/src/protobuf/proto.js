@@ -1,4 +1,4 @@
-/*eslint-disable block-scoped-var, no-redeclare, no-control-regex, no-prototype-builtins*/
+/*eslint-disable block-scoped-var, id-length, no-control-regex, no-magic-numbers, no-prototype-builtins, no-redeclare, no-shadow, no-var, sort-vars*/
 "use strict";
 
 var $protobuf = require("protobufjs/minimal");
@@ -6,10 +6,8 @@ var $protobuf = require("protobufjs/minimal");
 // Common aliases
 var $Reader = $protobuf.Reader, $Writer = $protobuf.Writer, $util = $protobuf.util;
 
-// Exported root namespace
-var $root = $protobuf.roots["default"] || ($protobuf.roots["default"] = {});
-
-$root.tensorflow = (function() {
+// NOTE: I HAD TO HAND-EDIT THIS TO BE ES MODULES
+export const tensorflow = (function() {
 
     /**
      * Namespace tensorflow.
@@ -54,6 +52,7 @@ $root.tensorflow = (function() {
              * @property {tensorflow.magenta.NoteSequence.IQuantizationInfo|null} [quantizationInfo] NoteSequence quantizationInfo
              * @property {tensorflow.magenta.NoteSequence.ISubsequenceInfo|null} [subsequenceInfo] NoteSequence subsequenceInfo
              * @property {tensorflow.magenta.ISequenceMetadata|null} [sequenceMetadata] NoteSequence sequenceMetadata
+             * @property {Array.<tensorflow.magenta.NoteSequence.IInstrumentInfo>|null} [instrumentInfos] NoteSequence instrumentInfos
              */
 
             /**
@@ -75,6 +74,7 @@ $root.tensorflow = (function() {
                 this.textAnnotations = [];
                 this.sectionAnnotations = [];
                 this.sectionGroups = [];
+                this.instrumentInfos = [];
                 if (properties)
                     for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
@@ -250,6 +250,14 @@ $root.tensorflow = (function() {
             NoteSequence.prototype.sequenceMetadata = null;
 
             /**
+             * NoteSequence instrumentInfos.
+             * @member {Array.<tensorflow.magenta.NoteSequence.IInstrumentInfo>} instrumentInfos
+             * @memberof tensorflow.magenta.NoteSequence
+             * @instance
+             */
+            NoteSequence.prototype.instrumentInfos = $util.emptyArray;
+
+            /**
              * Creates a new NoteSequence instance using the specified properties.
              * @function create
              * @memberof tensorflow.magenta.NoteSequence
@@ -325,6 +333,9 @@ $root.tensorflow = (function() {
                 if (message.sectionGroups != null && message.sectionGroups.length)
                     for (var i = 0; i < message.sectionGroups.length; ++i)
                         $root.tensorflow.magenta.NoteSequence.SectionGroup.encode(message.sectionGroups[i], writer.uint32(/* id 21, wireType 2 =*/170).fork()).ldelim();
+                if (message.instrumentInfos != null && message.instrumentInfos.length)
+                    for (var i = 0; i < message.instrumentInfos.length; ++i)
+                        $root.tensorflow.magenta.NoteSequence.InstrumentInfo.encode(message.instrumentInfos[i], writer.uint32(/* id 23, wireType 2 =*/186).fork()).ldelim();
                 return writer;
             };
 
@@ -441,6 +452,11 @@ $root.tensorflow = (function() {
                         break;
                     case 19:
                         message.sequenceMetadata = $root.tensorflow.magenta.SequenceMetadata.decode(reader, reader.uint32());
+                        break;
+                    case 23:
+                        if (!(message.instrumentInfos && message.instrumentInfos.length))
+                            message.instrumentInfos = [];
+                        message.instrumentInfos.push($root.tensorflow.magenta.NoteSequence.InstrumentInfo.decode(reader, reader.uint32()));
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -608,6 +624,15 @@ $root.tensorflow = (function() {
                     if (error)
                         return "sequenceMetadata." + error;
                 }
+                if (message.instrumentInfos != null && message.hasOwnProperty("instrumentInfos")) {
+                    if (!Array.isArray(message.instrumentInfos))
+                        return "instrumentInfos: array expected";
+                    for (var i = 0; i < message.instrumentInfos.length; ++i) {
+                        var error = $root.tensorflow.magenta.NoteSequence.InstrumentInfo.verify(message.instrumentInfos[i]);
+                        if (error)
+                            return "instrumentInfos." + error;
+                    }
+                }
                 return null;
             };
 
@@ -771,6 +796,16 @@ $root.tensorflow = (function() {
                         throw TypeError(".tensorflow.magenta.NoteSequence.sequenceMetadata: object expected");
                     message.sequenceMetadata = $root.tensorflow.magenta.SequenceMetadata.fromObject(object.sequenceMetadata);
                 }
+                if (object.instrumentInfos) {
+                    if (!Array.isArray(object.instrumentInfos))
+                        throw TypeError(".tensorflow.magenta.NoteSequence.instrumentInfos: array expected");
+                    message.instrumentInfos = [];
+                    for (var i = 0; i < object.instrumentInfos.length; ++i) {
+                        if (typeof object.instrumentInfos[i] !== "object")
+                            throw TypeError(".tensorflow.magenta.NoteSequence.instrumentInfos: object expected");
+                        message.instrumentInfos[i] = $root.tensorflow.magenta.NoteSequence.InstrumentInfo.fromObject(object.instrumentInfos[i]);
+                    }
+                }
                 return message;
             };
 
@@ -798,6 +833,7 @@ $root.tensorflow = (function() {
                     object.textAnnotations = [];
                     object.sectionAnnotations = [];
                     object.sectionGroups = [];
+                    object.instrumentInfos = [];
                 }
                 if (options.defaults) {
                     object.id = "";
@@ -897,6 +933,11 @@ $root.tensorflow = (function() {
                     object.sectionGroups = [];
                     for (var j = 0; j < message.sectionGroups.length; ++j)
                         object.sectionGroups[j] = $root.tensorflow.magenta.NoteSequence.SectionGroup.toObject(message.sectionGroups[j], options);
+                }
+                if (message.instrumentInfos && message.instrumentInfos.length) {
+                    object.instrumentInfos = [];
+                    for (var j = 0; j < message.instrumentInfos.length; ++j)
+                        object.instrumentInfos[j] = $root.tensorflow.magenta.NoteSequence.InstrumentInfo.toObject(message.instrumentInfos[j], options);
                 }
                 return object;
             };
@@ -3374,6 +3415,216 @@ $root.tensorflow = (function() {
                 return PartInfo;
             })();
 
+            NoteSequence.InstrumentInfo = (function() {
+
+                /**
+                 * Properties of an InstrumentInfo.
+                 * @memberof tensorflow.magenta.NoteSequence
+                 * @interface IInstrumentInfo
+                 * @property {number|null} [instrument] InstrumentInfo instrument
+                 * @property {string|null} [name] InstrumentInfo name
+                 */
+
+                /**
+                 * Constructs a new InstrumentInfo.
+                 * @memberof tensorflow.magenta.NoteSequence
+                 * @classdesc Represents an InstrumentInfo.
+                 * @implements IInstrumentInfo
+                 * @constructor
+                 * @param {tensorflow.magenta.NoteSequence.IInstrumentInfo=} [properties] Properties to set
+                 */
+                function InstrumentInfo(properties) {
+                    if (properties)
+                        for (var keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                            if (properties[keys[i]] != null)
+                                this[keys[i]] = properties[keys[i]];
+                }
+
+                /**
+                 * InstrumentInfo instrument.
+                 * @member {number} instrument
+                 * @memberof tensorflow.magenta.NoteSequence.InstrumentInfo
+                 * @instance
+                 */
+                InstrumentInfo.prototype.instrument = 0;
+
+                /**
+                 * InstrumentInfo name.
+                 * @member {string} name
+                 * @memberof tensorflow.magenta.NoteSequence.InstrumentInfo
+                 * @instance
+                 */
+                InstrumentInfo.prototype.name = "";
+
+                /**
+                 * Creates a new InstrumentInfo instance using the specified properties.
+                 * @function create
+                 * @memberof tensorflow.magenta.NoteSequence.InstrumentInfo
+                 * @static
+                 * @param {tensorflow.magenta.NoteSequence.IInstrumentInfo=} [properties] Properties to set
+                 * @returns {tensorflow.magenta.NoteSequence.InstrumentInfo} InstrumentInfo instance
+                 */
+                InstrumentInfo.create = function create(properties) {
+                    return new InstrumentInfo(properties);
+                };
+
+                /**
+                 * Encodes the specified InstrumentInfo message. Does not implicitly {@link tensorflow.magenta.NoteSequence.InstrumentInfo.verify|verify} messages.
+                 * @function encode
+                 * @memberof tensorflow.magenta.NoteSequence.InstrumentInfo
+                 * @static
+                 * @param {tensorflow.magenta.NoteSequence.IInstrumentInfo} message InstrumentInfo message or plain object to encode
+                 * @param {$protobuf.Writer} [writer] Writer to encode to
+                 * @returns {$protobuf.Writer} Writer
+                 */
+                InstrumentInfo.encode = function encode(message, writer) {
+                    if (!writer)
+                        writer = $Writer.create();
+                    if (message.instrument != null && message.hasOwnProperty("instrument"))
+                        writer.uint32(/* id 1, wireType 0 =*/8).int32(message.instrument);
+                    if (message.name != null && message.hasOwnProperty("name"))
+                        writer.uint32(/* id 2, wireType 2 =*/18).string(message.name);
+                    return writer;
+                };
+
+                /**
+                 * Encodes the specified InstrumentInfo message, length delimited. Does not implicitly {@link tensorflow.magenta.NoteSequence.InstrumentInfo.verify|verify} messages.
+                 * @function encodeDelimited
+                 * @memberof tensorflow.magenta.NoteSequence.InstrumentInfo
+                 * @static
+                 * @param {tensorflow.magenta.NoteSequence.IInstrumentInfo} message InstrumentInfo message or plain object to encode
+                 * @param {$protobuf.Writer} [writer] Writer to encode to
+                 * @returns {$protobuf.Writer} Writer
+                 */
+                InstrumentInfo.encodeDelimited = function encodeDelimited(message, writer) {
+                    return this.encode(message, writer).ldelim();
+                };
+
+                /**
+                 * Decodes an InstrumentInfo message from the specified reader or buffer.
+                 * @function decode
+                 * @memberof tensorflow.magenta.NoteSequence.InstrumentInfo
+                 * @static
+                 * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+                 * @param {number} [length] Message length if known beforehand
+                 * @returns {tensorflow.magenta.NoteSequence.InstrumentInfo} InstrumentInfo
+                 * @throws {Error} If the payload is not a reader or valid buffer
+                 * @throws {$protobuf.util.ProtocolError} If required fields are missing
+                 */
+                InstrumentInfo.decode = function decode(reader, length) {
+                    if (!(reader instanceof $Reader))
+                        reader = $Reader.create(reader);
+                    var end = length === undefined ? reader.len : reader.pos + length, message = new $root.tensorflow.magenta.NoteSequence.InstrumentInfo();
+                    while (reader.pos < end) {
+                        var tag = reader.uint32();
+                        switch (tag >>> 3) {
+                        case 1:
+                            message.instrument = reader.int32();
+                            break;
+                        case 2:
+                            message.name = reader.string();
+                            break;
+                        default:
+                            reader.skipType(tag & 7);
+                            break;
+                        }
+                    }
+                    return message;
+                };
+
+                /**
+                 * Decodes an InstrumentInfo message from the specified reader or buffer, length delimited.
+                 * @function decodeDelimited
+                 * @memberof tensorflow.magenta.NoteSequence.InstrumentInfo
+                 * @static
+                 * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+                 * @returns {tensorflow.magenta.NoteSequence.InstrumentInfo} InstrumentInfo
+                 * @throws {Error} If the payload is not a reader or valid buffer
+                 * @throws {$protobuf.util.ProtocolError} If required fields are missing
+                 */
+                InstrumentInfo.decodeDelimited = function decodeDelimited(reader) {
+                    if (!(reader instanceof $Reader))
+                        reader = new $Reader(reader);
+                    return this.decode(reader, reader.uint32());
+                };
+
+                /**
+                 * Verifies an InstrumentInfo message.
+                 * @function verify
+                 * @memberof tensorflow.magenta.NoteSequence.InstrumentInfo
+                 * @static
+                 * @param {Object.<string,*>} message Plain object to verify
+                 * @returns {string|null} `null` if valid, otherwise the reason why it is not
+                 */
+                InstrumentInfo.verify = function verify(message) {
+                    if (typeof message !== "object" || message === null)
+                        return "object expected";
+                    if (message.instrument != null && message.hasOwnProperty("instrument"))
+                        if (!$util.isInteger(message.instrument))
+                            return "instrument: integer expected";
+                    if (message.name != null && message.hasOwnProperty("name"))
+                        if (!$util.isString(message.name))
+                            return "name: string expected";
+                    return null;
+                };
+
+                /**
+                 * Creates an InstrumentInfo message from a plain object. Also converts values to their respective internal types.
+                 * @function fromObject
+                 * @memberof tensorflow.magenta.NoteSequence.InstrumentInfo
+                 * @static
+                 * @param {Object.<string,*>} object Plain object
+                 * @returns {tensorflow.magenta.NoteSequence.InstrumentInfo} InstrumentInfo
+                 */
+                InstrumentInfo.fromObject = function fromObject(object) {
+                    if (object instanceof $root.tensorflow.magenta.NoteSequence.InstrumentInfo)
+                        return object;
+                    var message = new $root.tensorflow.magenta.NoteSequence.InstrumentInfo();
+                    if (object.instrument != null)
+                        message.instrument = object.instrument | 0;
+                    if (object.name != null)
+                        message.name = String(object.name);
+                    return message;
+                };
+
+                /**
+                 * Creates a plain object from an InstrumentInfo message. Also converts values to other types if specified.
+                 * @function toObject
+                 * @memberof tensorflow.magenta.NoteSequence.InstrumentInfo
+                 * @static
+                 * @param {tensorflow.magenta.NoteSequence.InstrumentInfo} message InstrumentInfo
+                 * @param {$protobuf.IConversionOptions} [options] Conversion options
+                 * @returns {Object.<string,*>} Plain object
+                 */
+                InstrumentInfo.toObject = function toObject(message, options) {
+                    if (!options)
+                        options = {};
+                    var object = {};
+                    if (options.defaults) {
+                        object.instrument = 0;
+                        object.name = "";
+                    }
+                    if (message.instrument != null && message.hasOwnProperty("instrument"))
+                        object.instrument = message.instrument;
+                    if (message.name != null && message.hasOwnProperty("name"))
+                        object.name = message.name;
+                    return object;
+                };
+
+                /**
+                 * Converts this InstrumentInfo to JSON.
+                 * @function toJSON
+                 * @memberof tensorflow.magenta.NoteSequence.InstrumentInfo
+                 * @instance
+                 * @returns {Object.<string,*>} JSON object
+                 */
+                InstrumentInfo.prototype.toJSON = function toJSON() {
+                    return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+                };
+
+                return InstrumentInfo;
+            })();
+
             NoteSequence.SourceInfo = (function() {
 
                 /**
@@ -5705,5 +5956,3 @@ $root.tensorflow = (function() {
 
     return tensorflow;
 })();
-
-module.exports = $root;

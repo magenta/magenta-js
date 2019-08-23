@@ -16,8 +16,8 @@
  */
 
 import {saveAs} from 'file-saver';
-import * as mm from '../src';
-import {sequences} from '../src';
+import * as mm from '../src/index.js';
+import {sequences} from '../src/core/index.js';
 
 export const CHECKPOINTS_DIR =
     'https://storage.googleapis.com/magentadata/js/checkpoints';

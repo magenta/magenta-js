@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {INoteSequence, NoteSequence} from '../protobuf';
+import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import {logging, sequences} from '.';
 import {MAX_MIDI_PITCH, MIN_MIDI_PITCH} from './constants';
@@ -141,7 +141,8 @@ export abstract class BaseVisualizer {
         this.noteSequence.totalQuantizedSteps :
         this.noteSequence.totalTime;
     if (!endTime) {
-      throw new Error('The sequence you are using with the ' +
+      throw new Error(
+          'The sequence you are using with the ' +
           'mm.PianoRollSVGVisualizer does not have a ' +
           (this.sequenceIsQuantized ? 'totalQuantizedSteps' : 'totalTime') +
           ' field set, so the visualizer can\'t be horizontally ' +

@@ -19,9 +19,10 @@
 /**
  * Imports
  */
+// @ts-ignore
 import * as Tone from 'tone';
 
-import {INoteSequence, NoteSequence} from '../protobuf';
+import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import {sequences} from '.';
 import * as constants from './constants';
@@ -370,10 +371,8 @@ class DrumKit {
 export class Player extends BasePlayer {
   private drumKit = DrumKit.getInstance();
 
-  private bassSynth = new Tone.Synth({
-    volume: 5,
-    oscillator: { type: 'triangle' }
-  }).toMaster();
+  private bassSynth =
+      new Tone.Synth({volume: 5, oscillator: {type: 'triangle'}}).toMaster();
 
   private polySynth = new Tone.PolySynth(10).toMaster();
 

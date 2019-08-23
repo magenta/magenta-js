@@ -1,16 +1,13 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "allowSyntheticDefaultImports": true,
     "noImplicitAny": true,
     "removeComments": true,
     "preserveConstEnums": true,
-    "declaration": true,
-    "target": "es5",
     "allowJs": false,
     "sourceMap": true,
     "lib": ["es2015", "dom"],
-    "types": ["webmidi", "d3"],
-    "outDir": "./es5",
+    "types": ["webmidi", "d3", "jasmine"],
     "noUnusedLocals": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
@@ -20,7 +17,10 @@
     "noFallthroughCasesInSwitch": true,
     "allowUnreachableCode": false,
     "experimentalDecorators": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "module": "esnext",
+    "target": "esnext",
+    "moduleResolution": "node"
   },
   "include": [ "src/" ]
 }
