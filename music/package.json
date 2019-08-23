@@ -51,7 +51,8 @@
     "typescript": "^3.5.3",
     "webpack": "^4.24.0",
     "webpack-cli": "^3.1.2",
-    "webpack-dev-server": "^3.1.14"
+    "webpack-dev-server": "^3.1.14",
+    "webpack-node-externals": "^1.7.2"
   },
   "scripts": {
     "prepublish": "in-publish && yarn lint && yarn test && yarn build && yarn docs && yarn bundle || not-in-publish",

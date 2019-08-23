@@ -1,25 +1,18 @@
 const Terser = require('terser-webpack-plugin');
 const path = require('path');
-// import { baseConfig } from './base.config';
 const glob = require('glob');
 
 const src = path.resolve(__dirname, '../src');
-// const matches = glob.sync('{*/*.ts,index.ts,lib.ts}', { cwd: src });
 const matches = glob.sync('*.ts', { cwd: src });
 
 const entries = matches.reduce((entries, entry) => {
-	// const name = (entry.match(/([^\/]+)(\/index)?\.ts$/) || [])[1];
-  // entries[name] = entry;
   if (!entry.match(/test|\.d\./)) {
     entries[entry.replace(/\.ts$/, '')] = './' + entry;
   }
 	return entries;
 }, {});
 
-console.log(src, matches, entries);
-
 module.exports = {
-	// ...baseConfig,
 	mode: 'production',
 	context: src,
   entry: entries,
@@ -54,6 +47,9 @@ module.exports = {
       // }
     }],
   },
+
+  // if bundling for Node/Webpack usage, don't bundle node_modules
+  externals: require('webpack-node-externals')(),
 
   resolve: {
     extensions: [ '.ts', '.js' ],
