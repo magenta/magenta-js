@@ -22,14 +22,14 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
-import * as aux_inputs from '../core/aux_inputs.js';
-import * as chords from '../core/chords.js';
-import * as data from '../core/data.js';
-import * as logging from '../core/logging.js';
-import * as sequences from '../core/sequences.js';
-import {INoteSequence} from '../protobuf/index.js';
+import * as aux_inputs from '../core/aux_inputs';
+import * as chords from '../core/chords';
+import * as data from '../core/data';
+import * as logging from '../core/logging';
+import * as sequences from '../core/sequences';
+import {INoteSequence} from '../protobuf/index';
 
-import {ATTENTION_PREFIX, AttentionWrapper} from './attention.js';
+import {ATTENTION_PREFIX, AttentionWrapper} from './attention';
 
 /**
  * @hidden

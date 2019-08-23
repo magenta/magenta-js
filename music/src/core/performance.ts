@@ -18,10 +18,10 @@
 /**
  * Imports
  */
-import {INoteSequence, NoteSequence} from '../protobuf/index.js';
+import {INoteSequence, NoteSequence} from '../protobuf/index';
 
-import * as constants from './constants.js';
-import * as sequences from './sequences.js';
+import * as constants from './constants';
+import * as sequences from './sequences';
 
 /**
  * Start a new note.

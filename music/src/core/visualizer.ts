@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-import {INoteSequence, NoteSequence} from '../protobuf/index.js';
+import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import {logging, sequences} from '.';
-import {MAX_MIDI_PITCH, MIN_MIDI_PITCH} from './constants.js';
+import {MAX_MIDI_PITCH, MIN_MIDI_PITCH} from './constants';
 
 /**
  * An interface for providing configurable properties to a Visualizer.

@@ -25,11 +25,11 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
-import {INoteSequence, NoteSequence} from '../protobuf/index.js';
+import {INoteSequence, NoteSequence} from '../protobuf/index';
 
-import * as constants from './constants.js';
-import * as performance from './performance.js';
-import * as sequences from './sequences.js';
+import * as constants from './constants';
+import * as performance from './performance';
+import * as sequences from './sequences';
 
 export const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
   // bass drum

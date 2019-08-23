@@ -18,11 +18,11 @@
 import * as tf from '@tensorflow/tfjs';
 import * as test from 'tape';
 
-import {NoteSequence} from '../protobuf/index.js';
+import {NoteSequence} from '../protobuf/index';
 
-import * as constants from './constants.js';
-import * as data from './data.js';
-import * as sequences from './sequences.js';
+import * as constants from './constants';
+import * as data from './data';
+import * as sequences from './sequences';
 
 const MEL_NS = NoteSequence.create({
   notes: [

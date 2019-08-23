@@ -15,5 +15,5 @@
  * =============================================================================
  */
 
-export {MidiMe} from './midi_me.js';
-export {Decoder, Encoder, MusicVAE} from './model.js';
+export {MidiMe} from './midi_me';
+export {Decoder, Encoder, MusicVAE} from './model';

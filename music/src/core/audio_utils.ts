@@ -23,7 +23,7 @@ import ndarray from 'ndarray';
 //@ts-ignore
 import resample from 'ndarray-resample';
 
-import * as logging from './logging.js';
+import * as logging from './logging';
 
 // Safari Webkit only supports 44.1kHz audio.
 const WEBKIT_SAMPLE_RATE = 44100;

@@ -18,11 +18,11 @@
 import * as tf from '@tensorflow/tfjs';
 export {tf};
 
-export * from './core/index.js';
-export * from './coconet/index.js';
-export * from './music_rnn/index.js';
-export * from './music_vae/index.js';
-export * from './piano_genie/index.js';
-export * from './protobuf/index.js';
-export * from './transcription/index.js';
-export * from './gansynth/index.js';
+export * from './core/index';
+export * from './coconet/index';
+export * from './music_rnn/index';
+export * from './music_vae/index';
+export * from './piano_genie/index';
+export * from './protobuf/index';
+export * from './transcription/index';
+export * from './gansynth/index';

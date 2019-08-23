@@ -18,11 +18,11 @@
 import * as fs from 'fs';
 import * as test from 'tape';
 
-import {NoteSequence} from '../protobuf/index.js';
+import {NoteSequence} from '../protobuf/index';
 
-import * as constants from './constants.js';
-import * as midi_io from './midi_io.js';
-import * as sequences from './sequences.js';
+import * as constants from './constants';
+import * as midi_io from './midi_io';
+import * as sequences from './sequences';
 
 const simpleNs = NoteSequence.create({
   ticksPerQuarter: 220,

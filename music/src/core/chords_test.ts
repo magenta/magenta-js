@@ -17,7 +17,7 @@
 
 import * as tf from '@tensorflow/tfjs';
 import * as test from 'tape';
-import * as chords from './chords.js';
+import * as chords from './chords';
 
 import ChordQuality = chords.ChordQuality;
 import ChordSymbolException = chords.ChordSymbolException;

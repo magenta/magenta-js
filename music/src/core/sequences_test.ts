@@ -16,8 +16,8 @@
  */
 
 import * as test from 'tape';
-import {NoteSequence} from '../protobuf/index.js';
-import * as sequences from './sequences.js';
+import {NoteSequence} from '../protobuf/index';
+import * as sequences from './sequences';
 
 const STEPS_PER_QUARTER = 4;
 

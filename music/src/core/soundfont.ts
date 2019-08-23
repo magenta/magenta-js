@@ -22,7 +22,7 @@
  */
 // @ts-ignore
 import * as Tone from 'tone';
-import * as constants from './constants.js';
+import * as constants from './constants';
 
 /**
  * Instrument sample pitch and velocity.

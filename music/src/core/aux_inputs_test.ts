@@ -17,7 +17,7 @@
 
 import * as tf from '@tensorflow/tfjs';
 import * as test from 'tape';
-import * as aux_inputs from './aux_inputs.js';
+import * as aux_inputs from './aux_inputs';
 
 test('Test Binary Counter', (t: test.Test) => {
   const spec: aux_inputs.BinaryCounterSpec = {

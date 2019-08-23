@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 // tslint:disable-next-line:max-line-length
-import {melSpectrogram, powerToDb, resampleAndMakeMono} from '../core/audio_utils.js';
-import {MEL_SPEC_BINS, SAMPLE_RATE, SPEC_HOP_LENGTH} from './constants.js';
+import {melSpectrogram, powerToDb, resampleAndMakeMono} from '../core/audio_utils';
+import {MEL_SPEC_BINS, SAMPLE_RATE, SPEC_HOP_LENGTH} from './constants';
 
 /**
  * Resamples and computes a log mel spectrogram from the given AudioBuffer.

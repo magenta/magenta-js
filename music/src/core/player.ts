@@ -22,12 +22,12 @@
 // @ts-ignore
 import * as Tone from 'tone';
 
-import {INoteSequence, NoteSequence} from '../protobuf/index.js';
+import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import {sequences} from '.';
-import * as constants from './constants.js';
-import {DEFAULT_DRUM_PITCH_CLASSES} from './data.js';
-import * as soundfont from './soundfont.js';
+import * as constants from './constants';
+import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
+import * as soundfont from './soundfont';
 
 function compareQuantizedNotes(a: NoteSequence.INote, b: NoteSequence.INote) {
   if (a.quantizedStartStep < b.quantizedStartStep) {

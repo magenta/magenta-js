@@ -8,8 +8,10 @@
   <div>does mm.Player work? <b id="player">loading...</b></div>
   <div>does MusicVAE work? <b id="musicvae">loading...</b></div>
 </body>
+<script src="../es6/core.js"></script>
+<!-- <script src="../es6/music_vae.js"></script> -->
 <script type="module">
-  import { Player } from '../es6/core/player.js';
+  // import { Player } from '../es6/core/index.js';
   const player = new mm.Player();
   document.getElementById('player').textContent = player.drumKit ? 'yes' : 'no';
 

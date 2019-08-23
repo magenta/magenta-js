@@ -15,4 +15,4 @@
  * =============================================================================
  */
 
-export {OnsetsAndFrames} from './model.js';
+export {OnsetsAndFrames} from './model';

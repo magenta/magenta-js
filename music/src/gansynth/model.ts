@@ -22,9 +22,9 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
-import * as logging from '../core/logging.js';
-import {specgramsToAudio} from './audio_utils.js';
-import {boxUpscale, initialPad, pixelNorm} from './custom_layers.js';
+import * as logging from '../core/logging';
+import {specgramsToAudio} from './audio_utils';
+import {boxUpscale, initialPad, pixelNorm} from './custom_layers';
 
 class GANSynth {
   private checkpointURL: string;

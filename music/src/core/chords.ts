@@ -23,7 +23,7 @@
  */
 import * as tf from '@tensorflow/tfjs';
 import {Chord, Note} from 'tonal';
-import * as constants from './constants.js';
+import * as constants from './constants';
 
 const CHORD_QUALITY_INTERVALS = [
   ['1P', '3M', '5P'],  // major

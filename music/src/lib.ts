@@ -14,6 +14,6 @@
  * limitations under the License.
  * =============================================================================
  */
-import * as mm from './index.js';
+import * as mm from './index';
 // tslint:disable-next-line
 (window as any).mm = mm;
