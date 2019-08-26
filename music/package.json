@@ -55,7 +55,7 @@
     "build:node": "webpack --config webpack/node.config.ts && cp src/protobuf/proto.* node/protobuf",
     "build:clean": "rm -rf ./es5 && rm -rf ./es6 && rm -rf ./node && rm -rf ./dist",
     "build": "npm run build:clean && npm run build:es5 && npm run build:node && npm run build:es6",
-    "lint": "tslint -c ../tslint.json -p . -t verbose",
+    "lint": "tslint -c ../tslint.json -p ./tsconfig.es5.json -t verbose",
     "test": "ts-node node_modules/tape/bin/tape src/**/*_test.ts",
     "test-node-build": "ts-node node_modules/tape/bin/tape build_tests/node.ts",
     "build-demos": "webpack --config ./webpack/es5.demo.config.ts",
