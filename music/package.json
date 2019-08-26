@@ -51,8 +51,8 @@
   "scripts": {
     "prepublish": "in-publish && yarn lint && yarn test && yarn build && yarn test-node-build && yarn docs && yarn bundle || not-in-publish",
     "build:es5": "tsc --outdir es5 --module commonjs --target es5 && cp src/protobuf/proto.* es5/protobuf",
-    "build:es6": "webpack --config webpack/es6.config.js && cp src/protobuf/proto.* es6/protobuf",
-    "build": "npm run build:es5 && npm run build:es6",
+    "build:node": "webpack --config webpack/es6.config.js && cp src/protobuf/proto.* es6/protobuf",
+    "build": "npm run build:es5 && npm run build:node",
     "bundle": "webpack --config ./webpack/lib.config.ts",
     "lint": "tslint -c ../tslint.json -p . -t verbose",
     "test": "ts-node node_modules/tape/bin/tape src/**/*_test.ts",
