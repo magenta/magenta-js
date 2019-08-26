@@ -110,9 +110,9 @@ there would be a risk of downloading multiple copies on the same page). Here is 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/13.8.21/Tone.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/1.2.8/tf.min.js"></script>
   <!-- Core library, since we're going to use a player -->
-  <script src="../es6/core.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@magenta/music@^1.0.0/es6/core.js"></script>
   <!--Model we want to use -->
-  <script src="../es6/music_vae.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@magenta/music@^1.0.0/es6/music_vae.js"></script>
 </head>
 <script>
   // Each bundle exports a global object with the name of the bundle.
@@ -126,7 +126,7 @@ there would be a risk of downloading multiple copies on the same page). Here is 
 </html>
 ```
 
-### In node.js
+### In Node
 You can use [MagentaMusic.js][mm-npm] in your project using [yarn](https://yarnpkg.com/en/)
 (by calling `yarn add @magenta/music`) **or** [npm](https://docs.npmjs.com/cli/npm)
 (by calling `npn install --save @magenta/music`).
