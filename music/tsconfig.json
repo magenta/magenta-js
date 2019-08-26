@@ -8,7 +8,7 @@
     "sourceMap": true,
     "lib": ["es2015", "dom"],
     "types": ["webmidi", "d3"],
-    "outDir": "./es5",
+    "outDir": "./es6",
     "noUnusedLocals": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,

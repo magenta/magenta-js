@@ -16,9 +16,9 @@
  */
 
 // tslint:disable:no-require-imports
-const mm = require('../es6/music_vae');
-const core = require('../es6/core');
-const proto = require('../es6/protobuf');
+const mm = require('../node/music_vae');
+const core = require('../node/core');
+const proto = require('../node/protobuf');
 const test = require('tape');
 const tf = require('@tensorflow/tfjs');
 

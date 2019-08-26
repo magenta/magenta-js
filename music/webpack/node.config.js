@@ -6,7 +6,7 @@ const src = path.resolve(__dirname, '../src');
 const matches = glob.sync('*.ts', { cwd: src });
 
 const entries = matches.reduce((entries, entry) => {
-	if (!entry.match(/test|\.d\./)) {
+  if (!entry.match(/test|\.d\./)) {
     entries[entry.replace(/\.ts$/, '')] = './' + entry;
   }
 	return entries;
@@ -19,10 +19,10 @@ module.exports = {
 	output: {
     filename: '[name].js',
     chunkFilename: '_lib/[name].js',
-    globalObject: 'self',
-    library: '[name]',
+    library: 'mm',
     libraryTarget: 'umd',
-		path: path.resolve(__dirname, '../es6')
+    path: path.resolve(__dirname, '../node'),
+    globalObject: 'global'
   },
 	optimization: {
     minimize: true,
@@ -42,22 +42,8 @@ module.exports = {
       loader: 'ts-loader',
     }],
   },
-  // Don't package these huge dependencies with the bundles, since we'd
-  // be downloading duplicates.
-  externals: {
-    Tone: {
-      commonjs: 'tone',
-      commonjs2: 'tone',
-      amd: 'tone',
-      root: 'Tone'
-    },
-    tf: {
-      commonjs: '@tensorflow/tfjs',
-      commonjs2: '@tensorflow/tfjs',
-      amd: '@tensorflow/tfjs',
-      root: 'tf'
-    }
-  },
+  // If bundling for Node/Webpack usage, don't bundle node_modules.
+  externals: require('webpack-node-externals')(),
   resolve: {
     extensions: [ '.ts', '.js' ],
   },
