@@ -56,7 +56,7 @@
     "bundle": "webpack --config ./webpack/lib.config.ts",
     "lint": "tslint -c ../tslint.json -p . -t verbose",
     "test": "ts-node node_modules/tape/bin/tape src/**/*_test.ts",
-    "test-node-build": "ts-node node_modules/tape/bin/tape build_tests/**/*_test.ts",
+    "test-node-build": "ts-node node_modules/tape/bin/tape build_tests/test.ts",
     "build-demos": "webpack --config ./webpack/demo.config.ts",
     "publish-demos": "yarn build-demos && mkdir -p ../docs/music/demos && cp demos/*.{js,html,mid,css} ../docs/music/demos",
     "run-demos": "webpack-dev-server --config ./webpack/demo.config.ts",

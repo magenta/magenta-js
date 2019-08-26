@@ -22,7 +22,8 @@ const entries = matches.reduce((entries, entry) => {
     globalObject: 'self',
     library: 'mm',
     libraryTarget: 'umd',
-		path: path.resolve(__dirname, '../es6')
+    path: path.resolve(__dirname, '../es6'),
+    globalObject: 'global'
   },
 	optimization: {
     minimize: true,
@@ -39,7 +40,7 @@ const entries = matches.reduce((entries, entry) => {
     rules: [{
       test: /\.ts$/,
       exclude: /node_modules/,
-      loader: 'awesome-typescript-loader',
+      loader: 'ts-loader',
     }],
   },
 
