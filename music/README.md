@@ -59,13 +59,15 @@ missing, or feel free to submit a Pull Request!
 
 ## Getting started
 
-There are two main ways to get MagentaMusic.js in your JavaScript project:
-via [script tags](https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_JavaScript_within_a_webpage) **or** by installing it from [NPM](https://www.npmjs.com/)
-and using a build tool like [yarn](https://yarnpkg.com/en/).
+There are several ways to get `magentamusic.js` in your JavaScript project,
+either in the browser, or in Node:
 
-### via Script Tag
+### Including an ES5 bundle in a [`<script>` tag](https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_JavaScript_within_a_webpage)
 
-Add the following code to an HTML file:
+This has all the models and all the core library helpers all bundled into
+one file. This is the simplest way to use Magenta.js.
+
+To use this bundle, add the following code to an HTML file:
 
 ```html
 <html>
@@ -94,19 +96,57 @@ and the code will run. Click the "Play Trio" button to hear 4-bar trios that are
 
 It's also easy to add the ability to download MIDI for generated outputs, which is demonstrated in [this example](https://goo.gl/magenta/simpletriodl).
 
-### via NPM
+See our [demos](./demos) for example usage.
 
-Add [MagentaMusic.js][mm-npm] to your project using [yarn](https://yarnpkg.com/en/) **or** [npm](https://docs.npmjs.com/cli/npm).
-For example, with yarn you can simply call `yarn add @magenta/music`.
+### Using a smaller ES6 bundle for just the code you need
+We have also split all the models and the core library into smaller ES6 bundles (not ESModules, unfortunately 😢), so that you can use a model independent of the rest of the
+library. These bundles don't package `Tone.js` or `TensorFlow.js` (since
+there would be a risk of downloading multiple copies on the same page). Here is an example:
+```html
+<html>
+<head>
+  ...
+  <!-- You need to bring your own Tone.js for the player, and tfjs for the model -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/13.8.21/Tone.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/1.2.8/tf.min.js"></script>
+  <!-- Core library, since we're going to use a player -->
+  <script src="../es6/core.js"></script>
+  <!--Model we want to use -->
+  <script src="../es6/music_vae.js"></script>
+</head>
+<script>
+  // Each bundle exports a global object with the name of the bundle.
+  const player = new core.Player();
+  //...
+  const mvae = new music_vae.MusicVAE('https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_2bar_small');
+  mvae.initialize().then(() => {
+    //...
+  });
+</script>
+</html>
+```
 
-Then, you can use the library in your own code as in the following example:
+### In node.js
+You can use [MagentaMusic.js][mm-npm] in your project using [yarn](https://yarnpkg.com/en/)
+(by calling `yarn add @magenta/music`) **or** [npm](https://docs.npmjs.com/cli/npm)
+(by calling `npn install --save @magenta/music`).
+
+The node-specific bundles (that don't transpile the CommonJS modules) are under
+`@magenta/music/node`. For example:
 
 ```js
-import * as mm from '@magenta/music';
+const model = require('@magenta/music/node/music_vae');
+const core = require('@magenta/music/node/core');
 
-const model = new mm.MusicVAE('/path/to/checkpoint');
-const player = new mm.Player();
+// These hacks below are needed because the library uses performance and fetch which
+// exist in browsers but not in node. We are working on simplifying this!
+const globalAny: any = global;
+globalAny.performance = Date;
+globalAny.fetch = require('node-fetch');
 
+// Your code:
+const model = new mode.MusicVAE('/path/to/checkpoint');
+const player = new core.Player();
 model
   .initialize()
   .then(() => model.sample(1))
@@ -116,15 +156,13 @@ model
   });
 ```
 
-See our [demos](./demos) for example usage.
-
 #### Example Commands
 
 `yarn install` to install dependencies.
 
 `yarn test` to run tests.
 
-`yarn bundle` to produce a bundled version in `dist/`.
+`yarn build` to produce the different bundled versions.
 
 `yarn run-demos` to build and serve the demos, with live reload.
 
