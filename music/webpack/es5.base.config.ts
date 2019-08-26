@@ -3,12 +3,10 @@ export const baseConfig = {
     rules: [{
       test: /\.ts$/,
       exclude: /node_modules/,
-      use: 'ts-loader',
+      use: {loader: 'ts-loader', options: {configFile: 'tsconfig.es5.json'}}
     }],
   },
-  node: {
-    fs: 'empty'
-  },
+  node: {fs: 'empty'},
   resolve: {
     extensions: ['.ts', '.js'],
   },

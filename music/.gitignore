@@ -3,4 +3,5 @@ node_modules/
 es5/
 es6/
 node/
+dist/
 yarn-error.log

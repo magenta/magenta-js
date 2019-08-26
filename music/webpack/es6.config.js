@@ -39,7 +39,7 @@ module.exports = {
     rules: [{
       test: /\.ts$/,
       exclude: /node_modules/,
-      loader: 'ts-loader',
+      use: {loader: 'ts-loader', options: {configFile: 'tsconfig.es6.json'}}
     }],
   },
   // Don't package these huge dependencies with the bundles, since we'd
