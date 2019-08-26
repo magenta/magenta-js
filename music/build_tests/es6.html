@@ -8,13 +8,17 @@
   <div>does mm.Player work? <b id="player">loading...</b></div>
   <div>does MusicVAE work? <b id="musicvae">loading...</b></div>
 </body>
-<!-- You need to bring your own Tone.js and tfjs-->
-<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/13.8.21/Tone.js"></script> -->
+<!-- You need to bring your own Tone.js and tfjs. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/13.8.21/Tone.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/1.2.8/tf.min.js"></script>
 <script src="../es6/core.js"></script>
 <script src="../es6/music_vae.js"></script>
+<!-- Do an extra import to make sure we're not double-downloading tfjs. -->
+<script src="../es6/coconet.js"></script>
 <script>
   const player = new core.Player();
   document.getElementById('player').textContent = player.drumKit ? 'yes' : 'no';
+
   const mvae = new music_vae.MusicVAE('https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_2bar_small');
   mvae.initialize().then(() => {
     document.getElementById('musicvae').textContent = mvae.isInitialized ? 'yes' : 'no';
