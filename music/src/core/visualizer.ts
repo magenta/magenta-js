@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import {INoteSequence, NoteSequence} from '../protobuf';
+import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import {logging, sequences} from '.';
 import {MAX_MIDI_PITCH, MIN_MIDI_PITCH} from './constants';

@@ -20,8 +20,8 @@
  */
 import * as tf from '@tensorflow/tfjs-core';
 
-import {logging, sequences} from '..';
-import {INoteSequence} from '../protobuf';
+import {logging, sequences} from '../index';
+import {INoteSequence} from '../protobuf/index';
 
 import {IS_IOS, NUM_PITCHES, pianorollToSequence, sequenceToPianoroll} from './coconet_utils';
 
