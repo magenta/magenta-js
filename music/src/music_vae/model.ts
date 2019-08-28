@@ -26,7 +26,7 @@ import * as chords from '../core/chords';
 import * as constants from '../core/constants';
 import * as data from '../core/data';
 import * as logging from '../core/logging';
-import {INoteSequence} from '../protobuf';
+import {INoteSequence} from '../protobuf/index';
 
 /**
  * A class for keeping track of the parameters of an affine transformation.
