@@ -1,6 +1,6 @@
 import * as path from 'path';
 
-import {baseConfig} from './base.config';
+import {baseConfig} from './es5.base.config';
 
 module.exports = {
   ...baseConfig,

@@ -19,9 +19,10 @@
 /**
  * Imports
  */
+// @ts-ignore
 import * as Tone from 'tone';
 
-import {INoteSequence, NoteSequence} from '../protobuf';
+import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import {sequences} from '.';
 import * as constants from './constants';

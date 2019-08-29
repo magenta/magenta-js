@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as minimist from 'minimist';
 import * as path from 'path';
 
-import {baseConfig} from './base.config';
+import {baseConfig} from './es5.base.config';
 
 // Allow for specific demos to built with a --demos=<someName>,<someOtherName>
 // CLI format.

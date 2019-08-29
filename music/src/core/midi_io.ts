@@ -23,7 +23,7 @@
  */
 import * as midiconvert from 'midiconvert';
 
-import {INoteSequence, NoteSequence} from '../protobuf';
+import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import * as constants from './constants';
 import * as sequences from './sequences';
@@ -223,7 +223,12 @@ export function blobToNoteSequence(blob: Blob): Promise<NoteSequence> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
-      resolve(midiToSequenceProto(reader.result as string));
+      try {
+        const ns = midiToSequenceProto(reader.result as string);
+        resolve(ns);
+      } catch (error) {
+        reject(error);
+      }
     };
     reader.onerror = (e) => reject(e);
     reader.readAsBinaryString(blob);

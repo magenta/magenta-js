@@ -17,9 +17,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+// @ts-ignore
 import * as Tone from 'tone';
 
-import {NoteSequence} from '../protobuf';
+import {NoteSequence} from '../protobuf/index';
 
 import {DEFAULT_QUARTERS_PER_MINUTE} from './constants';
 
