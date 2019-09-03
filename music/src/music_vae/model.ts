@@ -494,9 +494,11 @@ class ConductorDecoder extends Decoder {
         }
         samples.push(tf.concat(currSamples, -1));
         initialInput = currSamples.map(
-            s => s.slice([0, -1, 0], [batchSize, 1, s.shape[s.rank - 1]])
-                     .squeeze([1])
-                     .toFloat() as tf.Tensor2D);
+          s => s.slice(
+                    [0, s.shape[1] - 1, 0],
+                    [batchSize, 1, s.shape[s.rank - 1]])
+                   .squeeze([1])
+                   .toFloat() as tf.Tensor2D);
       }
       return tf.concat(samples, 1);
     });
