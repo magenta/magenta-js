@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>CoconetConfig | @magenta/music</title>
+	<title>&quot;gansynth&quot; | @magenta/music</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,100 +54,16 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="../modules/_coconet_model_.html">&quot;coconet/model&quot;</a>
-				</li>
-				<li>
-					<a href="_coconet_model_.coconetconfig.html">CoconetConfig</a>
+					<a href="_gansynth_.html">&quot;gansynth&quot;</a>
 				</li>
 			</ul>
-			<h1>Interface CoconetConfig</h1>
+			<h1>External module &quot;gansynth&quot;</h1>
 		</div>
 	</div>
 </header>
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
-			<section class="tsd-panel tsd-comment">
-				<div class="tsd-comment tsd-typography">
-					<div class="lead">
-						<p>An interface for providing configurable properties to a Coconet model.</p>
-					</div>
-					<dl class="tsd-comment-tags">
-						<dt>param</dt>
-						<dd><p>(Optional) The softmax temperature to use when sampling
-							from the logits. Default is 0.99.</p>
-						</dd>
-						<dt>param</dt>
-						<dd><p>(Optional) The number of Gibbs sampling iterations
-								before the final output. Fewer iterations will be faster but have poorer
-							results; more iterations will be slower but have better results.</p>
-						</dd>
-						<dt>param</dt>
-						<dd><p>(Optional) Array of timesteps at which the model should
-								infill notes. The array should contain pairs of the form
-								<code>{step: number, voice: number}</code>, indicating which voice should be
-								infilled for a particular step. If this value isn&#39;t provided, then the model
-							will attempt to infill all the &quot;silent&quot; steps in the input sequence.</p>
-						</dd>
-					</dl>
-				</div>
-			</section>
-			<section class="tsd-panel tsd-hierarchy">
-				<h3>Hierarchy</h3>
-				<ul class="tsd-hierarchy">
-					<li>
-						<span class="target">CoconetConfig</span>
-					</li>
-				</ul>
-			</section>
-			<section class="tsd-panel-group tsd-index-group">
-				<h2>Index</h2>
-				<section class="tsd-panel tsd-index-panel">
-					<div class="tsd-index-content">
-						<section class="tsd-index-section tsd-is-not-exported">
-							<h3>Properties</h3>
-							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_coconet_model_.coconetconfig.html#infillmask" class="tsd-kind-icon">infill<wbr>Mask</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_coconet_model_.coconetconfig.html#numiterations" class="tsd-kind-icon">num<wbr>Iterations</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_coconet_model_.coconetconfig.html#temperature" class="tsd-kind-icon">temperature</a></li>
-							</ul>
-						</section>
-					</div>
-				</section>
-			</section>
-			<section class="tsd-panel-group tsd-member-group tsd-is-not-exported">
-				<h2>Properties</h2>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="infillmask" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> infill<wbr>Mask</h3>
-					<div class="tsd-signature tsd-kind-icon">infill<wbr>Mask<span class="tsd-signature-symbol">:</span> <a href="_coconet_model_.infillmask.html" class="tsd-signature-type">InfillMask</a><span class="tsd-signature-symbol">[]</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/coconet/model.ts#L55">coconet/model.ts:55</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="numiterations" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> num<wbr>Iterations</h3>
-					<div class="tsd-signature tsd-kind-icon">num<wbr>Iterations<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/coconet/model.ts#L54">coconet/model.ts:54</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="temperature" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> temperature</h3>
-					<div class="tsd-signature tsd-kind-icon">temperature<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/coconet/model.ts#L53">coconet/model.ts:53</a></li>
-						</ul>
-					</aside>
-				</section>
-			</section>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
 			<nav class="tsd-navigation primary">
@@ -156,48 +72,12 @@
 						<a href="../globals.html"><em>Globals</em></a>
 					</li>
 					<li class="current tsd-kind-external-module">
-						<a href="../modules/_coconet_model_.html">"coconet/model"</a>
+						<a href="_gansynth_.html">"gansynth"</a>
 					</li>
 				</ul>
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
-					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../classes/_coconet_model_.coconet.html" class="tsd-kind-icon">Coconet</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../classes/_coconet_model_.convnet.html" class="tsd-kind-icon">Conv<wbr>Net</a>
-					</li>
-				</ul>
-				<ul class="current">
-					<li class="current tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_coconet_model_.coconetconfig.html" class="tsd-kind-icon">Coconet<wbr>Config</a>
-						<ul>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_coconet_model_.coconetconfig.html#infillmask" class="tsd-kind-icon">infill<wbr>Mask</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_coconet_model_.coconetconfig.html#numiterations" class="tsd-kind-icon">num<wbr>Iterations</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_coconet_model_.coconetconfig.html#temperature" class="tsd-kind-icon">temperature</a>
-							</li>
-						</ul>
-					</li>
-				</ul>
-				<ul class="after-current">
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_coconet_model_.infillmask.html" class="tsd-kind-icon">Infill<wbr>Mask</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_coconet_model_.layerspec.html" class="tsd-kind-icon">Layer<wbr>Spec</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_coconet_model_.modelspec.html" class="tsd-kind-icon">Model<wbr>Spec</a>
-					</li>
-					<li class=" tsd-kind-object-literal tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../modules/_coconet_model_.html#default_spec" class="tsd-kind-icon">DEFAULT_<wbr>SPEC</a>
-					</li>
 				</ul>
 			</nav>
 		</div>
