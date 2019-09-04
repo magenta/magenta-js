@@ -8,6 +8,9 @@
 !*.css.map
 !*.html
 !*.js
-!*.png
 !*.md
+!*.mid
+!*.png
 !.gitignore
+
+node_modules/
