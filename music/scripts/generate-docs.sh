@@ -68,6 +68,7 @@ mkdir -p $TMP_DIR/demos && cp demos/*.{js,html,mid,css} $TMP_DIR/demos
 git checkout gh-pages
 cd $baseDir
 git rm -fr music
+# Use rsync instead of cp so that we don't clobber untracked files.
 rsync -a $TMP_DIR/ music/
 git add music
 currDate=$(date)
