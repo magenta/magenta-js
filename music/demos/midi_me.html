@@ -1,0 +1,133 @@
+<!-- Copyright 2019 Google Inc. All Rights Reserved.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================-->
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+  <link rel="stylesheet" href="./style.css">
+  <title>MidiME</title>
+  <style>
+    input[type="file"] {
+      width: 0;
+      height: 0;
+      opacity: 0;
+      cursor: pointer;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>MidiME</h1>
+  <p><code>MidiME</code> is a variational autoencoder that lets you personalize
+    your own <code>MusicVAE</code> model with just a little data, so that samples
+    from <code>MidiME</code> sound closer to your provided data. Normally training
+    a <code>MusicVAE</code> model with new data would take days on a big GPU and
+    millions of data points, but with <code>MidiME</code> you can do it
+    with a single MIDI file, and directly in the browser. </p>
+  <h2>Input data</h2>
+  <p><code>MidiME</code> works in parallel with a <code>MusicVAE</code> model,
+  so the kind of results you get depend on which <code>MusicVAE</code> checkpoint
+  you use. Here, we give examples of both training on melodies (the "monophonic"
+  section), and multi-instrument trios (the "polyphonic" section).</p>
+  <h2>1. Monophonic models</h2>
+  <section>
+    <p>This is what you want the samples to sound like. For this example we
+      are using the <code>mel_2bar_small</code> checkpoint, which is
+      monophonic -- if you use a polyphonic MIDI file, you're not
+      guaranteed to reconstruct the "main" melody, just a single instrument.</p>
+      <p>Try training on a single full song to get outputs that sound like
+        variations on it, or train on multiple songs to get samples that
+        combine various characteristics of them.</p>
+    <label class="button" id="mel_fileBtn" disabled>
+      Load midi file(s)
+      <input type="file" id="mel_fileInput" multiple>
+    </label>
+    <p><code id="mel_input"></code>
+  </section>
+
+  <h2>Training</h2>
+  <p>The MidiMe model works by training a variational autoencoder in the
+    browser. The more steps you train for, the better the input reconstruction will be.
+    <button id="mel_train" disabled>start training</button>
+  </p>
+  <section>
+    <svg id="mel_graph"></svg>
+  </section>
+
+  <h2>Input reconstruction</h2>
+  <section>
+    <p><b>Before training:</b> <code id="mel_pre-training"></code></p>
+    <p><b>After training:</b> <code id="mel_post-training"></code></p>
+    <p><b>It took:</b> <code id="mel_training-time"></code></p>
+  </section>
+
+  <h2>Random samples</h2>
+  <p>You can now sample from MidiMe. If you trained for long enough, then
+    these samples will be very similar to the input data. Contrast this with
+    random samples from MusicVAE, which do not sound like the input data.
+  </p>
+  <p>Each of the examples below is 5 concatenated 2-bar samples.</p>
+  <section>
+    <p><b>From MusicVAE</b> <code id="mel_sample-musicvae"></code></p>
+    <p><b>From trained MidiMe</b> <code id="mel_sample-midime"></code></p>
+  </section>
+
+  <h2>2. Polyphonic models</h2>
+  <section>
+    <p>In this example we are using the <code>trio_4bar</code> checkpoint, which
+      uses 3 different instruments. You will notice in these results that
+      the reconstruction of your original melody is far worse (and might not
+      even won't necessarily sound like the input), but the random samples
+      are significantly more musical, and contain patterns from the original</p>
+    <label class="button" id="trio_fileBtn" disabled>
+      Load midi file(s)
+      <input type="file" id="trio_fileInput" multiple>
+    </label>
+    <p><code id="trio_input"></code>
+  </section>
+
+  <h2>Training</h2>
+  <p>We will again train a variational autoencoder in the
+    browser. In this example we will train longer than we did in the monophonic
+    case.
+    <button id="trio_train" disabled>start training</button>
+  </p>
+  <section>
+    <svg id="trio_graph"></svg>
+  </section>
+
+  <h2>Input reconstruction</h2>
+  <p>You'll notice that unlike the monophonic case, the reconstruction in
+    this case is far worse. This is because this particular MusicVAE checkpoint
+    is well suited for sampling, but not for data reconstruction (you can think
+    of it as a lossier encoding of the training data).
+  </p>
+  <section>
+    <p><b>Before training:</b> <code id="trio_pre-training"></code></p>
+    <p><b>After training:</b> <code id="trio_post-training"></code></p>
+    <p><b>It took:</b> <code id="trio_training-time"></code></p>
+  </section>
+
+  <h2>Random samples</h2>
+  <p>As before, we can now sample from MidiMe. The samples should sound
+    more melodic and have more interesting patterns (that have been learnt
+    from your input data), that the random samples from MusicVAE.
+  </p>
+  <p>Each of the examples below is 5 concatenated 4-bar samples.</p>
+  <section>
+    <p><b>From MusicVAE</b> <code id="trio_sample-musicvae"></code></p>
+    <p><b>From trained MidiMe</b> <code id="trio_sample-midime"></code></p>
+  </section>
+  <script src="midi_me_bundle.js"></script>
+</body>
+</html>
