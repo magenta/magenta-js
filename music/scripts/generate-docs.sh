@@ -20,7 +20,6 @@
 
 # Exit on error.
 set -e
-set -x
 
 # Generate the docs.
 OUT_DIR=/tmp/mm_docs
