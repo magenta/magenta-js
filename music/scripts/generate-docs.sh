@@ -21,14 +21,13 @@
 # Exit on error.
 set -e
 
-# Generate the docs.
+# Set up variables.
 TMP_DIR=/tmp/mm_docs
-currRepo=$(git rev-parse --abbrev-ref HEAD)
+currBranch=$(git rev-parse --abbrev-ref HEAD)
 currDir=$(pwd)
-currDate=$(date)
 baseDir=$(git rev-parse --show-toplevel)
 
-
+# Generate the docs.
 npx typedoc --tsconfig "tsconfig.es5.json" --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/music/src/' --out $TMP_DIR src --mode modules --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals
 
 # Fix any leaked local paths in the music docs
@@ -60,15 +59,21 @@ for path in ./*.html; do
   fi
 done
 
+# Build the demos and copy them to the temporary docs directory.
 cd $currDir
 yarn build-demos
 mkdir -p $TMP_DIR/demos && cp demos/*.{js,html,mid,css} $TMP_DIR/demos
+
+# Switch to gh-pages and update docs.
 git checkout gh-pages
-docsDir=$(git rev-parse --show-toplevel)
 cd $baseDir
 git rm -fr music
 rsync -a $TMP_DIR/ music/
 git add music
+currDate=$(date)
 git commit -m "Updating music docs: $currDate"
 git push --set-upstream origin gh-pages
-git checkout $currRepo
+
+# Switch back to original branch.
+git checkout $currBranch
+cd $currDir
