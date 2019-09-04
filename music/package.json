@@ -59,7 +59,6 @@
     "test": "ts-node node_modules/tape/bin/tape src/**/*_test.ts",
     "test-node-build": "ts-node node_modules/tape/bin/tape build_tests/node.ts",
     "build-demos": "webpack --config ./webpack/es5.demo.config.ts",
-    "publish-demos": "yarn build-demos && mkdir -p ../docs/music/demos && cp demos/*.{js,html,mid,css} ../docs/music/demos",
     "run-demos": "webpack-dev-server --config ./webpack/es5.demo.config.ts",
     "serve-demos": "http-server demos/",
     "serve-dist": "http-server dist/",
