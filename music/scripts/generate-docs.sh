@@ -70,5 +70,5 @@ git rm -fr music
 rsync -a $TMP_DIR/ music/
 git add music
 git commit -m "Updating music docs: $currDate"
-git push
+git push --set-upstream origin gh-pages
 git checkout $currRepo
