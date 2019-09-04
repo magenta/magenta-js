@@ -61,9 +61,9 @@ mkdir -p $OUT_DIR/demos && cp demos/*.{js,html,mid,css} $OUT_DIR/demos
 
 git checkout gh-pages
 cd $(git rev-parse --show-toplevel)
-git rm -fr music_docs
-mv $OUT_DIR music_docs
-git add music_docs
+git rm -fr music
+mv $OUT_DIR/* music
+git add music
 currentDate=$(date)
 git commit -m "Updating music docs: $currentDate"
 
