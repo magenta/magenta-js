@@ -63,6 +63,7 @@ mkdir -p $OUT_DIR/demos && cp demos/*.{js,html,mid,css} $OUT_DIR/demos
 git checkout gh-pages
 docsDir=$(git rev-parse --show-toplevel)
 cd $docsDir
+ls .
 git rm -fr music
 rsync -a $OUT_DIR music
 git add music
