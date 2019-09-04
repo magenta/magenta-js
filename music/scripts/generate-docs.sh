@@ -22,13 +22,18 @@
 set -e
 
 # Generate the docs.
-OUT_DIR=/tmp/mm_docs
-REPO_DIR=$(pwd)
-npx typedoc --tsconfig "tsconfig.es5.json" --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/music/src/' --out $OUT_DIR src --mode modules --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals
+TMP_DIR=/tmp/mm_docs
+currRepo=$(git rev-parse --abbrev-ref HEAD)
+currDir=$(pwd)
+currDate=$(date)
+baseDir=$(git rev-parse --show-toplevel)
+
+
+npx typedoc --tsconfig "tsconfig.es5.json" --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/music/src/' --out $TMP_DIR src --mode modules --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals
 
 # Fix any leaked local paths in the music docs
 # See https://github.com/TypeStrong/typedoc/issues/800.
-cd $OUT_DIR/classes/
+cd $TMP_DIR/classes/
 
 for path in ./*.html; do
   filename=$(basename $path .html)
@@ -55,16 +60,15 @@ for path in ./*.html; do
   fi
 done
 
-cd $REPO_DIR
+cd $currDir
 yarn build-demos
-mkdir -p $OUT_DIR/demos && cp demos/*.{js,html,mid,css} $OUT_DIR/demos
-
+mkdir -p $TMP_DIR/demos && cp demos/*.{js,html,mid,css} $TMP_DIR/demos
 git checkout gh-pages
 docsDir=$(git rev-parse --show-toplevel)
-cd $docsDir
+cd $baseDir
 git rm -fr music
-rsync -a $OUT_DIR/ music/
+rsync -a $TMP_DIR/ music/
 git add music
-currentDate=$(date)
-git commit -m "Updating music docs: $currentDate"
-
+git commit -m "Updating music docs: $currDate"
+git push
+git checkout $currRepo
