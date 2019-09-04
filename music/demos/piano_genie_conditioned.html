@@ -1,0 +1,172 @@
+<!-- Copyright 2019 Google Inc. All Rights Reserved.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================-->
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+  <link rel="stylesheet" href="./style.css">
+  <title>Piano Genie Conditioned</title>
+</head>
+<body>
+  <h1>Piano Genie Conditioned</h1>
+
+  <p>Implements Magenta's <a href="https://magenta.tensorflow.org/pianogenie"><i>Piano Genie</i></a> model with conditioning on musical context.</p>
+  <p>Piano Genie expands novice performances on a miniature piano keyboard (8 keys) to performances on full pianos (88 keys) in real-time.</p>
+  <p>Press keyboard keys 1-8 to hear sound.</p>
+
+  <div id="model">
+    <select id="models"></select>
+  </div>
+  <div id="loading">
+      <p>Loading model weights...</p>
+  </div>
+  <div id="loaded" hidden>
+      <div>
+          <label>Temperature</label>
+          <input type="range" id="temp" min="0" max="1000" value="250">
+          <button id="reset">Reset</button>
+      </div>
+      <div id="dt_only"></div>
+      <div id="keysig">
+        <label>Key signature</label>
+        <select id="keysig_keysig" class="rs">
+          <option value="0">Unspecified</option>
+          <option value="1">C</option>
+          <option value="2">C#/Db</option>
+          <option value="3">D</option>
+          <option value="4">D#/Eb</option>
+          <option value="5">E</option>
+          <option value="6">F</option>
+          <option value="7">F#/Gb</option>
+          <option value="8">G</option>
+          <option value="9">G#/Ab</option>
+          <option value="10">A</option>
+          <option value="11">A#/Bb</option>
+          <option value="12">B</option>
+        </select>
+      </div>
+      <div id="chord">
+          <label>Chord root</label>
+          <select id="chord_chordroot" class="rs">
+            <option value="0">Unspecified</option>
+            <option value="1">C</option>
+            <option value="2">C#/Db</option>
+            <option value="3">D</option>
+            <option value="4">D#/Eb</option>
+            <option value="5">E</option>
+            <option value="6">F</option>
+            <option value="7">F#/Gb</option>
+            <option value="8">G</option>
+            <option value="9">G#/Ab</option>
+            <option value="10">A</option>
+            <option value="11">A#/Bb</option>
+            <option value="12">B</option>
+          </select>
+      
+          <label>Chord family</label>
+          <select id="chord_chordfamily" class="rs">
+            <option value="0">Unspecified</option>
+            <option value="1">Major</option>
+            <option value="2">Minor</option>
+            <option value="3">Augmented</option>
+            <option value="4">Diminished</option>
+            <option value="5">Dominant Seventh</option>
+            <option value="6">Major Seventh</option>
+            <option value="7">Minor Seventh</option>
+            <option value="8">Minor Seventh Flat Five</option>
+          </select>
+      </div>
+      <div id="keysig_chordfamily">
+          <label>Key signature</label>
+          <select id="keysig_chordfamily_keysig" class="rs">
+            <option value="0">Unspecified</option>
+            <option value="1">C</option>
+            <option value="2">C#/Db</option>
+            <option value="3">D</option>
+            <option value="4">D#/Eb</option>
+            <option value="5">E</option>
+            <option value="6">F</option>
+            <option value="7">F#/Gb</option>
+            <option value="8">G</option>
+            <option value="9">G#/Ab</option>
+            <option value="10">A</option>
+            <option value="11">A#/Bb</option>
+            <option value="12">B</option>
+          </select>
+      
+          <label>Chord family</label>
+          <select id="keysig_chordfamily_chordfamily" class="rs">
+            <option value="0">Unspecified</option>
+            <option value="1">Major</option>
+            <option value="2">Minor</option>
+            <option value="3">Augmented</option>
+            <option value="4">Diminished</option>
+            <option value="5">Dominant Seventh</option>
+            <option value="6">Major Seventh</option>
+            <option value="7">Minor Seventh</option>
+            <option value="8">Minor Seventh Flat Five</option>
+          </select>
+      </div>
+      <div id="keysig_chord">
+          <label>Key signature</label>
+          <select id="keysig_chord_keysig" class="rs">
+            <option value="0">Unspecified</option>
+            <option value="1">C</option>
+            <option value="2">C#/Db</option>
+            <option value="3">D</option>
+            <option value="4">D#/Eb</option>
+            <option value="5">E</option>
+            <option value="6">F</option>
+            <option value="7">F#/Gb</option>
+            <option value="8">G</option>
+            <option value="9">G#/Ab</option>
+            <option value="10">A</option>
+            <option value="11">A#/Bb</option>
+            <option value="12">B</option>
+          </select>
+
+          <label>Chord root</label>
+          <select id="keysig_chord_chordroot" class="rs">
+            <option value="0">Unspecified</option>
+            <option value="1">C</option>
+            <option value="2">C#/Db</option>
+            <option value="3">D</option>
+            <option value="4">D#/Eb</option>
+            <option value="5">E</option>
+            <option value="6">F</option>
+            <option value="7">F#/Gb</option>
+            <option value="8">G</option>
+            <option value="9">G#/Ab</option>
+            <option value="10">A</option>
+            <option value="11">A#/Bb</option>
+            <option value="12">B</option>
+          </select>
+      
+          <label>Chord family</label>
+          <select id="keysig_chord_chordfamily" class="rs">
+            <option value="0">Unspecified</option>
+            <option value="1">Major</option>
+            <option value="2">Minor</option>
+            <option value="3">Augmented</option>
+            <option value="4">Diminished</option>
+            <option value="5">Dominant Seventh</option>
+            <option value="6">Major Seventh</option>
+            <option value="7">Minor Seventh</option>
+            <option value="8">Minor Seventh Flat Five</option>
+          </select>
+      </div>
+  </div>
+
+  <script src="piano_genie_conditioned_bundle.js"></script>
+</body>
+</html>
