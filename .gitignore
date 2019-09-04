@@ -1,0 +1,13 @@
+# Ignore everything
+*
+# Whitelist subdirectories
+!*/
+
+# Whitelist the following extensions
+!*.css
+!*.css.map
+!*.html
+!*.js
+!*.png
+!*.md
+!.gitignore
