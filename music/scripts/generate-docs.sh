@@ -16,14 +16,23 @@
 
 # Regenerates the docs
 #
-# To run, execute 'yarn doc'.
+# To run, execute 'yarn docs'.
+
+# Exit on error.
+set -e
+
+# Set up variables.
+TMP_DIR=/tmp/mm_docs
+currBranch=$(git rev-parse --abbrev-ref HEAD)
+currDir=$(pwd)
+baseDir=$(git rev-parse --show-toplevel)
 
 # Generate the docs.
-npx typedoc --tsconfig "tsconfig.es5.json" --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/music/src/' --out ../docs/music src --mode modules --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals
+npx typedoc --tsconfig "tsconfig.es5.json" --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/music/src/' --out $TMP_DIR src --mode modules --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals
 
 # Fix any leaked local paths in the music docs
 # See https://github.com/TypeStrong/typedoc/issues/800.
-cd ../docs/music/classes/
+cd $TMP_DIR/classes/
 
 for path in ./*.html; do
   filename=$(basename $path .html)
@@ -49,3 +58,22 @@ for path in ./*.html; do
     sed -i "" "s%${search}%${replace}%g" $path
   fi
 done
+
+# Build the demos and copy them to the temporary docs directory.
+cd $currDir
+yarn build-demos
+mkdir -p $TMP_DIR/demos && cp demos/*.{js,html,mid,css} $TMP_DIR/demos
+
+# Switch to gh-pages and update docs.
+git checkout gh-pages
+cd $baseDir
+git rm -fr music
+rsync -a $TMP_DIR/ music/
+git add music
+currDate=$(date)
+git commit -m "Updating music docs: $currDate"
+git push --set-upstream origin gh-pages
+
+# Switch back to original branch.
+git checkout $currBranch
+cd $currDir
