@@ -16,19 +16,14 @@
 
 # Regenerates the docs
 #
-# To run, execute 'yarn docs'.
-
-# Exit on error.
-set -e
+# To run, execute 'yarn doc'.
 
 # Generate the docs.
-OUT_DIR=/tmp/mm_docs
-REPO_DIR=$(pwd)
-npx typedoc --tsconfig "tsconfig.es5.json" --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/music/src/' --out $OUT_DIR src --mode modules --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals
+npx typedoc --tsconfig "tsconfig.es5.json" --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/music/src/' --out ../docs/music src --mode modules --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals
 
 # Fix any leaked local paths in the music docs
 # See https://github.com/TypeStrong/typedoc/issues/800.
-cd $OUT_DIR/classes/
+cd ../docs/music/classes/
 
 for path in ./*.html; do
   filename=$(basename $path .html)
@@ -54,12 +49,3 @@ for path in ./*.html; do
     sed -i "" "s%${search}%${replace}%g" $path
   fi
 done
-
-cd $REPO_DIR
-yarn build-demos
-mkdir -p $OUT_DIR/demos && mv demos/*.{js,html,mid,css} $OUT_DIR/demos
-
-git checkout gh-pages
-git rm -fr music
-mv -R OUT_DIR music
-git add music
