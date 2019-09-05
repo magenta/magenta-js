@@ -19,7 +19,7 @@
 # To run, execute 'yarn docs' in the appropriate package directory.
 
 # Direct usage:
-# sh ./generate-docs.sh <package name (music|sketch|image)> <(optional) tsconfig name>
+# sh ./generate-docs.sh <package name (music|sketch|image)>
 
 # Exit on error.
 set -e
