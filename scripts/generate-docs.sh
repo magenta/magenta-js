@@ -40,7 +40,8 @@ if [ $PKG_NAME == "image" ]
 then
   mode="file"
   urlPrefix="$urlPrefix/arbitrary_stylization/"
-else if [ $PKG_NAME == "music" ]
+elif [ $PKG_NAME == "music" ]
+then
   tsconfig="tsconfig.es6.json"
 fi
 
