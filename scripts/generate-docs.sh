@@ -25,25 +25,31 @@
 set -e
 
 PKG_NAME=$1
-if [ -z "$2" ]
-then
-  TSCONFIG=""
-else
-  TSCONFIG="--tsconfig $2"
-fi
 
-# Set up variables.
-TMP_DIR=/tmp/${PKG_NAME}_docs
+# Directory/branch variables.
+tmpDir=/tmp/${PKG_NAME}_docs
 currBranch=$(git rev-parse --abbrev-ref HEAD)
 currDir=$(pwd)
 baseDir=$(git rev-parse --show-toplevel)
 
+# Generation variables.
+mode="modules"
+tsconfig="tsconfig.json"
+urlPrefix="https://github.com/tensorflow/magenta-js/tree/master/${PKG_NAME}/src/"
+if [ $PKG_NAME == "image" ]
+then
+  mode="file"
+  urlPrefix="$urlPrefix/arbitrary_stylization/"
+else if [ $PKG_NAME == "music" ]
+  tsconfig="tsconfig.es6.json"
+fi
+
 # Generate the docs.
-npx typedoc $TSCONFIG --sourcefile-url-prefix "https://github.com/tensorflow/magenta-js/tree/master/${PKG_NAME}/src/" --out $TMP_DIR src --mode modules --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals
+npx typedoc --tsconfig $tsconfig --sourcefile-url-prefix $urlPrefix --out $tmpDir  --mode $mode --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals src
 
 # Fix any leaked local paths in the docs.
 # See https://github.com/TypeStrong/typedoc/issues/800.
-cd $TMP_DIR/classes/
+cd $tmpDir/classes/
 
 for path in ./*.html; do
   filename=$(basename $path .html)
@@ -73,16 +79,16 @@ done
 # Build the demos and copy them to the temporary docs directory.
 cd $currDir
 yarn build-demos
-mkdir -p $TMP_DIR/demos
+mkdir -p $tmpDir/demos
 # Or with true to avoid failing on a non-existent file extension.
-cp demos/*.{js,html,mid,css} $TMP_DIR/demos | true
+cp demos/*.{js,html,mid,css} $tmpDir/demos | true
 
 # Switch to gh-pages and update docs.
 git checkout gh-pages
 cd $baseDir
 git rm -fr $PKG_NAME
 # Use rsync instead of cp so that we don't clobber untracked files.
-rsync -a $TMP_DIR/ $PKG_NAME/
+rsync -a $tmpDir/ $PKG_NAME/
 git add $PKG_NAME
 currDate=$(date)
 git commit -m "Updating $PKG_NAME docs: $currDate"
