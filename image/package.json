@@ -27,7 +27,7 @@
         "lint": "tslint -c ../tslint.json -p . -t verbose",
         "build-demos": "cd demos && ./build-demos.sh",
         "run-demos": "yarn build-demos && http-server demos/",
-        "docs": "sh ../scripts/generate-docs.sh 'image' 'https://github.com/tensorflow/magenta-js/tree/master/image/src/arbitrary_stylization/' 'file'"
+        "docs": "sh ../scripts/generate-docs.sh 'image' 'https://github.com/tensorflow/magenta-js/tree/master/image/src/' 'modules'"
     },
     "author": "Magenta",
     "license": "Apache-2.0",
