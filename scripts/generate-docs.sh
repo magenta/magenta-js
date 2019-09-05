@@ -39,7 +39,7 @@ currDir=$(pwd)
 baseDir=$(git rev-parse --show-toplevel)
 
 # Generate the docs.
-npx typedoc $TSCONFIG --sourcefile-url-prefix "https://github.com/tensorflow/magenta-js/tree/master/${PKG_NAME}/src" --out $TMP_DIR src --mode modules --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals
+npx typedoc $TSCONFIG --sourcefile-url-prefix "https://github.com/tensorflow/magenta-js/tree/master/${PKG_NAME}/src/" --out $TMP_DIR src --mode modules --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals
 
 # Fix any leaked local paths in the docs.
 # See https://github.com/TypeStrong/typedoc/issues/800.
