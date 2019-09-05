@@ -63,7 +63,7 @@
     "serve-demos": "http-server demos/",
     "serve-dist": "http-server dist/",
     "proto": "sh ./scripts/compile-proto.sh",
-    "docs": "sh ../scripts/generate-docs.sh 'music' 'https://github.com/tensorflow/magenta-js/tree/master/music/src/' 'modules' 'tsconfig.es5.json'"
+    "docs": "sh ../scripts/generate-docs.sh 'music' 'tsconfig.es5.json'"
   },
   "author": "Magenta",
   "license": "Apache-2.0",

@@ -16,19 +16,20 @@
 
 # Regenerates the docs
 #
-# To run, execute 'yarn docs'.
+# To run, execute 'yarn docs' in the appropriate package directory.
+
+# Direct usage:
+# sh ./generate-docs.sh <package name (music|sketch|image)> <(optional) tsconfig name>
 
 # Exit on error.
 set -e
 
 PKG_NAME=$1
-URL_PREFIX=$2
-MODE=$3
-if [ -z "$4" ]
+if [ -z "$2" ]
 then
   TSCONFIG=""
 else
-  TSCONFIG="--tsconfig $4"
+  TSCONFIG="--tsconfig $2"
 fi
 
 # Set up variables.
@@ -37,9 +38,8 @@ currBranch=$(git rev-parse --abbrev-ref HEAD)
 currDir=$(pwd)
 baseDir=$(git rev-parse --show-toplevel)
 
-
 # Generate the docs.
-npx typedoc $TSCONFIG --sourcefile-url-prefix $URL_PREFIX --out $TMP_DIR src --mode $MODE --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals
+npx typedoc $TSCONFIG --sourcefile-url-prefix "https://github.com/tensorflow/magenta-js/tree/master/${PKG_NAME}/src" --out $TMP_DIR src --mode modules --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals
 
 # Fix any leaked local paths in the docs.
 # See https://github.com/TypeStrong/typedoc/issues/800.

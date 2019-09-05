@@ -47,7 +47,7 @@
     "run-demos": "yarn build-demos && http-server demos/",
     "serve-demos": "http-server demos/",
     "serve-dist": "http-server dist/",
-    "docs": "sh ../scripts/generate-docs.sh 'sketch' 'https://github.com/tensorflow/magenta-js/tree/master/sketch/src/' 'modules'"
+    "docs": "sh ../scripts/generate-docs.sh 'sketch'"
   },
   "author": "Magenta",
   "license": "Apache-2.0",
