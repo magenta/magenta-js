@@ -73,7 +73,9 @@ done
 # Build the demos and copy them to the temporary docs directory.
 cd $currDir
 yarn build-demos
-mkdir -p $TMP_DIR/demos && cp demos/*.{js,html,mid,css} $TMP_DIR/demos
+mkdir -p $TMP_DIR/demos
+# Or with true to avoid failing on a non-existent file extension.
+cp demos/*.{js,html,mid,css} $TMP_DIR/demos | true
 
 # Switch to gh-pages and update docs.
 git checkout gh-pages
