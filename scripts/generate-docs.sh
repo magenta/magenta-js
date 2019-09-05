@@ -42,7 +42,7 @@ then
   urlPrefix="$urlPrefix/arbitrary_stylization/"
 elif [ $PKG_NAME == "music" ]
 then
-  tsconfig="tsconfig.es6.json"
+  tsconfig="tsconfig.es5.json"
 fi
 
 # Generate the docs.
