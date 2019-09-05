@@ -21,16 +21,27 @@
 # Exit on error.
 set -e
 
+PKG_NAME=$1
+URL_PREFIX=$2
+TSCONFIG=$3
+if [ -z "$3" ]
+then
+  TSCONFIG=""
+else
+  TSCONFIG="--tsconfig $3"
+fi
+
 # Set up variables.
-TMP_DIR=/tmp/mm_docs
+TMP_DIR=/tmp/${PKG_NAME}_docs
 currBranch=$(git rev-parse --abbrev-ref HEAD)
 currDir=$(pwd)
 baseDir=$(git rev-parse --show-toplevel)
 
-# Generate the docs.
-npx typedoc --tsconfig "tsconfig.es5.json" --sourcefile-url-prefix 'https://github.com/tensorflow/magenta-js/tree/master/music/src/' --out $TMP_DIR src --mode modules --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals
 
-# Fix any leaked local paths in the music docs
+# Generate the docs.
+npx typedoc $TSCONFIG --sourcefile-url-prefix $URL_PREFIX --out $TMP_DIR src --mode modules --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals
+
+# Fix any leaked local paths in the docs.
 # See https://github.com/TypeStrong/typedoc/issues/800.
 cd $TMP_DIR/classes/
 
@@ -67,12 +78,12 @@ mkdir -p $TMP_DIR/demos && cp demos/*.{js,html,mid,css} $TMP_DIR/demos
 # Switch to gh-pages and update docs.
 git checkout gh-pages
 cd $baseDir
-git rm -fr music
+git rm -fr $PKG_NAME
 # Use rsync instead of cp so that we don't clobber untracked files.
-rsync -a $TMP_DIR/ music/
-git add music
+rsync -a $TMP_DIR/ $PKG_NAME/
+git add $PKG_NAME
 currDate=$(date)
-git commit -m "Updating music docs: $currDate"
+git commit -m "Updating $PKG_NAME docs: $currDate"
 git push --set-upstream origin gh-pages
 
 # Switch back to original branch.
