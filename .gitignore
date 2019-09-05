@@ -13,4 +13,6 @@
 !*.png
 !.gitignore
 
+*/dist/
+*/es5/
 node_modules/
