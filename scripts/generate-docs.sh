@@ -23,12 +23,12 @@ set -e
 
 PKG_NAME=$1
 URL_PREFIX=$2
-TSCONFIG=$3
-if [ -z "$3" ]
+MODE=$3
+if [ -z "$4" ]
 then
   TSCONFIG=""
 else
-  TSCONFIG="--tsconfig $3"
+  TSCONFIG="--tsconfig $4"
 fi
 
 # Set up variables.
@@ -39,7 +39,7 @@ baseDir=$(git rev-parse --show-toplevel)
 
 
 # Generate the docs.
-npx typedoc $TSCONFIG --sourcefile-url-prefix $URL_PREFIX --out $TMP_DIR src --mode modules --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals
+npx typedoc $TSCONFIG --sourcefile-url-prefix $URL_PREFIX --out $TMP_DIR src --mode $MODE --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals
 
 # Fix any leaked local paths in the docs.
 # See https://github.com/TypeStrong/typedoc/issues/800.
