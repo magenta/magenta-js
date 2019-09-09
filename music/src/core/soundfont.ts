@@ -347,10 +347,53 @@ export interface SoundFontSpec {
   instruments: InstrumentsSpec;
 }
 
+// tslint:disable:max-line-length
 /**
  * Multi-instrument SoundFont. Must be initialized and samples must be
  * pre-loaded using the `loadSamples` method before any notes can be played.
+ *
+ * If you want to use your own SoundFont samples, your SoundFont directory
+ * must have this structure:
+ *
+ * └─your_local_soundfont
+ *   |-- soundfont.json
+ *   |-- instrument_name (for each of the instruments listed in soundfont.json)
+ *       |-- instrument.json
+ *       |-- p1_v1.mp3
+ *       |-- p1_v2.mp3
+ *       |-- ...
+ *       |-- p${PITCH}_v${VELOCITY}.mp3, for all the pitches and velocities
+ * you want to support
+ *
+ * The soundfont.json file contains the name of the SoundFont, as well as
+ * all the available intruments. The
+ * [sgm_plus/soundfont.json](https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus/soundfont.json)
+ * for example looks like:
+ *    {
+ *      "name": "sgm_plus",
+ *      "instruments": {
+ *       "0": "acoustic_grand_piano",
+ *       "1": "bright_acoustic_piano",
+ *       "2": "electric_grand_piano",
+ *       ...
+ *    }
+ *
+ * For each of the instruments listed in the soundfont.json file, the
+ * instrument.json contains an InstrumentSpec. For example, the
+ * [sgm_plus/accoustic_grand_piano/instrument.json](https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus/acoustic_grand_piano/instrument.json):
+ *
+ *  {
+ *    "name": "acoustic_grand_piano",
+ *    "minPitch": 21,
+ *    "maxPitch": 108,
+ *    "durationSeconds": 3.0,
+ *    "releaseSeconds": 1.0,
+ *    "percussive": false,
+ *    "velocities": [15, 31, 47, 63, 79, 95, 111, 127]
+ *  }
  */
+// tslint:enable:max-line-length
+
 export class SoundFont {
   private readonly baseURL: string;
   private readonly instruments: Map<number|'drums', Instrument>;
