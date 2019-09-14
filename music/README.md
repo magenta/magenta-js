@@ -190,7 +190,7 @@ This tool is dependent on [tfjs-converter](https://github.com/tensorflow/tfjs-co
 ../scripts/checkpoint_converter.py /path/to/model.ckpt /path/to/output_dir
 ```
 
-There are additonal flags available to reduce the size of the output by removing unused (training) variables or using weight quantization. Call `../scripts/checkpoint_converter.py -h` to list the avilable options.
+There are additional flags available to reduce the size of the output by removing unused (training) variables or using weight quantization. Call `../scripts/checkpoint_converter.py -h` to list the available options.
 
 #### Specifying the Model Configuration
 

@@ -236,7 +236,7 @@ export class Instrument {
 
   /**
    * Strike a note down using one of the samples. If you call this twice
-   * without calling playNoteUp() in between, it will implicitely
+   * without calling playNoteUp() in between, it will implicitly
    * release the note before striking it the second time.
    *
    * @param pitch Pitch of the note.
@@ -259,7 +259,7 @@ export class Instrument {
   /**
    * Release a note using one of the samples. If you call this twice
    * without calling playNoteDown() in between, it will *not*
-   * implicitely call playNoteDown() for you, and the second call will have
+   * implicitly call playNoteDown() for you, and the second call will have
    * no noticeable effect.
    *
    * @param pitch Pitch of the note.
@@ -366,7 +366,7 @@ export interface SoundFontSpec {
  * you want to support
  *
  * The soundfont.json file contains the name of the SoundFont, as well as
- * all the available intruments. The
+ * all the available instruments. The
  * [sgm_plus/soundfont.json](https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus/soundfont.json)
  * for example looks like:
  *    {
@@ -380,7 +380,7 @@ export interface SoundFontSpec {
  *
  * For each of the instruments listed in the soundfont.json file, the
  * instrument.json contains an InstrumentSpec. For example, the
- * [sgm_plus/accoustic_grand_piano/instrument.json](https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus/acoustic_grand_piano/instrument.json):
+ * [sgm_plus/acoustic_grand_piano/instrument.json](https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus/acoustic_grand_piano/instrument.json):
  *
  *  {
  *    "name": "acoustic_grand_piano",
@@ -499,7 +499,7 @@ export class SoundFont {
 
   /**
    * Strikes a note down using one of the sampled instruments. If you call this
-   * twice without calling playNoteUp() in between, it will implicitely release
+   * twice without calling playNoteUp() in between, it will implicitly release
    * the note before striking it the second time.
    *
    * @param pitch Pitch of the note.
@@ -526,7 +526,7 @@ export class SoundFont {
 
   /**
    * Releases a note using one of the sampled instruments. If you call this
-   * twice without calling playNoteDown() in between, it will *not* implicitely
+   * twice without calling playNoteDown() in between, it will *not* implicitly
    * call playNoteDown() for you, and the second call will have no noticeable
    * effect.
    *

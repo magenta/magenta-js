@@ -433,7 +433,7 @@ class ConductorDecoder extends Decoder {
   /**
    * `Decoder` contructor.
    * @param coreDecoders Lower-level `Decoder` objects to pass the conductor
-   * LSTM output embeddings to for futher decoding.
+   * LSTM output embeddings to for further decoding.
    * @param lstmCellVars The `LayerVars` for each layer of the conductor LSTM.
    * @param zToInitStateVars The `LayerVars` for projecting from the latent
    * variable `z` to the initial states of the conductor LSTM layers.

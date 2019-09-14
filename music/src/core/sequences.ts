@@ -356,7 +356,7 @@ export function assertIsAbsoluteQuantizedSequence(ns: INoteSequence) {
  * @param ns The `NoteSequence` to unquantize.
  * @param qpm The tempo to use. If not provided, the tempo in `ns` is used,
  * or the default of 120 if it is not specified in the sequence either.
- * @returns a new non-quantized `NoteSequence` wih time in seconds.
+ * @returns a new non-quantized `NoteSequence` with time in seconds.
  */
 export function unquantizeSequence(qns: INoteSequence, qpm?: number) {
   // TODO(adarob): Support absolute quantized times and multiple tempos.
