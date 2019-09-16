@@ -317,7 +317,7 @@ export class SketchRNN {
   }
 
   /**
-   * Given the RNN state, returns the probabilty distribution function (pdf)
+   * Given the RNN state, returns the probability distribution function (pdf)
    * of the next stroke. Optionally adjust the temperature of the pdf here.
    *
    * @param state previous LSTMState.
