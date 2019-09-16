@@ -85,7 +85,7 @@ mkdir -p $tmpDir/demos
 cp demos/*.{js,html,mid,css} $tmpDir/demos | true
 
 # Switch to gh-pages and update docs.
-git checkout gh-pages
+git checkout --track origin/gh-pages
 cd $baseDir
 git rm -fr $PKG_NAME
 # Use rsync instead of cp so that we don't clobber untracked files.
