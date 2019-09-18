@@ -196,7 +196,7 @@ model
 				<p>To use your own checkpoints with one of our models, you must first convert the weights to the appropriate format using the provided <a href="https://github.com/tensorflow/magenta-js/blob/master/scripts/checkpoint_converter.py">checkpoint_converter</a> script.</p>
 				<p>This tool is dependent on <a href="https://github.com/tensorflow/tfjs-converter">tfjs-converter</a>, which you must first install using <code>pip install tensorflowjs</code>. Once installed, you can execute the script as follows:</p>
 				<pre><code class="language-bash">../scripts/checkpoint_converter.py /path/to/model.ckpt /path/to/output_dir</code></pre>
-				<p>There are additonal flags available to reduce the size of the output by removing unused (training) variables or using weight quantization. Call <code>../scripts/checkpoint_converter.py -h</code> to list the avilable options.</p>
+				<p>There are additional flags available to reduce the size of the output by removing unused (training) variables or using weight quantization. Call <code>../scripts/checkpoint_converter.py -h</code> to list the available options.</p>
 				<h4 id="specifying-the-model-configuration">Specifying the Model Configuration</h4>
 				<p>The model configuration should be placed in a JSON file named <code>config.json</code> in the same directory as your checkpoint. This configuration file contains all the information needed (besides the weights) to instantiate and run your model: the model type and data converter specification plus optional chord encoding, auxiliary inputs, and attention length. An example <code>config.json</code> file might look like:</p>
 				<pre><code class="language-json">{
@@ -214,11 +214,30 @@ model
 				<h2 id="soundfonts">SoundFonts</h2>
 				<p>There are several SoundFonts that you can use with the <code>mm.SoundFontPlayer</code>,
 				for more realistic sounding instruments:</p>
-				<p>| Instrument  | URL | License  |
-					|---|---|---|---|
-					| Piano | <a href="https://storage.googleapis.com/magentadata/js/soundfonts/salamander">salamander</a> |Audio samples from <a href="https://archive.org/details/SalamanderGrandPianoV3">Salamander Grand Piano</a>|
-					| Multi | <a href="https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus">sgm_plus</a> | Audio samples based on <a href="https://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01">SGM</a> with modifications by <a href="https://sites.google.com/site/soundfonts4u/">John Nebauer</a>|
-				| Percussion | <a href="https://storage.googleapis.com/magentadata/js/soundfonts/jazz_kit">jazz_kit</a> | Audio samples from <a href="https://musical-artifacts.com/artifacts/686">Jazz Kit (EXS)</a> by Lithalean |</p>
+				<table>
+					<thead>
+						<tr>
+							<th>Instrument</th>
+							<th>URL</th>
+							<th>License</th>
+						</tr>
+					</thead>
+					<tbody><tr>
+							<td>Piano</td>
+							<td><a href="https://storage.googleapis.com/magentadata/js/soundfonts/salamander">salamander</a></td>
+							<td>Audio samples from <a href="https://archive.org/details/SalamanderGrandPianoV3">Salamander Grand Piano</a></td>
+						</tr>
+						<tr>
+							<td>Multi</td>
+							<td><a href="https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus">sgm_plus</a></td>
+							<td>Audio samples based on <a href="https://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01">SGM</a> with modifications by <a href="https://sites.google.com/site/soundfonts4u/">John Nebauer</a></td>
+						</tr>
+						<tr>
+							<td>Percussion</td>
+							<td><a href="https://storage.googleapis.com/magentadata/js/soundfonts/jazz_kit">jazz_kit</a></td>
+							<td>Audio samples from <a href="https://musical-artifacts.com/artifacts/686">Jazz Kit (EXS)</a> by Lithalean</td>
+						</tr>
+				</tbody></table>
 				<!-- links -->
 			</div>
 		</div>
