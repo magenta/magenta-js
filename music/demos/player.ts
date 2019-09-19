@@ -17,7 +17,7 @@
 import * as mm from '../src/index';
 
 // tslint:disable-next-line:max-line-length
-import {DRUM_SEQ_WITH_VELOCITIES, DRUM_SEQS, FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED, MEL_TWINKLE_WITH_VELOCITIES, SOUNDFONT_URL, TRIO_EXAMPLE, writeNoteSeqs} from './common';
+import {DRUM_SEQ_WITH_VELOCITIES, DRUM_SEQS, FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED, MEL_TWINKLE_WITH_VELOCITIES, SOUNDFONT_URL, writeNoteSeqs} from './common';
 
 const soundFontPlayers: mm.SoundFontPlayer[] = [];
 const soundFontMelodies: mm.INoteSequence[] = [];
@@ -152,15 +152,22 @@ function generateVelocityPlayers() {
   writeNoteSeqs('s-v-player', [MEL_TWINKLE_WITH_VELOCITIES], true);
 }
 
-function generateSoundFontPlayers() {
+async function generateSoundFontPlayers() {
   const baseUrl = 'https://storage.googleapis.com/magentadata/js/soundfonts/';
   soundFontPlayers.push(new mm.SoundFontPlayer(baseUrl + 'salamander'));
   soundFontPlayers.push(new mm.SoundFontPlayer(baseUrl + 'sgm_plus'));
   soundFontPlayers.push(new mm.SoundFontPlayer(baseUrl + 'jazz_kit'));
 
   soundFontMelodies.push(FULL_TWINKLE);
-  soundFontMelodies.push(TRIO_EXAMPLE);
+  soundFontMelodies.push(FULL_TWINKLE);
   soundFontMelodies.push(DRUM_SEQS[1]);
+
+  // Load the sgm instruments.
+  const response =
+      await (await fetch(`${baseUrl}sgm_plus/soundfont.json`)).json();
+  const instruments = Object.values(response.instruments);
+  const select = document.getElementById('select') as HTMLSelectElement;
+  select.innerHTML = instruments.map(i => `<option>${i}</option>`).join('');
 
   // Preload the samples.
   for (let i = 0; i < soundFontPlayers.length; i++) {
@@ -182,6 +189,14 @@ function generateSoundFontPlayers() {
 async function playSoundFont(event: MouseEvent, index: number) {
   const player = soundFontPlayers[index];
   const button = event.target as HTMLElement;
+
+  // If this is the sgm player, use the right instrument.
+  if (index === 1) {
+    const instrument =
+        (document.getElementById('select') as HTMLSelectElement).selectedIndex;
+    soundFontMelodies[1].notes.forEach(n => n.program = instrument);
+  }
+
   if (player.isPlaying()) {
     player.stop();
     button.textContent = 'Play';

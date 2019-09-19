@@ -19,6 +19,7 @@ limitations under the License.
   <style>
     td {
       min-width: 100px;
+      vertical-align: top;
     }
   </style>
 </head>
@@ -38,7 +39,7 @@ limitations under the License.
     <b>Play state: </b><span id="playState"></span>
   </section>
 
-  <h2>SoundFonts</h2>
+  <h2 id="soundfonts">SoundFonts</h2>
   <section>
     <p>There are several SoundFonts that you can use with the
       <code>mm.SoundFontPlayer</code>, for more realistic sounding instruments:</p>
@@ -59,7 +60,7 @@ limitations under the License.
         <tr>
           <td>Multi</td>
           <td>sgm_plus</td>
-          <td><button id="playSF_1">Play</button></td>
+          <td><select id="select" class="button"></select><button id="playSF_1">Play</button></td>
           <td>Audio samples from <a href="https://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01">SGM</a> by Shan</td>
         </tr>
         <tr>
