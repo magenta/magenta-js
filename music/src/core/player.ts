@@ -19,9 +19,10 @@
 /**
  * Imports
  */
+// @ts-ignore
 import * as Tone from 'tone';
 
-import {INoteSequence, NoteSequence} from '../protobuf';
+import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import {sequences} from '.';
 import * as constants from './constants';
@@ -368,8 +369,14 @@ class DrumKit {
  * A `NoteSequence` player based on Tone.js.
  */
 export class Player extends BasePlayer {
-  private synths = new Map<number, any>();  // tslint:disable-line:no-any
   private drumKit = DrumKit.getInstance();
+
+  private bassSynth = new Tone.Synth({
+    volume: 5,
+    oscillator: { type: 'triangle' }
+  }).toMaster();
+
+  private polySynth = new Tone.PolySynth(10).toMaster();
 
   /**
    * The Tone module being used.
@@ -393,16 +400,11 @@ export class Player extends BasePlayer {
   }
 
   private getSynth(instrument: number, program?: number) {
-    if (this.synths.has(instrument)) {
-      return this.synths.get(instrument);
-    } else if (program !== undefined && program >= 32 && program <= 39) {
-      const bass = new Tone.Synth({oscillator: {type: 'triangle'}}).toMaster();
-      bass.volume.value = 5;
-      this.synths.set(instrument, bass);
+    if (program !== undefined && program >= 32 && program <= 39) {
+      return this.bassSynth;
     } else {
-      this.synths.set(instrument, new Tone.PolySynth(10).toMaster());
+      return this.polySynth;
     }
-    return this.synths.get(instrument);
   }
 }
 
@@ -518,7 +520,7 @@ export class SoundFontPlayer extends BasePlayer {
    * Plays the down stroke of a note (the attack and the sustain).
    * Note that this does not call `loadSamples`, and assumes that the
    * sample for this note is already loaded. If you call this
-   * twice without calling playNoteUp() in between, it will implicitely release
+   * twice without calling playNoteUp() in between, it will implicitly release
    * the note before striking it the second time.
    */
   public playNoteDown(note: NoteSequence.INote) {
@@ -531,7 +533,7 @@ export class SoundFontPlayer extends BasePlayer {
    * Plays the up stroke of a note (the release).
    * Note that this does not call `loadSamples`, and assumes that the
    * sample for this note is already loaded. If you call this
-   * twice without calling playNoteDown() in between, it will *not* implicitely
+   * twice without calling playNoteDown() in between, it will *not* implicitly
    * call playNoteDown() for you, and the second call will have no noticeable
    * effect.
    */
@@ -693,7 +695,7 @@ export class MIDIPlayer extends BasePlayer {
 
   /*
    * Plays the down stroke of a note (the attack and the sustain). If you call
-   * this twice without calling playNoteUp() in between, it will implicitely
+   * this twice without calling playNoteUp() in between, it will implicitly
    * release the note before striking it the second time.
    */
   public playNoteDown(note: NoteSequence.INote) {
@@ -707,7 +709,7 @@ export class MIDIPlayer extends BasePlayer {
   /*
    * Plays the up stroke of a note (the release). If you call this
    * twice without calling playNoteDown() in between, it will *not*
-   * implicitely call playNoteDown() for you, and the second call will have no
+   * implicitly call playNoteDown() for you, and the second call will have no
    * noticeable effect.
    */
   public playNoteUp(note: NoteSequence.INote) {

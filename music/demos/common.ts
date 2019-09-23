@@ -16,8 +16,8 @@
  */
 
 import {saveAs} from 'file-saver';
-import * as mm from '../src';
-import {sequences} from '../src';
+import * as mm from '../src/index';
+import {sequences} from '../src/core/index';
 
 export const CHECKPOINTS_DIR =
     'https://storage.googleapis.com/magentadata/js/checkpoints';
@@ -394,6 +394,33 @@ export const FULL_TWINKLE_UNQUANTIZED: mm.INoteSequence = {
   tempos: [{time: 0, qpm: 60}],
   totalTime: 24
 };
+
+export const TRIO_EXAMPLE: mm.INoteSequence = {
+  notes: [],
+  quantizationInfo: {stepsPerQuarter: 4}
+};
+
+mm.sequences.concatenate([MEL_TWINKLE, MEL_TWINKLE], [32, 32]).notes.map(n => {
+  const m = mm.NoteSequence.Note.create(n);
+  m.program = 0;
+  m.instrument = 0;
+  TRIO_EXAMPLE.notes.push(m);
+});
+
+mm.sequences.concatenate([MEL_TWINKLE, MEL_TWINKLE], [32, 32]).notes.map(n => {
+  const m = mm.NoteSequence.Note.create(n);
+  m.pitch -= 36;
+  m.program = 32;
+  m.instrument = 1;
+  TRIO_EXAMPLE.notes.push(m);
+});
+
+mm.sequences.concatenate([DRUM_SEQS[0], DRUM_SEQS[0]], [32, 32])
+    .notes.map(n => {
+      const m = mm.NoteSequence.Note.create(n);
+      m.instrument = 2;
+      TRIO_EXAMPLE.notes.push(m);
+    });
 
 export function writeTimer(elementId: string, startTime: number) {
   document.getElementById(elementId).innerHTML =

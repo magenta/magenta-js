@@ -48,7 +48,7 @@ missing, or feel free to submit a Pull Request!
 
 ### MusicVAE
 
-[MusicVAE](https://tensorflow.github.io/magenta-js/music/classes/_music_vae_model_.musicvae.html) implements several configurations of Magenta's variational autoencoder model called [MusicVAE][music-vae] including melody and drum "loop" models, 4- and 16-bar "trio" models, chord-conditioned [multi-track](https://g.co/magenta/multitrack) models, and drum performance "humanizations" with GrooVAE.
+[MusicVAE](https://tensorflow.github.io/magenta-js/music/classes/_music_vae_model_.musicvae.html) implements several configurations of Magenta's variational autoencoder model called [MusicVAE][music-vae] including melody and drum "loop" models, 4- and 16-bar "trio" models, chord-conditioned [multi-track](https://g.co/magenta/multitrack) models, and drum performance "humanizations" with [GrooVAE][https://g.co/magenta/groovae].
 
 **Demo Application:** [Endless Trios](https://goo.gl/magenta/endless-trios)
 
@@ -59,13 +59,15 @@ missing, or feel free to submit a Pull Request!
 
 ## Getting started
 
-There are two main ways to get MagentaMusic.js in your JavaScript project:
-via [script tags](https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_JavaScript_within_a_webpage) **or** by installing it from [NPM](https://www.npmjs.com/)
-and using a build tool like [yarn](https://yarnpkg.com/en/).
+There are several ways to get `magentamusic.js` in your JavaScript project,
+either in the browser, or in Node:
 
-### via Script Tag
+### Including an ES5 bundle in a [`<script>` tag](https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_JavaScript_within_a_webpage)
 
-Add the following code to an HTML file:
+This has all the models and all the core library helpers all bundled into
+one file. This is the simplest way to use Magenta.js.
+
+To use this bundle, add the following code to an HTML file:
 
 ```html
 <html>
@@ -94,19 +96,57 @@ and the code will run. Click the "Play Trio" button to hear 4-bar trios that are
 
 It's also easy to add the ability to download MIDI for generated outputs, which is demonstrated in [this example](https://goo.gl/magenta/simpletriodl).
 
-### via NPM
+See our [demos](./demos) for example usage.
 
-Add [MagentaMusic.js][mm-npm] to your project using [yarn](https://yarnpkg.com/en/) **or** [npm](https://docs.npmjs.com/cli/npm).
-For example, with yarn you can simply call `yarn add @magenta/music`.
+### Using a smaller ES6 bundle for just the code you need
+We have also split all the models and the core library into smaller ES6 bundles (not ESModules, unfortunately 😢), so that you can use a model independent of the rest of the
+library. These bundles don't package `Tone.js` or `TensorFlow.js` (since
+there would be a risk of downloading multiple copies on the same page). Here is an example:
+```html
+<html>
+<head>
+  ...
+  <!-- You need to bring your own Tone.js for the player, and tfjs for the model -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/13.8.21/Tone.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/1.2.8/tf.min.js"></script>
+  <!-- Core library, since we're going to use a player -->
+  <script src="https://cdn.jsdelivr.net/npm/@magenta/music@^1.0.0/es6/core.js"></script>
+  <!--Model we want to use -->
+  <script src="https://cdn.jsdelivr.net/npm/@magenta/music@^1.0.0/es6/music_vae.js"></script>
+</head>
+<script>
+  // Each bundle exports a global object with the name of the bundle.
+  const player = new core.Player();
+  //...
+  const mvae = new music_vae.MusicVAE('https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_2bar_small');
+  mvae.initialize().then(() => {
+    //...
+  });
+</script>
+</html>
+```
 
-Then, you can use the library in your own code as in the following example:
+### In Node
+You can use [MagentaMusic.js][mm-npm] in your project using [yarn](https://yarnpkg.com/en/)
+(by calling `yarn add @magenta/music`) **or** [npm](https://docs.npmjs.com/cli/npm)
+(by calling `npn install --save @magenta/music`).
+
+The node-specific bundles (that don't transpile the CommonJS modules) are under
+`@magenta/music/node`. For example:
 
 ```js
-import * as mm from '@magenta/music';
+const model = require('@magenta/music/node/music_vae');
+const core = require('@magenta/music/node/core');
 
-const model = new mm.MusicVAE('/path/to/checkpoint');
-const player = new mm.Player();
+// These hacks below are needed because the library uses performance and fetch which
+// exist in browsers but not in node. We are working on simplifying this!
+const globalAny: any = global;
+globalAny.performance = Date;
+globalAny.fetch = require('node-fetch');
 
+// Your code:
+const model = new mode.MusicVAE('/path/to/checkpoint');
+const player = new core.Player();
 model
   .initialize()
   .then(() => model.sample(1))
@@ -116,15 +156,13 @@ model
   });
 ```
 
-See our [demos](./demos) for example usage.
-
 #### Example Commands
 
 `yarn install` to install dependencies.
 
 `yarn test` to run tests.
 
-`yarn bundle` to produce a bundled version in `dist/`.
+`yarn build` to produce the different bundled versions.
 
 `yarn run-demos` to build and serve the demos, with live reload.
 
@@ -152,7 +190,7 @@ This tool is dependent on [tfjs-converter](https://github.com/tensorflow/tfjs-co
 ../scripts/checkpoint_converter.py /path/to/model.ckpt /path/to/output_dir
 ```
 
-There are additonal flags available to reduce the size of the output by removing unused (training) variables or using weight quantization. Call `../scripts/checkpoint_converter.py -h` to list the avilable options.
+There are additional flags available to reduce the size of the output by removing unused (training) variables or using weight quantization. Call `../scripts/checkpoint_converter.py -h` to list the available options.
 
 #### Specifying the Model Configuration
 
@@ -173,6 +211,16 @@ The model configuration should be placed in a JSON file named `config.json` in t
 ```
 
 This configuration corresponds to a chord-conditioned melody MusicRNN model.
+
+## SoundFonts
+There are several SoundFonts that you can use with the `mm.SoundFontPlayer`,
+for more realistic sounding instruments:
+
+| Instrument  | URL | License  |
+|---|---|---|
+| Piano | [salamander](https://storage.googleapis.com/magentadata/js/soundfonts/salamander) |Audio samples from [Salamander Grand Piano](https://archive.org/details/SalamanderGrandPianoV3)|
+| Multi | [sgm_plus](https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus) | Audio samples based on [SGM](https://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01) with modifications by [John Nebauer](https://sites.google.com/site/soundfonts4u/)|
+| Percussion | [jazz_kit](https://storage.googleapis.com/magentadata/js/soundfonts/jazz_kit) | Audio samples from [Jazz Kit (EXS)](https://musical-artifacts.com/artifacts/686) by Lithalean |
 
 <!-- links -->
 

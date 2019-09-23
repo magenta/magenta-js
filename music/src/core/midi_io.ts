@@ -23,7 +23,7 @@
  */
 import * as midiconvert from 'midiconvert';
 
-import {INoteSequence, NoteSequence} from '../protobuf';
+import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import * as constants from './constants';
 import * as sequences from './sequences';
@@ -113,12 +113,14 @@ export function midiToSequenceProto(midi: string): NoteSequence {
  * @param ns The `NoteSequence` to convert to MIDI.
  * @param qpm The tempo to use. If not provided, the tempo in `ns` is used,
  * or the default of 120 if it is not specified in the sequence either.
- * @returns a new non-quantized `NoteSequence` wih time in seconds.
+ * @returns a new non-quantized `NoteSequence` with time in seconds.
  */
 export function sequenceProtoToMidi(ns: INoteSequence) {
   if (sequences.isQuantizedSequence(ns)) {
     ns = sequences.unquantizeSequence(ns);
   }
+
+  const isZeroOrUndefined = (t: number) => (t === 0 || t === undefined);
 
   if (!ns.tempos || ns.tempos.length === 0) {
     ns.tempos = [{time: 0, qpm: constants.DEFAULT_QUARTERS_PER_MINUTE}];
@@ -127,11 +129,12 @@ export function sequenceProtoToMidi(ns: INoteSequence) {
     ns.timeSignatures = [{time: 0, numerator: 4, denominator: 4}];
   }
 
-  if (ns.tempos.length !== 1 || ns.tempos[0].time !== 0) {
+  if (ns.tempos.length !== 1 || !isZeroOrUndefined(ns.tempos[0].time)) {
     throw new MidiConversionError(
         'NoteSequence must have exactly 1 tempo at time 0');
   }
-  if (ns.timeSignatures.length !== 1 || ns.timeSignatures[0].time !== 0) {
+  if (ns.timeSignatures.length !== 1 ||
+      !isZeroOrUndefined(ns.timeSignatures[0].time)) {
     throw new MidiConversionError(
         'NoteSequence must have exactly 1 time signature at time 0');
   }
@@ -220,7 +223,12 @@ export function blobToNoteSequence(blob: Blob): Promise<NoteSequence> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
-      resolve(midiToSequenceProto(reader.result as string));
+      try {
+        const ns = midiToSequenceProto(reader.result as string);
+        resolve(ns);
+      } catch (error) {
+        reject(error);
+      }
     };
     reader.onerror = (e) => reject(e);
     reader.readAsBinaryString(blob);

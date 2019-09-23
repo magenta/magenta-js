@@ -22,7 +22,7 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
-import {NoteSequence} from '../protobuf';
+import {NoteSequence} from '../protobuf/index';
 
 import {FRAME_LENGTH_SECONDS, MIDI_PITCHES, MIN_MIDI_PITCH} from './constants';
 

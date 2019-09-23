@@ -126,10 +126,24 @@
     "size_mb": 96.9
   },
   {
-    "id": "groovae_unquantize_4bar",
+    "id": "groovae_2bar_humanize",
     "model": "MusicVAE",
-    "description": "A 4-bar GrooVAE model, trained to add feel to 9-class quantized drum beats.",
-    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/groovae_unquantize_4bar",
+    "description": "A 2-bar GrooVAE model that converts a quantized, constant-velocity drum pattern into a 'humanized' groove.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/groovae_2bar_humanize",
+    "size_mb": 15.8
+  },
+  {
+    "id": "groovae_2bar_tap2drum",
+    "model": "MusicVAE",
+    "description": "A 2-bar GrooVAE model that converts a constant-velocity single-drum 'tap' pattern into a groove.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/groovae_2bar_tap2drum",
+    "size_mb": 15.8
+  },
+  {
+    "id": "groovae_4bar",
+    "model": "MusicVAE",
+    "description": "A 4-bar GrooVAE autoencoder.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/groovae_4bar",
     "size_mb": 15.8
   },
   {

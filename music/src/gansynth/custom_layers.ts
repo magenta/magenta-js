@@ -14,7 +14,7 @@
  * limitations under the License.
  * =============================================================================
  *
- * Implementing a custom `Layer` in general invovles specifying a `call`
+ * Implementing a custom `Layer` in general involves specifying a `call`
  * function, and possibly also a `computeOutputShape` and `build` function.
  * These layers do not need a custom `build` function because they do not
  * store any variables.

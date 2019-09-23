@@ -26,7 +26,7 @@ import * as chords from '../core/chords';
 import * as constants from '../core/constants';
 import * as data from '../core/data';
 import * as logging from '../core/logging';
-import {INoteSequence} from '../protobuf';
+import {INoteSequence} from '../protobuf/index';
 
 /**
  * A class for keeping track of the parameters of an affine transformation.
@@ -433,7 +433,7 @@ class ConductorDecoder extends Decoder {
   /**
    * `Decoder` contructor.
    * @param coreDecoders Lower-level `Decoder` objects to pass the conductor
-   * LSTM output embeddings to for futher decoding.
+   * LSTM output embeddings to for further decoding.
    * @param lstmCellVars The `LayerVars` for each layer of the conductor LSTM.
    * @param zToInitStateVars The `LayerVars` for projecting from the latent
    * variable `z` to the initial states of the conductor LSTM layers.
@@ -494,9 +494,11 @@ class ConductorDecoder extends Decoder {
         }
         samples.push(tf.concat(currSamples, -1));
         initialInput = currSamples.map(
-            s => s.slice([0, -1, 0], [batchSize, 1, s.shape[s.rank - 1]])
-                     .squeeze([1])
-                     .toFloat() as tf.Tensor2D);
+          s => s.slice(
+                    [0, s.shape[1] - 1, 0],
+                    [batchSize, 1, s.shape[s.rank - 1]])
+                   .squeeze([1])
+                   .toFloat() as tf.Tensor2D);
       }
       return tf.concat(samples, 1);
     });
