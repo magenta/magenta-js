@@ -21,7 +21,7 @@ module.exports = {
   // Don't package these huge dependencies with the bundles, since we'd
   // be downloading duplicates.
   externals: {
-    'tone': {commonjs: 'Tone', commonjs2: 'Tone', amd: 'Tone', root: 'Tone'},
-    '@tensorflow/tfjs': {commonjs: 'tf', commonjs2: 'tf', amd: 'tf', root: 'tf'}
+    'tone': {commonjs: 'tone', commonjs2: 'tone', amd: 'Tone', root: 'Tone'},
+    '@tensorflow/tfjs': {commonjs: '@tensorflow/tfjs', commonjs2: '@tensorflow/tfjs', amd: 'tf', root: 'tf'}
   }
 };
