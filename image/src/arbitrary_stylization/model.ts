@@ -77,7 +77,7 @@ export class ArbitraryStyleTransferNetwork {
     ]);
 
     this.initialized = true;
-    console.log('Initialized Arbitrary Style Transfer network');
+    core.log('Initialized Arbitrary Style Transfer network');
   }
 
   dispose() {

@@ -48,7 +48,7 @@ test('Piano Genie Model Correctness', async (t: test.Test) => {
 
   const modelWeightsFp = 'src/piano_genie/test_data/stp_iq_auto_dt.json';
   if (!fs.existsSync(modelWeightsFp)) {
-    console.log('Piano Genie model weights not found. Provisional pass.');
+    core.log('Piano Genie model weights not found. Provisional pass.');
     t.end();
   }
 

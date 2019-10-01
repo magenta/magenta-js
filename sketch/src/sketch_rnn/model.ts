@@ -193,7 +193,7 @@ export class SketchRNN {
     this.instantiateFromJSON(vars[0], vars[1], vars[2]);
 
     this.initialized = true;
-    console.log('Initialized SketchRNN.');
+    core.log('Initialized SketchRNN.');
   }
 
   dispose() {

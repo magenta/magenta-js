@@ -102,7 +102,7 @@ export function sampleSoftmax(zSample: number[] | Float32Array): number {
       return i;
     }
   }
-  console.log('error sampling pi index');
+  core.log('error sampling pi index');
   return -1;
 }
 

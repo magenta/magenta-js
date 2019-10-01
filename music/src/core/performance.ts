@@ -297,12 +297,12 @@ export class Performance {
                 isDrum: this.isDrum,
               }));
             } else {
-              console.log(
+              core.log(
                   'Ignoring zero-length note: ' +
                   `(pitch = ${event.pitch}, step = ${currentStep})`);
             }
           } else {
-            console.log(
+            core.log(
                 'Ignoring note-off with no previous note-on:' +
                 `(pitch = ${event.pitch}, step = ${currentStep})`);
           }
@@ -340,7 +340,7 @@ export class Performance {
             isDrum: this.isDrum
           }));
         } else {
-          console.log(
+          core.log(
               'Ignoring zero-length note: ' +
               `(pitch = ${pitch}, step = ${currentStep})`);
         }

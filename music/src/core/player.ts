@@ -654,7 +654,7 @@ export class MIDIPlayer extends BasePlayer {
               'statechange',
               (event: WebMidi.MIDIMessageEvent) => this.initOutputs(midi));
           resolve(this.initOutputs(midi));
-        }, (err) => console.log('Something went wrong', reject(err)));
+        }, (err) => core.log('Something went wrong', reject(err)));
       });
     } else {
       return null;

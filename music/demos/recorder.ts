@@ -58,8 +58,8 @@ startStreamBtn.addEventListener('click', () => {
             seq, document.getElementsByClassName('svg')[0] as SVGSVGElement);
       }
     },
-    noteOn: (pitch, velocity, device) => {console.log('We have received a noteOn event!')},
-    noteOff: (pitch, velocity, device) => {console.log('We have received a noteOff event!')}
+    noteOn: (pitch, velocity, device) => {core.log('We have received a noteOn event!')},
+    noteOff: (pitch, velocity, device) => {core.log('We have received a noteOff event!')}
   };
   startStreamBtn.textContent = '...';
   recorder.start();

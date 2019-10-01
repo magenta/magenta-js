@@ -131,11 +131,11 @@ export class Recorder {
         .requestMIDIAccess()
         .then(
             (midi: WebMidi.MIDIAccess) => this.midiReady(midi),
-            (err: Error) => console.log('Something went wrong', err));
+            (err: Error) => core.log('Something went wrong', err));
   }
 
   private midiReady(midi: WebMidi.MIDIAccess) {
-    console.log('Initialized Recorder');
+    core.log('Initialized Recorder');
     const inputs = midi.inputs.values();
     for (let input = inputs.next(); input && !input.done;
          input = inputs.next()) {
