@@ -137,7 +137,7 @@ export class Recorder {
   }
 
   private midiReady(midi: WebMidi.MIDIAccess) {
-    logging.log('Initialized Recorder');
+    logging.log('Initialized Recorder', 'Recorder');
     const inputs = midi.inputs.values();
     for (let input = inputs.next(); input && !input.done;
          input = inputs.next()) {

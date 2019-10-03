@@ -195,7 +195,7 @@ export class Instrument {
       sampleNamesAndURLs.forEach(
           (nameAndURL) => this.buffers.add(nameAndURL.name, nameAndURL.url));
       await new Promise(resolve => Tone.Buffer.on('load', resolve));
-      logging.log(`Loaded samples for ${this.name}.`);
+      logging.log(`Loaded samples for ${this.name}.`, 'SoundFont');
     }
   }
 
@@ -215,7 +215,7 @@ export class Instrument {
 
     if (duration > this.durationSeconds) {
       logging.log(`Requested note duration longer than sample duration: ${
-          duration} > ${this.durationSeconds}`);
+          duration} > ${this.durationSeconds}`, 'SoundFont');
     }
 
     const source = new Tone
@@ -298,7 +298,7 @@ export class Instrument {
     }
     if (pitch < this.minPitch || pitch > this.maxPitch) {
       logging.log(`Pitch ${pitch} is outside the valid range for ${
-          this.name} (${this.minPitch}-${this.maxPitch})`);
+          this.name} (${this.minPitch}-${this.maxPitch})`, 'SoundFont');
       return;
     }
 
@@ -454,7 +454,7 @@ export class SoundFont {
       if (!instrumentSamples.has(instrument)) {
         if (!this.instruments.has(instrument)) {
           logging.log(`No instrument in ${this.name} for: program=${
-              info.program}, isDrum=${info.isDrum}`);
+              info.program}, isDrum=${info.isDrum}`, 'SoundFont');
         } else {
           instrumentSamples.set(instrument, [sampleInfo]);
         }
@@ -490,7 +490,7 @@ export class SoundFont {
     }
     if (!this.instruments.has(instrument)) {
       logging.log(`No instrument in ${this.name} for: program=${
-          program}, isDrum=${isDrum}`);
+          program}, isDrum=${isDrum}`, 'SoundFont');
       return;
     }
 
@@ -518,7 +518,7 @@ export class SoundFont {
     }
     if (!this.instruments.has(instrument)) {
       logging.log(`No instrument in ${this.name} for: program=${
-          program}, isDrum=${isDrum}`);
+          program}, isDrum=${isDrum}`, 'SoundFont');
       return;
     }
 
@@ -546,7 +546,7 @@ export class SoundFont {
     }
     if (!this.instruments.has(instrument)) {
       logging.log(`No instrument in ${this.name} for: program=${
-          program}, isDrum=${isDrum}`);
+          program}, isDrum=${isDrum}`, 'SoundFont');
       return;
     }
 
