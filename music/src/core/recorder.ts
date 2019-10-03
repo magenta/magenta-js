@@ -24,6 +24,8 @@ import {NoteSequence} from '../protobuf/index';
 
 import {DEFAULT_QUARTERS_PER_MINUTE} from './constants';
 
+import * as logging from './logging';
+
 /**
  * An interface for providing configurable properties to a Recorder.
  * @param qpm The tempo at which to play the click track.
@@ -135,7 +137,7 @@ export class Recorder {
   }
 
   private midiReady(midi: WebMidi.MIDIAccess) {
-    console.log('Initialized Recorder');
+    logging.log('Initialized Recorder');
     const inputs = midi.inputs.values();
     for (let input = inputs.next(); input && !input.done;
          input = inputs.next()) {

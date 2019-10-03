@@ -22,6 +22,7 @@
  */
 import * as Tone from 'tone';
 import * as constants from './constants';
+import * as logging from './logging';
 
 /**
  * Instrument sample pitch and velocity.
@@ -169,7 +170,7 @@ export class Instrument {
         samples
             .filter((info) => {
               if (info.pitch < this.minPitch || info.pitch > this.maxPitch) {
-                console.log(
+                logging.log(
                     `Pitch ${info.pitch} is outside the valid range for ${
                         this.name}, ignoring.`);
                 return false;
@@ -194,7 +195,7 @@ export class Instrument {
       sampleNamesAndURLs.forEach(
           (nameAndURL) => this.buffers.add(nameAndURL.name, nameAndURL.url));
       await new Promise(resolve => Tone.Buffer.on('load', resolve));
-      console.log(`Loaded samples for ${this.name}.`);
+      logging.log(`Loaded samples for ${this.name}.`);
     }
   }
 
@@ -213,7 +214,7 @@ export class Instrument {
     const buffer = this.getBuffer(pitch, velocity);
 
     if (duration > this.durationSeconds) {
-      console.log(`Requested note duration longer than sample duration: ${
+      logging.log(`Requested note duration longer than sample duration: ${
           duration} > ${this.durationSeconds}`);
     }
 
@@ -296,7 +297,7 @@ export class Instrument {
       throw new Error('Instrument is not initialized.');
     }
     if (pitch < this.minPitch || pitch > this.maxPitch) {
-      console.log(`Pitch ${pitch} is outside the valid range for ${
+      logging.log(`Pitch ${pitch} is outside the valid range for ${
           this.name} (${this.minPitch}-${this.maxPitch})`);
       return;
     }
@@ -452,7 +453,7 @@ export class SoundFont {
       const sampleInfo = {pitch: info.pitch, velocity: info.velocity};
       if (!instrumentSamples.has(instrument)) {
         if (!this.instruments.has(instrument)) {
-          console.log(`No instrument in ${this.name} for: program=${
+          logging.log(`No instrument in ${this.name} for: program=${
               info.program}, isDrum=${info.isDrum}`);
         } else {
           instrumentSamples.set(instrument, [sampleInfo]);
@@ -488,7 +489,7 @@ export class SoundFont {
       throw new Error('SoundFont is not initialized.');
     }
     if (!this.instruments.has(instrument)) {
-      console.log(`No instrument in ${this.name} for: program=${
+      logging.log(`No instrument in ${this.name} for: program=${
           program}, isDrum=${isDrum}`);
       return;
     }
@@ -516,7 +517,7 @@ export class SoundFont {
       throw new Error('SoundFont is not initialized.');
     }
     if (!this.instruments.has(instrument)) {
-      console.log(`No instrument in ${this.name} for: program=${
+      logging.log(`No instrument in ${this.name} for: program=${
           program}, isDrum=${isDrum}`);
       return;
     }
@@ -544,7 +545,7 @@ export class SoundFont {
       throw new Error('SoundFont is not initialized.');
     }
     if (!this.instruments.has(instrument)) {
-      console.log(`No instrument in ${this.name} for: program=${
+      logging.log(`No instrument in ${this.name} for: program=${
           program}, isDrum=${isDrum}`);
       return;
     }

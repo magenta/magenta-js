@@ -23,6 +23,8 @@ import {INoteSequence, NoteSequence} from '../protobuf/index';
 import * as constants from './constants';
 import * as sequences from './sequences';
 
+import * as logging from './logging';
+
 /**
  * Start a new note.
  */
@@ -297,12 +299,12 @@ export class Performance {
                 isDrum: this.isDrum,
               }));
             } else {
-              console.log(
+              logging.log(
                   'Ignoring zero-length note: ' +
                   `(pitch = ${event.pitch}, step = ${currentStep})`);
             }
           } else {
-            console.log(
+            logging.log(
                 'Ignoring note-off with no previous note-on:' +
                 `(pitch = ${event.pitch}, step = ${currentStep})`);
           }
@@ -340,7 +342,7 @@ export class Performance {
             isDrum: this.isDrum
           }));
         } else {
-          console.log(
+          logging.log(
               'Ignoring zero-length note: ' +
               `(pitch = ${pitch}, step = ${currentStep})`);
         }
