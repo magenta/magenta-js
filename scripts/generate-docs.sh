@@ -80,14 +80,16 @@ done
 # Build the demos and copy them to the temporary docs directory.
 cd $currDir
 yarn build-demos
+rm -rf $tmpDir
 mkdir -p $tmpDir/demos
 # Or with true to avoid failing on a non-existent file extension.
 cp demos/*.{js,html,mid,css} $tmpDir/demos | true
 
 # Switch to gh-pages and update docs.
-git checkout --track origin/gh-pages
+git checkout gh-pages
 cd $baseDir
 git rm -fr $PKG_NAME
+
 # Use rsync instead of cp so that we don't clobber untracked files.
 rsync -a $tmpDir/ $PKG_NAME/
 git add $PKG_NAME
