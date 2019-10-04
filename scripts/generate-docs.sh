@@ -88,6 +88,7 @@ cp demos/*.{js,html,mid,css} $tmpDir/demos | true
 # Switch to gh-pages and reset any local changes
 git checkout gh-pages
 git reset --hard upstream/gh-pages
+git push -f  # overwrite any local changes
 
 cd $baseDir
 git rm -fr $PKG_NAME
