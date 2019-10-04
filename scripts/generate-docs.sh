@@ -85,8 +85,10 @@ mkdir -p $tmpDir/demos
 # Or with true to avoid failing on a non-existent file extension.
 cp demos/*.{js,html,mid,css} $tmpDir/demos | true
 
-# Switch to gh-pages and update docs.
+# Switch to gh-pages and reset any local changes
 git checkout gh-pages
+git reset --hard upstream/gh-pages
+
 cd $baseDir
 git rm -fr $PKG_NAME
 
