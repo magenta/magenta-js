@@ -301,12 +301,12 @@ export class Performance {
             } else {
               logging.log(
                   'Ignoring zero-length note: ' +
-                  `(pitch = ${event.pitch}, step = ${currentStep})`);
+                  `(pitch = ${event.pitch}, step = ${currentStep})`, 'Performance');
             }
           } else {
             logging.log(
                 'Ignoring note-off with no previous note-on:' +
-                `(pitch = ${event.pitch}, step = ${currentStep})`);
+                `(pitch = ${event.pitch}, step = ${currentStep})`, 'Performance');
           }
           break;
         case 'time-shift':
@@ -344,7 +344,7 @@ export class Performance {
         } else {
           logging.log(
               'Ignoring zero-length note: ' +
-              `(pitch = ${pitch}, step = ${currentStep})`);
+              `(pitch = ${pitch}, step = ${currentStep})`, 'Performance');
         }
       }
     });
