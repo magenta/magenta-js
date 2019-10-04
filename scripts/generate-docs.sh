@@ -46,6 +46,7 @@ then
 fi
 
 # Generate the docs.
+rm -rf $tmpDir
 npx typedoc --tsconfig $tsconfig --sourcefile-url-prefix $urlPrefix --out $tmpDir  --mode $mode --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals src
 
 # Fix any leaked local paths in the docs.
@@ -80,13 +81,16 @@ done
 # Build the demos and copy them to the temporary docs directory.
 cd $currDir
 yarn build-demos
-rm -rf $tmpDir
 mkdir -p $tmpDir/demos
 # Or with true to avoid failing on a non-existent file extension.
 cp demos/*.{js,html,mid,css} $tmpDir/demos | true
 
-# Switch to gh-pages and update docs.
+# Switch to gh-pages and reset any local changes
 git checkout gh-pages
+git fetch upstream
+git reset --hard upstream/gh-pages
+git push -f  # overwrite any local changes
+
 cd $baseDir
 git rm -fr $PKG_NAME
 
