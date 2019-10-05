@@ -24,11 +24,19 @@ const MIDI_URL = './melody.mid';
 
 let canvasVisualizer: mm.PianoRollCanvasVisualizer;
 let svgVisualizer: mm.PianoRollSVGVisualizer;
+let staffVisualizer: mm.StaffSVGVisualizer;
+
+let staffConfig: mm.StaffSVGVisualizerConfig = {
+  noteHeight: 15,
+  pixelsPerTimeStep: 0,
+  scrollType: mm.ScrollType.BAR
+};
 
 const player = new mm.Player(false, {
   run: (note: mm.NoteSequence.Note) => {
     canvasVisualizer.redraw(note, true);
     svgVisualizer.redraw(note, true);
+    staffVisualizer.redraw(note, true);
   },
   stop: () => {}
 });
@@ -42,6 +50,7 @@ const tempoValue = document.getElementById('tempoValue') as HTMLDivElement;
 const fileInput = document.getElementById('fileInput') as HTMLInputElement;
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const svg = document.getElementsByTagName('svg')[0] as SVGSVGElement;
+const staff = document.getElementById('staff') as HTMLDivElement;
 
 // Set up some event listeners
 urlBtn.addEventListener('click', () => fetchMidi(MIDI_URL));
@@ -72,6 +81,7 @@ function initPlayerAndVisualizer(seq: mm.INoteSequence) {
 
   canvasVisualizer = new mm.PianoRollCanvasVisualizer(seq, canvas);
   svgVisualizer = new mm.PianoRollSVGVisualizer(seq, svg);
+  staffVisualizer = new mm.StaffSVGVisualizer(seq, staff, staffConfig);
 
   const tempo = seq.tempos[0].qpm;
   player.setTempo(tempo);
