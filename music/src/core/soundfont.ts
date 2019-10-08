@@ -172,7 +172,7 @@ export class Instrument {
               if (info.pitch < this.minPitch || info.pitch > this.maxPitch) {
                 logging.log(
                     `Pitch ${info.pitch} is outside the valid range for ${
-                        this.name}, ignoring.`);
+                         this.name}, ignoring.`, 'SoundFont');
                 return false;
               } else {
                 return true;
