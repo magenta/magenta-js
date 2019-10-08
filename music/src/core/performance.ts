@@ -344,7 +344,8 @@ export class Performance {
         } else {
           logging.log(
               'Ignoring zero-length note: ' +
-              `(pitch = ${pitch}, step = ${currentStep})`, 'Performance');
+              `(pitch = ${pitch}, step = ${currentStep})`, 
+              'Performance');
         }
       }
     });
