@@ -23,6 +23,8 @@ import {INoteSequence, NoteSequence} from '../protobuf/index';
 import * as constants from './constants';
 import * as sequences from './sequences';
 
+import * as logging from './logging';
+
 /**
  * Start a new note.
  */
@@ -297,14 +299,16 @@ export class Performance {
                 isDrum: this.isDrum,
               }));
             } else {
-              console.log(
+              logging.log(
                   'Ignoring zero-length note: ' +
-                  `(pitch = ${event.pitch}, step = ${currentStep})`);
+                  `(pitch = ${event.pitch}, step = ${currentStep})`,
+                  'Performance');
             }
           } else {
-            console.log(
+            logging.log(
                 'Ignoring note-off with no previous note-on:' +
-                `(pitch = ${event.pitch}, step = ${currentStep})`);
+                `(pitch = ${event.pitch}, step = ${currentStep})`,
+                'Performance');
           }
           break;
         case 'time-shift':
@@ -340,9 +344,10 @@ export class Performance {
             isDrum: this.isDrum
           }));
         } else {
-          console.log(
+          logging.log(
               'Ignoring zero-length note: ' +
-              `(pitch = ${pitch}, step = ${currentStep})`);
+              `(pitch = ${pitch}, step = ${currentStep})`, 
+              'Performance');
         }
       }
     });
