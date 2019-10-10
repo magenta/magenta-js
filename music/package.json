@@ -13,6 +13,7 @@
     "midiconvert": "^0.4.7",
     "ndarray-resample": "^1.0.1",
     "protobufjs": "^6.8.6",
+    "staffrender": "^0.1.0",
     "tonal": "^2.0.0",
     "tone": "^13.8.21"
   },
@@ -34,7 +35,6 @@
     "in-publish": "^2.0.0",
     "minimist": "^1.2.0",
     "node-fetch": "^2.6.0",
-    "staffrender": "^0.0.1",
     "tape": "^4.9.0",
     "terser-webpack-plugin": "^1.4.1",
     "ts-loader": "^5.3.0",

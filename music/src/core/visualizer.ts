@@ -460,8 +460,8 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
 }
 
 /**
- * Enumeration of different ways of horizontal score scrolling, like paginaged
- * (PAGE is default value), note by note (NOTE) or in packed chunks by doing 
+ * Enumeration of different ways of horizontal score scrolling, like paginated
+ * (PAGE is default value), note by note (NOTE) or in packed chunks by doing
  * scroll just on bar starting (BAR).
  */
 export enum ScrollType {
@@ -473,14 +473,15 @@ export enum ScrollType {
 /**
  * An interface for providing extra configurable properties to a Visualizer
  * extending the basic configurable properties of `VisualizerConfig`.
- * @param defaultKey The musical key the score must use to adapt the score to 
- * the right accidentals. It can be overwritten with 
- * `NoteSequence.keySignatures` value at time or step 0. If not assigned it 
+ *
+ * @param defaultKey The musical key the score must use to adapt the score to
+ * the right accidentals. It can be overwritten with
+ * `NoteSequence.keySignatures` value at time or step 0. If not assigned it
  * will be asumed C key.
- * @param instruments The subset of the `NoteSequence` instrument track numbers 
- * which should be merged and displayed. If not assigned or equal to [] it will 
+ * @param instruments The subset of the `NoteSequence` instrument track numbers
+ * which should be merged and displayed. If not assigned or equal to [] it will
  * be used all instruments altogether.
- * @param scrollType Sets scrolling to follow scoreplaying in different ways 
+ * @param scrollType Sets scrolling to follow scoreplaying in different ways
  * according to `ScrollType` enum values.
  */
 export interface StaffSVGVisualizerConfig extends VisualizerConfig {
@@ -490,34 +491,34 @@ export interface StaffSVGVisualizerConfig extends VisualizerConfig {
 }
 
 /**
- * Displays a `NoteSecuence` as a staff on a given SVG. Staff is scaled to fit 
- * vertically `config.noteHeight` and note horizontal position can behave in 
- * two different ways: If `config.pixelsPerTimeStep` is greater than zero, 
- * horizontal position will be proportional to its starting time, allowing to 
- * pile several instances for different voices (parts). Otherwise, resulting 
- * staff will display notes in a compact form, using minimum horizontal space 
- * between musical symbols as regular paper staff does. 
- * 
- * Clef, key and time signature will be displayed at the leftmost side and the 
+ * Displays a `NoteSecuence` as a staff on a given SVG. Staff is scaled to fit
+ * vertically `config.noteHeight` and note horizontal position can behave in
+ * two different ways: If `config.pixelsPerTimeStep` is greater than zero,
+ * horizontal position will be proportional to its starting time, allowing to
+ * pile several instances for different voices (parts). Otherwise, resulting
+ * staff will display notes in a compact form, using minimum horizontal space
+ * between musical symbols as regular paper staff does.
+ *
+ * Clef, key and time signature will be displayed at the leftmost side and the
  * rest of the staff will scroll under this initial signature area accordingly.
  * In case of proportional note positioning, given it starts at pixel zero, the
  * signature area will blink meanwhile it collides with initial active notes.
  * Key and time signature changes will be shown accordingly through score.
- * 
- * New configuration features have been introduced through 
+ *
+ * New configuration features have been introduced through
  * `StaffSVGVisualizerConfig` over basic `VisualizerConfig`.
- * 
- * When connected to a player, the visualizer can also highlight 
+ *
+ * When connected to a player, the visualizer can also highlight
  * the notes being currently played.
- * 
+ *
  * You can find more info at:
- * 
+ *
  * https://github.com/rogerpasky/staffrender-magentaviewer
  */
 export class StaffSVGVisualizer extends BaseVisualizer {
-  private render: sr.StaffSVGRender; // The actual render
-  private instruments: number[]; // Instruments filter to be rendered
-  private drawnNotes: number; // Number of drawn notes. Will redraw if changed
+  private render: sr.StaffSVGRender; // The actual render.
+  private instruments: number[]; // Instruments filter to be rendered.
+  private drawnNotes: number; // Number of drawn notes. Will redraw if changed.
 
   /**
    * `StaffSVGVisualizer` constructor.
@@ -527,30 +528,28 @@ export class StaffSVGVisualizer extends BaseVisualizer {
    * @param config Visualization configuration options.
    */
   constructor(
-    sequence: INoteSequence, 
-    div: HTMLDivElement, 
-    config: StaffSVGVisualizerConfig = {}
-  ) {
+      sequence: INoteSequence,
+      div: HTMLDivElement,
+      config: StaffSVGVisualizerConfig = {}) {
     super(sequence, config);
-    if (
-      config.pixelsPerTimeStep === undefined || config.pixelsPerTimeStep <= 0
-    ) { // Overwritting super() value. Compact visualization as default
+    if ( // Overwritting super() value. Compact visualization as default.
+        config.pixelsPerTimeStep === undefined ||
+        config.pixelsPerTimeStep <= 0) {
       this.config.pixelsPerTimeStep = 0;
     }
     this.instruments = config.instruments || [];
     this.render = new sr.StaffSVGRender(
-      this.getScoreInfo(sequence), 
-      {
-        noteHeight: this.config.noteHeight,
-        noteSpacing: this.config.noteSpacing,
-        pixelsPerTimeStep: this.config.pixelsPerTimeStep,
-        noteRGB: this.config.noteRGB,
-        activeNoteRGB: this.config.activeNoteRGB,
-        defaultKey: config.defaultKey || 0,
-        scrollType: config.scrollType || ScrollType.PAGE,      
-      },
-      div
-    );
+        this.getScoreInfo(sequence),
+        {
+          noteHeight: this.config.noteHeight,
+          noteSpacing: this.config.noteSpacing,
+          pixelsPerTimeStep: this.config.pixelsPerTimeStep,
+          noteRGB: this.config.noteRGB,
+          activeNoteRGB: this.config.activeNoteRGB,
+          defaultKey: config.defaultKey || 0,
+          scrollType: config.scrollType || ScrollType.PAGE,
+        },
+        div);
     this.drawnNotes = sequence.notes.length;
     this.clear();
     this.redraw();
@@ -565,44 +564,43 @@ export class StaffSVGVisualizer extends BaseVisualizer {
 
   /**
    * Redraws the entire `noteSequence` in a staff if no `activeNote` is given,
-   * highlighting on and off the appropriate notes otherwise. Should the 
+   * highlighting on and off the appropriate notes otherwise. Should the
    * `noteSequence` had changed adding more notes at the end, calling this
    * method again would complete the redrawing from the very last note it was
-   * drawn, maintaining the active note and the scroll position as they were. 
-   * This is handy for incremental compositions. Given the complexity of 
+   * drawn, maintaining the active note and the scroll position as they were.
+   * This is handy for incremental compositions. Given the complexity of
    * adaption to a modified score, modifyied notes previously drawn will be
-   * ignored (you can always `clear()` and `redraw()` for a full redraw). 
+   * ignored (you can always `clear()` and `redraw()` for a full redraw).
    * Please have in mind `mm.Player` does not have this incremental capability
-   * so, once the player had started, it will go on ignoring the changes. 
-   * 
+   * so, once the player had started, it will go on ignoring the changes.
+   *
    * @param activeNote (Optional) If specified, this `Note` will be painted
-   * in the active color and there won't be an actual redrawing, but a 
-   * re-colouring of the involved note heads, accidentals, dots and ties 
-   * (activated and de-activated ones). Otherwise, all musical symbols which 
+   * in the active color and there won't be an actual redrawing, but a
+   * re-colouring of the involved note heads, accidentals, dots and ties
+   * (activated and de-activated ones). Otherwise, all musical symbols which
    * were not processed yet will be drawn to complete the score.
-   * @param scrollIntoView (Optional) If specified and the active note to be 
-   * highlited is not visualized in the container DIV, the later will be 
-   * scrolled so that the note is viewed in the right place. This can be 
+   * @param scrollIntoView (Optional) If specified and the active note to be
+   * highlighted is not visualized in the container DIV, the latter will be
+   * scrolled so that the note is viewed in the right place. This can be
    * altered by `AdvancedVisualizerConfig.scrollType`.
-   * @returns The x position of the highlighted active note relative to the 
-   * beginning of the SVG, or -1 if there wasn't any given active note. Useful
+   * @returns The x position of the highlighted active note relative to the
+   * beginning of the DIV, or -1 if there wasn't any given active note. Useful
    * for automatically advancing the visualization if needed.
    */
   public redraw(
-    activeNote?: NoteSequence.INote, 
-    scrollIntoView?: boolean 
-  ) : number {
+      activeNote?: NoteSequence.INote,
+      scrollIntoView?: boolean): number {
     if (this.drawnNotes !== this.noteSequence.notes.length) {
       this.render.scoreInfo = this.getScoreInfo(this.noteSequence);
     }
-    const activeNoteInfo = activeNote ? 
-      this.getNoteInfo(activeNote) : undefined;
+    const activeNoteInfo = activeNote ?
+        this.getNoteInfo(activeNote) : undefined;
     return this.render.redraw(activeNoteInfo, scrollIntoView);
   }
 
   private isNoteInInstruments(note: NoteSequence.INote) : boolean {
     if (note.instrument === undefined || this.instruments.length === 0) {
-      return true; // No instrument information in note means no filtering
+      return true; // No instrument information in note means no filtering.
     }
     else { // Instrument filtering
       return this.instruments.indexOf(note.instrument) >= 0;
@@ -611,23 +609,21 @@ export class StaffSVGVisualizer extends BaseVisualizer {
 
   private timeToQuarters(time: number): number {
     const q = time * this.noteSequence.tempos[0].qpm / 60;
-    return Math.round(q*16)/16; // Current resolution = 1/16 quarter
+    return Math.round(q * 16) / 16; // Current resolution = 1/16 quarter.
   }
 
   private quantizedStepsToQuarters(steps: number): number {
     const q = steps / this.noteSequence.quantizationInfo.stepsPerQuarter;
-    return Math.round(q*16)/16; // Current resolution = 1/16 quarter
+    return Math.round(q * 16) / 16; // Current resolution = 1/16 quarter.
   }
 
-  private getNoteInfo(
-    note: NoteSequence.INote
-  ): sr.NoteInfo {
+  private getNoteInfo(note: NoteSequence.INote): sr.NoteInfo {
     const startQ = this.sequenceIsQuantized ?
-      this.quantizedStepsToQuarters(note.quantizedStartStep):
-      this.timeToQuarters(note.startTime);
+        this.quantizedStepsToQuarters(note.quantizedStartStep) :
+        this.timeToQuarters(note.startTime);
     const endQ = this.sequenceIsQuantized ?
-      this.quantizedStepsToQuarters(note.quantizedEndStep):
-      this.timeToQuarters(note.endTime);
+        this.quantizedStepsToQuarters(note.quantizedEndStep) :
+        this.timeToQuarters(note.endTime);
     return {
       start: startQ,
       length: endQ - startQ,
@@ -636,59 +632,31 @@ export class StaffSVGVisualizer extends BaseVisualizer {
     };
   }
 
-  // TODO: Update when ProtocolBuffer covers a quantizedStep version
-  private getTempoInfo (
-    t: NoteSequence.ITempo
-  ) : sr.TempoInfo {
-    return {start: this.timeToQuarters(t.time), qpm: t.qpm};
-  }
-
-  // TODO: Update when ProtocolBuffer covers a quantizedStep version
-  private getKeySignatureInfo (
-    ks: NoteSequence.IKeySignature
-  ) : sr.KeySignatureInfo {
-    return {start: this.timeToQuarters(ks.time), key: ks.key};
-  }
-
-  // TODO: Update when ProtocolBuffer covers a quantizedStep version
-  private getTimeSignatureInfo (
-    ts: NoteSequence.ITimeSignature
-  ) : sr.TimeSignatureInfo {
-    return {
-      start: this.timeToQuarters(ts.time), 
-      numerator: ts.numerator, 
-      denominator: ts.denominator
-    };
-  }
-
-  private getScoreInfo(
-    sequence: INoteSequence
-  ) : sr.ScoreInfo {
+  private getScoreInfo(sequence: INoteSequence): sr.ScoreInfo {
     const notesInfo: sr.NoteInfo[] = [];
-    sequence.notes.forEach(
-      (note: NoteSequence.INote) => {
-        if (this.isNoteInInstruments(note)) {
-          notesInfo.push(this.getNoteInfo(note));
-        }
+    sequence.notes.forEach((note: NoteSequence.INote) => {
+      if (this.isNoteInInstruments(note)) {
+        notesInfo.push(this.getNoteInfo(note));
       }
-    );
+    });
     return {
       notes: notesInfo,
-      tempos: sequence.tempos ? 
-        sequence.tempos.map(
-          (t: NoteSequence.ITempo) => this.getTempoInfo(t)
-        ) : 
-        [],
-      keySignatures: sequence.keySignatures ? 
-        sequence.keySignatures.map(
-          (ks: NoteSequence.IKeySignature) => this.getKeySignatureInfo(ks)
-        ) : 
-        [],
-      timeSignatures: sequence.timeSignatures ? 
-        sequence.timeSignatures.map(
-          (ts: NoteSequence.ITimeSignature) => this.getTimeSignatureInfo(ts)
-        ) : 
-        []
+      tempos: sequence.tempos ?
+        sequence.tempos.map((t: NoteSequence.ITempo) => {
+          return { start: this.timeToQuarters(t.time), qpm: t.qpm };
+        }) : [],
+      keySignatures: sequence.keySignatures ?
+        sequence.keySignatures.map((ks: NoteSequence.IKeySignature) => {
+          return { start: this.timeToQuarters(ks.time), key: ks.key };
+        }) : [],
+      timeSignatures: sequence.timeSignatures ?
+        sequence.timeSignatures.map((ts: NoteSequence.ITimeSignature) => {
+          return {
+            start: this.timeToQuarters(ts.time),
+            numerator: ts.numerator,
+            denominator: ts.denominator
+          };
+        }) : []
     };
   }
 }

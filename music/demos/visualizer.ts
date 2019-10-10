@@ -26,12 +26,6 @@ let canvasVisualizer: mm.PianoRollCanvasVisualizer;
 let svgVisualizer: mm.PianoRollSVGVisualizer;
 let staffVisualizer: mm.StaffSVGVisualizer;
 
-let staffConfig: mm.StaffSVGVisualizerConfig = {
-  noteHeight: 15,
-  pixelsPerTimeStep: 0,
-  scrollType: mm.ScrollType.BAR
-};
-
 const player = new mm.Player(false, {
   run: (note: mm.NoteSequence.Note) => {
     canvasVisualizer.redraw(note, true);
@@ -81,7 +75,7 @@ function initPlayerAndVisualizer(seq: mm.INoteSequence) {
 
   canvasVisualizer = new mm.PianoRollCanvasVisualizer(seq, canvas);
   svgVisualizer = new mm.PianoRollSVGVisualizer(seq, svg);
-  staffVisualizer = new mm.StaffSVGVisualizer(seq, staff, staffConfig);
+  staffVisualizer = new mm.StaffSVGVisualizer(seq, staff);
 
   const tempo = seq.tempos[0].qpm;
   player.setTempo(tempo);
