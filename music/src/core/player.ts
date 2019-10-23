@@ -371,10 +371,8 @@ class DrumKit {
 export class Player extends BasePlayer {
   private drumKit = DrumKit.getInstance();
 
-  private bassSynth = new Tone.Synth({
-    volume: 5,
-    oscillator: { type: 'triangle' }
-  }).toMaster();
+  private bassSynth =
+      new Tone.Synth({volume: 5, oscillator: {type: 'triangle'}}).toMaster();
 
   private polySynth = new Tone.PolySynth(10).toMaster();
 
@@ -599,7 +597,12 @@ export class PlayerWithClick extends Player {
  *      // a message will be sent to all ports.
  *      player.outputs = [player.availableOutputs[0]];
  *      player.start(seq);
- *    })```
+ *    })
+ *   ```
+ *
+ * If you want to specify which MIDI channel the messages should be sent on,
+ * you can set the `outputChannel` property before calling `start`. By
+ * default, the `outputChannel` is 0.
  *
  * You can also explicitly request MIDI access outside of the player, in
  * your application, and just update the `output` property before playing:
@@ -623,10 +626,12 @@ export class PlayerWithClick extends Player {
  *       player = new mm.MIDIPlayer();
  *       player.outputs = [availableOutputs[el.selectedIndex]];
  *       player.start(seq)
- *     });```
+ *     });
+ *   ```
  */
 export class MIDIPlayer extends BasePlayer {
   public outputs: WebMidi.MIDIOutput[] = [];
+  public outputChannel = 0;
   public readonly availableOutputs: WebMidi.MIDIOutput[] = [];
   private NOTE_ON = 0x90;
   private NOTE_OFF = 0x80;
@@ -675,8 +680,8 @@ export class MIDIPlayer extends BasePlayer {
     const velocity = note.velocity || 100;
     const length = (note.endTime - note.startTime) * 1000;  // in ms.
 
-    const msgOn = [this.NOTE_ON, note.pitch, velocity];
-    const msgOff = [this.NOTE_OFF, note.pitch, velocity];
+    const msgOn = [this.NOTE_ON + this.outputChannel, note.pitch, velocity];
+    const msgOff = [this.NOTE_OFF + this.outputChannel, note.pitch, velocity];
 
     const outputs = this.outputs ? this.outputs : this.availableOutputs;
     for (let i = 0; i < outputs.length; i++) {
