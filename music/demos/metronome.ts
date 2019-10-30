@@ -30,18 +30,17 @@ document.getElementById('muteClick')
     });
 
 function onClick(time: number, click: number) {
-  logEvent('    Click', `${click + 1}/${metronome.clicksPerQuarter * 4}`, time);
+  logEvent('Click', `${click + 1}/${metronome.clicksPerQuarter * 4}`, time);
 }
 function onQuarter(time: number, quarter: number) {
-  logEvent('  Quarter', `${quarter + 1}/4`, time);
+  logEvent('Quarter', `${quarter + 1}/4`, time);
 }
 function onBar(time: number, bar: number) {
   logEvent('Bar', `${bar + 1}`, time);
 }
 function logEvent(type: string, text: string, time: number) {
   const tr = document.createElement('tr');
-  tr.innerHTML =
-      `<td class="pre">${type}</td><td>${text}</td><td>${time.toFixed(5)}</td>`;
-  tr.classList.add(type.toLowerCase().trim());
+  tr.innerHTML = `<td>${type}</td><td>${text}</td><td>${time.toFixed(5)}</td>`;
+  tr.classList.add(type.toLowerCase());
   output.appendChild(tr);
 }

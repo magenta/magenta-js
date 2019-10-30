@@ -1,7 +1,7 @@
 /**
- * A module containing a basic metronome based on Tone.js. The metronome speed
- * and click sound can be configured, and if fires callbacks for every audible
- * click, quarter and bar marks.
+ * A module containing a metronome based on Tone.js. The timing is done
+ * using the underlying WebAudio clock, so it is accurate, and the metronome
+ * fires callbacks for every audible click, quarter and bar marks.
  *
  * @license
  * Copyright 2012 Google Inc. All Rights Reserved.
@@ -58,25 +58,27 @@ export abstract class MetronomeCallbackObject {
  * A Metronome based on Tone.js
  */
 export class Metronome {
+  // The number of audible clicks per quarter note.
   public clicksPerQuarter = 1;
   public muted = false;
+  // The sound for the regular click.
+  protected loClick = new Tone
+                          .MembraneSynth({
+                            pitchDecay: 0.008,
+                            envelope: {attack: 0.001, decay: 0.3, sustain: 0}
+                          })
+                          .toMaster();
+  // The sound for the click that occurs on a new bar.
+  protected hiClick = new Tone
+                          .MembraneSynth({
+                            pitchDecay: 0.008,
+                            envelope: {attack: 0.001, decay: 0.3, sustain: 0}
+                          })
+                          .toMaster();
   private ticking = false;
   private startedAt: number = null;
   private step = -1;
   private callbackObject: MetronomeCallbackObject;
-  private loClick = new Tone
-                        .MembraneSynth({
-                          pitchDecay: 0.008,
-                          envelope: {attack: 0.001, decay: 0.3, sustain: 0}
-                        })
-                        .toMaster();
-  private hiClick = new Tone
-                        .MembraneSynth({
-                          pitchDecay: 0.008,
-                          envelope: {attack: 0.001, decay: 0.3, sustain: 0}
-                        })
-                        .toMaster();
-
   /**
    *   `Metronome` constructor.
    *
@@ -156,13 +158,14 @@ export class Metronome {
       // Every quarter...
       if (quarter === 0) {
         this.callbackObject.quarter(offsetTime, clickInQuarter);
+      }
 
-        if (!this.muted) {
-          if (clickInBar === 0) {
-            this.hiClick.triggerAttack('g5', time, 0.1);
-          } else {
-            this.loClick.triggerAttack('c5', time, 0.1);
-          }
+      // Every click, make an audible click.
+      if (!this.muted) {
+        if (clickInBar === 0) {
+          this.hiClick.triggerAttack('g5', time, 0.1);
+        } else {
+          this.loClick.triggerAttack('c5', time, 0.1);
         }
       }
 
