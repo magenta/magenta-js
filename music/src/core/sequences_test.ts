@@ -458,12 +458,19 @@ function testUnQuantize(
 
   const ns = sequences.unquantizeSequence(qns, finalQpm);
 
-  const expectedSequence = sequences.clone(qns);
-  expectedSequence.notes.map((n, i) => {
-    n.startTime = expectedTimes[i][0];
-    n.endTime = expectedTimes[i][1];
+  const expectedSequence = NoteSequence.create();
+  expectedSequence.timeSignatures = ns.timeSignatures;
+  qns.notes.forEach((n, i) => {
+    expectedSequence.notes.push({
+      pitch: n.pitch,
+      instrument: n.instrument,
+      velocity: n.velocity,
+      startTime: expectedTimes[i][0],
+      endTime: expectedTimes[i][1]
+    });
   });
   expectedSequence.totalTime = expectedTotalTime;
+
   if (!finalQpm && !originalQpm) {
     expectedSequence.tempos = [];
   } else {
@@ -710,8 +717,7 @@ test(
           {stepsPerQuarter: STEPS_PER_QUARTER});
 
       addQuantizedTrackToSequence(expected, 0, [
-        [60, 100, 0, 4], [72, 100, 2, 6], [59, 100, 10, 14],
-        [71, 100, 11, 16]
+        [60, 100, 0, 4], [72, 100, 2, 6], [59, 100, 10, 14], [71, 100, 11, 16]
       ]);
       expected.quantizationInfo = NoteSequence.QuantizationInfo.create(
           {stepsPerQuarter: STEPS_PER_QUARTER});
