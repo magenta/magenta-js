@@ -16,12 +16,12 @@
  * limitations under the License.
  */
 
+import * as sr from 'staffrender';
+
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import {logging, sequences} from '.';
 import {MAX_MIDI_PITCH, MIN_MIDI_PITCH} from './constants';
-
-import * as sr from 'staffrender';
 
 /**
  * An interface for providing configurable properties to a Visualizer.
@@ -143,7 +143,8 @@ export abstract class BaseVisualizer {
         this.noteSequence.totalQuantizedSteps :
         this.noteSequence.totalTime;
     if (!endTime) {
-      throw new Error('The sequence you are using with the ' +
+      throw new Error(
+          'The sequence you are using with the ' +
           'mm.PianoRollSVGVisualizer does not have a ' +
           (this.sequenceIsQuantized ? 'totalQuantizedSteps' : 'totalTime') +
           ' field set, so the visualizer can\'t be horizontally ' +
@@ -516,9 +517,9 @@ export interface StaffSVGVisualizerConfig extends VisualizerConfig {
  * https://github.com/rogerpasky/staffrender-magentaviewer
  */
 export class StaffSVGVisualizer extends BaseVisualizer {
-  private render: sr.StaffSVGRender; // The actual render.
-  private instruments: number[]; // Instruments filter to be rendered.
-  private drawnNotes: number; // Number of drawn notes. Will redraw if changed.
+  private render: sr.StaffSVGRender;  // The actual render.
+  private instruments: number[];      // Instruments filter to be rendered.
+  private drawnNotes: number;  // Number of drawn notes. Will redraw if changed.
 
   /**
    * `StaffSVGVisualizer` constructor.
@@ -528,19 +529,17 @@ export class StaffSVGVisualizer extends BaseVisualizer {
    * @param config Visualization configuration options.
    */
   constructor(
-      sequence: INoteSequence,
-      div: HTMLDivElement,
+      sequence: INoteSequence, div: HTMLDivElement,
       config: StaffSVGVisualizerConfig = {}) {
     super(sequence, config);
-    if ( // Overwritting super() value. Compact visualization as default.
+    if (  // Overwritting super() value. Compact visualization as default.
         config.pixelsPerTimeStep === undefined ||
         config.pixelsPerTimeStep <= 0) {
       this.config.pixelsPerTimeStep = 0;
     }
     this.instruments = config.instruments || [];
     this.render = new sr.StaffSVGRender(
-        this.getScoreInfo(sequence),
-        {
+        this.getScoreInfo(sequence), {
           noteHeight: this.config.noteHeight,
           noteSpacing: this.config.noteSpacing,
           pixelsPerTimeStep: this.config.pixelsPerTimeStep,
@@ -587,34 +586,32 @@ export class StaffSVGVisualizer extends BaseVisualizer {
    * beginning of the DIV, or -1 if there wasn't any given active note. Useful
    * for automatically advancing the visualization if needed.
    */
-  public redraw(
-      activeNote?: NoteSequence.INote,
-      scrollIntoView?: boolean): number {
+  public redraw(activeNote?: NoteSequence.INote, scrollIntoView?: boolean):
+      number {
     if (this.drawnNotes !== this.noteSequence.notes.length) {
       this.render.scoreInfo = this.getScoreInfo(this.noteSequence);
     }
-    const activeNoteInfo = activeNote ?
-        this.getNoteInfo(activeNote) : undefined;
+    const activeNoteInfo =
+        activeNote ? this.getNoteInfo(activeNote) : undefined;
     return this.render.redraw(activeNoteInfo, scrollIntoView);
   }
 
-  private isNoteInInstruments(note: NoteSequence.INote) : boolean {
+  private isNoteInInstruments(note: NoteSequence.INote): boolean {
     if (note.instrument === undefined || this.instruments.length === 0) {
-      return true; // No instrument information in note means no filtering.
-    }
-    else { // Instrument filtering
+      return true;  // No instrument information in note means no filtering.
+    } else {        // Instrument filtering
       return this.instruments.indexOf(note.instrument) >= 0;
     }
   }
 
   private timeToQuarters(time: number): number {
     const q = time * this.noteSequence.tempos[0].qpm / 60;
-    return Math.round(q * 16) / 16; // Current resolution = 1/16 quarter.
+    return Math.round(q * 16) / 16;  // Current resolution = 1/16 quarter.
   }
 
   private quantizedStepsToQuarters(steps: number): number {
     const q = steps / this.noteSequence.quantizationInfo.stepsPerQuarter;
-    return Math.round(q * 16) / 16; // Current resolution = 1/16 quarter.
+    return Math.round(q * 16) / 16;  // Current resolution = 1/16 quarter.
   }
 
   private getNoteInfo(note: NoteSequence.INote): sr.NoteInfo {
@@ -642,21 +639,24 @@ export class StaffSVGVisualizer extends BaseVisualizer {
     return {
       notes: notesInfo,
       tempos: sequence.tempos ?
-        sequence.tempos.map((t: NoteSequence.ITempo) => {
-          return { start: this.timeToQuarters(t.time), qpm: t.qpm };
-        }) : [],
+          sequence.tempos.map((t: NoteSequence.ITempo) => {
+            return {start: this.timeToQuarters(t.time), qpm: t.qpm};
+          }) :
+          [],
       keySignatures: sequence.keySignatures ?
-        sequence.keySignatures.map((ks: NoteSequence.IKeySignature) => {
-          return { start: this.timeToQuarters(ks.time), key: ks.key };
-        }) : [],
+          sequence.keySignatures.map((ks: NoteSequence.IKeySignature) => {
+            return {start: this.timeToQuarters(ks.time), key: ks.key};
+          }) :
+          [],
       timeSignatures: sequence.timeSignatures ?
-        sequence.timeSignatures.map((ts: NoteSequence.ITimeSignature) => {
-          return {
-            start: this.timeToQuarters(ts.time),
-            numerator: ts.numerator,
-            denominator: ts.denominator
-          };
-        }) : []
+          sequence.timeSignatures.map((ts: NoteSequence.ITimeSignature) => {
+            return {
+              start: this.timeToQuarters(ts.time),
+              numerator: ts.numerator,
+              denominator: ts.denominator
+            };
+          }) :
+          []
     };
   }
 }
