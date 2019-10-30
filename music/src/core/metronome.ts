@@ -75,6 +75,8 @@ export class Metronome {
                             envelope: {attack: 0.001, decay: 0.3, sustain: 0}
                           })
                           .toMaster();
+  protected loClickNote = 'c5';
+  protected hiClickNote = 'g5';
   private ticking = false;
   private startedAt: number = null;
   private step = -1;
@@ -163,9 +165,9 @@ export class Metronome {
       // Every click, make an audible click.
       if (!this.muted) {
         if (clickInBar === 0) {
-          this.hiClick.triggerAttack('g5', time, 0.1);
+          this.hiClick.triggerAttack(this.hiClickNote, time, 0.1);
         } else {
-          this.loClick.triggerAttack('c5', time, 0.1);
+          this.loClick.triggerAttack(this.loClickNote, time, 0.1);
         }
       }
 
