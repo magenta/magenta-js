@@ -9,7 +9,7 @@ hopefully help you pick something to work on.
 
 ### Contributor License Agreement
 
-You might notice your neighbourhood CLA-bot commenting on a pull request you
+You might notice our friendly neighbourhood CLA-bot commenting on a pull request you
 open if you haven't yet signed our CLA. We use the same CLA for all open-source
 Google projects, so you only have to sign it once. Once you complete the CLA,
 all your pull-requests will automatically get the `cla: yes` tag.
