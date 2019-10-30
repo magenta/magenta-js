@@ -386,6 +386,10 @@ export function unquantizeSequence(qns: INoteSequence, qpm?: number) {
     n.endTime = stepToSeconds(n.quantizedEndStep);
     // Extend sequence if necessary.
     ns.totalTime = Math.max(ns.totalTime, n.endTime);
+
+    // Delete the quantized step information.
+    delete n.quantizedStartStep;
+    delete n.quantizedEndStep;
   });
 
   // Also quantize control changes and text annotations.
@@ -393,6 +397,8 @@ export function unquantizeSequence(qns: INoteSequence, qpm?: number) {
     // Quantize the event time, disallowing negative time.
     event.time = stepToSeconds(event.time);
   });
+  delete ns.totalQuantizedSteps;
+  delete ns.quantizationInfo;
   return ns;
 }
 
