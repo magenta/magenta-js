@@ -14,6 +14,6 @@ Magenta 프로젝트에 대한 자세한 내용은 [blog](https://magenta.tensor
 
 ## Libraries
 
-* [music](music): Contains [TensorFlow.js](https://js.tensorflow.org) implementations and support libraries for Magenta's musical note-based models including MusicVAE, MelodyRNN, DrumsRNN, PerformanceRNN, and ImprovRNN. [![npm version](https://badge.fury.io/js/%40magenta%2Fmusic.svg)](https://badge.fury.io/js/%40magenta%2Fmusic)
+* [music](음악): 음악에는 [TensorFlow.js](https://js.tensorflow.org) 구현 및 MusicVAE, MelodyRNN, DrumsRNN, PerformanceRNN과 ImprovRNN를 포함한 Magenta의 음악 노트 기반 모델에 대한 지원 라이브러리가 포함되어 있다. [![npm version](https://badge.fury.io/js/%40magenta%2Fmusic.svg)](https://badge.fury.io/js/%40magenta%2Fmusic)
 * [sketch](sketch): Contains [TensorFlow.js](https://js.tensorflow.org) implementations and support libraries for Magenta's sketch models including [SketchRNN](https://goo.gl/magenta/sketchrnn). [![npm version](https://badge.fury.io/js/%40magenta%2Fsketch.svg)](https://badge.fury.io/js/%40magenta%2Fsketch)
 * [image](image): Contains [TensorFlow.js](https://js.tensorflow.org) implementations and support libraries for Magenta's image models including [Arbitrary Style Transfer](https://github.com/tensorflow/magenta/tree/master/magenta/models/arbitrary_image_stylization). [![npm version](https://badge.fury.io/js/%40magenta%2Fimage.svg)](https://badge.fury.io/js/%40magenta%2Fimage)
