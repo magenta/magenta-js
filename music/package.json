@@ -1,6 +1,6 @@
 {
   "name": "@magenta/music",
-  "version": "1.11.3",
+  "version": "1.12.0",
   "description": "Make music with machine learning, in the browser.",
   "main": "es5/index.js",
   "module": "es6/index.js",
@@ -13,7 +13,7 @@
     "midiconvert": "^0.4.7",
     "ndarray-resample": "^1.0.1",
     "protobufjs": "^6.8.6",
-    "staffrender": "^0.1.0",
+    "staffrender": "^0.2.1",
     "tonal": "^2.0.0",
     "tone": "^13.8.21"
   },
