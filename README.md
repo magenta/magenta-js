@@ -3,13 +3,13 @@
 [![Build Status](https://travis-ci.org/tensorflow/magenta-js.svg?branch=master)](https://travis-ci.org/tensorflow/magenta-js)
 
 **Magenta.js** 는 사전 훈련된 Magenta 모델로 추론하기 위한 TypeScript 라이브러리의 모음이다.
-All libraries are published as [npm packages](https://www.npmjs.com/search?q=%40magenta).
+모든 라이브러리는 [npm packages]에 게시된다.(https://www.npmjs.com/search?q=%40magenta).
 
-Complete documentation is available at: https://tensorflow.github.io/magenta-js
+전체 문서는 다음에서 확인할 수 있다. : https://tensorflow.github.io/magenta-js
 
-More information and example applications can be found at [g.co/magenta/js](https://g.co/magenta/js).
+자세한 정보와 예제 애플리케이션은 [g.co/magenta/js](https://g.co/magenta/js)에서 확인할 수 있다..
 
-Learn more about the Magenta project at our [blog](https://magenta.tensorflow.org) and [main TensorFlow repo](https://github.com/tensorflow/magenta).
+Magenta 프로젝트에 대한 자세한 내용은 [blog](https://magenta.tensorflow.org) 및 [main TensorFlow repo](https://github.com/tensorflow/magenta)를 참조하십시오.
 
 ## Libraries
 
