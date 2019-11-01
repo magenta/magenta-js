@@ -86,7 +86,10 @@
      <span class="hljs-comment">// a message will be sent to all ports.</span>
      <span class="hljs-built_in">player</span>.outputs = [<span class="hljs-built_in">player</span>.availableOutputs[<span class="hljs-number">0</span>]];
      <span class="hljs-built_in">player</span>.start(seq);
-   })</code></pre><p>You can also explicitly request MIDI access outside of the player, in
+   })</code></pre><p>If you want to specify which MIDI channel the messages should be sent on,
+						you can set the <code>outputChannel</code> property before calling <code>start</code>. By
+					default, the <code>outputChannel</code> is 0.</p>
+					<p>You can also explicitly request MIDI access outside of the player, in
 					your application, and just update the <code>output</code> property before playing:</p>
 					<p>Example (advanced mode):</p>
 					<pre><code>   navigator.requestMIDIAccess().then(<span class="hljs-function">(<span class="hljs-params">midi</span>) =&gt;</span> {
@@ -138,6 +141,7 @@
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_core_player_.midiplayer.html#callbackobject" class="tsd-kind-icon">callback<wbr>Object</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_core_player_.midiplayer.html#currentpart" class="tsd-kind-icon">current<wbr>Part</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_core_player_.midiplayer.html#desiredqpm" class="tsd-kind-icon">desiredQPM</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_player_.midiplayer.html#outputchannel" class="tsd-kind-icon">output<wbr>Channel</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_core_player_.midiplayer.html#outputs" class="tsd-kind-icon">outputs</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_core_player_.midiplayer.html#playclick" class="tsd-kind-icon">play<wbr>Click</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_core_player_.midiplayer.html#scheduledstop" class="tsd-kind-icon">scheduled<wbr>Stop</a></li>
@@ -176,7 +180,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L632">core/player.ts:632</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L637">core/player.ts:637</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -206,7 +210,7 @@
 					<div class="tsd-signature tsd-kind-icon">available<wbr>Outputs<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">MIDIOutput</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> =&nbsp;[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L630">core/player.ts:630</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L635">core/player.ts:635</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -244,12 +248,22 @@
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="outputchannel" class="tsd-anchor"></a>
+					<h3>output<wbr>Channel</h3>
+					<div class="tsd-signature tsd-kind-icon">output<wbr>Channel<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;0</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L634">core/player.ts:634</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="outputs" class="tsd-anchor"></a>
 					<h3>outputs</h3>
 					<div class="tsd-signature tsd-kind-icon">outputs<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">MIDIOutput</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> =&nbsp;[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L629">core/player.ts:629</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L633">core/player.ts:633</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -362,7 +376,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#playnote">playNote</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L673">core/player.ts:673</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L678">core/player.ts:678</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -388,7 +402,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L701">core/player.ts:701</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L706">core/player.ts:706</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -411,7 +425,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L715">core/player.ts:715</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L720">core/player.ts:720</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -434,7 +448,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L648">core/player.ts:648</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L653">core/player.ts:653</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -637,6 +651,9 @@
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 								<a href="_core_player_.midiplayer.html#desiredqpm" class="tsd-kind-icon">desiredQPM</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="_core_player_.midiplayer.html#outputchannel" class="tsd-kind-icon">output<wbr>Channel</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="_core_player_.midiplayer.html#outputs" class="tsd-kind-icon">outputs</a>
