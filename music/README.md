@@ -129,7 +129,7 @@ there would be a risk of downloading multiple copies on the same page). Here is 
 ### In Node
 You can use [MagentaMusic.js][mm-npm] in your project using [yarn](https://yarnpkg.com/en/)
 (by calling `yarn add @magenta/music`) **or** [npm](https://docs.npmjs.com/cli/npm)
-(by calling `npn install --save @magenta/music`).
+(by calling `npm install --save @magenta/music`).
 
 The node-specific bundles (that don't transpile the CommonJS modules) are under
 `@magenta/music/node`. For example:
