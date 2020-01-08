@@ -48,12 +48,12 @@ missing, or feel free to submit a Pull Request!
 
 ### MusicVAE
 
-[MusicVAE](https://tensorflow.github.io/magenta-js/music/classes/_music_vae_model_.musicvae.html) implements several configurations of Magenta's variational autoencoder model called [MusicVAE][music-vae] including melody and drum "loop" models, 4- and 16-bar "trio" models, chord-conditioned [multi-track](https://g.co/magenta/multitrack) models, and drum performance "humanizations" with [GrooVAE][https://g.co/magenta/groovae].
+[MusicVAE](https://tensorflow.github.io/magenta-js/music/classes/_music_vae_model_.musicvae.html) implements several configurations of Magenta's variational autoencoder model called [MusicVAE][music-vae] including melody and drum "loop" models, 4- and 16-bar "trio" models, chord-conditioned [multi-track](https://g.co/magenta/multitrack) models, and drum performance "humanizations" with [GrooVAE](https://g.co/magenta/groovae).
 
 **Demo Application:** [Endless Trios](https://goo.gl/magenta/endless-trios)
 
 ### Piano Genie
-[Piano Genie](https://g.co/magenta/pianogenie) is a VQ-VAE model that that maps 8-button input to a full 88-key piano in real time.
+[Piano Genie](https://g.co/magenta/pianogenie) is a VQ-VAE model that maps 8-button input to a full 88-key piano in real time.
 
 **Demo Application:** [Piano Genie](https://goo.gl/magenta/piano-genie)
 
@@ -174,7 +174,7 @@ Since MagentaMusic.js does not support training models, you must use weights fro
 
 ### Magenta-Hosted Checkpoints
 
-Several pre-trained MusicRNN and MusicVAE checkpoints are hosted on GCS. The full list can is available in [this table](https://github.com/tensorflow/magenta-js/blob/master/music/checkpoints/README.md#table) and can be accessed programmatically via a JSON index at https://goo.gl/magenta/js-checkpoints-json.
+Several pre-trained MusicRNN and MusicVAE checkpoints are hosted on GCS. The full list is available in [this table](https://github.com/tensorflow/magenta-js/blob/master/music/checkpoints/README.md#table) and can be accessed programmatically via a JSON index at https://goo.gl/magenta/js-checkpoints-json.
 
 More information is available at https://goo.gl/magenta/js-checkpoints.
 
