@@ -30,7 +30,7 @@
     "ts-node": "^5.0.1",
     "tsify": "^3.0.4",
     "tslint": "^5.9.1",
-    "typedoc": "^0.14.2",
+    "typedoc": "^0.16.9",
     "typedoc-plugin-sourcefile-url": "^1.0.3",
     "typescript": "^3.3.3333",
     "webpack": "^4.24.0",
