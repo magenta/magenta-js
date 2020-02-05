@@ -421,8 +421,15 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
       const note = this.noteSequence.notes[i];
       const size = this.getNotePosition(note, i);
       const fill = this.getNoteFillColor(note, false);
+      const dataAttributes = {
+        'index': i,
+        'instrument': note.instrument,
+        'program': note.program,
+        'is-drum': note.isDrum === true,
+        'pitch': note.pitch,
+      };
 
-      this.drawNote(size.x, size.y, size.w, size.h, fill, i);
+      this.drawNote(size.x, size.y, size.w, size.h, fill, dataAttributes);
     }
     this.drawn = true;
   }
@@ -437,7 +444,8 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
   }
 
   private drawNote(
-      x: number, y: number, w: number, h: number, fill: string, index: number) {
+      x: number, y: number, w: number, h: number, fill: string,
+      dataAttributes: {[attr: string]: any}) { // tslint:disable-line:no-any
     if (!this.svg) {
       return;
     }
@@ -450,7 +458,11 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
     rect.setAttribute('y', `${Math.round(y)}`);
     rect.setAttribute('width', `${Math.round(w)}`);
     rect.setAttribute('height', `${Math.round(h)}`);
-    rect.setAttribute('data-index', `${index}`);
+    for (const attr in dataAttributes) {
+      if (dataAttributes[attr] !== undefined) {
+        rect.setAttribute('data-' + attr, dataAttributes[attr]);
+      }
+    }
     this.svg.appendChild(rect);
   }
 
