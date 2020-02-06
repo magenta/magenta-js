@@ -81,7 +81,7 @@ export abstract class BaseVisualizer {
    *
    *   @param sequence The `NoteSequence` to be visualized.
    *   @param canvas The element where the visualization should be displayed.
-   *   @param config Visualization configuration options.
+   *   @param config (optional) Visualization configuration options.
    */
   constructor(sequence: INoteSequence, config: VisualizerConfig = {}) {
     this.noteSequence = sequence;
@@ -112,24 +112,32 @@ export abstract class BaseVisualizer {
     this.height = size.height;
   }
 
-  protected getSize(): {width: number; height: number} {
+  protected updateMinMaxPitches() {
+    if (this.config.minPitch && this.config.maxPitch) {
+      return;
+    }
+
     // If the pitches haven't been specified already, figure them out
     // from the NoteSequence.
-    if (this.config.minPitch === undefined ||
-        this.config.maxPitch === undefined) {
+    if (this.config.minPitch === undefined) {
       this.config.minPitch = MAX_MIDI_PITCH;
-      this.config.maxPitch = MIN_MIDI_PITCH;
-
-      // Find the smallest pitch so that we can scale the drawing correctly.
-      for (const note of this.noteSequence.notes) {
-        this.config.minPitch = Math.min(note.pitch, this.config.minPitch);
-        this.config.maxPitch = Math.max(note.pitch, this.config.maxPitch);
-      }
-
-      // Add a little bit of padding at the top and the bottom.
-      this.config.minPitch -= 2;
-      this.config.maxPitch += 2;
     }
+    if (this.config.maxPitch === undefined) {
+      this.config.maxPitch = MIN_MIDI_PITCH;
+    }
+    // Find the smallest pitch so that we can scale the drawing correctly.
+    for (const note of this.noteSequence.notes) {
+      this.config.minPitch = Math.min(note.pitch, this.config.minPitch);
+      this.config.maxPitch = Math.max(note.pitch, this.config.maxPitch);
+    }
+
+    // Add a little bit of padding at the top and the bottom.
+    this.config.minPitch -= 2;
+    this.config.maxPitch += 2;
+  }
+
+  protected getSize(): {width: number; height: number} {
+    this.updateMinMaxPitches();
 
     // Height of the canvas based on the range of pitches in the sequence.
     const height =
@@ -144,8 +152,7 @@ export abstract class BaseVisualizer {
         this.noteSequence.totalTime;
     if (!endTime) {
       throw new Error(
-          'The sequence you are using with the ' +
-          'mm.PianoRollSVGVisualizer does not have a ' +
+          'The sequence you are using with the visualizer does not have a ' +
           (this.sequenceIsQuantized ? 'totalQuantizedSteps' : 'totalTime') +
           ' field set, so the visualizer can\'t be horizontally ' +
           'sized correctly.');
@@ -158,12 +165,12 @@ export abstract class BaseVisualizer {
   protected getNotePosition(note: NoteSequence.INote, noteIndex: number):
       {x: number; y: number, w: number, h: number} {
     // Size of this note.
+    const duration = this.getNoteEndTime(note) - this.getNoteStartTime(note);
     const x = (this.getNoteStartTime(note) * this.config.pixelsPerTimeStep);
-    const w = this.config.pixelsPerTimeStep *
-            (this.getNoteEndTime(note) - this.getNoteStartTime(note)) -
-        this.config.noteSpacing;
+    const w =
+        this.config.pixelsPerTimeStep * duration - this.config.noteSpacing;
 
-    // The canvas' y=0 is at the top, but a smaller pitch is actually
+    // The svg' y=0 is at the top, but a smaller pitch is actually
     // lower, so we're kind of painting backwards.
     const y = this.height -
         ((note.pitch - this.config.minPitch) * this.config.noteHeight);
@@ -220,7 +227,7 @@ export class PianoRollCanvasVisualizer extends BaseVisualizer {
    *
    *   @param sequence The `NoteSequence` to be visualized.
    *   @param canvas The element where the visualization should be displayed.
-   *   @param config Visualization configuration options.
+   *   @param config (optional) Visualization configuration options.
    */
   constructor(
       sequence: INoteSequence, canvas: HTMLCanvasElement,
@@ -268,7 +275,6 @@ export class PianoRollCanvasVisualizer extends BaseVisualizer {
     let activeNotePosition;
     for (let i = 0; i < this.noteSequence.notes.length; i++) {
       const note = this.noteSequence.notes[i];
-
       const size = this.getNotePosition(note, i);
 
       // Color of this note.
@@ -320,58 +326,39 @@ export class Visualizer extends PianoRollCanvasVisualizer {
         'mm.Visualizer', logging.Level.WARN);
   }
 }
+
 /**
- * Displays a pianoroll as an SVG. Pitches are the vertical axis and time is
- * the horizontal. When connected to a player, the visualizer can also highlight
- * the notes being currently played.
- *
- * Unlike PianoRollCanvasVisualizer which looks similar, PianoRollSVGVisualizer
- * does not redraw the entire sequence when activating a note.
+ * Abstract base class for a `NoteSequence` visualizer.
  */
-export class PianoRollSVGVisualizer extends BaseVisualizer {
-  private svg: SVGSVGElement;
-  private drawn: boolean;
+export abstract class BaseSVGVisualizer extends BaseVisualizer {
+  // This is the element used for drawing. You must set this property in
+  // implementations of this class.
+  protected svg: SVGSVGElement;
+  protected drawn: boolean;
 
   /**
-   *   `PianoRollSVGVisualizer` constructor.
+   *   `SVGVisualizer` constructor.
    *
    *   @param sequence The `NoteSequence` to be visualized.
    *   @param svg The element where the visualization should be displayed.
-   *   @param config Visualization configuration options.
+   *   @param config (optional) Visualization configuration options.
    */
-  constructor(
-      sequence: INoteSequence, svg: SVGSVGElement,
-      config: VisualizerConfig = {}) {
+  constructor(sequence: INoteSequence, config: VisualizerConfig = {}) {
     super(sequence, config);
-
-    if (!(svg instanceof SVGSVGElement)) {
-      throw new Error(
-          'mm.PianoRollSVGVisualizer requires an <svg> ' +
-          'element to display the visualization');
-    }
-    this.svg = svg;
-    this.parentElement = svg.parentElement;
     this.drawn = false;
-    // Make sure that if we've used this svg element before, it's now emptied.
-    this.svg.style.width = `${this.width}px`;
-    this.svg.style.height = `${this.height}px`;
-
-    this.clear();
-    this.draw();
   }
 
   /**
-   * Redraws the entire note sequence if it hasn't been drawn before, optionally
-   * painting a note as active
+   * Redraws the entire note sequence if it hasn't been drawn before,
+   * optionally painting a note as active
    * @param activeNote (Optional) If specified, this `Note` will be painted
    * in the active color.
-   * @param scrollIntoView (Optional) If specified and the note being painted
-   *     is
-   * offscreen, the parent container will be scrolled so that the note is
-   * in view.
+   * @param scrollIntoView (Optional) If specified and the note being
+   *     painted is offscreen, the parent container will be scrolled so that
+   *     the note is in view.
    * @returns The x position of the painted active note. Useful for
-   * automatically advancing the visualization if the note was painted outside
-   * of the screen.
+   * automatically advancing the visualization if the note was painted
+   * outside of the screen.
    */
   redraw(activeNote?: NoteSequence.INote, scrollIntoView?: boolean): number {
     if (!this.drawn) {
@@ -416,12 +403,11 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
     return activeNotePosition;
   }
 
-  private draw() {
+  protected draw() {
     for (let i = 0; i < this.noteSequence.notes.length; i++) {
       const note = this.noteSequence.notes[i];
       const size = this.getNotePosition(note, i);
       const fill = this.getNoteFillColor(note, false);
-
       this.drawNote(size.x, size.y, size.w, size.h, fill, i);
     }
     this.drawn = true;
@@ -461,6 +447,295 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
 }
 
 /**
+ * Displays a pianoroll as an SVG. Pitches are the vertical axis and time is
+ * the horizontal. When connected to a player, the visualizer can also highlight
+ * the notes being currently played.
+ *
+ * Unlike PianoRollCanvasVisualizer which looks similar, PianoRollSVGVisualizer
+ * does not redraw the entire sequence when activating a note.
+ */
+export class PianoRollSVGVisualizer extends BaseSVGVisualizer {
+  /**
+   *   `PianoRollSVGVisualizer` constructor.
+   *
+   *   @param sequence The `NoteSequence` to be visualized.
+   *   @param svg The element where the visualization should be displayed.
+   *   @param config (optional) Visualization configuration options.
+   */
+  constructor(
+      sequence: INoteSequence, svg: SVGSVGElement,
+      config: VisualizerConfig = {}) {
+    super(sequence, config);
+
+    if (!(svg instanceof SVGSVGElement)) {
+      throw new Error(
+          'This visualizer requires an <svg> element to display the visualization');
+    }
+    this.svg = svg;
+    this.parentElement = svg.parentElement;
+
+    this.clear();
+    this.draw();
+  }
+}
+
+export interface WaterfallVisualizerConfig extends VisualizerConfig {
+  whiteNoteHeight?: number;
+  whiteNoteWidth?: number;
+  blackNoteHeight?: number;
+  blackNoteWidth?: number;
+  usePitchesForKeyboardSize?: number;
+}
+
+/**
+ * Displays a waterfall pianoroll as an SVG, on top of a piano keyboard. When
+ * connected to a player, the visualizer can also highlight the notes being
+ * currently played, by letting them "fall down" onto the piano keys that
+ * match them. By default, a keyboard with 88 keys will be drawn, but this can
+ * be overriden with the `usePitchesForKeyboardSize` config parameter.
+ *
+ * The DOM created by this element is:
+ *    <div class="waterfall-notes-container">
+ *      <svg class="waterfall-notes"></svg>
+ *    </div>
+ *    <svg class="waterfall-piano"></svg>
+ * In particular, `div.waterfall-notes-container` needs to make some default
+ * styling decisions (such as its height, to hide the overlow, and how much
+ * it should be initially overflown) that you can override in your app
+ * using CSS.
+ */
+export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
+  private NOTES_PER_OCTAVE = 12;
+  private NUM_OCTAVES = 12;
+  // private WHITE_NOTES_PER_OCTAVE = 7;
+  private LOWEST_PIANO_KEY_PITCH = 21;
+
+  protected svgPiano: SVGSVGElement;
+  protected config: WaterfallVisualizerConfig;
+
+  /**
+   *   `WaterfallSVGVisualizer` constructor.
+   *
+   *   @param sequence The `NoteSequence` to be visualized.
+   *   @param parentElement The parent element that will contain the
+   * visualization.
+   *   @param config (optional) Visualization configuration options.
+   */
+  constructor(
+      sequence: INoteSequence, parentElement: HTMLDivElement,
+      config: WaterfallVisualizerConfig = {}) {
+    super(sequence, config);
+
+    if (!(parentElement instanceof HTMLDivElement)) {
+      throw new Error(
+          'This visualizer requires a <div> element to display the visualization');
+    }
+    super(sequence, config);
+    this.setupDOM(parentElement);
+
+    this.config.whiteNoteWidth = config.whiteNoteWidth || 20;
+    this.config.blackNoteWidth =
+        config.blackNoteWidth || this.config.whiteNoteWidth * 2 / 3;
+    this.config.whiteNoteHeight = config.whiteNoteHeight || 70;
+    this.config.blackNoteHeight = config.blackNoteHeight || (2 * 70 / 3);
+
+    const size = this.getSize();
+    this.width = size.width;
+    this.height = size.height;
+
+    // Make sure that if we've used this svg element before, it's now emptied.
+    this.svg.style.width = `${this.width}px`;
+    this.svg.style.height = `${this.height}px`;
+
+    this.svgPiano.style.width = `${this.width}px`;
+    this.svgPiano.style.height = `${this.config.whiteNoteHeight}px`;
+    this.parentElement.style.width = `${this.width}px`;
+    this.drawPiano();
+    super.draw();
+    this.parentElement.scrollTop = this.parentElement.scrollHeight;
+  }
+
+  private setupDOM(container: HTMLDivElement) {
+    this.parentElement = document.createElement('div');
+    this.parentElement.classList.add('waterfall-notes-container');
+    this.parentElement.style.height = '200px';
+    this.parentElement.style.overflowX = 'hidden';
+    this.parentElement.style.overflowY = 'auto';
+
+    this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    this.svgPiano =
+        document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    this.svg.classList.add('waterfall-notes');
+    this.svgPiano.classList.add('waterfall-piano');
+
+    this.parentElement.appendChild(this.svg);
+    container.appendChild(this.parentElement);
+    container.appendChild(this.svgPiano);
+  }
+
+  protected scrollIntoViewIfNeeded(
+      scrollIntoView: boolean, activeNotePosition: number) {
+    if (scrollIntoView && this.parentElement) {
+      // Slide the waterfall down.
+      const containerHeight = this.parentElement.getBoundingClientRect().height;
+      const activeNote =
+          this.svg.querySelector('rect.active') as SVGRectElement;
+      const y = Number(activeNote.getAttribute('y'));
+      this.parentElement.scrollTop = y - containerHeight;
+
+      // Highlight the piano keyboard.
+    }
+  }
+
+  protected getSize(): {width: number; height: number} {
+    this.updateMinMaxPitches();
+
+    // const whiteNotesDrawn = this.config.numOctaves === 7 ?
+    //     52 :
+    //     this.config.numOctaves * this.WHITE_NOTES_PER_OCTAVE;
+    const width = 52 * this.config.whiteNoteWidth;
+
+    // Calculate a nice width based on the length of the sequence we're
+    // playing.
+    // Warn if there's no totalTime or quantized steps set, since it leads
+    // to a bad size.
+    const endTime = this.sequenceIsQuantized ?
+        this.noteSequence.totalQuantizedSteps :
+        this.noteSequence.totalTime;
+    if (!endTime) {
+      throw new Error(
+          'The sequence you are using with the visualizer does not have a ' +
+          (this.sequenceIsQuantized ? 'totalQuantizedSteps' : 'totalTime') +
+          ' field set, so the visualizer can\'t be horizontally ' +
+          'sized correctly.');
+    }
+
+    const height = endTime * this.config.pixelsPerTimeStep;
+    return {width, height};
+  }
+
+  protected getNotePosition(note: NoteSequence.INote, noteIndex: number):
+      {x: number; y: number, w: number, h: number} {
+    const rect =
+        this.svgPiano.querySelector(`rect[data-pitch="${note.pitch}"]`);
+
+    if (!rect) {
+      return null;
+    }
+
+    // Size of this note.
+    const duration = this.getNoteEndTime(note) - this.getNoteStartTime(note);
+    const x = Number(rect.getAttribute('x'));
+    const w = Number(rect.getAttribute('width'));
+    const h =
+        this.config.pixelsPerTimeStep * duration - this.config.noteSpacing;
+
+    // The svg' y=0 is at the top, but a smaller pitch is actually
+    // lower, so we're kind of painting backwards.
+    const y = this.height -
+        (this.getNoteStartTime(note) * this.config.pixelsPerTimeStep) - h;
+    return {x, y, w, h};
+  }
+
+  private drawPiano() {
+    this.svgPiano.innerHTML = '';
+    const drawAllOctaves = true;
+    const blackNoteOffset =
+        this.config.whiteNoteWidth - this.config.blackNoteWidth / 2;
+    const blackNoteIndexes = [1, 3, 6, 8, 10];
+
+    // Dear future reader: I am sure there is a better way to do this, but
+    // splitting it up makes it more readable and maintainable in case there's
+    // an off by one key error somewhere.
+    // Each note has an index, which also helps with counting (since it
+    // conveniently matches to the number of semitones between notes).
+    // First draw all the white notes, in this order:
+    //    - if we're using all the octaves, pianos start on an A (so draw A, B)
+    //    - ... the rest of the white keys per octave
+    //    - if we started on an A, we end on an extra C.
+    // Then draw all the black notes (so that these rects sit on top):
+    //    - if the piano started on an A, draw the A sharp
+    //    - ... the rest of the black keys per octave.
+
+    let x = 0;
+    let index = 0;
+    if (drawAllOctaves) {
+      this.drawWhiteKey(0, x);
+      this.drawWhiteKey(2, this.config.whiteNoteWidth);
+      index = 3;
+      x = 2 * this.config.whiteNoteWidth;
+    } else {
+      // Starting 3 semitones up (on a C), and a whole octave up.
+      index = 3 + this.NOTES_PER_OCTAVE;
+    }
+
+    // Draw the rest of the white notes.
+    for (let o = 0; o < this.NUM_OCTAVES; o++) {
+      for (let i = 0; i < this.NOTES_PER_OCTAVE; i++) {
+        // Black keys come later.
+        if (blackNoteIndexes.indexOf(i) === -1) {
+          this.drawWhiteKey(index, x);
+          x += this.config.whiteNoteWidth;
+        }
+        index++;
+      }
+    }
+
+    if (drawAllOctaves) {
+      // And an extra C at the end (if we're using all the octaves);
+      this.drawWhiteKey(index, x);
+
+      // This piano also started on an A, so draw the A sharp black key.
+      this.drawBlackKey(1, blackNoteOffset);
+      index = 3;
+      x = this.config.whiteNoteWidth;
+    } else {
+      // Starting 3 semitones up on (on a C), and a whole octave up.
+      index = 3 + this.NOTES_PER_OCTAVE;
+      x = -this.config.whiteNoteWidth;
+    }
+
+    // Draw the rest of the black notes.
+    for (let o = 0; o < this.NUM_OCTAVES; o++) {
+      for (let i = 0; i < this.NOTES_PER_OCTAVE; i++) {
+        if (blackNoteIndexes.indexOf(i) !== -1) {
+          this.drawBlackKey(index, x + blackNoteOffset);
+        } else {
+          x += this.config.whiteNoteWidth;
+        }
+        index++;
+      }
+    }
+  }
+
+  private drawWhiteKey(index: number, x: number) {
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.dataset.pitch = String(this.LOWEST_PIANO_KEY_PITCH + index);
+    rect.setAttribute('x', String(x));
+    rect.setAttribute('y', '0');
+    rect.setAttribute('width', String(this.config.whiteNoteWidth));
+    rect.setAttribute('height', String(this.config.whiteNoteHeight));
+    rect.setAttribute('fill', 'white');
+    rect.setAttribute('stroke', 'black');
+    rect.setAttribute('stroke-width', '3px');
+    this.svgPiano.appendChild(rect);
+    return rect;
+  }
+
+  private drawBlackKey(index: number, x: number) {
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.dataset.pitch = String(this.LOWEST_PIANO_KEY_PITCH + index);
+    rect.setAttribute('x', String(x));
+    rect.setAttribute('y', '0');
+    rect.setAttribute('width', String(this.config.blackNoteWidth));
+    rect.setAttribute('height', String(this.config.blackNoteHeight));
+    rect.setAttribute('fill', 'black');
+    this.svgPiano.appendChild(rect);
+    return rect;
+  }
+}
+
+/**
  * Enumeration of different ways of horizontal score scrolling, like paginated
  * (PAGE is default value), note by note (NOTE) or in packed chunks by doing
  * scroll just on bar starting (BAR).
@@ -479,9 +754,10 @@ export enum ScrollType {
  * the right accidentals. It can be overwritten with
  * `NoteSequence.keySignatures` value at time or step 0. If not assigned it
  * will be asumed C key.
- * @param instruments The subset of the `NoteSequence` instrument track numbers
- * which should be merged and displayed. If not assigned or equal to [] it will
- * be used all instruments altogether.
+ * @param instruments The subset of the `NoteSequence` instrument track
+ *     numbers
+ * which should be merged and displayed. If not assigned or equal to [] it
+ * will be used all instruments altogether.
  * @param scrollType Sets scrolling to follow scoreplaying in different ways
  * according to `ScrollType` enum values.
  */
@@ -501,10 +777,11 @@ export interface StaffSVGVisualizerConfig extends VisualizerConfig {
  * between musical symbols as regular paper staff does.
  *
  * Clef, key and time signature will be displayed at the leftmost side and the
- * rest of the staff will scroll under this initial signature area accordingly.
- * In case of proportional note positioning, given it starts at pixel zero, the
- * signature area will blink meanwhile it collides with initial active notes.
- * Key and time signature changes will be shown accordingly through score.
+ * rest of the staff will scroll under this initial signature area
+ * accordingly. In case of proportional note positioning, given it starts at
+ * pixel zero, the signature area will blink meanwhile it collides with
+ * initial active notes. Key and time signature changes will be shown
+ * accordingly through score.
  *
  * New configuration features have been introduced through
  * `StaffSVGVisualizerConfig` over basic `VisualizerConfig`.
@@ -526,7 +803,7 @@ export class StaffSVGVisualizer extends BaseVisualizer {
    *
    * @param sequence The `NoteSequence` to be visualized.
    * @param div The element where the visualization should be displayed.
-   * @param config Visualization configuration options.
+   * @param config (optional) Visualization configuration options.
    */
   constructor(
       sequence: INoteSequence, div: HTMLDivElement,

@@ -17,20 +17,17 @@
 
 import * as mm from '../src/index';
 import {blobToNoteSequence, urlToNoteSequence} from '../src/index';
-
 import {FULL_TWINKLE_UNQUANTIZED} from './common';
 
 const MIDI_URL = './melody.mid';
-
-let canvasVisualizer: mm.PianoRollCanvasVisualizer;
-let svgVisualizer: mm.PianoRollSVGVisualizer;
-let staffVisualizer: mm.StaffSVGVisualizer;
+let visualizers: mm.BaseVisualizer[] = [];
+let currentSequence: mm.INoteSequence = null;
 
 const player = new mm.Player(false, {
   run: (note: mm.NoteSequence.Note) => {
-    canvasVisualizer.redraw(note, true);
-    svgVisualizer.redraw(note, true);
-    staffVisualizer.redraw(note, true);
+    for (let i = 0; i < visualizers.length; i++) {
+      visualizers[i].redraw(note, true);
+    }
   },
   stop: () => {}
 });
@@ -44,6 +41,7 @@ const tempoValue = document.getElementById('tempoValue') as HTMLDivElement;
 const fileInput = document.getElementById('fileInput') as HTMLInputElement;
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const svg = document.getElementsByTagName('svg')[0] as SVGSVGElement;
+const waterfall = document.querySelector('#waterfall') as HTMLDivElement;
 const staff = document.getElementById('staff') as HTMLDivElement;
 
 // Set up some event listeners
@@ -69,19 +67,23 @@ function loadFile(e: any) {
 }
 
 function initPlayerAndVisualizer(seq: mm.INoteSequence) {
-  // Disable the UI
+  // Disable the UI.
   playBtn.disabled = false;
   playBtn.textContent = 'Loading';
 
-  canvasVisualizer = new mm.PianoRollCanvasVisualizer(seq, canvas);
-  svgVisualizer = new mm.PianoRollSVGVisualizer(seq, svg);
-  staffVisualizer = new mm.StaffSVGVisualizer(seq, staff);
+  visualizers = [
+    new mm.PianoRollSVGVisualizer(seq, svg),
+    new mm.StaffSVGVisualizer(seq, staff),
+    new mm.WaterfallSVGVisualizer(seq, waterfall),
+    new mm.PianoRollCanvasVisualizer(seq, canvas),
+  ];
+  currentSequence = seq;
 
   const tempo = seq.tempos[0].qpm;
   player.setTempo(tempo);
   tempoValue.textContent = tempoInput.value = '' + tempo;
 
-  // Enable the UI
+  // Enable the UI.
   playBtn.disabled = false;
   playBtn.textContent = 'Play';
 }
@@ -91,7 +93,7 @@ function startOrStop() {
     player.stop();
     playBtn.textContent = 'Play';
   } else {
-    player.start(canvasVisualizer.noteSequence);
+    player.start(currentSequence);
     playBtn.textContent = 'Stop';
   }
 }

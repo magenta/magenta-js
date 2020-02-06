@@ -1,6 +1,6 @@
 * {
   box-sizing: border-box;
-  scroll-behavior: smooth; 
+  scroll-behavior: smooth;
 }
 
 body {
@@ -11,7 +11,7 @@ body {
   background-color: #fdfdfd;
   -webkit-font-smoothing: antialiased;
   width: 100%;
-  max-width: 1000px;
+  xmax-width: 1000px;
 }
 
 [disabled] {

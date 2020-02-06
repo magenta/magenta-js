@@ -25,6 +25,10 @@ limitations under the License.
       cursor: pointer;
       display: none;
     }
+    .waterfall {
+      height: 200px;
+      overflow-y: auto;
+    }
   </style>
 </head>
 <body>
@@ -51,27 +55,41 @@ limitations under the License.
       <span id="tempoValue"></span>
     </span>
   </section>
-
+<div hidden>
   <h2>mm.PianoRollSVGVisualizer</h2>
   <section>
-    <div class="visualizer-container" id="container2">
+    <div class="visualizer-container">
       <svg id="svg"></svg>
     </div>
   </section>
 
   <h2>mm.PianoRollCanvasVisualizer</h2>
   <section>
-    <div class="visualizer-container" id="container">
+    <p>
+      <b>Note:</b> For longer sequences, canvases become really expensive and
+      big, and might crash the renderer. We recommend using the <code>PianoRollSVGVisualizer</code>
+      if performance is a concern.
+    </p>
+    <div class="visualizer-container">
       <canvas id="canvas"></canvas>
     </div>
   </section>
 
   <h2>mm.StaffSVGVisualizer</h2>
   <section>
-    <div class="visualizer-container" id="container3">
+    <div class="visualizer-container">
       <div id="staff"></div>
     </div>
   </section>
+</div>
+  <h2>mm.WaterfallSVGVisualizer</h2>
+  <section>
+    <div class="visualizer-container">
+      <div id="waterfall">
+      </div>
+    </div>
+  </section>
+
   <script src="visualizer_bundle.js"></script>
 </body>
 </html>
