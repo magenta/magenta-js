@@ -327,14 +327,11 @@ export class Visualizer extends PianoRollCanvasVisualizer {
   }
 }
 
-<<<<<<< HEAD
-=======
 /**
  * HTML data attribute key-value pair.
  */
-type DataAttribute = [string, any]; // tslint:disable-line:no-any
+type DataAttribute = [string, any];  // tslint:disable-line:no-any
 
->>>>>>> master
 /**
  * Abstract base class for a `NoteSequence` visualizer.
  */
@@ -416,10 +413,7 @@ export abstract class BaseSVGVisualizer extends BaseVisualizer {
       const note = this.noteSequence.notes[i];
       const size = this.getNotePosition(note, i);
       const fill = this.getNoteFillColor(note, false);
-<<<<<<< HEAD
-      this.drawNote(size.x, size.y, size.w, size.h, fill, i);
-=======
-      const dataAttributes : DataAttribute[] = [
+      const dataAttributes: DataAttribute[] = [
         ['index', i],
         ['instrument', note.instrument],
         ['program', note.program],
@@ -428,7 +422,6 @@ export abstract class BaseSVGVisualizer extends BaseVisualizer {
       ];
 
       this.drawNote(size.x, size.y, size.w, size.h, fill, dataAttributes);
->>>>>>> master
     }
     this.drawn = true;
   }
