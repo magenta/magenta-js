@@ -320,6 +320,15 @@ export class Visualizer extends PianoRollCanvasVisualizer {
         'mm.Visualizer', logging.Level.WARN);
   }
 }
+
+/**
+ * HTML data attribute key-value pair.
+ */
+interface DataAttribute {
+  key: string;
+  value: any; // tslint:disable-line:no-any
+}
+
 /**
  * Displays a pianoroll as an SVG. Pitches are the vertical axis and time is
  * the horizontal. When connected to a player, the visualizer can also highlight
@@ -421,13 +430,13 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
       const note = this.noteSequence.notes[i];
       const size = this.getNotePosition(note, i);
       const fill = this.getNoteFillColor(note, false);
-      const dataAttributes = {
-        'index': i,
-        'instrument': note.instrument,
-        'program': note.program,
-        'is-drum': note.isDrum === true,
-        'pitch': note.pitch,
-      };
+      const dataAttributes = [
+        {key: 'index', value: i},
+        {key: 'instrument', value: note.instrument},
+        {key: 'program', value: note.program},
+        {key: 'isDrum', value: note.isDrum === true},
+        {key: 'pitch', value: note.pitch},
+      ];
 
       this.drawNote(size.x, size.y, size.w, size.h, fill, dataAttributes);
     }
@@ -445,7 +454,7 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
 
   private drawNote(
       x: number, y: number, w: number, h: number, fill: string,
-      dataAttributes: {[attr: string]: any}) { // tslint:disable-line:no-any
+      dataAttributes: DataAttribute[]) {
     if (!this.svg) {
       return;
     }
@@ -458,11 +467,11 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
     rect.setAttribute('y', `${Math.round(y)}`);
     rect.setAttribute('width', `${Math.round(w)}`);
     rect.setAttribute('height', `${Math.round(h)}`);
-    for (const attr in dataAttributes) {
-      if (dataAttributes[attr] !== undefined) {
-        rect.setAttribute('data-' + attr, dataAttributes[attr]);
+    dataAttributes.forEach((attr: DataAttribute) => {
+      if (attr.value !== undefined) {
+        rect.dataset[attr.key] = `${attr.value}`;
       }
-    }
+    });
     this.svg.appendChild(rect);
   }
 
