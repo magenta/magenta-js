@@ -76,6 +76,8 @@ export abstract class BaseVisualizer {
   // Clears the current visualization.
   protected abstract clear(): void;
 
+  // Clears the active notes in the visualization.
+  public abstract clearActiveNotes(): void;
   /**
    *   `BaseVisualizer` constructor.
    *
@@ -112,7 +114,7 @@ export abstract class BaseVisualizer {
     this.height = size.height;
   }
 
-  protected updateMinMaxPitches() {
+  protected updateMinMaxPitches(noExtraPadding = false) {
     if (this.config.minPitch && this.config.maxPitch) {
       return;
     }
@@ -132,8 +134,10 @@ export abstract class BaseVisualizer {
     }
 
     // Add a little bit of padding at the top and the bottom.
-    this.config.minPitch -= 2;
-    this.config.maxPitch += 2;
+    if (!noExtraPadding) {
+      this.config.minPitch -= 2;
+      this.config.maxPitch += 2;
+    }
   }
 
   protected getSize(): {width: number; height: number} {
@@ -301,6 +305,10 @@ export class PianoRollCanvasVisualizer extends BaseVisualizer {
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
   }
 
+  public clearActiveNotes() {
+    this.redraw();
+  }
+
   private redrawNote(x: number, y: number, w: number, h: number, fill: string) {
     this.ctx.fillStyle = fill;
 
@@ -375,15 +383,7 @@ export abstract class BaseSVGVisualizer extends BaseVisualizer {
     }
 
     // Remove the current active note, if one exists.
-    const els = this.svg.querySelectorAll('rect.active');
-    for (let i = 0; i < els.length; ++i) {
-      const el = els[i];
-      const fill = this.getNoteFillColor(
-          this.noteSequence.notes[parseInt(el.getAttribute('data-index'), 10)],
-          false);
-      el.setAttribute('fill', fill);
-      el.removeAttribute('class');
-    }
+    this.unfillActiveRect(this.svg);
 
     let activeNotePosition;
     for (let i = 0; i < this.noteSequence.notes.length; i++) {
@@ -396,16 +396,30 @@ export abstract class BaseSVGVisualizer extends BaseVisualizer {
         continue;
       }
       const el = this.svg.querySelector(`rect[data-index="${i}"]`);
-      const fill = this.getNoteFillColor(note, true);
-      el.setAttribute('fill', fill);
-      el.setAttribute('class', 'active');
+      this.fillActiveRect(el, note);
       if (note === activeNote) {
         activeNotePosition = parseFloat(el.getAttribute('x'));
       }
     }
-
     this.scrollIntoViewIfNeeded(scrollIntoView, activeNotePosition);
     return activeNotePosition;
+  }
+
+  protected fillActiveRect(rect: Element, note: NoteSequence.INote) {
+    rect.setAttribute('fill', this.getNoteFillColor(note, true));
+    rect.setAttribute('class', 'active');
+  }
+
+  protected unfillActiveRect(svg: SVGSVGElement) {
+    const els = svg.querySelectorAll('rect.active');
+    for (let i = 0; i < els.length; ++i) {
+      const el = els[i];
+      const fill = this.getNoteFillColor(
+          this.noteSequence.notes[parseInt(el.getAttribute('data-index'), 10)],
+          false);
+      el.setAttribute('fill', fill);
+      el.removeAttribute('class');
+    }
   }
 
   protected draw() {
@@ -462,6 +476,10 @@ export abstract class BaseSVGVisualizer extends BaseVisualizer {
     this.svg.innerHTML = '';
     this.drawn = false;
   }
+
+  public clearActiveNotes() {
+    this.unfillActiveRect(this.svg);
+  }
 }
 
 /**
@@ -502,7 +520,9 @@ export interface WaterfallVisualizerConfig extends VisualizerConfig {
   whiteNoteWidth?: number;
   blackNoteHeight?: number;
   blackNoteWidth?: number;
-  usePitchesForKeyboardSize?: number;
+  // Set this to true if you don't want to see the full 88 keys piano
+  // keyboard, and only want to see the octaves used in the NoteSequence.
+  showOnlyOctavesUsed?: boolean;
 }
 
 /**
@@ -510,7 +530,8 @@ export interface WaterfallVisualizerConfig extends VisualizerConfig {
  * connected to a player, the visualizer can also highlight the notes being
  * currently played, by letting them "fall down" onto the piano keys that
  * match them. By default, a keyboard with 88 keys will be drawn, but this can
- * be overriden with the `usePitchesForKeyboardSize` config parameter.
+ * be overriden with the `showOnlyOctavesUsed` config parameter, in which case
+ * only the octaves present in the NoteSequence will be used.
  *
  * The DOM created by this element is:
  *    <div class="waterfall-notes-container">
@@ -524,9 +545,10 @@ export interface WaterfallVisualizerConfig extends VisualizerConfig {
  */
 export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
   private NOTES_PER_OCTAVE = 12;
-  private NUM_OCTAVES = 12;
-  // private WHITE_NOTES_PER_OCTAVE = 7;
-  private LOWEST_PIANO_KEY_PITCH = 21;
+  private WHITE_NOTES_PER_OCTAVE = 7;
+  private LOW_C = 24;
+  private firstDrawnOctave = 0;
+  private lastDrawnOctave = 6;
 
   protected svgPiano: SVGSVGElement;
   protected config: WaterfallVisualizerConfig;
@@ -557,6 +579,8 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
     this.config.whiteNoteHeight = config.whiteNoteHeight || 70;
     this.config.blackNoteHeight = config.blackNoteHeight || (2 * 70 / 3);
 
+    this.config.showOnlyOctavesUsed = true;
+
     const size = this.getSize();
     this.width = size.width;
     this.height = size.height;
@@ -567,10 +591,15 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
 
     this.svgPiano.style.width = `${this.width}px`;
     this.svgPiano.style.height = `${this.config.whiteNoteHeight}px`;
-    this.parentElement.style.width = `${this.width}px`;
-    this.drawPiano();
-    super.draw();
+    // Add a little bit of padding to the right, so that the scrollbar
+    // doesn't overlap the last note on the piano.
+    this.parentElement.style.width =
+        `${this.width + this.config.whiteNoteWidth}px`;
     this.parentElement.scrollTop = this.parentElement.scrollHeight;
+
+    this.clear();
+    this.drawPiano();
+    this.draw();
   }
 
   private setupDOM(container: HTMLDivElement) {
@@ -579,6 +608,7 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
     this.parentElement.style.height = '200px';
     this.parentElement.style.overflowX = 'hidden';
     this.parentElement.style.overflowY = 'auto';
+    this.parentElement.style.paddingTop = '200px';
 
     this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     this.svgPiano =
@@ -587,31 +617,96 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
     this.svgPiano.classList.add('waterfall-piano');
 
     this.parentElement.appendChild(this.svg);
+    container.innerHTML = '';
     container.appendChild(this.parentElement);
     container.appendChild(this.svgPiano);
   }
-
-  protected scrollIntoViewIfNeeded(
-      scrollIntoView: boolean, activeNotePosition: number) {
-    if (scrollIntoView && this.parentElement) {
-      // Slide the waterfall down.
-      const containerHeight = this.parentElement.getBoundingClientRect().height;
-      const activeNote =
-          this.svg.querySelector('rect.active') as SVGRectElement;
-      const y = Number(activeNote.getAttribute('y'));
-      this.parentElement.scrollTop = y - containerHeight;
-
-      // Highlight the piano keyboard.
+  /**
+   * Redraws the entire note sequence if it hasn't been drawn before,
+   * optionally painting a note as active
+   * @param activeNote (Optional) If specified, this `Note` will be painted
+   * in the active color.
+   * @param scrollIntoView (Optional) If specified and the note being
+   *     painted is offscreen, the parent container will be scrolled so that
+   *     the note is in view.
+   * @returns The x position of the painted active note. Useful for
+   * automatically advancing the visualization if the note was painted
+   * outside of the screen.
+   */
+  redraw(activeNote?: NoteSequence.INote, scrollIntoView?: boolean): number {
+    if (!this.drawn) {
+      this.draw();
     }
+
+    if (!activeNote) {
+      return null;
+    }
+
+    // Remove the current active note, if one exists.
+    this.clearActiveNotes();
+
+    for (let i = 0; i < this.noteSequence.notes.length; i++) {
+      const note = this.noteSequence.notes[i];
+      const isActive =
+          activeNote && this.isPaintingActiveNote(note, activeNote);
+
+      // We're only looking to re-paint the active notes.
+      if (!isActive) {
+        continue;
+      }
+
+      // Activate this note.
+      const el = this.svg.querySelector(`rect[data-index="${i}"]`);
+      this.fillActiveRect(el, note);
+
+      // And on the keyboard.
+      const key =
+          this.svgPiano.querySelector(`rect[data-pitch="${note.pitch}"]`);
+      this.fillActiveRect(key, note);
+
+      if (note === activeNote) {
+        const y = parseFloat(el.getAttribute('y'));
+        const height = parseFloat(el.getAttribute('height'));
+
+        // Scroll the waterfall.
+        if (y < (this.parentElement.scrollTop - height)) {
+          this.parentElement.scrollTop = y + height;
+        }
+
+        // This is the note we wanted to draw.
+        return y;
+      }
+    }
+    return null;
   }
 
   protected getSize(): {width: number; height: number} {
-    this.updateMinMaxPitches();
+    this.updateMinMaxPitches(true);
 
-    // const whiteNotesDrawn = this.config.numOctaves === 7 ?
-    //     52 :
-    //     this.config.numOctaves * this.WHITE_NOTES_PER_OCTAVE;
-    const width = 52 * this.config.whiteNoteWidth;
+    let whiteNotesDrawn = 52;  // For a full piano.
+    if (this.config.showOnlyOctavesUsed) {
+      // Go through each C note and see which is the one right below and
+      // above our sequence.
+      let foundFirst = false, foundLast = false;
+      for (let i = 1; i < 7; i++) {
+        const c = this.LOW_C + this.NOTES_PER_OCTAVE * i;
+        // Have we found the lowest pitch?
+        if (!foundFirst && c > this.config.minPitch) {
+          this.firstDrawnOctave = i - 1;
+          foundFirst = true;
+        }
+        // Have we found the highest pitch?
+        if (!foundLast && c > this.config.maxPitch) {
+          this.lastDrawnOctave = i - 1;
+          foundLast = true;
+        }
+      }
+
+      whiteNotesDrawn = (this.lastDrawnOctave - this.firstDrawnOctave + 1) *
+          this.WHITE_NOTES_PER_OCTAVE;
+    }
+
+    const width = whiteNotesDrawn * this.config.whiteNoteWidth;
 
     // Calculate a nice width based on the length of the sequence we're
     // playing.
@@ -642,11 +737,10 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
     }
 
     // Size of this note.
-    const duration = this.getNoteEndTime(note) - this.getNoteStartTime(note);
+    const len = this.getNoteEndTime(note) - this.getNoteStartTime(note);
     const x = Number(rect.getAttribute('x'));
     const w = Number(rect.getAttribute('width'));
-    const h =
-        this.config.pixelsPerTimeStep * duration - this.config.noteSpacing;
+    const h = this.config.pixelsPerTimeStep * len - this.config.noteSpacing;
 
     // The svg' y=0 is at the top, but a smaller pitch is actually
     // lower, so we're kind of painting backwards.
@@ -657,7 +751,7 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
 
   private drawPiano() {
     this.svgPiano.innerHTML = '';
-    const drawAllOctaves = true;
+
     const blackNoteOffset =
         this.config.whiteNoteWidth - this.config.blackNoteWidth / 2;
     const blackNoteIndexes = [1, 3, 6, 8, 10];
@@ -665,10 +759,10 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
     // Dear future reader: I am sure there is a better way to do this, but
     // splitting it up makes it more readable and maintainable in case there's
     // an off by one key error somewhere.
-    // Each note has an index, which also helps with counting (since it
-    // conveniently matches to the number of semitones between notes).
+    // Each note has an pitch. Pianos start on pitch 21 and end on 108.
     // First draw all the white notes, in this order:
-    //    - if we're using all the octaves, pianos start on an A (so draw A, B)
+    //    - if we're using all the octaves, pianos start on an A (so draw A,
+    //    B)
     //    - ... the rest of the white keys per octave
     //    - if we started on an A, we end on an extra C.
     // Then draw all the black notes (so that these rects sit on top):
@@ -676,64 +770,70 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
     //    - ... the rest of the black keys per octave.
 
     let x = 0;
-    let index = 0;
-    if (drawAllOctaves) {
-      this.drawWhiteKey(0, x);
-      this.drawWhiteKey(2, this.config.whiteNoteWidth);
-      index = 3;
-      x = 2 * this.config.whiteNoteWidth;
+    let currentPitch = 0;
+    if (this.config.showOnlyOctavesUsed) {
+      // Starting on a C, and a bunch of octaves up.
+      currentPitch =
+          (this.firstDrawnOctave * this.NOTES_PER_OCTAVE) + this.LOW_C;
     } else {
-      // Starting 3 semitones up (on a C), and a whole octave up.
-      index = 3 + this.NOTES_PER_OCTAVE;
+      // Starting on the lowest A and B.
+      currentPitch = this.LOW_C - 3;
+      this.drawWhiteKey(currentPitch, x);
+      this.drawWhiteKey(currentPitch + 2, this.config.whiteNoteWidth);
+      currentPitch += 3;
+      x = 2 * this.config.whiteNoteWidth;
     }
 
     // Draw the rest of the white notes.
-    for (let o = 0; o < this.NUM_OCTAVES; o++) {
+    for (let o = this.firstDrawnOctave; o <= this.lastDrawnOctave; o++) {
       for (let i = 0; i < this.NOTES_PER_OCTAVE; i++) {
         // Black keys come later.
         if (blackNoteIndexes.indexOf(i) === -1) {
-          this.drawWhiteKey(index, x);
+          this.drawWhiteKey(currentPitch, x);
           x += this.config.whiteNoteWidth;
         }
-        index++;
+        currentPitch++;
       }
     }
 
-    if (drawAllOctaves) {
-      // And an extra C at the end (if we're using all the octaves);
-      this.drawWhiteKey(index, x);
-
-      // This piano also started on an A, so draw the A sharp black key.
-      this.drawBlackKey(1, blackNoteOffset);
-      index = 3;
-      x = this.config.whiteNoteWidth;
-    } else {
-      // Starting 3 semitones up on (on a C), and a whole octave up.
-      index = 3 + this.NOTES_PER_OCTAVE;
+    if (this.config.showOnlyOctavesUsed) {
+      // Starting on a C, and a bunch of octaves up.
+      currentPitch =
+          (this.firstDrawnOctave * this.NOTES_PER_OCTAVE) + this.LOW_C;
       x = -this.config.whiteNoteWidth;
+    } else {
+      // Before we reset, add an extra C at the end because pianos.
+      this.drawWhiteKey(currentPitch, x);
+
+      // This piano started on an A, so draw the A sharp black key.
+      currentPitch = this.LOW_C - 3;
+      this.drawBlackKey(currentPitch + 1, blackNoteOffset);
+      currentPitch += 1;
+      x = this.config.whiteNoteWidth;
     }
 
     // Draw the rest of the black notes.
-    for (let o = 0; o < this.NUM_OCTAVES; o++) {
+    for (let o = this.firstDrawnOctave; o <= this.lastDrawnOctave; o++) {
       for (let i = 0; i < this.NOTES_PER_OCTAVE; i++) {
         if (blackNoteIndexes.indexOf(i) !== -1) {
-          this.drawBlackKey(index, x + blackNoteOffset);
+          this.drawBlackKey(currentPitch, x + blackNoteOffset);
         } else {
           x += this.config.whiteNoteWidth;
         }
-        index++;
+        currentPitch++;
       }
     }
   }
 
   private drawWhiteKey(index: number, x: number) {
     const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    rect.dataset.pitch = String(this.LOWEST_PIANO_KEY_PITCH + index);
+    rect.dataset.pitch = String(index);
     rect.setAttribute('x', String(x));
     rect.setAttribute('y', '0');
     rect.setAttribute('width', String(this.config.whiteNoteWidth));
     rect.setAttribute('height', String(this.config.whiteNoteHeight));
     rect.setAttribute('fill', 'white');
+    rect.setAttribute('original-fill', 'white');
     rect.setAttribute('stroke', 'black');
     rect.setAttribute('stroke-width', '3px');
     this.svgPiano.appendChild(rect);
@@ -742,14 +842,26 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
 
   private drawBlackKey(index: number, x: number) {
     const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    rect.dataset.pitch = String(this.LOWEST_PIANO_KEY_PITCH + index);
+    rect.dataset.pitch = String(index);
     rect.setAttribute('x', String(x));
     rect.setAttribute('y', '0');
     rect.setAttribute('width', String(this.config.blackNoteWidth));
     rect.setAttribute('height', String(this.config.blackNoteHeight));
     rect.setAttribute('fill', 'black');
+    rect.setAttribute('original-fill', 'black');
     this.svgPiano.appendChild(rect);
     return rect;
+  }
+
+  public clearActiveNotes() {
+    super.unfillActiveRect(this.svg);
+    // And the piano.
+    const els = this.svgPiano.querySelectorAll('rect.active');
+    for (let i = 0; i < els.length; ++i) {
+      const el = els[i];
+      el.setAttribute('fill', el.getAttribute('original-fill'));
+      el.classList.remove('active');
+    }
   }
 }
 
@@ -953,5 +1065,9 @@ export class StaffSVGVisualizer extends BaseVisualizer {
           }) :
           []
     };
+  }
+
+  public clearActiveNotes() {
+    this.redraw();
   }
 }

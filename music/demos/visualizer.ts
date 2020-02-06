@@ -23,14 +23,20 @@ const MIDI_URL = './melody.mid';
 let visualizers: mm.BaseVisualizer[] = [];
 let currentSequence: mm.INoteSequence = null;
 
-const player = new mm.Player(false, {
-  run: (note: mm.NoteSequence.Note) => {
-    for (let i = 0; i < visualizers.length; i++) {
-      visualizers[i].redraw(note, true);
-    }
-  },
-  stop: () => {}
-});
+const player = new mm.SoundFontPlayer(
+    'https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus',
+    mm.Player.tone.Master, null, null, {
+      run: (note: mm.NoteSequence.Note) => {
+        for (let i = 0; i < visualizers.length; i++) {
+          visualizers[i].redraw(note, true);
+        }
+      },
+      stop: () => {
+        for (let i = 0; i < visualizers.length; i++) {
+          visualizers[i].clearActiveNotes();
+        }
+      }
+    });
 
 // UI elements
 const playBtn = document.getElementById('playBtn') as HTMLButtonElement;
@@ -66,7 +72,7 @@ function loadFile(e: any) {
       .then((seq) => initPlayerAndVisualizer(seq));
 }
 
-function initPlayerAndVisualizer(seq: mm.INoteSequence) {
+async function initPlayerAndVisualizer(seq: mm.INoteSequence) {
   // Disable the UI.
   playBtn.disabled = false;
   playBtn.textContent = 'Loading';
@@ -84,6 +90,7 @@ function initPlayerAndVisualizer(seq: mm.INoteSequence) {
   tempoValue.textContent = tempoInput.value = '' + tempo;
 
   // Enable the UI.
+  await player.loadSamples(seq);
   playBtn.disabled = false;
   playBtn.textContent = 'Play';
 }
