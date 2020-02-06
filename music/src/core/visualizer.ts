@@ -320,6 +320,12 @@ export class Visualizer extends PianoRollCanvasVisualizer {
         'mm.Visualizer', logging.Level.WARN);
   }
 }
+
+/**
+ * HTML data attribute key-value pair.
+ */
+type DataAttribute = [string, any]; // tslint:disable-line:no-any
+
 /**
  * Displays a pianoroll as an SVG. Pitches are the vertical axis and time is
  * the horizontal. When connected to a player, the visualizer can also highlight
@@ -421,8 +427,15 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
       const note = this.noteSequence.notes[i];
       const size = this.getNotePosition(note, i);
       const fill = this.getNoteFillColor(note, false);
+      const dataAttributes : DataAttribute[] = [
+        ['index', i],
+        ['instrument', note.instrument],
+        ['program', note.program],
+        ['isDrum', note.isDrum === true],
+        ['pitch', note.pitch],
+      ];
 
-      this.drawNote(size.x, size.y, size.w, size.h, fill, i);
+      this.drawNote(size.x, size.y, size.w, size.h, fill, dataAttributes);
     }
     this.drawn = true;
   }
@@ -437,7 +450,8 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
   }
 
   private drawNote(
-      x: number, y: number, w: number, h: number, fill: string, index: number) {
+      x: number, y: number, w: number, h: number, fill: string,
+      dataAttributes: DataAttribute[]) {
     if (!this.svg) {
       return;
     }
@@ -450,7 +464,11 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
     rect.setAttribute('y', `${Math.round(y)}`);
     rect.setAttribute('width', `${Math.round(w)}`);
     rect.setAttribute('height', `${Math.round(h)}`);
-    rect.setAttribute('data-index', `${index}`);
+    dataAttributes.forEach(([key, value]: DataAttribute) => {
+      if (value !== undefined) {
+        rect.dataset[key] = `${value}`;
+      }
+    });
     this.svg.appendChild(rect);
   }
 
