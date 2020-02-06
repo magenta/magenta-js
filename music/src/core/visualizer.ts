@@ -324,10 +324,7 @@ export class Visualizer extends PianoRollCanvasVisualizer {
 /**
  * HTML data attribute key-value pair.
  */
-interface DataAttribute {
-  key: string;
-  value: any; // tslint:disable-line:no-any
-}
+type DataAttribute = [string, any]; // tslint:disable-line:no-any
 
 /**
  * Displays a pianoroll as an SVG. Pitches are the vertical axis and time is
@@ -430,12 +427,12 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
       const note = this.noteSequence.notes[i];
       const size = this.getNotePosition(note, i);
       const fill = this.getNoteFillColor(note, false);
-      const dataAttributes = [
-        {key: 'index', value: i},
-        {key: 'instrument', value: note.instrument},
-        {key: 'program', value: note.program},
-        {key: 'isDrum', value: note.isDrum === true},
-        {key: 'pitch', value: note.pitch},
+      const dataAttributes : DataAttribute[] = [
+        ['index', i],
+        ['instrument', note.instrument],
+        ['program', note.program],
+        ['isDrum', note.isDrum === true],
+        ['pitch', note.pitch],
       ];
 
       this.drawNote(size.x, size.y, size.w, size.h, fill, dataAttributes);
@@ -467,9 +464,9 @@ export class PianoRollSVGVisualizer extends BaseVisualizer {
     rect.setAttribute('y', `${Math.round(y)}`);
     rect.setAttribute('width', `${Math.round(w)}`);
     rect.setAttribute('height', `${Math.round(h)}`);
-    dataAttributes.forEach((attr: DataAttribute) => {
-      if (attr.value !== undefined) {
-        rect.dataset[attr.key] = `${attr.value}`;
+    dataAttributes.forEach(([key, value]: DataAttribute) => {
+      if (value !== undefined) {
+        rect.dataset[key] = `${value}`;
       }
     });
     this.svg.appendChild(rect);
