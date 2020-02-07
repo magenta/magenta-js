@@ -510,6 +510,14 @@ export class PianoRollSVGVisualizer extends BaseSVGVisualizer {
     this.svg = svg;
     this.parentElement = svg.parentElement;
 
+    const size = this.getSize();
+    this.width = size.width;
+    this.height = size.height;
+
+    // Make sure that if we've used this svg element before, it's now emptied.
+    this.svg.style.width = `${this.width}px`;
+    this.svg.style.height = `${this.height}px`;
+
     this.clear();
     this.draw();
   }
