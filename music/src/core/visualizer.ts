@@ -405,9 +405,9 @@ export abstract class BaseSVGVisualizer extends BaseVisualizer {
     return activeNotePosition;
   }
 
-  protected fillActiveRect(rect: Element, note: NoteSequence.INote) {
-    rect.setAttribute('fill', this.getNoteFillColor(note, true));
-    rect.setAttribute('class', 'active');
+  protected fillActiveRect(el: Element, note: NoteSequence.INote) {
+    el.setAttribute('fill', this.getNoteFillColor(note, true));
+    el.classList.add('active');
   }
 
   protected unfillActiveRect(svg: SVGSVGElement) {
@@ -418,7 +418,7 @@ export abstract class BaseSVGVisualizer extends BaseVisualizer {
           this.noteSequence.notes[parseInt(el.getAttribute('data-index'), 10)],
           false);
       el.setAttribute('fill', fill);
-      el.removeAttribute('class');
+      el.classList.remove('active');
     }
   }
 
