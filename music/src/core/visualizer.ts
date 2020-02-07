@@ -564,6 +564,14 @@ export interface WaterfallVisualizerConfig extends VisualizerConfig {
  *   <script>
  *      const viz = new mm.WaterfallSVGVisualizer(seq, waterfall);
  *   </script>
+ *
+ * If you want to style the piano keyboard, you can style the rects themselves:
+ *
+ *    <style>
+ *     #waterfall svg.waterfall-notes rect.black {
+ *       fill: hotpink;
+ *     }
+ *    </style>
  */
 export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
   private NOTES_PER_OCTAVE = 12;
@@ -868,6 +876,7 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
     rect.setAttribute('original-fill', 'white');
     rect.setAttribute('stroke', 'black');
     rect.setAttribute('stroke-width', '3px');
+    rect.classList.add('white');
     this.svgPiano.appendChild(rect);
     return rect;
   }
@@ -883,6 +892,7 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
     rect.setAttribute('original-fill', 'black');
     rect.setAttribute('stroke', 'black');
     rect.setAttribute('stroke-width', '3px');
+    rect.classList.add('black');
     this.svgPiano.appendChild(rect);
     return rect;
   }
