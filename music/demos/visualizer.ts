@@ -49,6 +49,8 @@ const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const svg = document.getElementsByTagName('svg')[0] as SVGSVGElement;
 const waterfall = document.querySelector('#waterfall') as HTMLDivElement;
 const staff = document.getElementById('staff') as HTMLDivElement;
+const waterfallCheckbox =
+    document.getElementById('waterfallCheckbox') as HTMLInputElement;
 
 // Set up some event listeners
 urlBtn.addEventListener('click', () => fetchMidi(MIDI_URL));
@@ -60,6 +62,15 @@ fileInput.addEventListener('change', loadFile);
 tempoInput.addEventListener('input', () => {
   player.setTempo(parseInt(tempoInput.value, 10));
   tempoValue.textContent = tempoInput.value;
+});
+waterfallCheckbox.addEventListener('change', () => {
+  if (visualizers.length === 0) {
+    return;
+  } else {
+    visualizers[2] = new mm.WaterfallSVGVisualizer(
+        currentSequence, waterfall,
+        {showOnlyOctavesUsed: waterfallCheckbox.checked});
+  }
 });
 
 function fetchMidi(url: string) {
@@ -80,7 +91,8 @@ async function initPlayerAndVisualizer(seq: mm.INoteSequence) {
   visualizers = [
     new mm.PianoRollSVGVisualizer(seq, svg),
     new mm.StaffSVGVisualizer(seq, staff),
-    new mm.WaterfallSVGVisualizer(seq, waterfall),
+    new mm.WaterfallSVGVisualizer(
+        seq, waterfall, {showOnlyOctavesUsed: waterfallCheckbox.checked}),
     new mm.PianoRollCanvasVisualizer(seq, canvas),
   ];
   currentSequence = seq;

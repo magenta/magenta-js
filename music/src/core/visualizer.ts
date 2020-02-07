@@ -573,13 +573,13 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
     super(sequence, config);
     this.setupDOM(parentElement);
 
+    // Some sensible defaults.
     this.config.whiteNoteWidth = config.whiteNoteWidth || 20;
     this.config.blackNoteWidth =
         config.blackNoteWidth || this.config.whiteNoteWidth * 2 / 3;
     this.config.whiteNoteHeight = config.whiteNoteHeight || 70;
     this.config.blackNoteHeight = config.blackNoteHeight || (2 * 70 / 3);
-
-    this.config.showOnlyOctavesUsed = true;
+    this.config.showOnlyOctavesUsed = config.showOnlyOctavesUsed;
 
     const size = this.getSize();
     this.width = size.width;
@@ -591,6 +591,7 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
 
     this.svgPiano.style.width = `${this.width}px`;
     this.svgPiano.style.height = `${this.config.whiteNoteHeight}px`;
+
     // Add a little bit of padding to the right, so that the scrollbar
     // doesn't overlap the last note on the piano.
     this.parentElement.style.width =
@@ -808,7 +809,7 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
       // This piano started on an A, so draw the A sharp black key.
       currentPitch = this.LOW_C - 3;
       this.drawBlackKey(currentPitch + 1, blackNoteOffset);
-      currentPitch += 1;
+      currentPitch += 3;  // Next one is the LOW_C.
       x = this.config.whiteNoteWidth;
     }
 
