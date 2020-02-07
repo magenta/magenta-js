@@ -613,6 +613,7 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
   private setupDOM(container: HTMLDivElement) {
     this.parentElement = document.createElement('div');
     this.parentElement.classList.add('waterfall-notes-container');
+    this.parentElement.style.boxSizing = 'border-box';
     this.parentElement.style.height = '200px';
     this.parentElement.style.overflowX = 'hidden';
     this.parentElement.style.overflowY = 'auto';
