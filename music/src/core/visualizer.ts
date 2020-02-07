@@ -549,7 +549,8 @@ export interface WaterfallVisualizerConfig extends VisualizerConfig {
  * In particular, `div.waterfall-notes-container` needs to make some default
  * styling decisions (such as its height, to hide the overlow, and how much
  * it should be initially overflown) that you can override in your app
- * using CSS.
+ * using CSS -- but be careful about it since it might make the entire
+ * element not work :(
  */
 export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
   private NOTES_PER_OCTAVE = 12;
