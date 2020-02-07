@@ -857,6 +857,8 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
     rect.setAttribute('height', String(this.config.blackNoteHeight));
     rect.setAttribute('fill', 'black');
     rect.setAttribute('original-fill', 'black');
+    rect.setAttribute('stroke', 'black');
+    rect.setAttribute('stroke-width', '3px');
     this.svgPiano.appendChild(rect);
     return rect;
   }
