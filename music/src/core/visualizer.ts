@@ -578,7 +578,6 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
       throw new Error(
           'This visualizer requires a <div> element to display the visualization');
     }
-    super(sequence, config);
     this.setupDOM(parentElement);
 
     // Some sensible defaults.
