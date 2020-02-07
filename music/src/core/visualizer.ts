@@ -542,15 +542,28 @@ export interface WaterfallVisualizerConfig extends VisualizerConfig {
  * only the octaves present in the NoteSequence will be used.
  *
  * The DOM created by this element is:
- *    <div class="waterfall-notes-container">
+ *    <div>
  *      <svg class="waterfall-notes"></svg>
  *    </div>
  *    <svg class="waterfall-piano"></svg>
- * In particular, `div.waterfall-notes-container` needs to make some default
+ *
+ * In particular, the `div` created needs to make some default
  * styling decisions (such as its height, to hide the overlow, and how much
- * it should be initially overflown) that you can override in your app
- * using CSS -- but be careful about it since it might make the entire
- * element not work :(
+ * it should be initially overflown), that we don't recommend you override since
+ * it has a high chance of breaking how the visualizer works.
+ * If you want to style the waterfall area, style the element that you
+ * pass in the `WaterfallSVGVisualizer` constructor. For example, if you
+ * want to resize the height (by default it is 200px), you can do:
+ *
+ *   <style>
+ *     #waterfall {
+ *       height: 500px;
+ *     }
+ *   </style>
+ *   <div id="waterfall"></div>
+ *   <script>
+ *      const viz = new mm.WaterfallSVGVisualizer(seq, waterfall);
+ *   </script>
  */
 export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
   private NOTES_PER_OCTAVE = 12;
@@ -579,7 +592,6 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
       throw new Error(
           'This visualizer requires a <div> element to display the visualization');
     }
-    this.setupDOM(parentElement);
 
     // Some sensible defaults.
     this.config.whiteNoteWidth = config.whiteNoteWidth || 20;
@@ -588,6 +600,8 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
     this.config.whiteNoteHeight = config.whiteNoteHeight || 70;
     this.config.blackNoteHeight = config.blackNoteHeight || (2 * 70 / 3);
     this.config.showOnlyOctavesUsed = config.showOnlyOctavesUsed;
+
+    this.setupDOM(parentElement);
 
     const size = this.getSize();
     this.width = size.width;
@@ -614,11 +628,18 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
   private setupDOM(container: HTMLDivElement) {
     this.parentElement = document.createElement('div');
     this.parentElement.classList.add('waterfall-notes-container');
+
+    const height = Math.max(container.getBoundingClientRect().height, 200);
+
+    // Height and padding-top must match for this to work.
+    this.parentElement.style.paddingTop =
+        `${height - this.config.whiteNoteHeight}px`;
+    this.parentElement.style.height =
+        `${height - this.config.whiteNoteHeight}px`;
+
     this.parentElement.style.boxSizing = 'border-box';
-    this.parentElement.style.height = '200px';
     this.parentElement.style.overflowX = 'hidden';
     this.parentElement.style.overflowY = 'auto';
-    this.parentElement.style.paddingTop = '200px';
 
     this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     this.svgPiano =
@@ -654,6 +675,7 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
 
     // Remove the current active note, if one exists.
     this.clearActiveNotes();
+    this.parentElement.style.paddingTop = this.parentElement.style.height;
 
     for (let i = 0; i < this.noteSequence.notes.length; i++) {
       const note = this.noteSequence.notes[i];
