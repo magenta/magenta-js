@@ -75,9 +75,12 @@ function setupPlayerControlsDemo() {
     resumeBtn.disabled = true;
   });
   slider.addEventListener('change', () => {
-    player.pause();
     const t = parseFloat(slider.value);
     currentTime.textContent = t.toFixed(1);
+
+    // You don't _have_ to pause and resume the context, but it makes
+    // the UI jump around less.
+    player.pause();
     player.seekTo(t);
     player.resume();
   });
