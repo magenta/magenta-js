@@ -221,6 +221,13 @@ export abstract class BasePlayer {
   }
 
   /**
+   * Seek to a number of seconds in the NoteSequence.
+   */
+  seekTo(seconds: number) {
+    Tone.Transport.seconds = seconds;
+  }
+
+  /**
    * Returns true iff the player is completely stopped. This will only be
    * false after calling stop(), and will be true after calling
    * start(), pause() or unpause().

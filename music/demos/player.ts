@@ -28,12 +28,22 @@ function setupPlayerControlsDemo() {
   const pauseBtn = document.getElementById('pause') as HTMLButtonElement;
   const resumeBtn = document.getElementById('resume') as HTMLButtonElement;
   const playState = document.getElementById('playState') as HTMLSpanElement;
+  const slider = document.getElementById('slider') as HTMLInputElement;
+  const currentTime = document.getElementById('currentTime') as HTMLDivElement;
 
-  const player = new mm.Player();
+  const player = new mm.Player(false, {
+    run: (note) => {
+      slider.value = currentTime.textContent = note.startTime.toFixed(1);
+    },
+    stop: () => {}
+  });
   playState.textContent = player.getPlayState();
 
   playBtn.addEventListener('click', () => {
-    player.start(FULL_TWINKLE);
+    player.start(FULL_TWINKLE_UNQUANTIZED);
+    slider.max = document.getElementById('totalTime').textContent =
+        FULL_TWINKLE_UNQUANTIZED.totalTime.toFixed(1);
+    slider.value = '0';
     playState.textContent = player.getPlayState();
     playBtn.disabled = true;
     stopBtn.disabled = false;
@@ -63,6 +73,13 @@ function setupPlayerControlsDemo() {
     stopBtn.disabled = false;
     pauseBtn.disabled = false;
     resumeBtn.disabled = true;
+  });
+  slider.addEventListener('change', () => {
+    player.pause();
+    const t = parseFloat(slider.value);
+    currentTime.textContent = t.toFixed(1);
+    player.seekTo(t);
+    player.resume();
   });
 }
 
