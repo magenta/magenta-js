@@ -79,11 +79,11 @@ export abstract class BaseVisualizer {
   // Clears the active notes in the visualization.
   public abstract clearActiveNotes(): void;
   /**
-   *   `BaseVisualizer` constructor.
+   * BaseVisualizer` constructor.
    *
-   *   @param sequence The `NoteSequence` to be visualized.
-   *   @param canvas The element where the visualization should be displayed.
-   *   @param config (optional) Visualization configuration options.
+   * @param sequence The `NoteSequence` to be visualized.
+   * @param canvas The element where the visualization should be displayed.
+   * @param config (optional) Visualization configuration options.
    */
   constructor(sequence: INoteSequence, config: VisualizerConfig = {}) {
     this.noteSequence = sequence;
@@ -227,11 +227,11 @@ export abstract class BaseVisualizer {
 export class PianoRollCanvasVisualizer extends BaseVisualizer {
   protected ctx: CanvasRenderingContext2D;
   /**
-   *   `PianoRollCanvasVisualizer` constructor.
+   * PianoRollCanvasVisualizer` constructor.
    *
-   *   @param sequence The `NoteSequence` to be visualized.
-   *   @param canvas The element where the visualization should be displayed.
-   *   @param config (optional) Visualization configuration options.
+   * @param sequence The `NoteSequence` to be visualized.
+   * @param canvas The element where the visualization should be displayed.
+   * @param config (optional) Visualization configuration options.
    */
   constructor(
       sequence: INoteSequence, canvas: HTMLCanvasElement,
@@ -350,11 +350,11 @@ export abstract class BaseSVGVisualizer extends BaseVisualizer {
   protected drawn: boolean;
 
   /**
-   *   `SVGVisualizer` constructor.
+   * `SVGVisualizer` constructor.
    *
-   *   @param sequence The `NoteSequence` to be visualized.
-   *   @param svg The element where the visualization should be displayed.
-   *   @param config (optional) Visualization configuration options.
+   * @param sequence The `NoteSequence` to be visualized.
+   * @param svg The element where the visualization should be displayed.
+   * @param config (optional) Visualization configuration options.
    */
   constructor(sequence: INoteSequence, config: VisualizerConfig = {}) {
     super(sequence, config);
@@ -367,8 +367,8 @@ export abstract class BaseSVGVisualizer extends BaseVisualizer {
    * @param activeNote (Optional) If specified, this `Note` will be painted
    * in the active color.
    * @param scrollIntoView (Optional) If specified and the note being
-   *     painted is offscreen, the parent container will be scrolled so that
-   *     the note is in view.
+   * painted is offscreen, the parent container will be scrolled so that
+   * the note is in view.
    * @returns The x position of the painted active note. Useful for
    * automatically advancing the visualization if the note was painted
    * outside of the screen.
@@ -492,11 +492,11 @@ export abstract class BaseSVGVisualizer extends BaseVisualizer {
  */
 export class PianoRollSVGVisualizer extends BaseSVGVisualizer {
   /**
-   *   `PianoRollSVGVisualizer` constructor.
+   * `PianoRollSVGVisualizer` constructor.
    *
-   *   @param sequence The `NoteSequence` to be visualized.
-   *   @param svg The element where the visualization should be displayed.
-   *   @param config (optional) Visualization configuration options.
+   * @param sequence The `NoteSequence` to be visualized.
+   * @param svg The element where the visualization should be displayed.
+   * @param config (optional) Visualization configuration options.
    */
   constructor(
       sequence: INoteSequence, svg: SVGSVGElement,
@@ -584,12 +584,12 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
   protected config: WaterfallVisualizerConfig;
 
   /**
-   *   `WaterfallSVGVisualizer` constructor.
+   * `WaterfallSVGVisualizer` constructor.
    *
-   *   @param sequence The `NoteSequence` to be visualized.
-   *   @param parentElement The parent element that will contain the
+   * @param sequence The `NoteSequence` to be visualized.
+   * @param parentElement The parent element that will contain the
    * visualization.
-   *   @param config (optional) Visualization configuration options.
+   * @param config (optional) Visualization configuration options.
    */
   constructor(
       sequence: INoteSequence, parentElement: HTMLDivElement,
@@ -666,8 +666,8 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
    * @param activeNote (Optional) If specified, this `Note` will be painted
    * in the active color.
    * @param scrollIntoView (Optional) If specified and the note being
-   *     painted is offscreen, the parent container will be scrolled so that
-   *     the note is in view.
+   * painted is offscreen, the parent container will be scrolled so that
+   * the note is in view.
    * @returns The x position of the painted active note. Useful for
    * automatically advancing the visualization if the note was painted
    * outside of the screen.
@@ -929,9 +929,8 @@ export enum ScrollType {
  * `NoteSequence.keySignatures` value at time or step 0. If not assigned it
  * will be asumed C key.
  * @param instruments The subset of the `NoteSequence` instrument track
- *     numbers
- * which should be merged and displayed. If not assigned or equal to [] it
- * will be used all instruments altogether.
+ * numbers which should be merged and displayed. If not assigned or equal to []
+ * it will be used all instruments altogether.
  * @param scrollType Sets scrolling to follow scoreplaying in different ways
  * according to `ScrollType` enum values.
  */
