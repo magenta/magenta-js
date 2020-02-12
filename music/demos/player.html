@@ -21,6 +21,11 @@ limitations under the License.
       min-width: 100px;
       vertical-align: top;
     }
+    #currentTime, #totalTime {
+      width: 35px;
+      text-align: right;
+      display: inline-block;
+    }
   </style>
 </head>
 
@@ -37,6 +42,11 @@ limitations under the License.
     <button id="pause" disabled>Pause</button>
     <button id="resume" disabled>Resume</button>
     <b>Play state: </b><span id="playState"></span>
+
+    <p>You can also seek to a point in the NoteSequence:</p>
+    <b id="currentTime">0</b>s
+    <input type="range" id="slider" min="0" value="0" step="0.5">
+    <b id="totalTime">0</b>s
   </section>
 
   <h2 id="soundfonts">SoundFonts</h2>
