@@ -161,7 +161,7 @@ export abstract class BasePlayer {
     }
 
     const thisPart = new Tone.Part((t: number, n: NoteSequence.INote) => {
-      // Prevent playback after the part has been removed
+      // Prevent playback after the part has been removed.
       if (this.currentPart !== thisPart) {
         return;
       }
