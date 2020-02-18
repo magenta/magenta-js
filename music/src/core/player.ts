@@ -160,7 +160,12 @@ export abstract class BasePlayer {
       throw new Error('Cannot specify a `qpm` for a non-quantized sequence.');
     }
 
-    this.currentPart = new Tone.Part((t: number, n: NoteSequence.INote) => {
+    const thisPart = new Tone.Part((t: number, n: NoteSequence.INote) => {
+      // Prevent playback after the part has been removed.
+      if (this.currentPart !== thisPart) {
+        return;
+      }
+
       if (this.playClick ||
           (n.pitch !== constants.LO_CLICK_PITCH &&
            n.pitch !== constants.HI_CLICK_PITCH)) {
@@ -172,6 +177,8 @@ export abstract class BasePlayer {
         }, t);
       }
     }, seq.notes.map(n => [n.startTime, n]));
+    this.currentPart = thisPart;
+
     if (this.desiredQPM) {
       Tone.Transport.bpm.value = this.desiredQPM;
     }
