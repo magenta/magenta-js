@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+import * as audio_utils from './audio_utils';
 import * as aux_inputs from './aux_inputs';
 import * as chords from './chords';
 import * as constants from './constants';
@@ -23,7 +24,7 @@ import * as logging from './logging';
 import * as performance from './performance';
 import * as sequences from './sequences';
 
-export {aux_inputs, chords, constants, data, logging, performance, sequences};
+export {audio_utils, aux_inputs, chords, constants, data, logging, performance, sequences};
 
 export * from './metronome';
 export * from './midi_io';

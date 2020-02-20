@@ -202,7 +202,7 @@ function magSpectrogram(
   return [spec, nFft];
 }
 
-function stft(y: Float32Array, params: SpecParams): Float32Array[] {
+export function stft(y: Float32Array, params: SpecParams): Float32Array[] {
   const nFft = params.nFft || 2048;
   const winLength = params.winLength || nFft;
   const hopLength = params.hopLength || Math.floor(winLength / 4);
