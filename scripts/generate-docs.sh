@@ -22,7 +22,7 @@
 # sh ./generate-docs.sh <package name (music|sketch|image)>
 
 # Exit on error.
-set -e
+set -euo pipefail
 
 PKG_NAME=$1
 
@@ -83,7 +83,7 @@ cd $currDir
 yarn build-demos
 mkdir -p $tmpDir/demos
 # Or with true to avoid failing on a non-existent file extension.
-cp demos/*.{js,html,mid,css} $tmpDir/demos | true
+cp demos/*.{js,html,mid,css} $tmpDir/demos || true
 
 # Switch to gh-pages and reset any local changes
 git checkout gh-pages
