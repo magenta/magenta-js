@@ -60,7 +60,11 @@ npx typedoc src --out $tmpDir \
 --mode "modules" \
 --includeVersion --includeDeclarations \
 --excludePrivate --excludeExternals --excludeNotExported \
---exclude '**/*+(index|test|lib).ts'
+--exclude '**/*+(index|test|lib).ts' \
+--toc "core,protobuf,coconet,music_rnn,music_vae,piano_genie,protobuf,transcription,gansynth"
+# The toc argument above contains exactly the list of exports in src/index.ts.
+# This reduces the number of globas we're displaying in the side bar, which
+# aren't actually usable in the library.
 
 # This will generate a bunch of 'Defined in <a href="https://github.com/notwaldorf/magenta-js/blob/c48f0b9/music/src/..."''
 # links that we need to change to 'Defined in <a href="${urlPrefix}/...' links.
@@ -73,7 +77,7 @@ for path in $allFiles; do
 
   # Fix "Defined in" links.
   if grep -Fq "Defined in" $path; then
-    echo "Fixing Defined in: $path"
+    #echo "Fixing Defined in: $path"
 
     search="href=\".*${keepAfter}\(.*\)\""
     replace="href=\"${urlPrefix}\1\""
@@ -84,7 +88,7 @@ for path in $allFiles; do
   # Fix any leaked local paths in the docs.
   # See https://github.com/TypeStrong/typedoc/issues/800.
   if grep -Fq "Users" $path; then
-    echo "Fixing local paths in: $path"
+    #echo "Fixing local paths in: $path"
 
     path1=`expr "$filename" : '_\(.*\)_.*_'`  # core
     path2=`expr "$filename" : '_.*_\(.*\)_.*'`  # chords
