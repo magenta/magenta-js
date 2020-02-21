@@ -7,5 +7,5 @@
   "excludePrivate": true,
   "exclude": "**/*+(index|test|lib).ts",
   "name": "@magenta/music",
-  "readme": "./README.md",
+  "readme": "./README.md"
 }
