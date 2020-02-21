@@ -58,7 +58,7 @@ echo "batman"
 npx typedoc src --out $tmpDir \
 --tsconfig $tsconfig \
 --includeVersion --includeDeclarations \
---excludePrivate --excludeExternals \
+--excludePrivate --excludeExternals --excludeNotExported \
 --exclude '**/*+(index|test|lib).ts'
 
 # This will generate a bunch of 'Defined in <a href="https://github.com/notwaldorf/magenta-js/blob/c48f0b9/music/src/..."''
