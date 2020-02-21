@@ -73,8 +73,8 @@ for path in ./*.html; do
   if grep -Fq "Defined in" $path; then
     echo "Fixing Defined in: $path"
 
-    search="href=\".*${keepAfter}\(.*\)"
-    replace="href=\"${urlPrefix}\1"
+    search="href=\".*${keepAfter}\(.*\)\""
+    replace="href=\"${urlPrefix}\1\""
 
     sed -i "" "s%${search}%${replace}%g" $path
   fi
