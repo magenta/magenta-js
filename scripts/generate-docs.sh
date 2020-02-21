@@ -33,45 +33,19 @@ currDir=$(pwd)
 baseDir=$(git rev-parse --show-toplevel)
 
 # Generation variables.
-mode="modules"
-tsconfig="tsconfig.json"
-
 urlPrefix="https://github.com/${ORG_NAME}/magenta-js/tree/master/${PKG_NAME}/src/"
 keepAfter="/src/"
-specialToc=""
 
 if [ $PKG_NAME == "image" ]
 then
   mode="file"
   urlPrefix="$urlPrefix/arbitrary_stylization/"
   keepAfter="/arbitrary_stylization/"
-elif [ $PKG_NAME == "music" ]
-then
-  echo ""
-  read -p "👋 Did you add a new top level export to src/index.ts? (y/n)? " -n 1 choice
-  if [ $choice == "y" ]
-  then
-    echo "\n🛑 You need to edit 'generate-docs.sh' and add that export to the --toc parameter"
-    echo "Then you can re-run this script!"
-    exit 1
-  else
-    echo "\n👍 You're all good! Carry on!"
-  fi
-
-  tsconfig="tsconfig.es6.json"
-  specialToc="--toc core,protobuf,coconet,music_rnn,music_vae,piano_genie,protobuf,transcription,gansynth"
 fi
 
 # Generate the docs.
 rm -rf $tmpDir
-
-npx typedoc src --out $tmpDir \
---tsconfig $tsconfig \
---mode "modules" \
---includeVersion --includeDeclarations \
---excludePrivate --excludeExternals --excludeNotExported \
---exclude '**/*+(index|test|lib).ts' \
-${specialToc}
+npx typedoc --options typedoc.json src --out $tmpDir
 
 # The toc argument above contains exactly the list of exports in src/index.ts.
 # This reduces the number of globas we're displaying in the side bar, which
