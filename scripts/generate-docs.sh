@@ -25,10 +25,15 @@
 set -e
 
 echo ""
-echo "Did you add a new top level export to src/index.ts?"
-echo "If yes: edit generate-docs and add it to the --toc parameter!"
-echo "💖, your friendly documentation bot."
-echo ""
+read -p "👋 Did you add a new top level export to src/index.ts? (y/n)? " -n 1 -r choice
+if [ $choice == "y" ]
+then
+  echo "\n🛑 You need to edit 'generate-docs.sh' and add that export to the --toc parameter"
+  echo "Then you can re-run this script!"
+  exit 1
+else
+  echo "\n👍 You're all good! Carry on!"
+fi
 
 PKG_NAME=$1
 ORG_NAME="tensorflow"
@@ -118,6 +123,7 @@ done
 cd $currDir
 yarn build-demos
 mkdir -p $tmpDir/demos
+
 # Or with true to avoid failing on a non-existent file extension.
 cp demos/*.{js,html,mid,css} $tmpDir/demos | true
 
@@ -134,7 +140,7 @@ git rm -fr $PKG_NAME
 rsync -a $tmpDir/ $PKG_NAME/
 git add $PKG_NAME
 currDate=$(date)
-git commit -m "Updating $PKG_NAME docs: $currDate"
+git commit -m "📖 Updating $PKG_NAME docs: $currDate"
 git push --set-upstream origin gh-pages
 
 # Switch back to original branch.
