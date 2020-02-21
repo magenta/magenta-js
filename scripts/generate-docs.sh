@@ -47,7 +47,7 @@ then
   keepAfter="/arbitrary_stylization/"
 elif [ $PKG_NAME == "music" ]
 then
-  tsconfig="tsconfig.es5.json"
+  tsconfig="tsconfig.es6.json"
 fi
 
 # Generate the docs.
@@ -57,6 +57,7 @@ echo "batman"
 
 npx typedoc src --out $tmpDir \
 --tsconfig $tsconfig \
+--mode "modules" \
 --includeVersion --includeDeclarations \
 --excludePrivate --excludeExternals --excludeNotExported \
 --exclude '**/*+(index|test|lib).ts'
