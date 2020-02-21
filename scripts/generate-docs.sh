@@ -66,8 +66,9 @@ npx typedoc src --out $tmpDir \
 # links that we need to change to 'Defined in <a href="${urlPrefix}/...' links.
 # We used to be using typedoc-plugin-sourcefile-url to do this, but it stopped
 # working at some point and for loops work well enough.
-cd $tmpDir/classes/
-for path in ./*.html; do
+
+allFiles=$(find $tmpDir -type f -name '*.html')
+for path in $allFiles; do
   filename=$(basename $path .html)
 
   # Fix "Defined in" links.
