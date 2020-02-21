@@ -59,7 +59,8 @@ npx typedoc src --out $tmpDir \
 --includeVersion --includeDeclarations \
 --excludePrivate --excludeExternals --excludeNotExported \
 --exclude '**/*+(index|test|lib).ts' \
---toc "core,protobuf,coconet,music_rnn,music_vae,piano_genie,protobuf,transcription,gansynth"
+--toc core,protobuf,coconet,music_rnn,music_vae,piano_genie,protobuf,transcription,gansynth
+
 # The toc argument above contains exactly the list of exports in src/index.ts.
 # This reduces the number of globas we're displaying in the side bar, which
 # aren't actually usable in the library.
@@ -108,7 +109,7 @@ for path in $allFiles; do
 done
 
 # Build the demos and copy them to the temporary docs directory.
-cd $currDir
+cd $currDirg
 yarn build-demos
 mkdir -p $tmpDir/demos
 # Or with true to avoid failing on a non-existent file extension.
