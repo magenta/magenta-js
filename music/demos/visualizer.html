@@ -54,24 +54,44 @@ limitations under the License.
 
   <h2>mm.PianoRollSVGVisualizer</h2>
   <section>
-    <div class="visualizer-container" id="container2">
+    <div class="visualizer-container">
       <svg id="svg"></svg>
-    </div>
-  </section>
-
-  <h2>mm.PianoRollCanvasVisualizer</h2>
-  <section>
-    <div class="visualizer-container" id="container">
-      <canvas id="canvas"></canvas>
     </div>
   </section>
 
   <h2>mm.StaffSVGVisualizer</h2>
   <section>
-    <div class="visualizer-container" id="container3">
+    <div class="visualizer-container">
       <div id="staff"></div>
     </div>
   </section>
+
+  <h2>mm.WaterfallSVGVisualizer</h2>
+  <section>
+    <label><input type="checkbox" id="waterfallCheckbox">Show only necessary octaves</label>
+    <br>
+    <div class="visualizer-container">
+      <div id="waterfall">
+      </div>
+    </div>
+  </section>
+
+  <h2>mm.PianoRollCanvasVisualizer</h2>
+  <section>
+    <p>
+      <b>Note:</b> This has the same visual output as <code>mm.PianoRollSVGVisualizer</code>,
+      but using a canvas instead of an svg. This visualizers also redraws the entire
+      sequence on every time step. For longer sequences, canvases become really expensive and
+      big, and might crash the renderer.
+      We recommend using the <code>PianoRollSVGVisualizer</code>mm.PianoRollSVGVisualizer</code>,
+      if performance is a concern.
+    </p>
+    <div class="visualizer-container">
+      <canvas id="canvas"></canvas>
+    </div>
+  </section>
+
+
   <script src="visualizer_bundle.js"></script>
 </body>
 </html>
