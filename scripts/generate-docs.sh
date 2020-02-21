@@ -25,6 +25,7 @@
 set -e
 
 PKG_NAME=$1
+ORG_NAME="tensorflow"
 
 # Directory/branch variables.
 tmpDir=/tmp/${PKG_NAME}_docs
@@ -35,11 +36,15 @@ baseDir=$(git rev-parse --show-toplevel)
 # Generation variables.
 mode="modules"
 tsconfig="tsconfig.json"
-urlPrefix="https://github.com/tensorflow/magenta-js/tree/master/${PKG_NAME}/src/"
+
+urlPrefix="https://github.com/${ORG_NAME}/magenta-js/tree/master/${PKG_NAME}/src/"
+keepAfter="/src/"
+
 if [ $PKG_NAME == "image" ]
 then
   mode="file"
   urlPrefix="$urlPrefix/arbitrary_stylization/"
+  keepAfter="/arbitrary_stylization/"
 elif [ $PKG_NAME == "music" ]
 then
   tsconfig="tsconfig.es5.json"
@@ -47,15 +52,35 @@ fi
 
 # Generate the docs.
 rm -rf $tmpDir
-npx typedoc --tsconfig $tsconfig --sourcefile-url-prefix $urlPrefix --out $tmpDir  --mode $mode --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals src
 
-# Fix any leaked local paths in the docs.
-# See https://github.com/TypeStrong/typedoc/issues/800.
+echo "batman"
+
+npx typedoc src --out $tmpDir \
+--tsconfig $tsconfig \
+--includeVersion --includeDeclarations \
+--excludePrivate --excludeExternals \
+--exclude '**/*+(index|test|lib).ts'
+
+# This will generate a bunch of 'Defined in <a href="https://github.com/notwaldorf/magenta-js/blob/c48f0b9/music/src/..."''
+# links that we need to change to 'Defined in <a href="${urlPrefix}/...' links.
+# We used to be using typedoc-plugin-sourcefile-url to do this, but it stopped
+# working at some point and for loops work well enough.
 cd $tmpDir/classes/
-
 for path in ./*.html; do
   filename=$(basename $path .html)
 
+  # Fix "Defined in" links.
+  if grep -Fq "Defined in" $path; then
+    echo "Fixing Defined in: $path"
+
+    search="href=\".*${keepAfter}\(.*\)"
+    replace="href=\"${urlPrefix}\1"
+
+    sed -i "" "s%${search}%${replace}%g" $path
+  fi
+
+  # Fix any leaked local paths in the docs.
+  # See https://github.com/TypeStrong/typedoc/issues/800.
   if grep -Fq "Users" $path; then
     echo "Fixing local paths in: $path"
 
