@@ -38,7 +38,6 @@ keepAfter="/src/"
 
 if [ $PKG_NAME == "image" ]
 then
-  mode="file"
   urlPrefix="$urlPrefix/arbitrary_stylization/"
   keepAfter="/arbitrary_stylization/"
 fi

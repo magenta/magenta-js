@@ -1,5 +1,5 @@
 {
-  "mode": "modules",
+  "mode": "file",
   "tsconfig": "tsconfig.json",
   "includeVersion": true,
   "excludeExternals": true,
