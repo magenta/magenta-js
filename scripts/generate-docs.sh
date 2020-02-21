@@ -46,15 +46,10 @@ fi
 rm -rf $tmpDir
 npx typedoc --options typedoc.json src --out $tmpDir
 
-# The toc argument above contains exactly the list of exports in src/index.ts.
-# This reduces the number of globas we're displaying in the side bar, which
-# aren't actually usable in the library.
-
-# This will generate a bunch of 'Defined in <a href="https://github.com/notwaldorf/magenta-js/blob/c48f0b9/music/src/..."''
+# This has generated a bunch of 'Defined in <a href="https://github.com/notwaldorf/magenta-js/blob/c48f0b9/music/src/..."''
 # links that we need to change to 'Defined in <a href="${urlPrefix}/...' links.
 # We used to be using typedoc-plugin-sourcefile-url to do this, but it stopped
 # working at some point and for loops work well enough.
-
 allFiles=$(find $tmpDir -type f -name '*.html')
 for path in $allFiles; do
   filename=$(basename $path .html)
