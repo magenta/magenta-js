@@ -24,6 +24,12 @@
 # Exit on error.
 set -e
 
+echo ""
+echo "Did you add a new top level export to src/index.ts?"
+echo "If yes: edit generate-docs and add it to the --toc parameter!"
+echo "💖, your friendly documentation bot."
+echo ""
+
 PKG_NAME=$1
 ORG_NAME="tensorflow"
 
@@ -109,7 +115,7 @@ for path in $allFiles; do
 done
 
 # Build the demos and copy them to the temporary docs directory.
-cd $currDirg
+cd $currDir
 yarn build-demos
 mkdir -p $tmpDir/demos
 # Or with true to avoid failing on a non-existent file extension.
