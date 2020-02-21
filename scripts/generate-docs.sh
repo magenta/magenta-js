@@ -53,8 +53,6 @@ fi
 # Generate the docs.
 rm -rf $tmpDir
 
-echo "batman"
-
 npx typedoc src --out $tmpDir \
 --tsconfig $tsconfig \
 --mode "modules" \
