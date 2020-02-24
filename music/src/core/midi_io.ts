@@ -159,12 +159,7 @@ export function sequenceProtoToMidi(ns: INoteSequence) {
   }
   const instruments = Array.from(tracks.keys()).sort((a, b) => a - b);
   for (let i = 0; i < instruments.length; i++) {
-    if (i !== instruments[i]) {
-      throw new MidiConversionError(
-          'Instrument list must be continuous and start at 0');
-    }
-
-    const notes = tracks.get(i);
+    const notes = tracks.get(instruments[i]);
     const track = {
       id: i,
       notes: [] as Array<{}>,
