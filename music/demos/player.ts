@@ -80,9 +80,14 @@ function setupPlayerControlsDemo() {
 
     // You don't _have_ to pause and resume the context, but it makes
     // the UI jump around less.
-    player.pause();
+    const playing = (player.getPlayState() === 'started');
+    if (playing) {
+      player.pause();
+    }
     player.seekTo(t);
-    player.resume();
+    if (playing) {
+      player.resume();
+    }
   });
 }
 
