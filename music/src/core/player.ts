@@ -147,7 +147,8 @@ export abstract class BasePlayer {
       throw new Error(`Cannot start playback while "${this.getPlayState()}".`);
     }
     if (Tone.Transport.state !== 'stopped') {
-      throw new Error(`Cannot start playback while \`Tone.Transport\` is in use.`);
+      throw new Error(
+        'Cannot start playback while `Tone.Transport` is in use.');
     }
 
     this.resumeContext();
