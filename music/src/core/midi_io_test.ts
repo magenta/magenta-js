@@ -195,13 +195,13 @@ const polyNs = NoteSequence.create({
 });
 
 test('Parse Simple MIDI', (t: test.Test) => {
-  const midi = fs.readFileSync('../testdata/melody.mid', 'binary');
+  const midi = fs.readFileSync('../testdata/melody.mid');
   const ns = midi_io.midiToSequenceProto(midi);
 
   t.deepEqual(ns, simpleNs);
 
   const nsRoundTrip = midi_io.midiToSequenceProto(
-      String.fromCharCode.apply(null, midi_io.sequenceProtoToMidi(ns)));
+      midi_io.sequenceProtoToMidi(ns));
 
   t.deepEqual(nsRoundTrip, simpleNs);
 
@@ -212,7 +212,7 @@ test('Create Simple MIDI File', (t: test.Test) => {
   const midiFile = midi_io.sequenceProtoToMidi(simpleNs);
 
   t.deepEqual(
-      midi_io.midiToSequenceProto(String.fromCharCode.apply(null, midiFile)),
+      midi_io.midiToSequenceProto(midiFile),
       simpleNs);
   t.end();
 });
@@ -221,7 +221,7 @@ test('Create MIDI File With Polyphony', (t: test.Test) => {
   const midiFile = midi_io.sequenceProtoToMidi(polyNs);
 
   t.deepEqual(
-      midi_io.midiToSequenceProto(String.fromCharCode.apply(null, midiFile)),
+      midi_io.midiToSequenceProto(midiFile),
       polyNs);
   t.end();
 });
@@ -245,7 +245,7 @@ test('Write MIDI Using Defaults', (t: test.Test) => {
   });
 
   const nsRoundTrip = midi_io.midiToSequenceProto(
-      String.fromCharCode.apply(null, midi_io.sequenceProtoToMidi(strippedNs)));
+      midi_io.sequenceProtoToMidi(strippedNs));
 
   t.deepEqual(nsRoundTrip, expectedNs);
 
