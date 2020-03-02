@@ -3,7 +3,7 @@
 [![npm version](https://badge.fury.io/js/%40magenta%2Fsketch.svg)](https://badge.fury.io/js/%40magenta%2Fsketch) [![](https://data.jsdelivr.com/v1/package/npm/@magenta/sketch/badge?style=rounded)](https://www.jsdelivr.com/package/npm/@magenta/sketch)
 
 
-Link to Documentation: [tensorflow.github.io/magenta-js/sketch](https://tensorflow.github.io/magenta-js/sketch/)
+Link to Documentation: [magenta.github.io/magenta-js/sketch](https://magenta.github.io/magenta-js/sketch/)
 
 This JavaScript implementation of Magenta's sketch-rnn model uses [TensorFlow.js](https://js.tensorflow.org) for GPU-accelerated inference. `sketch-rnn` is a recurrent neural network model described in [Teaching Machines to Draw](https://research.googleblog.com/2017/04/teaching-machines-to-draw.html) and [A Neural Representation of Sketch Drawings](https://arxiv.org/abs/1704.03477).
 
@@ -109,26 +109,26 @@ function draw() {
 
 ## Demos
 
-There are several demos available in `demos` directory that show how to use the SketchRNN model. You can also view the [hosted demos](https://tensorflow.github.io/magenta-js/sketch/demos), or run the
+There are several demos available in `demos` directory that show how to use the SketchRNN model. You can also view the [hosted demos](https://magenta.github.io/magenta-js/sketch/demos), or run the
 examples locally by running `yarn run-demos`. This command will first build the library `magentasketch.js` from the TypeScript source files, and then launch the server, where you can put in `http://127.0.0.1:8080` into your web browser to select the demos.
 
 ### 1) simple.html / simple.js
 This demo generates a bird using the model using the example code in the earlier section.
 
-See the [simple](https://tensorflow.github.io/magenta-js/sketch/demos/simple.html) demo.
+See the [simple](https://magenta.github.io/magenta-js/sketch/demos/simple.html) demo.
 
 ### 2) predict.html / predict.js
 
 This demo attempts to finish the drawing given starting set of strokes (a circle, drawn in red).
 In this demo, you can also select other classes, like "cat", "ant", "bus", etc.  The demo will dynamically load the json files in the models directory but cache previously loaded json models.
 
-See the [predict](https://tensorflow.github.io/magenta-js/sketch/demos/predict.html) demo.
+See the [predict](https://magenta.github.io/magenta-js/sketch/demos/predict.html) demo.
 
 ### 3) interactive\_predict.html / interactive\_predict.js
 
 Same as the previous demo, but made to be interactive so the user can draw the beginning of a sketch on the canvas. Similar to the first [AI experiment](https://magenta.tensorflow.org/sketch-rnn-demo). Hitting restart will clear the current human-entered drawing and start from scratch.
 
-See the [interactive predict](https://tensorflow.github.io/magenta-js/sketch/demos/interactive_predict.html) demo.
+See the [interactive predict](https://magenta.github.io/magenta-js/sketch/demos/interactive_predict.html) demo.
 
 ## Pre-trained models
 We have provided around 100 pre-trained sketch-rnn models. We have trained the models with a .gen.json extension.

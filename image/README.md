@@ -4,7 +4,7 @@
 
 This JavaScript implementation of Magenta's image models uses [TensorFlow.js](https://js.tensorflow.org) for GPU-accelerated inference.
 
-Complete documentation is available at https://tensorflow.github.io/magenta-js/image.
+Complete documentation is available at https://magenta.github.io/magenta-js/image.
 
 ## Contents
 
@@ -14,7 +14,7 @@ Complete documentation is available at https://tensorflow.github.io/magenta-js/i
 
 ## Example Applications
 
-You can try our [hosted demos](https://tensorflow.github.io/magenta-js/image/demos) for each model and have a look at the [demo code](./demos).
+You can try our [hosted demos](https://magenta.github.io/magenta-js/image/demos) for each model and have a look at the [demo code](./demos).
 
 ## Supported Models
 

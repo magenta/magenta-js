@@ -5,7 +5,7 @@
 
 This JavaScript implementation of Magenta's musical note-based models uses [TensorFlow.js](https://js.tensorflow.org) for GPU-accelerated inference.
 
-Complete documentation is available at https://tensorflow.github.io/magenta-js/music.
+Complete documentation is available at https://magenta.github.io/magenta-js/music.
 
 For the Python TensorFlow implementations, see the [main Magenta repo](https://github.com/tensorflow/magenta).
 
@@ -27,7 +27,7 @@ Here are a few applications built with `@magenta/music`:
 - [Neural Drum Machine](https://goo.gl/magenta/neuraldrum) by [Tero Parviainen](https://github.com/teropa)
 - [Tenori-Off](https://tenori-off.glitch.me) by [Monica Dinculescu](https://github.com/notwaldorf)
 
-You can also try our [hosted demos](https://tensorflow.github.io/magenta-js/music/demos) for each model and have a look at the [demo code](./demos).
+You can also try our [hosted demos](https://magenta.github.io/magenta-js/music/demos) for each model and have a look at the [demo code](./demos).
 
 ## Supported Models
 
@@ -36,19 +36,19 @@ missing, or feel free to submit a Pull Request!
 
 ### Piano Transcription w/ Onsets and Frames
 
-[OnsetsAndFrames](https://tensorflow.github.io/magenta-js/music/classes/_transcription_model_.onsetsandframes.html) implements Magenta's [piano transcription model](g.co/magenta/onsets-frames) for converting raw audio to MIDI in the browser. While it is somewhat flexible, it works best on solo piano recordings. The algorithm takes half the duration of audio to run on most browsers, but due to a [Webkit bug](https://github.com/WebKit/webkit/blob/4a4870b75b95a836b516163d45a5cbd6f5222562/Source/WebCore/Modules/webaudio/AudioContext.cpp#L109), audio resampling will make this it significantly slower on Safari.
+[OnsetsAndFrames](https://magenta.github.io/magenta-js/music/classes/_transcription_model_.onsetsandframes.html) implements Magenta's [piano transcription model](g.co/magenta/onsets-frames) for converting raw audio to MIDI in the browser. While it is somewhat flexible, it works best on solo piano recordings. The algorithm takes half the duration of audio to run on most browsers, but due to a [Webkit bug](https://github.com/WebKit/webkit/blob/4a4870b75b95a836b516163d45a5cbd6f5222562/Source/WebCore/Modules/webaudio/AudioContext.cpp#L109), audio resampling will make this it significantly slower on Safari.
 
 **Demo Application:** [Piano Scribe](https://piano-scribe.glitch.me)
 
 ### MusicRNN
 
-[MusicRNN](https://tensorflow.github.io/magenta-js/music/classes/_music_rnn_model_.musicrnn.html) implements Magenta's LSTM-based language models. These include [MelodyRNN][melody-rnn], [DrumsRNN][drums-rnn], [ImprovRNN][improv-rnn], and [PerformanceRNN][performance-rnn].
+[MusicRNN](https://magenta.github.io/magenta-js/music/classes/_music_rnn_model_.musicrnn.html) implements Magenta's LSTM-based language models. These include [MelodyRNN][melody-rnn], [DrumsRNN][drums-rnn], [ImprovRNN][improv-rnn], and [PerformanceRNN][performance-rnn].
 
 **Demo Application:** [Neural Drum Machine](https://goo.gl/magenta/neuraldrum)
 
 ### MusicVAE
 
-[MusicVAE](https://tensorflow.github.io/magenta-js/music/classes/_music_vae_model_.musicvae.html) implements several configurations of Magenta's variational autoencoder model called [MusicVAE][music-vae] including melody and drum "loop" models, 4- and 16-bar "trio" models, chord-conditioned [multi-track](https://g.co/magenta/multitrack) models, and drum performance "humanizations" with [GrooVAE](https://g.co/magenta/groovae).
+[MusicVAE](https://magenta.github.io/magenta-js/music/classes/_music_vae_model_.musicvae.html) implements several configurations of Magenta's variational autoencoder model called [MusicVAE][music-vae] including melody and drum "loop" models, 4- and 16-bar "trio" models, chord-conditioned [multi-track](https://g.co/magenta/multitrack) models, and drum performance "humanizations" with [GrooVAE](https://g.co/magenta/groovae).
 
 **Demo Application:** [Endless Trios](https://goo.gl/magenta/endless-trios)
 
@@ -222,7 +222,7 @@ for more realistic sounding instruments:
 | Multi | [sgm_plus](https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus) | Audio samples based on [SGM](https://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01) with modifications by [John Nebauer](https://sites.google.com/site/soundfonts4u/)|
 | Percussion | [jazz_kit](https://storage.googleapis.com/magentadata/js/soundfonts/jazz_kit) | Audio samples from [Jazz Kit (EXS)](https://musical-artifacts.com/artifacts/686) by Lithalean |
 
-You can explore what each of them sounds like on this [demo page](https://tensorflow.github.io/magenta-js/music/demos/player.html#soundfonts).
+You can explore what each of them sounds like on this [demo page](https://magenta.github.io/magenta-js/music/demos/player.html#soundfonts).
 
 <!-- links -->
 
