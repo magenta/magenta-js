@@ -137,8 +137,8 @@ export function sequenceProtoToMidi(ns: INoteSequence) {
     tracks: []
   });
 
-  // Add tempo changes. We need add them in chronologic order, so that we can
-  // calculate their times correctly.
+  // Add tempo changes. We need to add them in chronological order, so that we
+  // can calculate their times correctly.
   const tempos = Array.from(ns.tempos || []) as NoteSequence.ITempo[];
   if (tempos.length === 0) {
     tempos.push({time: 0, qpm: constants.DEFAULT_QUARTERS_PER_MINUTE});
