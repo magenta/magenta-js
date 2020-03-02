@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>@magenta/music</title>
+	<title>@magenta/music - v1.13.0</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="assets/css/main.css">
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="index.html" class="title">@magenta/music</a>
+					<a href="index.html" class="title">@magenta/music - v1.13.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -38,8 +38,6 @@
 							</div>
 							<input type="checkbox" id="tsd-filter-inherited" checked />
 							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
-							<input type="checkbox" id="tsd-filter-only-exported" />
-							<label class="tsd-widget" for="tsd-filter-only-exported">Only exported</label>
 						</div>
 					</div>
 					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
@@ -54,7 +52,7 @@
 					<a href="globals.html">Globals</a>
 				</li>
 			</ul>
-			<h1> @magenta/music</h1>
+			<h1>@magenta/music - v1.13.0</h1>
 		</div>
 	</div>
 </header>
@@ -62,19 +60,25 @@
 	<div class="row">
 		<div class="col-8 col-content">
 			<div class="tsd-panel tsd-typography">
-				<h1 id="-magenta-music">@magenta/music</h1>
+				<a href="#magentamusic" id="magentamusic" style="color: inherit; text-decoration: none;">
+					<h1>@magenta/music</h1>
+				</a>
 				<p><a href="https://badge.fury.io/js/%40magenta%2Fmusic"><img src="https://badge.fury.io/js/%40magenta%2Fmusic.svg" alt="npm version"></a> <a href="https://www.jsdelivr.com/package/npm/@magenta/music"><img src="https://data.jsdelivr.com/v1/package/npm/@magenta/music/badge?style=rounded" alt=""></a></p>
 				<p>This JavaScript implementation of Magenta&#39;s musical note-based models uses <a href="https://js.tensorflow.org">TensorFlow.js</a> for GPU-accelerated inference.</p>
 				<p>Complete documentation is available at <a href="https://tensorflow.github.io/magenta-js/music">https://tensorflow.github.io/magenta-js/music</a>.</p>
 				<p>For the Python TensorFlow implementations, see the <a href="https://github.com/tensorflow/magenta">main Magenta repo</a>.</p>
-				<h2 id="contents">Contents</h2>
+				<a href="#contents" id="contents" style="color: inherit; text-decoration: none;">
+					<h2>Contents</h2>
+				</a>
 				<ul>
 					<li><a href="#example-applications">Example Applications</a></li>
 					<li><a href="#supported-models">Supported Models</a></li>
 					<li><a href="#getting-started">Getting Started</a></li>
 					<li><a href="#model-checkpoints">Model Checkpoints</a></li>
 				</ul>
-				<h2 id="example-applications">Example Applications</h2>
+				<a href="#example-applications" id="example-applications" style="color: inherit; text-decoration: none;">
+					<h2>Example Applications</h2>
+				</a>
 				<p>Here are a few applications built with <code>@magenta/music</code>:</p>
 				<ul>
 					<li><a href="https://piano-scribe.glitch.me">Piano Scribe</a> by <a href="https://github.com/notwaldorf">Monica Dinculescu</a> and <a href="https://github.com/adarob">Adam Roberts</a></li>
@@ -85,25 +89,39 @@
 					<li><a href="https://tenori-off.glitch.me">Tenori-Off</a> by <a href="https://github.com/notwaldorf">Monica Dinculescu</a></li>
 				</ul>
 				<p>You can also try our <a href="https://tensorflow.github.io/magenta-js/music/demos">hosted demos</a> for each model and have a look at the <a href="./demos">demo code</a>.</p>
-				<h2 id="supported-models">Supported Models</h2>
+				<a href="#supported-models" id="supported-models" style="color: inherit; text-decoration: none;">
+					<h2>Supported Models</h2>
+				</a>
 				<p>We have made an effort to port our most useful models, but please file an issue if you think something is
 				missing, or feel free to submit a Pull Request!</p>
-				<h3 id="piano-transcription-w-onsets-and-frames">Piano Transcription w/ Onsets and Frames</h3>
+				<a href="#piano-transcription-w-onsets-and-frames" id="piano-transcription-w-onsets-and-frames" style="color: inherit; text-decoration: none;">
+					<h3>Piano Transcription w/ Onsets and Frames</h3>
+				</a>
 				<p><a href="https://tensorflow.github.io/magenta-js/music/classes/_transcription_model_.onsetsandframes.html">OnsetsAndFrames</a> implements Magenta&#39;s <a href="g.co/magenta/onsets-frames">piano transcription model</a> for converting raw audio to MIDI in the browser. While it is somewhat flexible, it works best on solo piano recordings. The algorithm takes half the duration of audio to run on most browsers, but due to a <a href="https://github.com/WebKit/webkit/blob/4a4870b75b95a836b516163d45a5cbd6f5222562/Source/WebCore/Modules/webaudio/AudioContext.cpp#L109">Webkit bug</a>, audio resampling will make this it significantly slower on Safari.</p>
 				<p><strong>Demo Application:</strong> <a href="https://piano-scribe.glitch.me">Piano Scribe</a></p>
-				<h3 id="musicrnn">MusicRNN</h3>
+				<a href="#musicrnn" id="musicrnn" style="color: inherit; text-decoration: none;">
+					<h3>MusicRNN</h3>
+				</a>
 				<p><a href="https://tensorflow.github.io/magenta-js/music/classes/_music_rnn_model_.musicrnn.html">MusicRNN</a> implements Magenta&#39;s LSTM-based language models. These include <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/melody_rnn">MelodyRNN</a>, <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/drums_rnn">DrumsRNN</a>, <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/improv_rnn">ImprovRNN</a>, and <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models/performance_rnn">PerformanceRNN</a>.</p>
 				<p><strong>Demo Application:</strong> <a href="https://goo.gl/magenta/neuraldrum">Neural Drum Machine</a></p>
-				<h3 id="musicvae">MusicVAE</h3>
-				<p><a href="https://tensorflow.github.io/magenta-js/music/classes/_music_vae_model_.musicvae.html">MusicVAE</a> implements several configurations of Magenta&#39;s variational autoencoder model called <a href="https://g.co/magenta/musicvae">MusicVAE</a> including melody and drum &quot;loop&quot; models, 4- and 16-bar &quot;trio&quot; models, chord-conditioned <a href="https://g.co/magenta/multitrack">multi-track</a> models, and drum performance &quot;humanizations&quot; with [GrooVAE][<a href="https://g.co/magenta/groovae%5D">https://g.co/magenta/groovae]</a>.</p>
+				<a href="#musicvae" id="musicvae" style="color: inherit; text-decoration: none;">
+					<h3>MusicVAE</h3>
+				</a>
+				<p><a href="https://tensorflow.github.io/magenta-js/music/classes/_music_vae_model_.musicvae.html">MusicVAE</a> implements several configurations of Magenta&#39;s variational autoencoder model called <a href="https://g.co/magenta/musicvae">MusicVAE</a> including melody and drum &quot;loop&quot; models, 4- and 16-bar &quot;trio&quot; models, chord-conditioned <a href="https://g.co/magenta/multitrack">multi-track</a> models, and drum performance &quot;humanizations&quot; with <a href="https://g.co/magenta/groovae">GrooVAE</a>.</p>
 				<p><strong>Demo Application:</strong> <a href="https://goo.gl/magenta/endless-trios">Endless Trios</a></p>
-				<h3 id="piano-genie">Piano Genie</h3>
-				<p><a href="https://g.co/magenta/pianogenie">Piano Genie</a> is a VQ-VAE model that that maps 8-button input to a full 88-key piano in real time.</p>
+				<a href="#piano-genie" id="piano-genie" style="color: inherit; text-decoration: none;">
+					<h3>Piano Genie</h3>
+				</a>
+				<p><a href="https://g.co/magenta/pianogenie">Piano Genie</a> is a VQ-VAE model that maps 8-button input to a full 88-key piano in real time.</p>
 				<p><strong>Demo Application:</strong> <a href="https://goo.gl/magenta/piano-genie">Piano Genie</a></p>
-				<h2 id="getting-started">Getting started</h2>
+				<a href="#getting-started" id="getting-started" style="color: inherit; text-decoration: none;">
+					<h2>Getting started</h2>
+				</a>
 				<p>There are several ways to get <code>magentamusic.js</code> in your JavaScript project,
 				either in the browser, or in Node:</p>
-				<h3 id="including-an-es5-bundle-in-a-script-tag">Including an ES5 bundle in a <a href="https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_JavaScript_within_a_webpage"><code>&lt;script&gt;</code> tag</a></h3>
+				<a href="#including-an-es5-bundle-in-a-a-hrefhttpsdevelopermozillaorgen-usdocslearnhtmlhowtouse_javascript_within_a_webpagecodeltscriptgtcode-taga" id="including-an-es5-bundle-in-a-a-hrefhttpsdevelopermozillaorgen-usdocslearnhtmlhowtouse_javascript_within_a_webpagecodeltscriptgtcode-taga" style="color: inherit; text-decoration: none;">
+					<h3>Including an ES5 bundle in a <a href="https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_JavaScript_within_a_webpage"><code>&lt;script&gt;</code> tag</a></h3>
+				</a>
 				<p>This has all the models and all the core library helpers all bundled into
 				one file. This is the simplest way to use Magenta.js.</p>
 				<p>To use this bundle, add the following code to an HTML file:</p>
@@ -130,7 +148,9 @@
 				and the code will run. Click the &quot;Play Trio&quot; button to hear 4-bar trios that are randomly generated by MusicVAE.</p>
 				<p>It&#39;s also easy to add the ability to download MIDI for generated outputs, which is demonstrated in <a href="https://goo.gl/magenta/simpletriodl">this example</a>.</p>
 				<p>See our <a href="./demos">demos</a> for example usage.</p>
-				<h3 id="using-a-smaller-es6-bundle-for-just-the-code-you-need">Using a smaller ES6 bundle for just the code you need</h3>
+				<a href="#using-a-smaller-es6-bundle-for-just-the-code-you-need" id="using-a-smaller-es6-bundle-for-just-the-code-you-need" style="color: inherit; text-decoration: none;">
+					<h3>Using a smaller ES6 bundle for just the code you need</h3>
+				</a>
 				<p>We have also split all the models and the core library into smaller ES6 bundles (not ESModules, unfortunately 😢), so that you can use a model independent of the rest of the
 					library. These bundles don&#39;t package <code>Tone.js</code> or <code>TensorFlow.js</code> (since
 				there would be a risk of downloading multiple copies on the same page). Here is an example:</p>
@@ -155,10 +175,12 @@
   });
 </span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
 <span class="hljs-tag">&lt;/<span class="hljs-name">html</span>&gt;</span></code></pre>
-				<h3 id="in-node">In Node</h3>
+				<a href="#in-node" id="in-node" style="color: inherit; text-decoration: none;">
+					<h3>In Node</h3>
+				</a>
 				<p>You can use <a href="https://www.npmjs.com/package/@magenta/music">MagentaMusic.js</a> in your project using <a href="https://yarnpkg.com/en/">yarn</a>
 					(by calling <code>yarn add @magenta/music</code>) <strong>or</strong> <a href="https://docs.npmjs.com/cli/npm">npm</a>
-				(by calling <code>npn install --save @magenta/music</code>).</p>
+				(by calling <code>npm install --save @magenta/music</code>).</p>
 				<p>The node-specific bundles (that don&#39;t transpile the CommonJS modules) are under
 				<code>@magenta/music/node</code>. For example:</p>
 				<pre><code class="language-js"><span class="hljs-keyword">const</span> model = <span class="hljs-built_in">require</span>(<span class="hljs-string">'@magenta/music/node/music_vae'</span>);
@@ -180,24 +202,36 @@ model
     player.resumeContext();
     player.start(samples[<span class="hljs-number">0</span>])
   });</code></pre>
-				<h4 id="example-commands">Example Commands</h4>
+				<a href="#example-commands" id="example-commands" style="color: inherit; text-decoration: none;">
+					<h4>Example Commands</h4>
+				</a>
 				<p><code>yarn install</code> to install dependencies.</p>
 				<p><code>yarn test</code> to run tests.</p>
 				<p><code>yarn build</code> to produce the different bundled versions.</p>
 				<p><code>yarn run-demos</code> to build and serve the demos, with live reload.</p>
 				<p><em>(Note: the default behavior is to build/watch all demos - specific demos can be built by passing a comma-separated list of specific demo names as follows: <code>yarn run-demos --demos=transcription,visualizer</code>)</em></p>
-				<h2 id="model-checkpoints">Model Checkpoints</h2>
+				<a href="#model-checkpoints" id="model-checkpoints" style="color: inherit; text-decoration: none;">
+					<h2>Model Checkpoints</h2>
+				</a>
 				<p>Since MagentaMusic.js does not support training models, you must use weights from a model trained with the Python-based <a href="https://github.com/tensorflow/magenta/tree/master/magenta/models">Magenta models</a>. We are also making available our own hosted pre-trained checkpoints.</p>
-				<h3 id="magenta-hosted-checkpoints">Magenta-Hosted Checkpoints</h3>
-				<p>Several pre-trained MusicRNN and MusicVAE checkpoints are hosted on GCS. The full list can is available in <a href="https://github.com/tensorflow/magenta-js/blob/master/music/checkpoints/README.md#table">this table</a> and can be accessed programmatically via a JSON index at <a href="https://goo.gl/magenta/js-checkpoints-json">https://goo.gl/magenta/js-checkpoints-json</a>.</p>
+				<a href="#magenta-hosted-checkpoints" id="magenta-hosted-checkpoints" style="color: inherit; text-decoration: none;">
+					<h3>Magenta-Hosted Checkpoints</h3>
+				</a>
+				<p>Several pre-trained MusicRNN and MusicVAE checkpoints are hosted on GCS. The full list is available in <a href="https://github.com/tensorflow/magenta-js/blob/master/music/checkpoints/README.md#table">this table</a> and can be accessed programmatically via a JSON index at <a href="https://goo.gl/magenta/js-checkpoints-json">https://goo.gl/magenta/js-checkpoints-json</a>.</p>
 				<p>More information is available at <a href="https://goo.gl/magenta/js-checkpoints">https://goo.gl/magenta/js-checkpoints</a>.</p>
-				<h3 id="your-own-checkpoints">Your Own Checkpoints</h3>
-				<h4 id="dumping-your-weights">Dumping Your Weights</h4>
+				<a href="#your-own-checkpoints" id="your-own-checkpoints" style="color: inherit; text-decoration: none;">
+					<h3>Your Own Checkpoints</h3>
+				</a>
+				<a href="#dumping-your-weights" id="dumping-your-weights" style="color: inherit; text-decoration: none;">
+					<h4>Dumping Your Weights</h4>
+				</a>
 				<p>To use your own checkpoints with one of our models, you must first convert the weights to the appropriate format using the provided <a href="https://github.com/tensorflow/magenta-js/blob/master/scripts/checkpoint_converter.py">checkpoint_converter</a> script.</p>
 				<p>This tool is dependent on <a href="https://github.com/tensorflow/tfjs-converter">tfjs-converter</a>, which you must first install using <code>pip install tensorflowjs</code>. Once installed, you can execute the script as follows:</p>
 				<pre><code class="language-bash">../scripts/checkpoint_converter.py /path/to/model.ckpt /path/to/output_dir</code></pre>
 				<p>There are additional flags available to reduce the size of the output by removing unused (training) variables or using weight quantization. Call <code>../scripts/checkpoint_converter.py -h</code> to list the available options.</p>
-				<h4 id="specifying-the-model-configuration">Specifying the Model Configuration</h4>
+				<a href="#specifying-the-model-configuration" id="specifying-the-model-configuration" style="color: inherit; text-decoration: none;">
+					<h4>Specifying the Model Configuration</h4>
+				</a>
 				<p>The model configuration should be placed in a JSON file named <code>config.json</code> in the same directory as your checkpoint. This configuration file contains all the information needed (besides the weights) to instantiate and run your model: the model type and data converter specification plus optional chord encoding, auxiliary inputs, and attention length. An example <code>config.json</code> file might look like:</p>
 				<pre><code class="language-json">{
   <span class="hljs-attr">"type"</span>: <span class="hljs-string">"MusicRNN"</span>,
@@ -211,7 +245,9 @@ model
   <span class="hljs-attr">"chordEncoder"</span>: <span class="hljs-string">"PitchChordEncoder"</span>
 }</code></pre>
 				<p>This configuration corresponds to a chord-conditioned melody MusicRNN model.</p>
-				<h2 id="soundfonts">SoundFonts</h2>
+				<a href="#soundfonts" id="soundfonts" style="color: inherit; text-decoration: none;">
+					<h2>SoundFonts</h2>
+				</a>
 				<p>There are several SoundFonts that you can use with the <code>mm.SoundFontPlayer</code>,
 				for more realistic sounding instruments:</p>
 				<table>
@@ -249,118 +285,118 @@ model
 						<a href="globals.html"><em>Globals</em></a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_coconet_.html">"coconet"</a>
+						<a href="modules/_coconet_.html">&quot;coconet&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_coconet_coconet_utils_.html">"coconet/coconet_<wbr>utils"</a>
+						<a href="modules/_coconet_coconet_utils_.html">&quot;coconet/coconet_<wbr>utils&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_coconet_model_.html">"coconet/model"</a>
+						<a href="modules/_coconet_model_.html">&quot;coconet/model&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_core_.html">"core"</a>
+						<a href="modules/_core_.html">&quot;core&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_core_audio_utils_.html">"core/audio_<wbr>utils"</a>
+						<a href="modules/_core_audio_utils_.html">&quot;core/audio_<wbr>utils&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_core_aux_inputs_.html">"core/aux_<wbr>inputs"</a>
+						<a href="modules/_core_aux_inputs_.html">&quot;core/aux_<wbr>inputs&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_core_chords_.html">"core/chords"</a>
+						<a href="modules/_core_chords_.html">&quot;core/chords&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_core_constants_.html">"core/constants"</a>
+						<a href="modules/_core_constants_.html">&quot;core/constants&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_core_data_.html">"core/data"</a>
+						<a href="modules/_core_data_.html">&quot;core/data&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_core_logging_.html">"core/logging"</a>
+						<a href="modules/_core_logging_.html">&quot;core/logging&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_core_metronome_.html">"core/metronome"</a>
+						<a href="modules/_core_metronome_.html">&quot;core/metronome&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_core_midi_io_.html">"core/midi_<wbr>io"</a>
+						<a href="modules/_core_midi_io_.html">&quot;core/midi_<wbr>io&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_core_performance_.html">"core/performance"</a>
+						<a href="modules/_core_performance_.html">&quot;core/performance&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_core_player_.html">"core/player"</a>
+						<a href="modules/_core_player_.html">&quot;core/player&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_core_recorder_.html">"core/recorder"</a>
+						<a href="modules/_core_recorder_.html">&quot;core/recorder&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_core_sequences_.html">"core/sequences"</a>
+						<a href="modules/_core_sequences_.html">&quot;core/sequences&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_core_soundfont_.html">"core/soundfont"</a>
+						<a href="modules/_core_soundfont_.html">&quot;core/soundfont&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_core_visualizer_.html">"core/visualizer"</a>
+						<a href="modules/_core_visualizer_.html">&quot;core/visualizer&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_gansynth_.html">"gansynth"</a>
+						<a href="modules/_gansynth_.html">&quot;gansynth&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_gansynth_audio_utils_.html">"gansynth/audio_<wbr>utils"</a>
+						<a href="modules/_gansynth_audio_utils_.html">&quot;gansynth/audio_<wbr>utils&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_gansynth_constants_.html">"gansynth/constants"</a>
+						<a href="modules/_gansynth_constants_.html">&quot;gansynth/constants&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_gansynth_custom_layers_.html">"gansynth/custom_<wbr>layers"</a>
+						<a href="modules/_gansynth_custom_layers_.html">&quot;gansynth/custom_<wbr>layers&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_gansynth_mel_sparse_coeffs_.html">"gansynth/mel_<wbr>sparse_<wbr>coeffs"</a>
+						<a href="modules/_gansynth_mel_sparse_coeffs_.html">&quot;gansynth/mel_<wbr>sparse_<wbr>coeffs&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_gansynth_model_.html">"gansynth/model"</a>
+						<a href="modules/_gansynth_model_.html">&quot;gansynth/model&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_music_rnn_.html">"music_<wbr>rnn"</a>
+						<a href="modules/_music_rnn_.html">&quot;music_<wbr>rnn&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_music_rnn_attention_.html">"music_<wbr>rnn/attention"</a>
+						<a href="modules/_music_rnn_attention_.html">&quot;music_<wbr>rnn/attention&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_music_rnn_model_.html">"music_<wbr>rnn/model"</a>
+						<a href="modules/_music_rnn_model_.html">&quot;music_<wbr>rnn/model&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_music_vae_.html">"music_<wbr>vae"</a>
+						<a href="modules/_music_vae_.html">&quot;music_<wbr>vae&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_music_vae_midi_me_.html">"music_<wbr>vae/midi_<wbr>me"</a>
+						<a href="modules/_music_vae_midi_me_.html">&quot;music_<wbr>vae/midi_<wbr>me&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_music_vae_model_.html">"music_<wbr>vae/model"</a>
+						<a href="modules/_music_vae_model_.html">&quot;music_<wbr>vae/model&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_piano_genie_.html">"piano_<wbr>genie"</a>
+						<a href="modules/_piano_genie_.html">&quot;piano_<wbr>genie&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_piano_genie_model_.html">"piano_<wbr>genie/model"</a>
+						<a href="modules/_piano_genie_model_.html">&quot;piano_<wbr>genie/model&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_protobuf_.html">"protobuf"</a>
+						<a href="modules/_protobuf_.html">&quot;protobuf&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_transcription_.html">"transcription"</a>
+						<a href="modules/_transcription_.html">&quot;transcription&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_transcription_audio_utils_.html">"transcription/audio_<wbr>utils"</a>
+						<a href="modules/_transcription_audio_utils_.html">&quot;transcription/audio_<wbr>utils&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_transcription_constants_.html">"transcription/constants"</a>
+						<a href="modules/_transcription_constants_.html">&quot;transcription/constants&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_transcription_model_.html">"transcription/model"</a>
+						<a href="modules/_transcription_model_.html">&quot;transcription/model&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="modules/_transcription_transcription_utils_.html">"transcription/transcription_<wbr>utils"</a>
+						<a href="modules/_transcription_transcription_utils_.html">&quot;transcription/transcription_<wbr>utils&quot;</a>
 					</li>
 				</ul>
 			</nav>
@@ -383,6 +419,7 @@ model
 				<li class="tsd-kind-function tsd-has-type-parameter"><span class="tsd-kind-icon">Function with type parameter</span></li>
 				<li class="tsd-kind-index-signature"><span class="tsd-kind-icon">Index signature</span></li>
 				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
+				<li class="tsd-kind-type-alias tsd-has-type-parameter"><span class="tsd-kind-icon">Type alias with type parameter</span></li>
 			</ul>
 			<ul class="tsd-legend">
 				<li class="tsd-kind-enum"><span class="tsd-kind-icon">Enumeration</span></li>
@@ -431,10 +468,10 @@ model
 	</div>
 </footer>
 <div class="container tsd-generator">
-	<p>Generated using <a href="http://typedoc.org/" target="_blank">TypeDoc</a></p>
+	<p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p>
 </div>
 <div class="overlay"></div>
 <script src="assets/js/main.js"></script>
 <script>if (location.protocol == 'file:') document.write('<script src="assets/js/search.js"><' + '/script>');</script>
 </body>
-</html>
+</html><script> const toc = "core coconet music_rnn music_vae piano_genie protobuf transcription gansynth".split(' '); const links = document.querySelectorAll('.tsd-kind-external-module'); for (let i = 0; i < links.length; i++) { const name = links[i].textContent.trim().replace(/"/g, ''); if (toc.indexOf(name) === -1) { links[i].parentNode.removeChild(links[i]); } } </script>
