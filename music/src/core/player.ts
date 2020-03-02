@@ -143,8 +143,10 @@ export abstract class BasePlayer {
    */
 
   start(seq: INoteSequence, qpm?: number): Promise<void> {
-    if (this.isPlaying()) {
-      throw new Error(`Cannot start playback while "${this.getPlayState()}".`);
+    if (this.getPlayState() === 'started') {
+      throw new Error('Cannot start playback; player is already playing.');
+    } else if (this.getPlayState() === 'paused') {
+      throw new Error('Cannot `start()` a paused player; use `resume()`.');
     }
     if (Tone.Transport.state !== 'stopped') {
       throw new Error(
@@ -255,9 +257,9 @@ export abstract class BasePlayer {
   }
 
   /**
-   * Returns true iff the player is completely stopped. This will only be
-   * false after calling stop(), and will be true after calling
-   * start(), pause() or unpause().
+   * Returns false iff the player is completely stopped. This will only be
+   * false after creating the player or after calling stop(), and will be true
+   * after calling start(), pause() or resume().
    */
   isPlaying() {
     return !!this.currentPart;
