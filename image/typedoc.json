@@ -1,0 +1,11 @@
+{
+  "mode": "file",
+  "tsconfig": "tsconfig.json",
+  "includeVersion": true,
+  "excludeExternals": true,
+  "excludeNotExported": true,
+  "excludePrivate": true,
+  "exclude": "**/*+(index|test|lib).ts",
+  "name": "@magenta/image",
+  "readme": "./README.md"
+}

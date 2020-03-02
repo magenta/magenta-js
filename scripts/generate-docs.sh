@@ -25,6 +25,7 @@
 set -euo pipefail
 
 PKG_NAME=$1
+ORG_NAME="tensorflow"
 
 # Directory/branch variables.
 tmpDir=/tmp/${PKG_NAME}_docs
@@ -33,31 +34,67 @@ currDir=$(pwd)
 baseDir=$(git rev-parse --show-toplevel)
 
 # Generation variables.
-mode="modules"
-tsconfig="tsconfig.json"
-urlPrefix="https://github.com/tensorflow/magenta-js/tree/master/${PKG_NAME}/src/"
+urlPrefix="https://github.com/${ORG_NAME}/magenta-js/tree/master/${PKG_NAME}/src/"
+keepAfter="/src/"
+scriptToFixTheToc=""
+
 if [ $PKG_NAME == "image" ]
 then
-  mode="file"
   urlPrefix="$urlPrefix/arbitrary_stylization/"
+  keepAfter="/arbitrary_stylization/"
 elif [ $PKG_NAME == "music" ]
 then
-  tsconfig="tsconfig.es5.json"
+  # The root index.ts file has a bunch of "export * from './foo';" lines.
+  # Parse those lines into a space separated list of names. It's ok that
+  # they're space separated, we'll split them in JS, this is all a horror anyway.
+  exports=`sed -n "s/export \* from '.\/\(.*\)';/\1/p" $currDir/src/index.ts`
+  scriptToFixTheToc="<script> \
+const toc = \"$exports\".split(' '); \
+const links = document.querySelectorAll('.tsd-kind-external-module'); \
+for (let i = 0; i < links.length; i++) { \
+  const name = links[i].textContent.trim().replace(/\"/g, ''); \
+  if (toc.indexOf(name) === -1) { \
+    links[i].parentNode.removeChild(links[i]); \
+  } \
+} \
+</script>"
 fi
 
 # Generate the docs.
 rm -rf $tmpDir
-npx typedoc --tsconfig $tsconfig --sourcefile-url-prefix $urlPrefix --out $tmpDir  --mode $mode --excludePrivate --exclude '**/*+(index|test|lib).ts' --excludeExternals src
+npx typedoc --options typedoc.json src --out $tmpDir
 
-# Fix any leaked local paths in the docs.
-# See https://github.com/TypeStrong/typedoc/issues/800.
-cd $tmpDir/classes/
+###
+# Here begin the different hacks to fix the docs because typedoc has a lot of bugs.
+###
 
-for path in ./*.html; do
+# Typedoc generates documentation for _all_ files, not just the ones
+# actually exported in the library, so insert a script to fix the index.html.
+# see https://github.com/TypeStrong/typedoc/issues/639
+echo $scriptToFixTheToc >> $tmpDir/index.html
+
+# Typedoc has also generated a bunch of 'Defined in <a href="https://github.com/some-user/magenta-js/blob/some-hash/music/src/..."''
+# links that we need to change to 'Defined in <a href="${urlPrefix}/...' links.
+# We used to be using typedoc-plugin-sourcefile-url to do this, but it stopped
+# working at some point and for loops work well enough.
+allFiles=$(find $tmpDir -type f -name '*.html')
+for path in $allFiles; do
   filename=$(basename $path .html)
 
+  # Fix "Defined in" links.
+  if grep -Fq "Defined in" $path; then
+    #echo "Fixing Defined in: $path"
+
+    search="href=\".*${keepAfter}\(.*\)\""
+    replace="href=\"${urlPrefix}\1\""
+
+    sed -i "" "s%${search}%${replace}%g" $path
+  fi
+
+  # Fix any leaked local paths in the docs.
+  # See https://github.com/TypeStrong/typedoc/issues/800.
   if grep -Fq "Users" $path; then
-    echo "Fixing local paths in: $path"
+    #echo "Fixing local paths in: $path"
 
     path1=`expr "$filename" : '_\(.*\)_.*_'`  # core
     path2=`expr "$filename" : '_.*_\(.*\)_.*'`  # chords
@@ -82,6 +119,7 @@ done
 cd $currDir
 yarn build-demos
 mkdir -p $tmpDir/demos
+
 # Or with true to avoid failing on a non-existent file extension.
 cp demos/*.{js,html,mid,css} $tmpDir/demos || true
 
@@ -92,14 +130,14 @@ git reset --hard upstream/gh-pages
 git push -f  # overwrite any local changes
 
 cd $baseDir
-git rm -fr $PKG_NAME
+git rm -fr $PKG_NAME --quiet
 
 # Use rsync instead of cp so that we don't clobber untracked files.
 rsync -a $tmpDir/ $PKG_NAME/
 git add $PKG_NAME
 currDate=$(date)
-git commit -m "Updating $PKG_NAME docs: $currDate"
-git push --set-upstream origin gh-pages
+git commit -m "📖 Updating $PKG_NAME docs: $currDate"
+git push --set-upstream origin gh-pages --quiet
 
 # Switch back to original branch.
 git checkout $currBranch

@@ -1,0 +1,11 @@
+{
+  "mode": "modules",
+  "tsconfig": "tsconfig.es6.json",
+  "includeVersion": true,
+  "excludeExternals": true,
+  "excludeNotExported": true,
+  "excludePrivate": true,
+  "exclude": "**/*+(index|test|lib).ts",
+  "name": "@magenta/music",
+  "readme": "./README.md"
+}
