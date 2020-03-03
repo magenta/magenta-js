@@ -23,6 +23,8 @@ import {INoteSequence, NoteSequence} from '../protobuf/index';
 import {logging, sequences} from '.';
 import {MAX_MIDI_PITCH, MIN_MIDI_PITCH} from './constants';
 
+const MIN_NOTE_LENGTH = 1;
+
 /**
  * An interface for providing configurable properties to a Visualizer.
  * @param noteHeight The vertical height in pixels of a note.
@@ -171,8 +173,9 @@ export abstract class BaseVisualizer {
     // Size of this note.
     const duration = this.getNoteEndTime(note) - this.getNoteStartTime(note);
     const x = (this.getNoteStartTime(note) * this.config.pixelsPerTimeStep);
-    const w =
-        this.config.pixelsPerTimeStep * duration - this.config.noteSpacing;
+    const w = Math.max(
+        this.config.pixelsPerTimeStep * duration - this.config.noteSpacing,
+        MIN_NOTE_LENGTH);
 
     // The svg' y=0 is at the top, but a smaller pitch is actually
     // lower, so we're kind of painting backwards.
@@ -344,6 +347,7 @@ type DataAttribute = [string, any];  // tslint:disable-line:no-any
  * Abstract base class for a `NoteSequence` visualizer.
  */
 export abstract class BaseSVGVisualizer extends BaseVisualizer {
+
   // This is the element used for drawing. You must set this property in
   // implementations of this class.
   protected svg: SVGSVGElement;
@@ -763,7 +767,8 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
           'sized correctly.');
     }
 
-    const height = endTime * this.config.pixelsPerTimeStep;
+    const height = Math.max(endTime * this.config.pixelsPerTimeStep,
+                            MIN_NOTE_LENGTH);
     return {width, height};
   }
 
@@ -780,7 +785,9 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
     const len = this.getNoteEndTime(note) - this.getNoteStartTime(note);
     const x = Number(rect.getAttribute('x'));
     const w = Number(rect.getAttribute('width'));
-    const h = this.config.pixelsPerTimeStep * len - this.config.noteSpacing;
+    const h = Math.max(
+        this.config.pixelsPerTimeStep * len - this.config.noteSpacing,
+        MIN_NOTE_LENGTH);
 
     // The svg' y=0 is at the top, but a smaller pitch is actually
     // lower, so we're kind of painting backwards.
