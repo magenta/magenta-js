@@ -23,10 +23,11 @@ import {INoteSequence, NoteSequence} from '../protobuf/index';
 import {logging, sequences} from '.';
 import {MAX_MIDI_PITCH, MIN_MIDI_PITCH} from './constants';
 
+const MIN_NOTE_LENGTH = 1;
+
 /**
  * An interface for providing configurable properties to a Visualizer.
  * @param noteHeight The vertical height in pixels of a note.
- * @param minNoteLength The minimum length (width) in pixels of a note.
  * @param noteSpacing Number of horizontal pixels between each note.
  * @param pixelsPerTimeStep The horizontal scale at which notes are drawn. The
  * bigger this value, the "wider" a note looks.
@@ -40,7 +41,6 @@ import {MAX_MIDI_PITCH, MIN_MIDI_PITCH} from './constants';
  */
 export interface VisualizerConfig {
   noteHeight?: number;
-  minNoteLength?: number;
   noteSpacing?: number;
   pixelsPerTimeStep?: number;
   noteRGB?: string;
@@ -94,7 +94,6 @@ export abstract class BaseVisualizer {
     const defaultPixelsPerTimeStep = 30;
     this.config = {
       noteHeight: config.noteHeight || 6,
-      minNoteLength: config.minNoteLength || 1,
       noteSpacing: config.noteSpacing || 1,
       pixelsPerTimeStep: config.pixelsPerTimeStep || defaultPixelsPerTimeStep,
       noteRGB: config.noteRGB || '8, 41, 64',
@@ -176,7 +175,7 @@ export abstract class BaseVisualizer {
     const x = (this.getNoteStartTime(note) * this.config.pixelsPerTimeStep);
     const w = Math.max(
         this.config.pixelsPerTimeStep * duration - this.config.noteSpacing,
-        this.config.minNoteLength);
+        MIN_NOTE_LENGTH);
 
     // The svg' y=0 is at the top, but a smaller pitch is actually
     // lower, so we're kind of painting backwards.
@@ -348,6 +347,7 @@ type DataAttribute = [string, any];  // tslint:disable-line:no-any
  * Abstract base class for a `NoteSequence` visualizer.
  */
 export abstract class BaseSVGVisualizer extends BaseVisualizer {
+
   // This is the element used for drawing. You must set this property in
   // implementations of this class.
   protected svg: SVGSVGElement;
@@ -768,7 +768,7 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
     }
 
     const height = Math.max(endTime * this.config.pixelsPerTimeStep,
-                            this.config.minNoteLength);
+                            MIN_NOTE_LENGTH);
     return {width, height};
   }
 
@@ -787,7 +787,7 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
     const w = Number(rect.getAttribute('width'));
     const h = Math.max(
         this.config.pixelsPerTimeStep * len - this.config.noteSpacing,
-        this.config.minNoteLength);
+        MIN_NOTE_LENGTH);
 
     // The svg' y=0 is at the top, but a smaller pitch is actually
     // lower, so we're kind of painting backwards.
