@@ -181,7 +181,14 @@ export function sequenceProtoToMidi(ns: INoteSequence) {
   tracks.forEach((notes, key) => {
     const [program, isDrum] = JSON.parse(key).slice(1);
     const track = midi.addTrack();
-    track.channel = isDrum ? constants.DRUM_CHANNEL : constants.DEFAULT_CHANNEL;
+    // Cycle through non-drum channels. This is what pretty_midi does and it
+    // seems to matter for many MIDI sequencers.
+    if (isDrum) {
+      track.channel = constants.DRUM_CHANNEL;
+    } else {
+      track.channel = constants.NON_DRUM_CHANNELS[
+        (midi.tracks.length - 1) % constants.NON_DRUM_CHANNELS.length];
+    }
     track.instrument.number = program;
     for (const note of notes) {
       const velocity = (note.velocity === undefined) ?
