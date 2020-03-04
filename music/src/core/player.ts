@@ -139,9 +139,20 @@ export abstract class BasePlayer {
    * specified, will use either the qpm specified in the sequence or the
    * default of 120. Only valid for quantized sequences.
    * @returns a Promise that resolves when playback is complete.
+   * @throws {Error} If this or a different player is currently playing.
    */
 
   start(seq: INoteSequence, qpm?: number): Promise<void> {
+    if (this.getPlayState() === 'started') {
+      throw new Error('Cannot start playback; player is already playing.');
+    } else if (this.getPlayState() === 'paused') {
+      throw new Error('Cannot `start()` a paused player; use `resume()`.');
+    }
+    if (Tone.Transport.state !== 'stopped') {
+      throw new Error(
+        'Cannot start playback while `Tone.Transport` is in use.');
+    }
+
     this.resumeContext();
     const isQuantized = sequences.isQuantizedSequence(seq);
     if (this.playClick && isQuantized) {
@@ -201,7 +212,7 @@ export abstract class BasePlayer {
    * Stop playing the currently playing sequence right away.
    */
   stop() {
-    if (this.currentPart) {
+    if (this.isPlaying()) {
       this.currentPart.stop();
       Tone.Transport.stop();
       this.currentPart = null;
@@ -212,32 +223,43 @@ export abstract class BasePlayer {
   }
 
   /**
-   * Pause playing the currently playing sequence right away. Call unpause()
+   * Pause playing the currently playing sequence right away. Call resume()
    * to resume.
+   * @throws {Error} If the player is stopped.
    */
   pause() {
+    if (!this.isPlaying()) {
+      throw new Error('Cannot pause playback while the player is stopped.');
+    }
     Tone.Transport.pause();
   }
 
   /**
-   * Pause playing the currently playing sequence right away. Call resume()
-   * to resume playing the sequence.
+   * Resume playing the sequence after pause().
+   * @throws {Error} If the player is not paused.
    */
   resume() {
+    if (this.getPlayState() !== 'paused') {
+      throw new Error(`Cannot resume playback while "${this.getPlayState()}".`);
+    }
     Tone.Transport.start();
   }
 
   /**
    * Seek to a number of seconds in the NoteSequence.
+   * @throws {Error} If the player is stopped.
    */
   seekTo(seconds: number) {
+    if (!this.isPlaying()) {
+      throw new Error('Cannot seek while the player is stopped.');
+    }
     Tone.Transport.seconds = seconds;
   }
 
   /**
-   * Returns true iff the player is completely stopped. This will only be
-   * false after calling stop(), and will be true after calling
-   * start(), pause() or unpause().
+   * Returns false iff the player is completely stopped. This will only be
+   * false after creating the player or after calling stop(), and will be true
+   * after calling start(), pause() or resume().
    */
   isPlaying() {
     return !!this.currentPart;
@@ -248,7 +270,8 @@ export abstract class BasePlayer {
    * "stopped", or "paused".
    */
   getPlayState() {
-    return Tone.Transport.state;
+    // Return "stopped" if some other player is playing.
+    return this.isPlaying() ? Tone.Transport.state : 'stopped';
   }
 }
 
