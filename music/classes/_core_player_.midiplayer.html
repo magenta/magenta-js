@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>MIDIPlayer | @magenta/music - v1.13.0</title>
+	<title>MIDIPlayer | @magenta/music - v1.14.0</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">@magenta/music - v1.13.0</a>
+					<a href="../index.html" class="title">@magenta/music - v1.14.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -179,7 +179,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L651">src/core/player.ts:651</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L674">src/core/player.ts:674</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -213,7 +213,7 @@
 					<div class="tsd-signature tsd-kind-icon">available<wbr>Outputs<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">MIDIOutput</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> = []</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L649">src/core/player.ts:649</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L672">src/core/player.ts:672</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -256,7 +256,7 @@
 					<div class="tsd-signature tsd-kind-icon">output<wbr>Channel<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L648">src/core/player.ts:648</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L671">src/core/player.ts:671</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -266,7 +266,7 @@
 					<div class="tsd-signature tsd-kind-icon">outputs<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">MIDIOutput</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> = []</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L647">src/core/player.ts:647</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L670">src/core/player.ts:670</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -306,7 +306,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#getplaystate">getPlayState</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L250">src/core/player.ts:250</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L272">src/core/player.ts:272</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -330,14 +330,14 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#isplaying">isPlaying</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L242">src/core/player.ts:242</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L264">src/core/player.ts:264</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Returns true iff the player is completely stopped. This will only be
-										false after calling stop(), and will be true after calling
-									start(), pause() or unpause().</p>
+									<p>Returns false iff the player is completely stopped. This will only be
+										false after creating the player or after calling stop(), and will be true
+									after calling start(), pause() or resume().</p>
 								</div>
 							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
@@ -355,14 +355,19 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#pause">pause</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L218">src/core/player.ts:218</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L230">src/core/player.ts:230</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Pause playing the currently playing sequence right away. Call unpause()
+									<p>Pause playing the currently playing sequence right away. Call resume()
 									to resume.</p>
 								</div>
+								<dl class="tsd-comment-tags">
+									<dt>throws</dt>
+									<dd><p>{Error} If the player is stopped.</p>
+									</dd>
+								</dl>
 							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 						</li>
@@ -379,7 +384,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#playnote">playNote</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L692">src/core/player.ts:692</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L715">src/core/player.ts:715</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -405,7 +410,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L720">src/core/player.ts:720</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L743">src/core/player.ts:743</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -428,7 +433,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L734">src/core/player.ts:734</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L757">src/core/player.ts:757</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -451,7 +456,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L667">src/core/player.ts:667</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L690">src/core/player.ts:690</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -474,14 +479,18 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#resume">resume</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L226">src/core/player.ts:226</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L241">src/core/player.ts:241</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Pause playing the currently playing sequence right away. Call resume()
-									to resume playing the sequence.</p>
+									<p>Resume playing the sequence after pause().</p>
 								</div>
+								<dl class="tsd-comment-tags">
+									<dt>throws</dt>
+									<dd><p>{Error} If the player is not paused.</p>
+									</dd>
+								</dl>
 							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 						</li>
@@ -525,13 +534,18 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#seekto">seekTo</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L233">src/core/player.ts:233</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L252">src/core/player.ts:252</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
 									<p>Seek to a number of seconds in the NoteSequence.</p>
 								</div>
+								<dl class="tsd-comment-tags">
+									<dt>throws</dt>
+									<dd><p>{Error} If the player is stopped.</p>
+									</dd>
+								</dl>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
@@ -586,7 +600,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#start">start</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L144">src/core/player.ts:144</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L145">src/core/player.ts:145</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -594,6 +608,11 @@
 									<p>Starts playing a <code>NoteSequence</code> (either quantized or unquantized), and
 									returns a Promise that resolves when it is done playing.</p>
 								</div>
+								<dl class="tsd-comment-tags">
+									<dt>throws</dt>
+									<dd><p>{Error} If this or a different player is currently playing.</p>
+									</dd>
+								</dl>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
@@ -628,7 +647,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_core_player_.baseplayer.html">BasePlayer</a>.<a href="_core_player_.baseplayer.html#stop">stop</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L203">src/core/player.ts:203</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/player.ts#L214">src/core/player.ts:214</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
