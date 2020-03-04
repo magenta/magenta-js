@@ -21,7 +21,7 @@
 /**
  * Imports
  */
-import * as midiconvert from 'midiconvert';
+import { Midi } from '@tonejs/midi';
 
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
@@ -35,25 +35,25 @@ export class MidiConversionError extends Error {
   }
 }
 
-export function midiToSequenceProto(midi: string): NoteSequence {
-  const parsedMidi = midiconvert.parse(midi);
+export function midiToSequenceProto(
+    midi: ArrayBuffer | Uint8Array): NoteSequence {
+  const parsedMidi = new Midi(midi);
   const ns = NoteSequence.create();
 
-  ns.ticksPerQuarter = parsedMidi.header.PPQ;
+  ns.ticksPerQuarter = parsedMidi.header.ppq;
   ns.sourceInfo = NoteSequence.SourceInfo.create({
     parser: NoteSequence.SourceInfo.Parser.TONEJS_MIDI_CONVERT,
     encodingType: NoteSequence.SourceInfo.EncodingType.MIDI
   });
 
-  // TODO(fjord): When MidiConvert supports multiple time signatures, update
-  // accordingly.
-  if (parsedMidi.header.timeSignature) {
+  for (const ts of parsedMidi.header.timeSignatures) {
     ns.timeSignatures.push(NoteSequence.TimeSignature.create({
-      time: 0,
-      numerator: parsedMidi.header.timeSignature[0],
-      denominator: parsedMidi.header.timeSignature[1],
+      time: parsedMidi.header.ticksToSeconds(ts.ticks),
+      numerator: ts.timeSignature[0],
+      denominator: ts.timeSignature[1],
     }));
-  } else {
+  }
+  if (!ns.timeSignatures.length) {
     // Assume a default time signature of 4/4.
     ns.timeSignatures.push(NoteSequence.TimeSignature.create({
       time: 0,
@@ -62,19 +62,21 @@ export function midiToSequenceProto(midi: string): NoteSequence {
     }));
   }
 
-  // TODO(fjord): Add key signatures when MidiConvert supports them.
+  // TODO(fjord): Add key signatures.
 
-  // TODO(fjord): When MidiConvert supports multiple tempos, update
-  // accordingly.
-  ns.tempos.push(
-      NoteSequence.Tempo.create({time: 0, qpm: parsedMidi.header.bpm}));
+  for (const tempo of parsedMidi.header.tempos) {
+    ns.tempos.push(NoteSequence.Tempo.create({
+      time: tempo.time,
+      qpm: tempo.bpm,
+    }));
+  }
 
   // We want a unique instrument number for each combination of track and
   // program number.
   let instrumentNumber = -1;
   for (const track of parsedMidi.tracks) {
     // TODO(fjord): support changing programs within a track when
-    // MidiConvert does. When that happens, we'll need a map to keep track
+    // Tonejs/Midi does. When that happens, we'll need a map to keep track
     // of which program number within a track corresponds to what instrument
     // number, similar to how pretty_midi works.
     if (track.notes.length > 0) {
@@ -88,18 +90,20 @@ export function midiToSequenceProto(midi: string): NoteSequence {
 
       ns.notes.push(NoteSequence.Note.create({
         instrument: instrumentNumber,
-        program: track.instrumentNumber,
+        program: track.instrument.number,
         startTime,
         endTime,
         pitch: note.midi,
         velocity: Math.floor(note.velocity * constants.MIDI_VELOCITIES),
-        isDrum: track.isPercussion
+        isDrum: track.instrument.percussion
       }));
 
       if (endTime > ns.totalTime) {
         ns.totalTime = endTime;
       }
     }
+
+    // TODO: Support pitch bends & control changes.
   }
 
   return ns;
@@ -120,78 +124,88 @@ export function sequenceProtoToMidi(ns: INoteSequence) {
     ns = sequences.unquantizeSequence(ns);
   }
 
-  const isZeroOrUndefined = (t: number) => (t === 0 || t === undefined);
-
-  if (!ns.tempos || ns.tempos.length === 0) {
-    ns.tempos = [{time: 0, qpm: constants.DEFAULT_QUARTERS_PER_MINUTE}];
-  }
-  if (!ns.timeSignatures || ns.timeSignatures.length === 0) {
-    ns.timeSignatures = [{time: 0, numerator: 4, denominator: 4}];
-  }
-
-  if (ns.tempos.length !== 1 || !isZeroOrUndefined(ns.tempos[0].time)) {
-    throw new MidiConversionError(
-        'NoteSequence must have exactly 1 tempo at time 0');
-  }
-  if (ns.timeSignatures.length !== 1 ||
-      !isZeroOrUndefined(ns.timeSignatures[0].time)) {
-    throw new MidiConversionError(
-        'NoteSequence must have exactly 1 time signature at time 0');
-  }
-  const json = {
+  const midi = new Midi();
+  midi.fromJSON({
     header: {
-      bpm: ns.tempos[0].qpm,
-      PPQ: ns.ticksPerQuarter ? ns.ticksPerQuarter :
-                                constants.DEFAULT_TICKS_PER_QUARTER,
-      timeSignature:
-          [ns.timeSignatures[0].numerator, ns.timeSignatures[0].denominator]
+      name: '',
+      ppq: ns.ticksPerQuarter || constants.DEFAULT_TICKS_PER_QUARTER,
+      tempos: [],
+      timeSignatures: [],
+      keySignatures: [],
+      meta: []
     },
-    tracks: [] as Array<{}>
-  };
+    tracks: []
+  });
 
-  const tracks = new Map<number, NoteSequence.INote[]>();
+  // Add tempo changes. We need to add them in chronological order, so that we
+  // can calculate their times correctly.
+  const tempos = Array.from(ns.tempos || []) as NoteSequence.ITempo[];
+  if (tempos.length === 0) {
+    tempos.push({time: 0, qpm: constants.DEFAULT_QUARTERS_PER_MINUTE});
+  }
+  tempos.sort((a, b) => a.time - b.time);
+  for (const tempo of tempos) {
+    midi.header.tempos.push({ticks: midi.header.secondsToTicks(tempo.time),
+                             bpm: tempo.qpm});
+    midi.header.update();  // Update the tempo times for secondsToTicks to work.
+  }
+
+  // Add time signatures.
+  if (!ns.timeSignatures || ns.timeSignatures.length === 0) {
+    midi.header.timeSignatures.push({ticks: 0, timeSignature: [4, 4]});
+  } else {
+    for (const ts of ns.timeSignatures) {
+      midi.header.timeSignatures.push({
+        ticks: midi.header.secondsToTicks(ts.time),
+        timeSignature: [ts.numerator, ts.denominator]
+      });
+    }
+  }
+  midi.header.update();
+
+  // TODO: Add key signatures.
+
+  // Add tracks.
+  const tracks = new Map<string, NoteSequence.INote[]>();
   for (const note of ns.notes) {
     const instrument = note.instrument ? note.instrument : 0;
-    if (!tracks.has(instrument)) {
-      tracks.set(instrument, []);
+    const program = (note.program === undefined) ? constants.DEFAULT_PROGRAM :
+                                                   note.program;
+    const isDrum = !!note.isDrum;
+    const key = JSON.stringify([instrument, program, isDrum]);
+    if (!tracks.has(key)) {
+      tracks.set(key, []);
     }
-    tracks.get(instrument).push(note);
+    tracks.get(key).push(note);
   }
-  const instruments = Array.from(tracks.keys()).sort((a, b) => a - b);
-  for (let i = 0; i < instruments.length; i++) {
-    if (i !== instruments[i]) {
-      throw new MidiConversionError(
-          'Instrument list must be continuous and start at 0');
+  tracks.forEach((notes, key) => {
+    const [program, isDrum] = JSON.parse(key).slice(1);
+    const track = midi.addTrack();
+    // Cycle through non-drum channels. This is what pretty_midi does and it
+    // seems to matter for many MIDI sequencers.
+    if (isDrum) {
+      track.channel = constants.DRUM_CHANNEL;
+    } else {
+      track.channel = constants.NON_DRUM_CHANNELS[
+        (midi.tracks.length - 1) % constants.NON_DRUM_CHANNELS.length];
     }
-
-    const notes = tracks.get(i);
-    const track = {
-      id: i,
-      notes: [] as Array<{}>,
-      isPercussion: (notes[0].isDrum === undefined) ? false : notes[0].isDrum,
-      channelNumber: notes[0].isDrum ? constants.DRUM_CHANNEL :
-                                       constants.DEFAULT_CHANNEL,
-      instrumentNumber: (notes[0].program === undefined) ?
-          constants.DEFAULT_PROGRAM :
-          notes[0].program
-    };
-
-    track.notes = notes.map(note => {
+    track.instrument.number = program;
+    for (const note of notes) {
       const velocity = (note.velocity === undefined) ?
           constants.DEFAULT_VELOCITY :
           note.velocity;
-      return {
+      track.addNote({
         midi: note.pitch,
         time: note.startTime,
         duration: note.endTime - note.startTime,
         velocity: (velocity as number + 1) / constants.MIDI_VELOCITIES
-      };
-    });
+      });
+    }
+  });
 
-    json['tracks'].push(track);
-  }
+  // TODO: Support pitch bends & control changes.
 
-  return new Uint8Array(midiconvert.fromJSON(json).toArray());
+  return midi.toArray();
 }
 
 /**
@@ -224,14 +238,14 @@ export function blobToNoteSequence(blob: Blob): Promise<NoteSequence> {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const ns = midiToSequenceProto(reader.result as string);
+        const ns = midiToSequenceProto(reader.result as ArrayBuffer);
         resolve(ns);
       } catch (error) {
         reject(error);
       }
     };
     reader.onerror = (e) => reject(e);
-    reader.readAsBinaryString(blob);
+    reader.readAsArrayBuffer(blob);
   });
 }
 
