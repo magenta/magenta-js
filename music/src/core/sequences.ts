@@ -656,15 +656,16 @@ function trimHelper(
           (truncateEndNotes || n[endKey] <= end));
 
   // Shift the sequence to start at 0.
+  result[totalKey] -= start;
   for (let i = 0; i < result.notes.length; i++) {
     result.notes[i][startKey] -= start;
     result.notes[i][endKey] -= start;
 
     if (truncateEndNotes) {
-      result.notes[i][endKey] = Math.min(result.notes[i][endKey], end);
+      result.notes[i][endKey] = Math.min(result.notes[i][endKey],
+                                         result[totalKey]);
     }
   }
-  result[totalKey] = Math.min(ns[totalKey] - start, end);
   return result;
 }
 
