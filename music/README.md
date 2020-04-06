@@ -32,8 +32,7 @@ Complete API documentation is available [here](https://magenta.github.io/magenta
 ## Getting started
 If you want to get hands-on with Magenta, we've put together a small
 [interactive tutorial](https://hello-magenta.glitch.me/) that takes you through
-generating a small melody in the browser using a Machine Learning model. We also
-have a
+generating a small melody in the browser using a Machine Learning model.
 
 Here are some examples of applications that have been built with `@magenta/music`. A
 more complete list is available on the [Magenta site](https://magenta.tensorflow.org/demos).
@@ -133,7 +132,7 @@ missing, or feel free to submit a Pull Request!
 
 ### Piano Transcription w/ Onsets and Frames
 
-[OnsetsAndFrames](https://magenta.github.io/magenta-js/music/classes/_transcription_model_.onsetsandframes.html) implements Magenta's [piano transcription model](g.co/magenta/onsets-frames) for converting raw audio to MIDI in the browser. While it is somewhat flexible, it works best on solo piano recordings. The algorithm takes half the duration of audio to run on most browsers, but due to a [Webkit bug](https://github.com/WebKit/webkit/blob/4a4870b75b95a836b516163d45a5cbd6f5222562/Source/WebCore/Modules/webaudio/AudioContext.cpp#L109), audio resampling will make this it significantly slower on Safari.
+[OnsetsAndFrames](https://magenta.github.io/magenta-js/music/classes/_transcription_model_.onsetsandframes.html) implements Magenta's [piano transcription model](g.co/magenta/onsets-frames) for converting raw audio to MIDI in the browser. While it is somewhat flexible, it works best on solo piano recordings. The algorithm takes half the duration of audio to run on most browsers, but due to a [Webkit bug](https://github.com/WebKit/webkit/blob/4a4870b75b95a836b516163d45a5cbd6f5222562/Source/WebCore/Modules/webaudio/AudioContext.cpp#L109), audio resampling will make this significantly slower on Safari.
 
 **⭐️Demo:** [Piano Scribe](https://piano-scribe.glitch.me)
 
@@ -167,7 +166,8 @@ with very little user data.
 **⭐️Demo:** [GANHarp](https://ganharp.ctpt.co/) by [Counterpoint](https://ctpt.co/).
 
 ## Model Checkpoints
-Since `@magenta/music` does not support training these models in the browser, you must use weights from a model trained with the Python-based [Magenta models][magenta-models]. We are also making available our own hosted pre-trained checkpoints.
+Most `@magenta/music` models (with the exception of MidiMe) do not support training in the browser
+(because they require a large amount of data, which would take an incredibly long time), and they use weights from a model trained with the Python-based [Magenta models][magenta-models]. We are also making available our own hosted pre-trained checkpoints.
 
 ### Pre-trained hosted checkpoints
 Several pre-trained checkpoints for all of our models are available and hosted on GCS. The full list is available in [this table](https://github.com/tensorflow/magenta-js/blob/master/music/checkpoints/README.md#table) and can be accessed programmatically via a JSON index [here](https://goo.gl/magenta/js-checkpoints-json).
@@ -272,7 +272,7 @@ self.onmessage = async (e) => {
 
 ### Use with a ServiceWorker
 A [ServiceWorker](https://developers.google.com/web/fundamentals/primers/service-workers) is a script that your browser runs in the background, separate from a web page. In particular, ServiceWorkers allow
-you to provide offline interactions, by controlling what data your browser caches (like soundfont files,
+you to provide offline interactions by controlling what data your browser caches (like soundfont files,
 model checkpoint chunks). For a full example, check out the [Piano Genie PWA](https://piano-genie-pwa.glitch.me/) code, that lets you install Piano Genie as a PWA app, and use it entirely offline.
 
 This is also extremely useful if you want to test a very large model checkpoint, but
