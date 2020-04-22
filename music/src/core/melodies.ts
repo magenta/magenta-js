@@ -1,7 +1,5 @@
 /**
- * Module containing melody control signals, which can be extracted from a
- * melody and can be modeled directly or used as control signals for melody
- * generation.
+ * Module containing functions for converting to and from quantized melodies.
  *
  * @license
  * Copyright 2020 Google Inc. All Rights Reserved.
@@ -100,6 +98,13 @@ export class Melody {
     return new Melody(events, minPitch, maxPitch);
   }
 
+  /**
+   * Convert a melody to quantized NoteSequence.
+   *
+   * @param stepsPerQuarter Optional number of steps per quarter note.
+   * @param qpm Optional number of quarter notes per minute.
+   * @returns A quantized `NoteSequence` created from the `Melody`.
+   */
   toNoteSequence(stepsPerQuarter?: number, qpm?: number): INoteSequence {
     const noteSequence =
         sequences.createQuantizedNoteSequence(stepsPerQuarter, qpm);
