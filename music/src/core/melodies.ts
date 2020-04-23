@@ -109,7 +109,7 @@ export class Melody {
    * @param qpm Optional number of quarter notes per minute.
    * @returns A quantized `NoteSequence` created from the `Melody`.
    */
-  toNoteSequence(stepsPerQuarter?: number, qpm?: number): INoteSequence {
+  toNoteSequence(stepsPerQuarter?: number, qpm?: number): NoteSequence {
     const noteSequence =
         sequences.createQuantizedNoteSequence(stepsPerQuarter, qpm);
     let currNote: NoteSequence.Note = null;

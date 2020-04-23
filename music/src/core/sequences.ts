@@ -410,7 +410,7 @@ export function unquantizeSequence(qns: INoteSequence, qpm?: number) {
  */
 export function createQuantizedNoteSequence(
     stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER,
-    qpm = constants.DEFAULT_QUARTERS_PER_MINUTE): INoteSequence {
+    qpm = constants.DEFAULT_QUARTERS_PER_MINUTE): NoteSequence {
   return NoteSequence.create(
       {quantizationInfo: {stepsPerQuarter}, tempos: [{qpm}]});
 }
