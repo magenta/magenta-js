@@ -403,6 +403,19 @@ export function unquantizeSequence(qns: INoteSequence, qpm?: number) {
 }
 
 /**
+ * Create an empty quantized NoteSequence with steps per quarter note and tempo.
+ * @param stepsPerQuarter The number of steps per quarter note to use.
+ * @param qpm The tempo to use.
+ * @returns A new quantized NoteSequence.
+ */
+export function createQuantizedNoteSequence(
+    stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER,
+    qpm = constants.DEFAULT_QUARTERS_PER_MINUTE): NoteSequence {
+  return NoteSequence.create(
+      {quantizationInfo: {stepsPerQuarter}, tempos: [{qpm}]});
+}
+
+/**
  * Assign instruments to the notes, pitch bends, and control changes of a
  * `NoteSequence` based on program numbers and drum status. All drums will be
  * assigned the last instrument (and program 0). All non-drum events with the
