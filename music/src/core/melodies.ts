@@ -29,7 +29,11 @@ export const NOTE_OFF = 1;
 const FIRST_PITCH = 2;
 
 /**
- * Melody representation with note onsets, `NO_EVENT` (sustain) and `NOTE_OFF`.
+ * Melody representation as an array of integers: 0 for `NO_EVENT` (sustain), 1
+ * for `NOTE_OFF`, and 2+ for note onsets at pitches between `minPitch` and
+ * `maxPitch`.  Each position in the array corresponds to a fixed length of
+ * time.  So, `[2, 4, 6, 7, 9, 11, 13, 14, 0, 0, 0, 1]` represents a major scale
+ * where the final note is held for 4 time steps then released.
  *
  * @param events An array of melody events.
  * @param minPitch The minimum pitch to represent.
@@ -55,7 +59,7 @@ export class Melody {
    * cause an error to be thrown.
    * @param maxPitch The maximum pitch to represent. Those above this value will
    * cause an error to be thrown.
-   * @param ignorePolpyhony If false, an error will be raised when notes start
+   * @param ignorePolyphony If false, an error will be raised when notes start
    * at the same step. If true, the highest pitched note is used and others are
    * ignored.
    * @param numSteps The length of each sequence.
