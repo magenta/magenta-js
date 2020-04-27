@@ -40,7 +40,7 @@ from tensorflowjs.write_weights import write_weights
 def dump_checkpoint(
     checkpoint_file, output_dir, shard_mb=4, remove_variables_regex=None,
     quantization_dtype=None):
-  reader = tf.train.NewCheckpointReader(checkpoint_file)
+  reader = tf.compat.v1.train.NewCheckpointReader(checkpoint_file)
   var_to_shape_map = reader.get_variable_to_shape_map()
 
   remove_variables_regex_re = (
