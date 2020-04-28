@@ -42,11 +42,11 @@ const FIRST_PITCH = 2;
  *
  */
 export class Melody {
-  readonly events: Int32Array;
+  readonly events: ArrayLike<number>;
   readonly minPitch: number;
   readonly maxPitch: number;
 
-  constructor(events: Int32Array, minPitch: number, maxPitch: number) {
+  constructor(events: ArrayLike<number>, minPitch: number, maxPitch: number) {
     this.events = events;
     this.minPitch = minPitch;
     this.maxPitch = maxPitch;

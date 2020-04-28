@@ -51,8 +51,7 @@ test('Test Melody From NoteSequence (Extra Steps)', (t: test.Test) => {
 });
 
 test('Test Melody To NoteSequence', (t: test.Test) => {
-  const events = new Int32Array([0, 2, 0, 1, 4, 6, 9, 1]);
-  const melody = new Melody(events, 60, 72);
+  const melody = new Melody([0, 2, 0, 1, 4, 6, 9, 1], 60, 72);
   const ns = melody.toNoteSequence(2, 120);
   const expected = TEST_NS;
   expected.notes.pop();
@@ -61,8 +60,7 @@ test('Test Melody To NoteSequence', (t: test.Test) => {
 });
 
 test('Test Melody Rhythm Control', (t: test.Test) => {
-  const events = new Int32Array([0, 2, 0, 1, 4, 6, 9, 1]);
-  const melody = new Melody(events, 60, 72);
+  const melody = new Melody([0, 2, 0, 1, 4, 6, 9, 1], 60, 72);
   const mr = new MelodyRhythm();
   const rhythmTensor = mr.extract(melody);
   t.deepEqual(rhythmTensor.shape, [8, 1]);
@@ -71,8 +69,7 @@ test('Test Melody Rhythm Control', (t: test.Test) => {
 });
 
 test('Test Melody Shape Control', (t: test.Test) => {
-  const events = new Int32Array([0, 2, 0, 6, 6, 2, 9, 1]);
-  const melody = new Melody(events, 60, 72);
+  const melody = new Melody([0, 2, 0, 6, 6, 2, 9, 1], 60, 72);
   const ms = new MelodyShape();
   const shapeTensor = ms.extract(melody);
   const shapeIndices = tf.argMax(shapeTensor, 1);
