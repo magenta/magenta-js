@@ -20,6 +20,7 @@
 /**
  * Imports
  */
+import * as tf from '@tensorflow/tfjs';
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import * as sequences from './sequences';
@@ -41,11 +42,11 @@ const FIRST_PITCH = 2;
  *
  */
 export class Melody {
-  readonly events: Int32Array;
+  readonly events: ArrayLike<number>;
   readonly minPitch: number;
   readonly maxPitch: number;
 
-  constructor(events: Int32Array, minPitch: number, maxPitch: number) {
+  constructor(events: ArrayLike<number>, minPitch: number, maxPitch: number) {
     this.events = events;
     this.minPitch = minPitch;
     this.maxPitch = maxPitch;
@@ -142,5 +143,114 @@ export class Melody {
     }
     noteSequence.totalQuantizedSteps = this.events.length;
     return noteSequence;
+  }
+}
+
+/**
+ * MelodyControl interface for extracting control signals from melodies. These
+ * control signals can be used as conditioning for melody generation, or can
+ * themselves be generated.
+ *
+ * @param depth The dimension of the control signal at each step.
+ */
+export interface MelodyControl {
+  readonly depth: number;
+  extract(melody: Melody): tf.Tensor2D;
+}
+
+/**
+ * Rhythm control signal. Extracts a depth-1 tensor indicating note onsets.
+ */
+export class MelodyRhythm implements MelodyControl {
+  readonly depth = 1;
+
+  /**
+   * Extract the rhythm from a Melody object.
+   *
+   * @param melody Melody object from which to extract rhythm.
+   * @returns An n-by-1 2D tensor containing the melody rhythm, with 1 in steps
+   * with a note onset and 0 elsewhere.
+   */
+  extract(melody: Melody) {
+    const numSteps = melody.events.length;
+    const buffer = tf.buffer([numSteps, 1]);
+    for (let step = 0; step < numSteps; ++step) {
+      buffer.set(melody.events[step] >= FIRST_PITCH ? 1 : 0, step, 0);
+    }
+    return buffer.toTensor().as2D(numSteps, 1);
+  }
+}
+
+/**
+ * Melodic shape control signal. Extracts a depth-3 tensor representing a
+ * melodic contour as a Parsons code, a sequence of {up, down, same} values
+ * corresponding to the pitch interval direction. We use a one-hot encoding,
+ * where 0 = down, 1 = same, and 2 = up.
+ */
+export class MelodyShape implements MelodyControl {
+  readonly depth = 3;
+
+  /**
+   * Extract the melodic shape from a Melody object.
+   *
+   * @param melody Melody object from which to extract shape.
+   * @returns An n-by-3 2D tensor containing the melodic shape as one-hot
+   * Parsons code.
+   */
+  extract(melody: Melody) {
+    const numSteps = melody.events.length;
+    const buffer = tf.buffer([numSteps, 3]);
+
+    let lastIndex = null;
+    let lastPitch = null;
+
+    for (let step = 0; step < numSteps; ++step) {
+      if (melody.events[step] >= FIRST_PITCH) {
+        if (lastIndex !== null) {
+          if (buffer.get(lastIndex, 0) === 0 &&
+              buffer.get(lastIndex, 1) === 0 &&
+              buffer.get(lastIndex, 2) === 0) {
+            // This is the first time contour direction has been established, so
+            // propagate that direction back to the beginning of the melody.
+            lastIndex = -1;
+          }
+          let direction: number;
+          if (melody.events[step] < lastPitch) {
+            direction = 0;  // down
+          } else if (melody.events[step] > lastPitch) {
+            direction = 2;  // up
+          } else {
+            direction = 1;  // flat
+          }
+          // Fill in a 'linear' contour.
+          for (let i = step; i > lastIndex; --i) {
+            buffer.set(1, i, direction);
+          }
+        }
+        lastIndex = step;
+        lastPitch = melody.events[step];
+      }
+    }
+
+    // Handle the final contour segment.
+    if (lastIndex !== numSteps - 1) {
+      if ((lastIndex === null) ||
+          (buffer.get(lastIndex, 0) === 0 && buffer.get(lastIndex, 1) === 0 &&
+           buffer.get(lastIndex, 2) === 0)) {
+        // There were zero or one notes, make this a flat contour.
+        for (let i = 0; i < numSteps; ++i) {
+          buffer.set(1, i, 1);
+        }
+      } else {
+        // Just continue whatever the final contour direction was.
+        for (let i = numSteps - 1; i > lastIndex; --i) {
+          for (let j = 0; j < 3; j++) {
+            buffer.set(buffer.get(lastIndex, j), i, j);
+          }
+        }
+      }
+    }
+
+    return buffer.toTensor().as2D(numSteps, 3);
   }
 }
