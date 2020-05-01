@@ -28,7 +28,8 @@ const MULTITRACK_CHORDS_CKPT = `${CHECKPOINTS_DIR}/music_vae/multitrack_chords`;
 
 const MULTITRACK_EXAMPLE: mm.INoteSequence = {
   notes: [],
-  quantizationInfo: {stepsPerQuarter: 24}
+  quantizationInfo: {stepsPerQuarter: 24},
+  totalQuantizedSteps: 96
 };
 MEL_TWINKLE.notes.forEach(n => {
   const m = clone(n);
