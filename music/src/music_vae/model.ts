@@ -71,53 +71,33 @@ abstract class Encoder {
 }
 
 /**
- * A single-layer bidirectional LSTM encoder.
+ * A single-layer bidirectional LSTM module.
  */
-class BidirectionalLstmEncoder extends Encoder {
+class BidirectionalLstm {
   private lstmFwVars: LayerVars;
   private lstmBwVars: LayerVars;
-  private muVars: LayerVars;
-  readonly zDims: number;
 
   /**
-   * `BidirectionalLstmEncoder` contructor.
+   * `BidirectionalLstm` contructor.
    *
    * @param lstmFwVars The forward LSTM `LayerVars`.
    * @param lstmBwVars The backward LSTM `LayerVars`.
-   * @param muVars (Optional) The `LayerVars` for projecting from the final
-   * states of the bidirectional LSTM to the mean `mu` of the random variable,
-   * `z`. The final states are returned directly if not provided.
    */
-  constructor(
-      lstmFwVars: LayerVars, lstmBwVars: LayerVars, muVars?: LayerVars) {
-    super();
+  constructor(lstmFwVars: LayerVars, lstmBwVars: LayerVars) {
     this.lstmFwVars = lstmFwVars;
     this.lstmBwVars = lstmBwVars;
-    this.muVars = muVars;
-    this.zDims = muVars ? this.muVars.bias.shape[0] : null;
   }
 
   /**
-   * Encodes a batch of sequences.
-   * @param sequence The batch of sequences to be encoded.
-   * @param segmentLengths Unused for this encoder.
-   * @returns A batch of concatenated final LSTM states, or the `mu` if `muVars`
-   * is known.
+   * Processes a batch of sequences.
+   * @param sequence The batch of sequences to be processed.
+   * @returns A batch of forward and backward output LSTM states.
    */
-  encode(sequence: tf.Tensor3D, segmentLengths?: number[]) {
-    if (segmentLengths) {
-      throw new Error('Variable-length segments not supported in flat encoder');
-    }
-
+  process(sequence: tf.Tensor3D): [tf.Tensor2D[], tf.Tensor2D[]] {
     return tf.tidy(() => {
-      const fwState = this.singleDirection(sequence, true);
-      const bwState = this.singleDirection(sequence, false);
-      const finalState = tf.concat([fwState[1], bwState[1]], 1);
-      if (this.muVars) {
-        return dense(this.muVars, finalState);
-      } else {
-        return finalState;
-      }
+      const fwStates = this.singleDirection(sequence, true);
+      const bwStates = this.singleDirection(sequence, false);
+      return [fwStates, bwStates];
     });
   }
 
@@ -136,10 +116,62 @@ class BidirectionalLstmEncoder extends Encoder {
             forgetBias, lstmVars.kernel, lstmVars.bias, data, state[0],
             state[1]);
     const splitInputs = tf.split(inputs.toFloat(), length, 1);
+    const outputStates: tf.Tensor2D[] = [];
     for (const data of (fw ? splitInputs : splitInputs.reverse())) {
       state = lstm(data.squeeze([1]) as tf.Tensor2D, state);
+      outputStates.push(state[1]);
     }
-    return state;
+    return fw ? outputStates : outputStates.reverse();
+  }
+}
+
+/**
+ * A single-layer bidirectional LSTM encoder.
+ */
+class BidirectionalLstmEncoder extends Encoder {
+  private bidirectionalLstm: BidirectionalLstm;
+  private muVars: LayerVars;
+  readonly zDims: number;
+
+  /**
+   * `BidirectionalLstmEncoder` contructor.
+   *
+   * @param lstmFwVars The forward LSTM `LayerVars`.
+   * @param lstmBwVars The backward LSTM `LayerVars`.
+   * @param muVars (Optional) The `LayerVars` for projecting from the final
+   * states of the bidirectional LSTM to the mean `mu` of the random variable,
+   * `z`. The final states are returned directly if not provided.
+   */
+  constructor(
+      lstmFwVars: LayerVars, lstmBwVars: LayerVars, muVars?: LayerVars) {
+    super();
+    this.bidirectionalLstm = new BidirectionalLstm(lstmFwVars, lstmBwVars);
+    this.muVars = muVars;
+    this.zDims = muVars ? this.muVars.bias.shape[0] : null;
+  }
+
+  /**
+   * Encodes a batch of sequences.
+   * @param sequence The batch of sequences to be encoded.
+   * @param segmentLengths Unused for this encoder.
+   * @returns A batch of concatenated final LSTM states, or the `mu` if `muVars`
+   * is known.
+   */
+  encode(sequence: tf.Tensor3D, segmentLengths?: number[]) {
+    if (segmentLengths) {
+      throw new Error('Variable-length segments not supported in flat encoder');
+    }
+
+    return tf.tidy(() => {
+      const [fwStates, bwStates] = this.bidirectionalLstm.process(sequence);
+      const finalState =
+          tf.concat([fwStates[fwStates.length - 1], bwStates[0]], 1);
+      if (this.muVars) {
+        return dense(this.muVars, finalState);
+      } else {
+        return finalState;
+      }
+    });
   }
 }
 
@@ -262,6 +294,7 @@ abstract class BaseDecoder extends Decoder {
   protected outputProjectVars: LayerVars;
   readonly zDims: number;
   readonly outputDims: number;
+  readonly controlBidirectionalLstm?: BidirectionalLstm;
 
   /**
    * `BaseDecoder` contructor.
@@ -276,16 +309,25 @@ abstract class BaseDecoder extends Decoder {
    * @param nade (optional) A `Nade` to use for computing the output vectors at
    * each step. If not given, the final projection values are used as logits
    * for a categorical distribution.
+   * @param controlLstmFwVars (optional) The `LayerVars` for the forward
+   * direction of a bidirectional LSTM used to process the control tensors.
+   * @param controlLstmBwVars (optional) The `LayerVars` for the backward
+   * direction of a bidirectional LSTM used to process the control tensors.
    */
   constructor(
       lstmCellVars: LayerVars[], zToInitStateVars: LayerVars,
-      outputProjectVars: LayerVars, outputDims?: number) {
+      outputProjectVars: LayerVars, outputDims?: number,
+      controlLstmFwVars?: LayerVars, controlLstmBwVars?: LayerVars) {
     super();
     this.lstmCellVars = lstmCellVars;
     this.zToInitStateVars = zToInitStateVars;
     this.outputProjectVars = outputProjectVars;
     this.zDims = this.zToInitStateVars.kernel.shape[0];
     this.outputDims = outputDims || outputProjectVars.bias.shape[0];
+    if (controlLstmFwVars && controlLstmBwVars) {
+      this.controlBidirectionalLstm =
+          new BidirectionalLstm(controlLstmFwVars, controlLstmBwVars);
+    }
   }
 
   /**
@@ -329,17 +371,32 @@ abstract class BaseDecoder extends Decoder {
       const lstmCell =
           initLstmCells(z, this.lstmCellVars, this.zToInitStateVars);
 
+      // Add batch dimension to controls.
+      let expandedControls: tf.Tensor3D =
+          controls ? tf.expandDims(controls, 0) : undefined;
+
       // Generate samples.
       const samples: tf.Tensor2D[] = [];
       let nextInput = initialInput ?
           initialInput :
           tf.zeros([batchSize, this.outputDims]) as tf.Tensor2D;
-      const splitControls = controls ?
-          tf.split(tf.tile(controls, [batchSize, 1]), controls.shape[0]) :
+      if (this.controlBidirectionalLstm) {
+        // Preprocess the controls with a bidirectional LSTM.
+        const [fwStates, bwStates] =
+            this.controlBidirectionalLstm.process(expandedControls);
+        expandedControls =
+            tf.concat([tf.stack(fwStates, 1), tf.stack(bwStates, 1)], 2) as
+            tf.Tensor3D;
+      }
+      const splitControls = expandedControls ?
+          tf.split(
+              tf.tile(expandedControls, [batchSize, 1, 1]), controls.shape[0],
+              1) :
           undefined;
       for (let i = 0; i < length; ++i) {
-        const toConcat =
-            splitControls ? [nextInput, z, splitControls[i]] : [nextInput, z];
+        const toConcat = splitControls ?
+            [nextInput, z, tf.squeeze(splitControls[i], [1]) as tf.Tensor2D] :
+            [nextInput, z];
         [lstmCell.c, lstmCell.h] = tf.multiRNNCell(
             lstmCell.cell, tf.concat(toConcat, 1), lstmCell.c, lstmCell.h);
         const lstmOutput =
@@ -381,8 +438,11 @@ class NadeDecoder extends BaseDecoder {
 
   constructor(
       lstmCellVars: LayerVars[], zToInitStateVars: LayerVars,
-      outputProjectVars: LayerVars, nade: Nade) {
-    super(lstmCellVars, zToInitStateVars, outputProjectVars, nade.numDims);
+      outputProjectVars: LayerVars, nade: Nade, controlLstmFwVars?: LayerVars,
+      controlLstmBwVars?: LayerVars) {
+    super(
+        lstmCellVars, zToInitStateVars, outputProjectVars, nade.numDims,
+        controlLstmFwVars, controlLstmBwVars);
     this.nade = nade;
   }
 
@@ -494,11 +554,11 @@ class ConductorDecoder extends Decoder {
         }
         samples.push(tf.concat(currSamples, -1));
         initialInput = currSamples.map(
-          s => s.slice(
-                    [0, s.shape[1] - 1, 0],
-                    [batchSize, 1, s.shape[s.rank - 1]])
-                   .squeeze([1])
-                   .toFloat() as tf.Tensor2D);
+            s => s.slice(
+                      [0, s.shape[1] - 1, 0],
+                      [batchSize, 1, s.shape[s.rank - 1]])
+                     .squeeze([1])
+                     .toFloat() as tf.Tensor2D);
       }
       return tf.concat(samples, 1);
     });
@@ -690,6 +750,7 @@ class MusicVAE {
     const ENCODER_FORMAT = `encoder/${BIDI_LSTM_CELL}`;
     const HIER_ENCODER_FORMAT =
         `encoder/hierarchical_level_%d/${BIDI_LSTM_CELL.replace('%d', '0')}`;
+    const CONTROL_BIDI_LSTM_CELL = `control_preprocessing/${BIDI_LSTM_CELL}`;
 
     const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
                      .then((response) => response.json())
@@ -734,12 +795,22 @@ class MusicVAE {
           new BidirectionalLstmEncoder(fwLayers[0], bwLayers[0], encMu);
     }
 
+    // Whether or not we have variables for bidirectional control preprocessing.
+    const hasControlBidiLayers = `${
+                                     CONTROL_BIDI_LSTM_CELL.replace('%s', 'fw')
+                                         .replace('%d', '0')}kernel` in vars;
+
     // BaseDecoder variables.
     const decVarPrefix =
         (this.dataConverter.numSegments) ? 'core_decoder/' : '';
 
     const decVarPrefixes: string[] = [];
     if (this.dataConverter.NUM_SPLITS) {
+      if (hasControlBidiLayers) {
+        throw Error(
+            'Control preprocessing bidirectional LSTM currently not ' +
+            'supported in hierarchical decoder.');
+      }
       for (let i = 0; i < this.dataConverter.NUM_SPLITS; ++i) {
         decVarPrefixes.push(`${decVarPrefix}core_decoder_${i}/decoder/`);
       }
@@ -757,20 +828,39 @@ class MusicVAE {
           vars[`${varPrefix}output_projection/kernel`] as tf.Tensor2D,
           vars[`${varPrefix}output_projection/bias`] as tf.Tensor1D);
 
+      let controlLstmFwLayers: LayerVars[] = [null];
+      let controlLstmBwLayers: LayerVars[] = [null];
+      if (hasControlBidiLayers) {
+        controlLstmFwLayers = this.getLstmLayers(
+            CONTROL_BIDI_LSTM_CELL.replace('%s', 'fw'), vars);
+        controlLstmBwLayers = this.getLstmLayers(
+            CONTROL_BIDI_LSTM_CELL.replace('%s', 'bw'), vars);
+        if (controlLstmFwLayers.length !== controlLstmBwLayers.length ||
+            controlLstmFwLayers.length !== 1) {
+          throw Error(
+              'Only single-layer bidirectional control preprocessing is ' +
+              'supported. Got ' +
+              `${controlLstmFwLayers.length} forward and ${
+                  controlLstmBwLayers.length} backward.`);
+        }
+      }
+
       if (`${varPrefix}nade/w_enc` in vars) {
         return new NadeDecoder(
                    decLstmLayers, decZtoInitState, decOutputProjection,
                    new Nade(
                        vars[`${varPrefix}nade/w_enc`] as tf.Tensor3D,
-                       vars[`${varPrefix}nade/w_dec_t`] as tf.Tensor3D)) as
-            Decoder;
+                       vars[`${varPrefix}nade/w_dec_t`] as tf.Tensor3D),
+                   controlLstmFwLayers[0], controlLstmBwLayers[0]) as Decoder;
       } else if (this.spec.dataConverter.type === 'GrooveConverter') {
         return new GrooveDecoder(
-                   decLstmLayers, decZtoInitState, decOutputProjection) as
+                   decLstmLayers, decZtoInitState, decOutputProjection,
+                   undefined, controlLstmFwLayers[0], controlLstmBwLayers[0]) as
             Decoder;
       } else {
         return new CategoricalDecoder(
-                   decLstmLayers, decZtoInitState, decOutputProjection) as
+                   decLstmLayers, decZtoInitState, decOutputProjection,
+                   undefined, controlLstmFwLayers[0], controlLstmBwLayers[0]) as
             Decoder;
       }
     });
@@ -832,13 +922,16 @@ class MusicVAE {
    * sampling from the logits. Argmax is used if not provided.
    * @param chordProgression (Optional) Chord progression to use as
    * conditioning.
+   * @param extraControls (Optional) Additional control tensors to use as
+   * conditioning.
    *
    * @returns An array of interpolation `NoteSequence` objects, as described
    * above.
    */
   async interpolate(
       inputSequences: INoteSequence[], numInterps: number|number[],
-      temperature?: number, chordProgression?: string[]) {
+      temperature?: number, chordProgression?: string[],
+      extraControls?: tf.Tensor2D) {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
     }
@@ -851,17 +944,20 @@ class MusicVAE {
     }
     const startTime = 0;
 
-    const inputZs = await this.encode(inputSequences, chordProgression);
+    const inputZs =
+        await this.encode(inputSequences, chordProgression, extraControls);
     const interpZs = tf.tidy(() => this.getInterpolatedZs(inputZs, numInterps));
     inputZs.dispose();
 
-    const outputSequenes = this.decode(interpZs, temperature, chordProgression);
+    const outputSequences = this.decode(
+        interpZs, temperature, chordProgression, undefined, undefined,
+        extraControls);
     interpZs.dispose();
-    outputSequenes.then(
+    outputSequences.then(
         () => logging.logWithDuration(
             'Interpolation completed', startTime, 'MusicVAE',
             logging.Level.DEBUG));
-    return outputSequenes;
+    return outputSequences;
   }
 
   /**
@@ -942,10 +1038,14 @@ class MusicVAE {
    * @param inputSequences An array of `NoteSequence`s to encode.
    * @param chordProgression (Optional) Chord progression to use as
    * conditioning.
+   * @param extraControls (Optional) Extra control tensors to use as
+   * conditioning. Will be concatenated depthwise to the input tensors.
    * @returns A `Tensor` containing the batch of latent vectors, sized
    * `[inputSequences.length, zSize]`.
    */
-  async encode(inputSequences: INoteSequence[], chordProgression?: string[]) {
+  async encode(
+      inputSequences: INoteSequence[], chordProgression?: string[],
+      extraControls?: tf.Tensor2D) {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
     }
@@ -974,10 +1074,23 @@ class MusicVAE {
         undefined;
 
     if (this.chordEncoder) {
+      // Concatenate encoded chords with inputs depthwise.
       const newInputTensors = tf.tidy(() => {
         const encodedChords = this.encodeChordProgression(chordProgression);
         const controls = tf.tile(
                              tf.expandDims(encodedChords, 0),
+                             [inputSequences.length, 1, 1]) as tf.Tensor3D;
+        return inputTensors.concat(controls, 2);
+      });
+      inputTensors.dispose();
+      inputTensors = newInputTensors;
+    }
+
+    if (extraControls) {
+      // Concatenate extra controls with inputs depthwise.
+      const newInputTensors = tf.tidy(() => {
+        const controls = tf.tile(
+                             tf.expandDims(extraControls, 0),
                              [inputSequences.length, 1, 1]) as tf.Tensor3D;
         return inputTensors.concat(controls, 2);
       });
@@ -995,7 +1108,7 @@ class MusicVAE {
   }
 
   /**
-   * Decodes the input latnet vectors into `NoteSequence`s.
+   * Decodes the input latent vectors into `NoteSequence`s.
    *
    * @param z The latent vectors to decode, sized `[batchSize, zSize]`.
    * @param temperature (Optional) The softmax temperature to use when
@@ -1005,13 +1118,16 @@ class MusicVAE {
    * @param stepsPerQuarter The step resolution of the resulting
    * `NoteSequence`.
    * @param qpm The tempo of the resulting `NoteSequence`s.
+   * @param extraControls (Optional) Additional control tensors to use as
+   * conditioning.
    *
    * @returns The decoded `NoteSequence`s.
    */
   async decode(
       z: tf.Tensor2D, temperature?: number, chordProgression?: string[],
       stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER,
-      qpm = constants.DEFAULT_QUARTERS_PER_MINUTE) {
+      qpm = constants.DEFAULT_QUARTERS_PER_MINUTE,
+      extraControls?: tf.Tensor2D) {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
     }
@@ -1031,9 +1147,12 @@ class MusicVAE {
     const numSteps = this.dataConverter.numSteps;
 
     const ohSeqs: tf.Tensor2D[] = tf.tidy(() => {
-      const controls = this.chordEncoder ?
+      let controls = this.chordEncoder ?
           this.encodeChordProgression(chordProgression) :
           undefined;
+      if (extraControls) {
+        controls = controls ? controls.concat(extraControls, 1) : extraControls;
+      }
       const ohSeqs =
           this.decoder.decode(z, numSteps, undefined, temperature, controls);
       return tf.split(ohSeqs, ohSeqs.shape[0])
@@ -1114,13 +1233,16 @@ class MusicVAE {
    * @param stepsPerQuarter The step resolution of the resulting
    * `NoteSequence`s.
    * @param qpm The tempo of the resulting `NoteSequence`s.
+   * @param extraControls (Optional) Additional control tensors to use as
+   * conditioning.
    *
    * @returns An array of sampled `NoteSequence` objects.
    */
   async sample(
       numSamples: number, temperature = 0.5, chordProgression?: string[],
       stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER,
-      qpm = constants.DEFAULT_QUARTERS_PER_MINUTE) {
+      qpm = constants.DEFAULT_QUARTERS_PER_MINUTE,
+      extraControls?: tf.Tensor2D) {
     if (this.chordEncoder && !chordProgression) {
       throw new Error('Chord progression expected but not provided.');
     }
@@ -1135,8 +1257,9 @@ class MusicVAE {
 
     const randZs: tf.Tensor2D =
         tf.tidy(() => tf.randomNormal([numSamples, this.decoder.zDims]));
-    const outputSequences =
-        this.decode(randZs, temperature, chordProgression, stepsPerQuarter);
+    const outputSequences = this.decode(
+        randZs, temperature, chordProgression, stepsPerQuarter, qpm,
+        extraControls);
     randZs.dispose();
     outputSequences.then(
         () => logging.logWithDuration(
