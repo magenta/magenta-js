@@ -14,7 +14,7 @@ Complete API documentation is available [here](https://magenta.github.io/magenta
   - [In Node](#in-node)
 - [API docs](https://magenta.github.io/magenta-js/music)
 - [Supported Models](#supported-models)
-  - [Onsets and Frames](#onsets-and-frames)
+  - [Onsets and Frames](#piano-transcription-w-onsets-and-frames)
   - [MusicRNN](#musicrnn)
   - [MusicVAE](#musicvae)
   - [MidiMe](#midime)
