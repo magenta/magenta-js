@@ -91,7 +91,7 @@ class BidirectionalLstm {
   /**
    * Processes a batch of sequences.
    * @param sequence The batch of sequences to be processed.
-   * @returns A batch of forward and backward output LSTM states.
+   * @returns A batch of forward and backward output (h) LSTM states.
    */
   process(sequence: tf.Tensor3D): [tf.Tensor2D[], tf.Tensor2D[]] {
     return tf.tidy(() => {
@@ -118,9 +118,11 @@ class BidirectionalLstm {
     const splitInputs = tf.split(inputs.toFloat(), length, 1);
     const outputStates: tf.Tensor2D[] = [];
     for (const data of (fw ? splitInputs : splitInputs.reverse())) {
+      // Apply LSTM and store output (h) state.
       state = lstm(data.squeeze([1]) as tf.Tensor2D, state);
       outputStates.push(state[1]);
     }
+    // Return the output (h) states in chronological order.
     return fw ? outputStates : outputStates.reverse();
   }
 }
