@@ -796,7 +796,7 @@ test('Trim NoteSequence (unquantized)', (t: test.Test) => {
     [71, 100, 2.0, 3.0], [58, 100, 3.0, 4.5], [70, 100, 5.0, 5.5]
   ]);
   addTrackToSequence(expected, 0, [[59, 100, 0, 1], [71, 100, 0.5, 1.5]]);
-  expected.totalTime = 4;
+  expected.totalTime = 2.5;
 
   t.deepEqual(
       NoteSequence.toObject(sequences.trim(ns1, 1.5, 4.0)),
@@ -813,8 +813,8 @@ test('Trim and truncate NoteSequence (unquantized)', (t: test.Test) => {
     [71, 100, 2.0, 3.0], [58, 100, 3.0, 4.5], [70, 100, 5.0, 5.5]
   ]);
   addTrackToSequence(
-      expected, 0, [[59, 100, 0, 1], [71, 100, 0.5, 1.5], [58, 100, 1.5, 3.0]]);
-  expected.totalTime = 4;
+      expected, 0, [[59, 100, 0, 1], [71, 100, 0.5, 1.5], [58, 100, 1.5, 2.5]]);
+  expected.totalTime = 2.5;
 
   t.deepEqual(
       NoteSequence.toObject(sequences.trim(ns1, 1.5, 4.0, true)),
@@ -834,7 +834,7 @@ test('Trim NoteSequence (quantized)', (t: test.Test) => {
   expected.quantizationInfo = NoteSequence.QuantizationInfo.create(
       {stepsPerQuarter: STEPS_PER_QUARTER});
   addQuantizedTrackToSequence(expected, 0, [[60, 100, 1, 2], [60, 100, 2, 3]]);
-  expected.totalQuantizedSteps = 5;
+  expected.totalQuantizedSteps = 4;
 
   t.deepEqual(
       NoteSequence.toObject(sequences.trim(ns1, 1, 5)),
@@ -854,7 +854,7 @@ test('Trim and truncate NoteSequence (quantized)', (t: test.Test) => {
   expected.quantizationInfo = NoteSequence.QuantizationInfo.create(
       {stepsPerQuarter: STEPS_PER_QUARTER});
   addQuantizedTrackToSequence(
-      expected, 0, [[60, 100, 1, 2], [60, 100, 2, 3], [60, 100, 2, 5]]);
+      expected, 0, [[60, 100, 1, 2], [60, 100, 2, 3], [60, 100, 2, 4]]);
 
   t.deepEqual(
       NoteSequence.toObject(sequences.trim(ns1, 1, 5, true)),
