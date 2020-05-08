@@ -216,6 +216,38 @@ test('Test MelodyConverterWithPolyphonicInput', (t: test.Test) => {
   t.end();
 });
 
+test('Test MelodyRhythmConverter', (t: test.Test) => {
+  const rhythmConverter = new data.MelodyRhythmConverter({
+    numSteps: 32,
+    minPitch: 21,
+    maxPitch: 108,
+  });
+
+  const rhythmTensor = rhythmConverter.toTensor(MEL_NS);
+  t.deepEqual(rhythmTensor.shape, [32, 1]);
+
+  rhythmConverter.toNoteSequence(rhythmTensor);
+
+  rhythmTensor.dispose();
+  t.end();
+});
+
+test('Test MelodyShapeConverter', (t: test.Test) => {
+  const shapeConverter = new data.MelodyShapeConverter({
+    numSteps: 32,
+    minPitch: 21,
+    maxPitch: 108,
+  });
+
+  const shapeTensor = shapeConverter.toTensor(MEL_NS);
+  t.deepEqual(shapeTensor.shape, [32, 3]);
+
+  shapeConverter.toNoteSequence(shapeTensor);
+
+  shapeTensor.dispose();
+  t.end();
+});
+
 test('Test DrumConverters', (t: test.Test) => {
   const drumsConverter = new data.DrumsConverter({numSteps: 32});
   const drumsOneHotConverter = new data.DrumsOneHotConverter({numSteps: 32});

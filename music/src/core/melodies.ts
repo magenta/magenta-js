@@ -68,7 +68,7 @@ export class Melody {
    */
   static fromNoteSequence(
       noteSequence: INoteSequence, minPitch: number, maxPitch: number,
-      ignorePolyphony = false, numSteps?: number) {
+      ignorePolyphony = true, numSteps?: number) {
     sequences.assertIsQuantizedSequence(noteSequence);
     // Sort by note start times, and secondarily by pitch descending.
     const sortedNotes: NoteSequence.INote[] =

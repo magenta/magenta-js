@@ -28,7 +28,8 @@ import * as tf from '@tensorflow/tfjs';
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import * as constants from './constants';
-import {Melody} from './melodies';
+import * as logging from './logging';
+import {Melody, MelodyControl, MelodyRhythm, MelodyShape} from './melodies';
 import * as performance from './performance';
 import * as sequences from './sequences';
 
@@ -55,6 +56,14 @@ export const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
 
 export interface MelodyConverterSpec {
   type: 'MelodyConverter';
+  args: MelodyConverterArgs;
+}
+export interface MelodyRhythmConverterSpec {
+  type: 'MelodyRhythmConverter';
+  args: MelodyConverterArgs;
+}
+export interface MelodyShapeConverterSpec {
+  type: 'MelodyShapeConverter';
   args: MelodyConverterArgs;
 }
 export interface DrumsConverterSpec {
@@ -90,9 +99,10 @@ export interface GrooveConverterSpec {
  * @property args Map containing values for argments to the constructor of the
  * `DataConverter` class specified above.
  */
-export type ConverterSpec = MelodyConverterSpec|DrumsConverterSpec|
-    DrumRollConverterSpec|TrioConverterSpec|DrumsOneHotConverterSpec|
-    MultitrackConverterSpec|GrooveConverterSpec;
+export type ConverterSpec =
+    MelodyConverterSpec|MelodyRhythmConverterSpec|MelodyShapeConverterSpec|
+    DrumsConverterSpec|DrumRollConverterSpec|TrioConverterSpec|
+    DrumsOneHotConverterSpec|MultitrackConverterSpec|GrooveConverterSpec;
 
 /**
  * Builds a `DataConverter` based on the given `ConverterSpec`.
@@ -104,6 +114,10 @@ export function converterFromSpec(spec: ConverterSpec): DataConverter {
   switch (spec.type) {
     case 'MelodyConverter':
       return new MelodyConverter(spec.args);
+    case 'MelodyRhythmConverter':
+      return new MelodyRhythmConverter(spec.args);
+    case 'MelodyShapeConverter':
+      return new MelodyShapeConverter(spec.args);
     case 'DrumsConverter':
       return new DrumsConverter(spec.args);
     case 'DrumRollConverter':
@@ -370,8 +384,7 @@ export class MelodyConverter extends DataConverter {
     super(args);
     this.minPitch = args.minPitch;
     this.maxPitch = args.maxPitch;
-    this.ignorePolyphony =
-        (args.ignorePolyphony === undefined) ? true : args.ignorePolyphony;
+    this.ignorePolyphony = args.ignorePolyphony;
     this.depth = args.maxPitch - args.minPitch + 1 + this.FIRST_PITCH;
   }
 
@@ -393,6 +406,143 @@ export class MelodyConverter extends DataConverter {
     labelsTensor.dispose();
     const melody = new Melody(labels, this.minPitch, this.maxPitch);
     return melody.toNoteSequence(stepsPerQuarter, qpm);
+  }
+}
+
+/**
+ * Abstract `MelodyControlConverter` class for handling melody control signals.
+ * The `toTensor` method first extracts a monophonic melody from the
+ * `NoteSequence` then extracts the control signal from the melody. The
+ * `toNoteSequence` method is left undefined here but can be used by subclasses
+ * for debugging purposes.
+ *
+ * @param numSteps The length of each sequence.
+ * @param minPitch The minimum melody pitch.
+ * @param maxPitch The maximum melody pitch.
+ * @param ignorePolpyhony Whether to raise an error if multiple notes start at
+ * the same step.
+ * @param numSegments (Optional) The number of conductor segments.
+ */
+abstract class MelodyControlConverter extends DataConverter {
+  readonly minPitch: number;
+  readonly maxPitch: number;
+  readonly ignorePolyphony: boolean;
+  readonly melodyControl: MelodyControl;
+  readonly depth: number;
+  readonly endTensor: tf.Tensor1D;
+
+  constructor(args: MelodyConverterArgs, melodyControl: MelodyControl) {
+    super(args);
+    this.minPitch = args.minPitch;
+    this.maxPitch = args.maxPitch;
+    this.ignorePolyphony = args.ignorePolyphony;
+    this.melodyControl = melodyControl;
+    this.depth = melodyControl.depth;
+  }
+
+  toTensor(noteSequence: INoteSequence): tf.Tensor2D {
+    const melody = Melody.fromNoteSequence(
+        noteSequence, this.minPitch, this.maxPitch, this.ignorePolyphony,
+        this.numSteps);
+    return this.melodyControl.extract(melody);
+  }
+}
+
+/**
+ * Converts between a monophonic, quantized `NoteSequence` containing a melody
+ * and a `Tensor` representing only the *rhythm* of the melody.
+ *
+ * The rhythm is represented as a `numSteps`-by-1 `Tensor` with 1 in the
+ * positions corresponding to steps with a note-on and 0 elsewhere.
+ *
+ * Since the melody cannot be reconstructed from its rhythm alone,
+ * `toNoteSequence` returns a `NoteSequence` with drum hits at the note-on
+ * steps.
+ */
+export interface MelodyRhythmConverterArgs extends BaseConverterArgs {}
+export class MelodyRhythmConverter extends MelodyControlConverter {
+  constructor(args: MelodyConverterArgs) {
+    super(args, new MelodyRhythm());
+  }
+
+  async toNoteSequence(
+      tensor: tf.Tensor2D, stepsPerQuarter?: number, qpm?: number) {
+    // Create a NoteSequence containing the rhythm as drum hits.
+    // This is mainly for debugging purposes.
+    const noteSequence =
+        sequences.createQuantizedNoteSequence(stepsPerQuarter, qpm);
+    const rhythm: Int32Array = await tensor.data() as Int32Array;
+    for (let s = 0; s < rhythm.length; ++s) {
+      if (rhythm[s]) {
+        noteSequence.notes.push(NoteSequence.Note.create({
+          pitch: DEFAULT_DRUM_PITCH_CLASSES[1][0],  // snare
+          quantizedStartStep: s,
+          quantizedEndStep: s + 1,
+          isDrum: true
+        }));
+      }
+    }
+    noteSequence.totalQuantizedSteps = rhythm.length;
+    return noteSequence;
+  }
+}
+
+/**
+ * Converts between a monophonic, quantized `NoteSequence` containing a melody
+ * and a `Tensor` representing only the *shape* of the melody.
+ *
+ * The shape is represented as a `numSteps`-by-3 `Tensor` containing a one-hot
+ * Parsons code, where 0 = descending pitch, 1 = same pitch, and 2 = ascending
+ * pitch.
+ *
+ * Since the melody cannot be reconstructed from its shape alone,
+ * `toNoteSequence` returns a `NoteSequence` having the shape of the contour
+ * with a note at each time step.
+ */
+export interface MelodyShapeConverterArgs extends BaseConverterArgs {}
+export class MelodyShapeConverter extends MelodyControlConverter {
+  constructor(args: MelodyConverterArgs) {
+    super(args, new MelodyShape());
+  }
+
+  async toNoteSequence(
+      oh: tf.Tensor2D, stepsPerQuarter?: number, qpm?: number) {
+    // Create a NoteSequence containing the melodic shape, with a new note every
+    // time step. This is mainly for debugging purposes.
+    const noteSequence =
+        sequences.createQuantizedNoteSequence(stepsPerQuarter, qpm);
+    const shapeTensor = oh.argMax(1);
+    const shape: Int32Array = await shapeTensor.data() as Int32Array;
+    shapeTensor.dispose();
+    let pitch = Math.round((this.maxPitch + this.minPitch) / 2);
+    for (let s = 0; s < shape.length; ++s) {
+      switch (shape[s]) {
+        case 0:
+          pitch -= 1;
+          if (pitch < this.minPitch) {
+            pitch = this.minPitch;
+            logging.log(
+                'Pitch range exceeded when creating NoteSequence from shape.',
+                'MelodyShapeConverter');
+          }
+          break;
+        case 2:
+          pitch += 1;
+          if (pitch > this.maxPitch) {
+            pitch = this.maxPitch;
+            logging.log(
+                'Pitch range exceeded when creating NoteSequence from shape.',
+                'MelodyShapeConverter');
+          }
+          break;
+        default:
+          break;
+      }
+      noteSequence.notes.push(NoteSequence.Note.create(
+          {pitch, quantizedStartStep: s, quantizedEndStep: s + 1}));
+    }
+    noteSequence.totalQuantizedSteps = shape.length;
+    return noteSequence;
   }
 }
 
@@ -494,9 +644,9 @@ export class TrioConverter extends DataConverter {
  *   - An end token.
  *
  * Tracks are ordered by program number with drums at the end, then one-hot
- * encoded and padded with zeros to the maximum number of events. If fewer than
- * the maximum number of tracks are present, extra tracks consisting of only an
- * end token (then one-hot encoded and zero-padded) will be added.
+ * encoded and padded with zeros to the maximum number of events. If fewer
+ * than the maximum number of tracks are present, extra tracks consisting of
+ * only an end token (then one-hot encoded and zero-padded) will be added.
  *
  * @param numSteps The total number of events used to encode each
  * `NoteSequence`.
@@ -547,7 +697,8 @@ export class MultitrackConverter extends DataConverter {
     this.maxPitch = args.maxPitch ? args.maxPitch : constants.MAX_MIDI_PITCH;
 
     // Vocabulary:
-    // note-on, note-off, time-shift, velocity-change, program-select, end-token
+    // note-on, note-off, time-shift, velocity-change, program-select,
+    // end-token
 
     this.numPitches = this.maxPitch - this.minPitch + 1;
     this.performanceEventDepth =
@@ -753,8 +904,8 @@ export class MultitrackConverter extends DataConverter {
  * In this setting, we represent drum sequences and performances
  * as triples of (hit, velocity, offset). Each timestep refers to a fixed beat
  * on a grid, which is by default spaced at 16th notes (when `stepsPerQuarter`
- * is 4). Drum hits that don't fall exactly on beat are represented through the
- * offset value, which refers to the relative distance from the nearest
+ * is 4). Drum hits that don't fall exactly on beat are represented through
+ * the offset value, which refers to the relative distance from the nearest
  * quantized step.
  *
  * Hits are binary [0, 1].
@@ -766,13 +917,15 @@ export class MultitrackConverter extends DataConverter {
  * @param humanize If True, flatten all input velocities and
  * microtiming. The model then maps from a flattened input one with velocities
  * and microtiming. Defaults to False.
- * @param tapify  If True, squash all input drums at each timestep to the hi-hat
+ * @param tapify  If True, squash all input drums at each timestep to the
+ *     hi-hat
  * channel (3) and set velocities to 0. Defaults to False.
  * @param pitchClasses  An array of arrays, grouping together MIDI pitches to
  * treat as the same drum. The first pitch in each class will be used in the
  * `NoteSequence` returned by `toNoteSequence`. A default mapping to 9 classes
  * is used if not provided.
- * @param splitInstruments If True, the individual drum/pitch events for a given
+ * @param splitInstruments If True, the individual drum/pitch events for a
+ *     given
  * time are split across seprate, sequentail steps of the RNN. Otherwise, they
  * are combined into a single step of the RNN. Defaults to False.
  */
@@ -810,7 +963,8 @@ export class GrooveConverter extends DataConverter {
     this.tapify = args.tapify || false;
     this.splitInstruments = args.splitInstruments || false;
 
-    // Each drum hit is represented by 3 numbers - on/off, velocity, and offset.
+    // Each drum hit is represented by 3 numbers - on/off, velocity, and
+    // offset.
     this.depth = 3;
   }
 
@@ -824,8 +978,8 @@ export class GrooveConverter extends DataConverter {
         constants.DEFAULT_QUARTERS_PER_MINUTE;
     const stepLength = (60. / qpm) / this.stepsPerQuarter;
 
-    // For each quantized time step bin, collect a mapping from each pitch class
-    // to at most one drum hit. Break ties by selecting hit with highest
+    // For each quantized time step bin, collect a mapping from each pitch
+    // class to at most one drum hit. Break ties by selecting hit with highest
     // velocity.
     const stepNotes: Array<Map<number, NoteSequence.INote>> = [];
     for (let i = 0; i < numSteps; ++i) {

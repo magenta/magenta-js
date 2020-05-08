@@ -413,6 +413,25 @@ abstract class BaseDecoder extends Decoder {
 }
 
 /**
+ * Decoder that samples from a Bernoulli distributon. Unlike a NADE, each output
+ * dimension is sampled independently.
+ *
+ * Uses a probability threshold of 0.5 if no temperature is provided.
+ */
+class BooleanDecoder extends BaseDecoder {
+  sample(lstmOutput: tf.Tensor2D, temperature?: number): tf.Tensor2D {
+    const logits = lstmOutput;
+    return (temperature ?
+                tf.greaterEqual(
+                    tf.sigmoid(
+                        logits.div(tf.scalar(temperature)) as tf.Tensor2D),
+                    tf.randomUniform(logits.shape)) :
+                tf.greaterEqual(logits, 0))
+               .toFloat() as tf.Tensor2D;
+  }
+}
+
+/**
  * Decoder that samples from a Categorical distributon.
  *
  * Uses argmax if no temperature is provided.
@@ -640,11 +659,14 @@ class Nade {
  * converter to use.
  * @property chordEncoder: (Optional) Type of chord encoder to use when
  * conditioning on chords.
+ * @property useBooleanDecoder: If true, use a `BooleanDecoder` instead of a
+ * `CategoricalDecoder`.
  */
 export interface MusicVAESpec {
   type: 'MusicVAE';
   dataConverter: data.ConverterSpec;
   chordEncoder?: chords.ChordEncoderType;
+  useBooleanDecoder: boolean;
 }
 
 /**
@@ -859,6 +881,10 @@ class MusicVAE {
                    decLstmLayers, decZtoInitState, decOutputProjection,
                    undefined, controlLstmFwLayers[0], controlLstmBwLayers[0]) as
             Decoder;
+      } else if (this.spec.useBooleanDecoder) {
+        return new BooleanDecoder(
+            decLstmLayers, decZtoInitState, decOutputProjection, undefined,
+            controlLstmFwLayers[0], controlLstmBwLayers[0]);
       } else {
         return new CategoricalDecoder(
                    decLstmLayers, decZtoInitState, decOutputProjection,
@@ -894,6 +920,53 @@ class MusicVAE {
    */
   isInitialized() {
     return this.initialized;
+  }
+
+  /**
+   * Interpolates between the input `Tensor`s in latent space.
+   *
+   * If 2 sequences are given, a single linear interpolation is computed,
+   * with the first output sequence being a reconstruction of sequence A and
+   * the final output being a reconstruction of sequence B, with
+   * `numInterps` total sequences.
+   *
+   * If 4 sequences are given, bilinear interpolation is used. The results
+   * are returned in row-major order for a matrix with the following layout:
+   *   | A . . C |
+   *   | . . . . |
+   *   | . . . . |
+   *   | B . . D |
+   * where the letters represent the reconstructions of the four inputs, in
+   * alphabetical order, with the number of output columns and rows specified
+   * by `numInterps`.
+   *
+   * @param inputTensors A 3D `Tensor` containing 2 or 4 sequences to
+   * interpolate between.
+   * @param numInterps The number of pairwise interpolation sequences to
+   * return, including the reconstructions. If 4 inputs are given, this can be
+   * either a single number specifying the side length of a square, or a
+   * `[columnCount, rowCount]` array to specify a rectangle.
+   * @param temperature (Optional) The softmax temperature to use when
+   * sampling from the logits. Argmax is used if not provided.
+   *
+   * @returns A 3D `Tensor` of interpolations.
+   */
+  async interpolateTensors(
+      inputTensors: tf.Tensor3D, numInterps: number|number[],
+      temperature?: number) {
+    if (this.chordEncoder) {
+      throw new Error(
+          'Chords currently unsupported when interpolating tensors.');
+    }
+    if (!this.initialized) {
+      await this.initialize();
+    }
+    const inputZs = await this.encodeTensors(inputTensors);
+    const interpZs = tf.tidy(() => this.getInterpolatedZs(inputZs, numInterps));
+    inputZs.dispose();
+    const outputTensors = this.decodeTensors(interpZs, temperature);
+    interpZs.dispose();
+    return outputTensors;
   }
 
   /**
@@ -1035,6 +1108,26 @@ class MusicVAE {
   }
 
   /**
+   * Encodes the input `Tensor`s into latent vectors.
+   *
+   * @param inputTensors A 3D `Tensor` of sequences to encode.
+   * @returns A `Tensor` containing the batch of latent vectors, sized
+   * `[inputTensors.shape[0], zSize]`.
+   */
+  async encodeTensors(inputTensors: tf.Tensor3D) {
+    if (this.chordEncoder) {
+      throw new Error('Chords currently unsupported when encoding tensors.');
+    }
+    if (!this.initialized) {
+      await this.initialize();
+    }
+    const segmentLengths = this.dataConverter.endTensor ?
+        await this.getSegmentLengths(inputTensors) :
+        undefined;
+    return this.encoder.encode(inputTensors, segmentLengths);
+  }
+
+  /**
    * Encodes the input `NoteSequence`s into latent vectors.
    *
    * @param inputSequences An array of `NoteSequence`s to encode.
@@ -1107,6 +1200,26 @@ class MusicVAE {
     logging.logWithDuration(
         'Encoding completed', startTime, 'MusicVAE', logging.Level.DEBUG);
     return z;
+  }
+
+  /**
+   * Decodes the input latent vectors into tensors.
+   *
+   * @param z The latent vectors to decode, sized `[batchSize, zSize]`.
+   * @param temperature (Optional) The softmax temperature to use when
+   * sampling. The argmax is used if not provided.
+   *
+   * @returns The decoded tensors.
+   */
+  async decodeTensors(z: tf.Tensor2D, temperature?: number) {
+    if (this.chordEncoder) {
+      throw new Error('Chords currently unsupported when decoding to tensors.');
+    }
+    if (!this.initialized) {
+      await this.initialize();
+    }
+    return this.decoder.decode(
+        z, this.dataConverter.numSteps, undefined, temperature);
   }
 
   /**
@@ -1223,6 +1336,28 @@ class MusicVAE {
       }
     });
     return interpolatedZs;
+  }
+
+  /**
+   * Samples tensors from the model prior.
+   *
+   * @param numSamples The number of samples to return.
+   * @param temperature The softmax temperature to use when sampling.
+   *
+   * @returns A `Tensor3D` of samples.
+   */
+  async sampleTensors(numSamples: number, temperature = 0.5) {
+    if (this.chordEncoder) {
+      throw new Error('Chords currently unsupported when sampling tensors.');
+    }
+    if (!this.initialized) {
+      await this.initialize();
+    }
+    const randZs: tf.Tensor2D =
+        tf.tidy(() => tf.randomNormal([numSamples, this.decoder.zDims]));
+    const outputTensors = this.decodeTensors(randZs, temperature);
+    randZs.dispose();
+    return outputTensors;
   }
 
   /**
