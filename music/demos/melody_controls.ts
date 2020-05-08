@@ -19,9 +19,8 @@ import * as tf from '@tensorflow/tfjs';
 
 import * as mm from '../src/index';
 
-import {CHECKPOINTS_DIR, MEL_TWINKLE, writeMemory} from './common';
-import {MEL_TEAPOT} from './common';
-import {writeNoteSeqs, writeTimer} from './common';
+import {CHECKPOINTS_DIR, MEL_TEAPOT, MEL_TWINKLE} from './common';
+import {writeMemory, writeNoteSeqs, writeTimer} from './common';
 
 mm.logging.verbosity = mm.logging.Level.DEBUG;
 

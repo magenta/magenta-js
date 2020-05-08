@@ -644,9 +644,9 @@ export class TrioConverter extends DataConverter {
  *   - An end token.
  *
  * Tracks are ordered by program number with drums at the end, then one-hot
- * encoded and padded with zeros to the maximum number of events. If fewer
- * than the maximum number of tracks are present, extra tracks consisting of
- * only an end token (then one-hot encoded and zero-padded) will be added.
+ * encoded and padded with zeros to the maximum number of events. If fewer than
+ * the maximum number of tracks are present, extra tracks consisting of only an
+ * end token (then one-hot encoded and zero-padded) will be added.
  *
  * @param numSteps The total number of events used to encode each
  * `NoteSequence`.
@@ -697,8 +697,7 @@ export class MultitrackConverter extends DataConverter {
     this.maxPitch = args.maxPitch ? args.maxPitch : constants.MAX_MIDI_PITCH;
 
     // Vocabulary:
-    // note-on, note-off, time-shift, velocity-change, program-select,
-    // end-token
+    // note-on, note-off, time-shift, velocity-change, program-select, end-token
 
     this.numPitches = this.maxPitch - this.minPitch + 1;
     this.performanceEventDepth =
@@ -904,8 +903,8 @@ export class MultitrackConverter extends DataConverter {
  * In this setting, we represent drum sequences and performances
  * as triples of (hit, velocity, offset). Each timestep refers to a fixed beat
  * on a grid, which is by default spaced at 16th notes (when `stepsPerQuarter`
- * is 4). Drum hits that don't fall exactly on beat are represented through
- * the offset value, which refers to the relative distance from the nearest
+ * is 4). Drum hits that don't fall exactly on beat are represented through the
+ * offset value, which refers to the relative distance from the nearest
  * quantized step.
  *
  * Hits are binary [0, 1].
@@ -917,15 +916,13 @@ export class MultitrackConverter extends DataConverter {
  * @param humanize If True, flatten all input velocities and
  * microtiming. The model then maps from a flattened input one with velocities
  * and microtiming. Defaults to False.
- * @param tapify  If True, squash all input drums at each timestep to the
- *     hi-hat
+ * @param tapify  If True, squash all input drums at each timestep to the hi-hat
  * channel (3) and set velocities to 0. Defaults to False.
  * @param pitchClasses  An array of arrays, grouping together MIDI pitches to
  * treat as the same drum. The first pitch in each class will be used in the
  * `NoteSequence` returned by `toNoteSequence`. A default mapping to 9 classes
  * is used if not provided.
- * @param splitInstruments If True, the individual drum/pitch events for a
- *     given
+ * @param splitInstruments If True, the individual drum/pitch events for a given
  * time are split across seprate, sequentail steps of the RNN. Otherwise, they
  * are combined into a single step of the RNN. Defaults to False.
  */
@@ -963,8 +960,7 @@ export class GrooveConverter extends DataConverter {
     this.tapify = args.tapify || false;
     this.splitInstruments = args.splitInstruments || false;
 
-    // Each drum hit is represented by 3 numbers - on/off, velocity, and
-    // offset.
+    // Each drum hit is represented by 3 numbers - on/off, velocity, and offset.
     this.depth = 3;
   }
 
@@ -978,8 +974,8 @@ export class GrooveConverter extends DataConverter {
         constants.DEFAULT_QUARTERS_PER_MINUTE;
     const stepLength = (60. / qpm) / this.stepsPerQuarter;
 
-    // For each quantized time step bin, collect a mapping from each pitch
-    // class to at most one drum hit. Break ties by selecting hit with highest
+    // For each quantized time step bin, collect a mapping from each pitch class
+    // to at most one drum hit. Break ties by selecting hit with highest
     // velocity.
     const stepNotes: Array<Map<number, NoteSequence.INote>> = [];
     for (let i = 0; i < numSteps; ++i) {
