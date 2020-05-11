@@ -17,8 +17,10 @@
 
 import * as tf from '@tensorflow/tfjs';
 import * as test from 'tape';
+
 import {NoteSequence} from '../protobuf/index';
-import {Melody, MelodyRhythm, MelodyShape} from './melodies';
+
+import {Melody, MelodyRegister, MelodyRhythm, MelodyShape} from './melodies';
 
 const TEST_NS = NoteSequence.create({
   notes: [
@@ -75,5 +77,15 @@ test('Test Melody Shape Control', (t: test.Test) => {
   const shapeIndices = tf.argMax(shapeTensor, 1);
   t.deepEqual(shapeTensor.shape, [8, 3]);
   t.deepEqual(shapeIndices.dataSync(), [2, 2, 2, 2, 1, 0, 2, 2]);
+  t.end();
+});
+
+test('Test Melody Register Control', (t: test.Test) => {
+  const melody = new Melody([0, 2, 0, 0, 4, 6, 6, 1], 60, 72);
+  const mr = new MelodyRegister([60, 63, 72]);
+  const registerTensor = mr.extract(melody);
+  const registerIndices = tf.argMax(registerTensor, 1);
+  t.deepEqual(registerTensor.shape, [8, 4]);
+  t.deepEqual(registerIndices.dataSync(), [1, 1, 1, 1, 1, 1, 1, 1]);
   t.end();
 });

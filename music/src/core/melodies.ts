@@ -254,3 +254,65 @@ export class MelodyShape implements MelodyControl {
     return buffer.toTensor().as2D(numSteps, 3);
   }
 }
+
+/**
+ * Register control signal. Extracts a tensor with one-hot register indicator,
+ * constant across time steps.
+ */
+export class MelodyRegister implements MelodyControl {
+  readonly boundaryPitches: number[];
+  readonly depth: number;
+
+  constructor(boundaryPitches: number[]) {
+    this.boundaryPitches = boundaryPitches;
+    this.depth = boundaryPitches.length + 1;
+  }
+
+  private meanMelodyPitch(melody: Melody): number {
+    // Compute mean melody pitch, weighted by time steps.
+    let total = 0;
+    let count = 0;
+    let currentPitch = null;
+    for (let step = 0; step < melody.events.length; ++step) {
+      if (melody.events[step] === NOTE_OFF) {
+        currentPitch = null;
+      } else if (melody.events[step] >= FIRST_PITCH) {
+        currentPitch = melody.minPitch + melody.events[step] - FIRST_PITCH;
+      }
+      if (currentPitch !== null) {
+        total += currentPitch;
+        count += 1;
+      }
+    }
+    if (count) {
+      return total / count;
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * Extract the register from a Melody object.
+   *
+   * @param melody Melody object from which to extract register.
+   * @returns An n-by-`depth` 2D tensor containing the one-hot encoded melody
+   * register, constant across time steps.
+   */
+  extract(melody: Melody) {
+    const numSteps = melody.events.length;
+    const meanPitch = this.meanMelodyPitch(melody);
+    if (meanPitch === null) {
+      return tf.zeros([numSteps, this.depth]) as tf.Tensor2D;
+    }
+    let bin = 0;
+    while (bin < this.boundaryPitches.length &&
+           meanPitch >= this.boundaryPitches[bin]) {
+      bin++;
+    }
+    const buffer = tf.buffer([numSteps, this.depth]);
+    for (let step = 0; step < numSteps; ++step) {
+      buffer.set(1, step, bin);
+    }
+    return buffer.toTensor().as2D(numSteps, this.depth);
+  }
+}
