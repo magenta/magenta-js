@@ -452,7 +452,7 @@ abstract class MelodyControlConverter extends DataConverter {
  * Converts between a monophonic, quantized `NoteSequence` containing a melody
  * and a `Tensor` representing only the *rhythm* of the melody.
  *
- * The rhythm is represented as a `numSteps`-by-1 `Tensor` with 1 in the
+ * The rhythm is represented as a [`numSteps`, 1]-shaped `Tensor` with 1 in the
  * positions corresponding to steps with a note-on and 0 elsewhere.
  *
  * Since the melody cannot be reconstructed from its rhythm alone,
@@ -491,9 +491,9 @@ export class MelodyRhythmConverter extends MelodyControlConverter {
  * Converts between a monophonic, quantized `NoteSequence` containing a melody
  * and a `Tensor` representing only the *shape* of the melody.
  *
- * The shape is represented as a `numSteps`-by-3 `Tensor` containing a one-hot
- * Parsons code, where 0 = descending pitch, 1 = same pitch, and 2 = ascending
- * pitch.
+ * The shape is represented as a [`numSteps`, 3]-shaped `Tensor` containing a
+ * one-hot Parsons code, where 0 = descending pitch, 1 = same pitch, and 2 =
+ * ascending pitch.
  *
  * Since the melody cannot be reconstructed from its shape alone,
  * `toNoteSequence` returns a `NoteSequence` having the shape of the contour
