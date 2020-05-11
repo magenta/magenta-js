@@ -19,13 +19,14 @@ import * as tf from '@tensorflow/tfjs';
 
 import * as mm from '../src/index';
 
-import {CHECKPOINTS_DIR, writeMemory} from './common';
-import {MEL_TEAPOT} from './common';
-import {writeNoteSeqs, writeTimer} from './common';
+import {CHECKPOINTS_DIR, MEL_TEAPOT, MEL_TWINKLE} from './common';
+import {writeMemory, writeNoteSeqs, writeTimer} from './common';
 
 mm.logging.verbosity = mm.logging.Level.DEBUG;
 
 const MEL_CONTROLS_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_controls`;
+const MEL_RHYTHM_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_rhythm`;
+const MEL_SHAPE_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_shape`;
 
 const DOTTED_RHYTHM = tf.tensor(
                           [
@@ -77,11 +78,53 @@ async function runMelControls() {
   mvae.dispose();
 }
 
+async function runMelRhythm() {
+  const inputs = [MEL_TEAPOT, MEL_TWINKLE];
+  writeNoteSeqs('mel-rhythm-inputs', inputs);
+
+  const mvae = new mm.MusicVAE(MEL_RHYTHM_CKPT);
+  await mvae.initialize();
+
+  let start = performance.now();
+  const interp = await mvae.interpolate(inputs, 5);
+  writeTimer('mel-rhythm-interp-time', start);
+  writeNoteSeqs('mel-rhythm-interp', interp);
+
+  start = performance.now();
+  const sample = await mvae.sample(4);
+  writeTimer('mel-rhythm-sample-time', start);
+  writeNoteSeqs('mel-rhythm-samples', sample);
+
+  mvae.dispose();
+}
+
+async function runMelShape() {
+  const inputs = [MEL_TEAPOT, MEL_TWINKLE];
+  writeNoteSeqs('mel-shape-inputs', inputs);
+
+  const mvae = new mm.MusicVAE(MEL_SHAPE_CKPT);
+  await mvae.initialize();
+
+  let start = performance.now();
+  const interp = await mvae.interpolate(inputs, 5);
+  writeTimer('mel-shape-interp-time', start);
+  writeNoteSeqs('mel-shape-interp', interp);
+
+  start = performance.now();
+  const sample = await mvae.sample(4);
+  writeTimer('mel-shape-sample-time', start);
+  writeNoteSeqs('mel-shape-samples', sample);
+
+  mvae.dispose();
+}
+
 async function generateAllButton() {
   const button = document.createElement('button');
   button.textContent = 'Generate All';
   button.addEventListener('click', () => {
     runMelControls();
+    runMelRhythm();
+    runMelShape();
     button.disabled = true;
   });
   const div = document.getElementById('generate-all');
@@ -99,8 +142,34 @@ async function generateMelControlsButton() {
   melControlsDiv.appendChild(melControlsButton);
 }
 
+async function generateMelRhythmButton() {
+  const melRhythmButton = document.createElement('button');
+  melRhythmButton.textContent = 'Generate Rhythm';
+  melRhythmButton.addEventListener('click', () => {
+    runMelRhythm();
+    melRhythmButton.disabled = true;
+  });
+  const melRhythmDiv = document.getElementById('generate-melody-rhythm');
+  melRhythmDiv.appendChild(melRhythmButton);
+}
+
+async function generateMelShapeButton() {
+  const melShapeButton = document.createElement('button');
+  melShapeButton.textContent = 'Generate Shape';
+  melShapeButton.addEventListener('click', () => {
+    runMelShape();
+    melShapeButton.disabled = true;
+  });
+  const melShapeDiv = document.getElementById('generate-melody-shape');
+  melShapeDiv.appendChild(melShapeButton);
+}
+
 try {
-  Promise.all([generateAllButton(), generateMelControlsButton()])
+  Promise
+      .all([
+        generateAllButton(), generateMelControlsButton(),
+        generateMelRhythmButton(), generateMelShapeButton()
+      ])
       .then(() => writeMemory(tf.memory().numBytes));
 } catch (err) {
   console.error(err);
