@@ -269,7 +269,8 @@ export class MelodyRegister implements MelodyControl {
   }
 
   private meanMelodyPitch(melody: Melody): number {
-    // Compute mean melody pitch, weighted by time steps.
+    // Compute mean melody pitch, weighted by number of time steps the pitch is
+    // held.
     let total = 0;
     let count = 0;
     let currentPitch = null;
