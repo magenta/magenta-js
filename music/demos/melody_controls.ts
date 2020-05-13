@@ -28,6 +28,11 @@ const MEL_CONTROLS_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_controls`;
 const MEL_RHYTHM_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_rhythm`;
 const MEL_SHAPE_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_shape`;
 
+const MEL_MULTI_DIR = `${CHECKPOINTS_DIR}/music_vae/mel_multicontrol`;
+const MEL_MULTI_CONTROLS = `${MEL_MULTI_DIR}/mel_2bar_multicontrol_tiny_fb16`;
+const MEL_MULTI_RHYTHM = `${MEL_MULTI_DIR}/mel_rhythm_2bar_tiny_fb16`;
+const MEL_MULTI_SHAPE = `${MEL_MULTI_DIR}/mel_shape_2bar_tiny_fb16`;
+
 const DOTTED_RHYTHM = tf.tensor(
                           [
                             1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0,
@@ -44,6 +49,7 @@ const UDUDF_SHAPE = tf.oneHot(
 
 const RHYTHM = new mm.melodies.MelodyRhythm();
 const SHAPE = new mm.melodies.MelodyShape();
+const REGISTER = new mm.melodies.MelodyRegister([50, 63, 70]);
 
 async function runMelControls() {
   const melTeapotStaccato = mm.sequences.clone(MEL_TEAPOT);
@@ -118,6 +124,45 @@ async function runMelShape() {
   mvae.dispose();
 }
 
+async function runMelMulti() {
+  const mvaeMel = new mm.MusicVAE(MEL_MULTI_CONTROLS);
+  const mvaeRhythm = new mm.MusicVAE(MEL_MULTI_RHYTHM);
+  const mvaeShape = new mm.MusicVAE(MEL_MULTI_SHAPE);
+
+  await Promise.all(
+      [mvaeMel.initialize(), mvaeRhythm.initialize(), mvaeShape.initialize()]);
+
+  const start = performance.now();
+
+  const rhythmTensors = await mvaeRhythm.sampleTensors(1);
+  const shapeTensors = await mvaeShape.sampleTensors(1);
+  const rhythmTensor = tf.squeeze(rhythmTensors, [0]) as tf.Tensor2D;
+  const shapeTensor = tf.squeeze(shapeTensors, [0]) as tf.Tensor2D;
+  const registerTensor = REGISTER.extract(
+      mm.melodies.Melody.fromNoteSequence(MEL_TEAPOT, 0, 127, true, 32));
+  const controlTensor =
+      tf.concat([rhythmTensor, shapeTensor, registerTensor], 1);
+
+  const melodySeqs =
+      await mvaeMel.sample(1, null, ['C'], undefined, undefined, controlTensor);
+  const rhythmSeq = await mvaeRhythm.dataConverter.toNoteSequence(rhythmTensor);
+  const shapeSeq = await mvaeShape.dataConverter.toNoteSequence(shapeTensor);
+
+  writeTimer('mel-multi-sample-time', start);
+  writeNoteSeqs('mel-multi-seqs', [rhythmSeq, shapeSeq, melodySeqs[0]]);
+
+  rhythmTensors.dispose();
+  shapeTensors.dispose();
+  rhythmTensor.dispose();
+  shapeTensor.dispose();
+  registerTensor.dispose();
+  controlTensor.dispose();
+
+  mvaeMel.dispose();
+  mvaeRhythm.dispose();
+  mvaeShape.dispose();
+}
+
 async function generateAllButton() {
   const button = document.createElement('button');
   button.textContent = 'Generate All';
@@ -125,6 +170,7 @@ async function generateAllButton() {
     runMelControls();
     runMelRhythm();
     runMelShape();
+    runMelMulti();
     button.disabled = true;
   });
   const div = document.getElementById('generate-all');
@@ -164,11 +210,23 @@ async function generateMelShapeButton() {
   melShapeDiv.appendChild(melShapeButton);
 }
 
+async function generateMelMultiButton() {
+  const melMultiButton = document.createElement('button');
+  melMultiButton.textContent = 'Generate Rhythm, Shape, and Melody';
+  melMultiButton.addEventListener('click', () => {
+    runMelMulti();
+    melMultiButton.disabled = true;
+  });
+  const melMultiDiv = document.getElementById('generate-melody-multi');
+  melMultiDiv.appendChild(melMultiButton);
+}
+
 try {
   Promise
       .all([
         generateAllButton(), generateMelControlsButton(),
-        generateMelRhythmButton(), generateMelShapeButton()
+        generateMelRhythmButton(), generateMelShapeButton(),
+        generateMelMultiButton()
       ])
       .then(() => writeMemory(tf.memory().numBytes));
 } catch (err) {
