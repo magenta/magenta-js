@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>&quot;core/sequences&quot; | @magenta/music - v1.14.0</title>
+	<title>&quot;core/sequences&quot; | @magenta/music - v1.15.0</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">@magenta/music - v1.14.0</a>
+					<a href="../index.html" class="title">@magenta/music - v1.15.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -105,6 +105,7 @@
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#assertisrelativequantizedsequence" class="tsd-kind-icon">assert<wbr>IsRelative<wbr>Quantized<wbr>Sequence</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#clone" class="tsd-kind-icon">clone</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#concatenate" class="tsd-kind-icon">concatenate</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#createquantizednotesequence" class="tsd-kind-icon">create<wbr>Quantized<wbr>Note<wbr>Sequence</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#isabsolutequantizedsequence" class="tsd-kind-icon">is<wbr>Absolute<wbr>Quantized<wbr>Sequence</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#isquantizedsequence" class="tsd-kind-icon">is<wbr>Quantized<wbr>Sequence</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#isrelativequantizedsequence" class="tsd-kind-icon">is<wbr>Relative<wbr>Quantized<wbr>Sequence</a></li>
@@ -241,7 +242,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L557">src/core/sequences.ts:557</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L570">src/core/sequences.ts:570</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -254,6 +255,44 @@
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">NoteSequence</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
+					<a name="createquantizednotesequence" class="tsd-anchor"></a>
+					<h3>create<wbr>Quantized<wbr>Note<wbr>Sequence</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
+						<li class="tsd-signature tsd-kind-icon">create<wbr>Quantized<wbr>Note<wbr>Sequence<span class="tsd-signature-symbol">(</span>stepsPerQuarter<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, qpm<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">NoteSequence</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L411">src/core/sequences.ts:411</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Create an empty quantized NoteSequence with steps per quarter note and tempo.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> stepsPerQuarter: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = constants.DEFAULT_STEPS_PER_QUARTER</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The number of steps per quarter note to use.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> qpm: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = constants.DEFAULT_QUARTERS_PER_MINUTE</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The tempo to use.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">NoteSequence</span></h4>
+							<p>A new quantized NoteSequence.</p>
 						</li>
 					</ul>
 				</section>
@@ -351,7 +390,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L491">src/core/sequences.ts:491</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L504">src/core/sequences.ts:504</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -386,7 +425,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L414">src/core/sequences.ts:414</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L427">src/core/sequences.ts:427</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -532,7 +571,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L446">src/core/sequences.ts:446</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L459">src/core/sequences.ts:459</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -576,7 +615,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L686">src/core/sequences.ts:686</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L700">src/core/sequences.ts:700</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -648,7 +687,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L602">src/core/sequences.ts:602</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L615">src/core/sequences.ts:615</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -778,6 +817,9 @@
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
 						<a href="_core_sequences_.html#concatenate" class="tsd-kind-icon">concatenate</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="_core_sequences_.html#createquantizednotesequence" class="tsd-kind-icon">create<wbr>Quantized<wbr>Note<wbr>Sequence</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
 						<a href="_core_sequences_.html#isabsolutequantizedsequence" class="tsd-kind-icon">is<wbr>Absolute<wbr>Quantized<wbr>Sequence</a>
