@@ -1,6 +1,6 @@
 {
   "name": "@magenta/music",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "description": "Make music with machine learning, in the browser.",
   "main": "es5/index.js",
   "module": "es6/index.js",
