@@ -964,7 +964,7 @@ class MusicVAE {
     const inputZs = await this.encodeTensors(inputTensors);
     const interpZs = tf.tidy(() => this.getInterpolatedZs(inputZs, numInterps));
     inputZs.dispose();
-    const outputTensors = this.decodeTensors(interpZs, temperature);
+    const outputTensors = await this.decodeTensors(interpZs, temperature);
     interpZs.dispose();
     return outputTensors;
   }
@@ -1355,7 +1355,7 @@ class MusicVAE {
     }
     const randZs: tf.Tensor2D =
         tf.tidy(() => tf.randomNormal([numSamples, this.decoder.zDims]));
-    const outputTensors = this.decodeTensors(randZs, temperature);
+    const outputTensors = await this.decodeTensors(randZs, temperature);
     randZs.dispose();
     return outputTensors;
   }
@@ -1401,6 +1401,106 @@ class MusicVAE {
     outputSequences.then(
         () => logging.logWithDuration(
             'Sampling completed', startTime, 'MusicVAE', logging.Level.DEBUG));
+    return outputSequences;
+  }
+
+  /**
+   * Generates similar tensors to an input tensor.
+   *
+   * This is done by sampling new Zs from a unit Gaussian and interpolating
+   * between the encoded input tensor and the sampled Zs.
+   *
+   * @param inputTensor The input tensor, a `Tensor2D`.
+   * @param numSamples The number of samples to return.
+   * @param similarity The degree of similarity between the generated tensors
+   * and the input tensor. Must be between 0 and 1, where 1 is most similar and
+   * 0 is least similar.
+   * @param temperature The softmax temperature to use when sampling.
+   *
+   * @returns A `Tensor3D` of samples.
+   */
+  async similarTensors(
+      inputTensor: tf.Tensor2D, numSamples: number, similarity: number,
+      temperature?: number) {
+    if (this.chordEncoder) {
+      throw new Error(
+          'Chords currently unsupported when generating similar tensors.');
+    }
+    if (similarity < 0 || similarity > 1) {
+      throw new Error('Similarity must be between 0 and 1.');
+    }
+    if (!this.initialized) {
+      await this.initialize();
+    }
+    const inputTensors = tf.expandDims(inputTensor, 0) as tf.Tensor3D;
+    const inputZs = await this.encodeTensors(inputTensors);
+    inputTensors.dispose();
+    const similarZs: tf.Tensor2D = tf.tidy(() => {
+      const randZs = tf.randomNormal([numSamples, this.decoder.zDims]);
+      // TODO(iansimon): use slerp instead of linear interpolation
+      return tf.add(inputZs.mul(similarity), randZs.mul(1 - similarity));
+    });
+    inputZs.dispose();
+    const outputTensors = await this.decodeTensors(similarZs, temperature);
+    similarZs.dispose();
+    return outputTensors;
+  }
+
+  /**
+   * Generates similar `NoteSequence`s to an input `NoteSequence`.
+   *
+   * This is done by sampling new Zs from a unit Gaussian and interpolating
+   * between the encoded input `NoteSequence` and the sampled Zs.
+   *
+   * @param inputSequence The input `NoteSequence`.
+   * @param numSamples The number of samples to return.
+   * @param similarity The degree of similarity between the generated sequences
+   * and the input sequence. Must be between 0 and 1, where 1 is most similar
+   * and 0 is least similar.
+   * @param temperature The softmax temperature to use when sampling.
+   * @param chordProgression (Optional) Chord progression to use as
+   * conditioning.
+   * @param extraControls (Optional) Additional control tensors to use as
+   * conditioning.
+   *
+   * @returns An array of generated `NoteSequence` objects.
+   */
+  async similar(
+      inputSequence: INoteSequence, numSamples: number, similarity: number,
+      temperature?: number, chordProgression?: string[],
+      extraControls?: tf.Tensor2D) {
+    if (this.chordEncoder && !chordProgression) {
+      throw new Error('Chord progression expected but not provided.');
+    }
+    if (!this.chordEncoder && chordProgression) {
+      throw new Error('Unexpected chord progression provided.');
+    }
+    if (similarity < 0 || similarity > 1) {
+      throw new Error('Similarity must be between 0 and 1.');
+    }
+
+    if (!this.initialized) {
+      await this.initialize();
+    }
+    const startTime = 0;
+
+    const inputZs =
+        await this.encode([inputSequence], chordProgression, extraControls);
+    const similarZs: tf.Tensor2D = tf.tidy(() => {
+      const randZs = tf.randomNormal([numSamples, this.decoder.zDims]);
+      // TODO(iansimon): use slerp instead of linear interpolation
+      return tf.add(inputZs.mul(similarity), randZs.mul(1 - similarity));
+    });
+    inputZs.dispose();
+
+    const outputSequences = this.decode(
+        similarZs, temperature, chordProgression, undefined, undefined,
+        extraControls);
+    similarZs.dispose();
+    outputSequences.then(
+        () => logging.logWithDuration(
+            'Similar sequence generation completed', startTime, 'MusicVAE',
+            logging.Level.DEBUG));
     return outputSequences;
   }
 }

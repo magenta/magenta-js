@@ -18,6 +18,7 @@
 import * as tf from '@tensorflow/tfjs';
 
 import * as mm from '../src/index';
+import {INoteSequence} from '../src/index';
 
 import {CHECKPOINTS_DIR, MEL_TEAPOT, MEL_TWINKLE} from './common';
 import {writeMemory, writeNoteSeqs, writeTimer} from './common';
@@ -96,6 +97,13 @@ async function runMelRhythm() {
   writeTimer('mel-rhythm-interp-time', start);
   writeNoteSeqs('mel-rhythm-interp', interp);
 
+  const source = MEL_TEAPOT;
+  writeNoteSeqs('mel-rhythm-source', [source]);
+  start = performance.now();
+  const similar = await mvae.similar(source, 4, 0.8);
+  writeTimer('mel-rhythm-similar-time', start);
+  writeNoteSeqs('mel-rhythm-similar', similar);
+
   start = performance.now();
   const sample = await mvae.sample(4);
   writeTimer('mel-rhythm-sample-time', start);
@@ -116,6 +124,13 @@ async function runMelShape() {
   writeTimer('mel-shape-interp-time', start);
   writeNoteSeqs('mel-shape-interp', interp);
 
+  const source = MEL_TEAPOT;
+  writeNoteSeqs('mel-shape-source', [source]);
+  start = performance.now();
+  const similar = await mvae.similar(source, 4, 0.8);
+  writeTimer('mel-shape-similar-time', start);
+  writeNoteSeqs('mel-shape-similar', similar);
+
   start = performance.now();
   const sample = await mvae.sample(4);
   writeTimer('mel-shape-sample-time', start);
@@ -132,7 +147,7 @@ async function runMelMulti() {
   await Promise.all(
       [mvaeMel.initialize(), mvaeRhythm.initialize(), mvaeShape.initialize()]);
 
-  const start = performance.now();
+  let start = performance.now();
 
   const rhythmTensors = await mvaeRhythm.sampleTensors(1);
   const shapeTensors = await mvaeShape.sampleTensors(1);
@@ -151,12 +166,48 @@ async function runMelMulti() {
   writeTimer('mel-multi-sample-time', start);
   writeNoteSeqs('mel-multi-seqs', [rhythmSeq, shapeSeq, melodySeqs[0]]);
 
+  start = performance.now();
+
+  const z = await mvaeMel.encode(melodySeqs, ['C'], controlTensor);
+
+  const similarRhythmTensors =
+      await mvaeRhythm.similarTensors(rhythmTensor, 4, 0.8);
+  const similarShapeTensors =
+      await mvaeShape.similarTensors(shapeTensor, 4, 0.8);
+  const similarRhythmTensorsSplit = similarRhythmTensors.split(4);
+  const similarShapeTensorsSplit = similarShapeTensors.split(4);
+
+  const similarSeqs: INoteSequence[] = [];
+  for (let i = 0; i < 4; ++i) {
+    const similarControlTensor = tf.tidy(
+        () => tf.concat(
+            [
+              tf.squeeze(similarRhythmTensorsSplit[i], [0]) as tf.Tensor2D,
+              tf.squeeze(similarShapeTensorsSplit[i], [0]) as tf.Tensor2D,
+              registerTensor
+            ],
+            1));
+    const similarSeq = await mvaeMel.decode(
+        z, null, ['C'], undefined, undefined, similarControlTensor);
+    similarSeqs.push(similarSeq[0]);
+    similarRhythmTensorsSplit[i].dispose();
+    similarShapeTensorsSplit[i].dispose();
+    similarControlTensor.dispose();
+  }
+
+  writeTimer('mel-multi-similar-time', start);
+  writeNoteSeqs('mel-multi-similar', similarSeqs);
+
   rhythmTensors.dispose();
   shapeTensors.dispose();
   rhythmTensor.dispose();
   shapeTensor.dispose();
   registerTensor.dispose();
   controlTensor.dispose();
+
+  z.dispose();
+  similarRhythmTensors.dispose();
+  similarShapeTensors.dispose();
 
   mvaeMel.dispose();
   mvaeRhythm.dispose();
