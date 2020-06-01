@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>MusicVAE | @magenta/music - v1.15.0</title>
+	<title>MusicVAE | @magenta/music - v1.16.0</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">@magenta/music - v1.15.0</a>
+					<a href="../index.html" class="title">@magenta/music - v1.16.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -115,6 +115,8 @@
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_music_vae_model_.musicvae.html#isinitialized" class="tsd-kind-icon">is<wbr>Initialized</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_music_vae_model_.musicvae.html#sample" class="tsd-kind-icon">sample</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_music_vae_model_.musicvae.html#sampletensors" class="tsd-kind-icon">sample<wbr>Tensors</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_music_vae_model_.musicvae.html#similar" class="tsd-kind-icon">similar</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_music_vae_model_.musicvae.html#similartensors" class="tsd-kind-icon">similar<wbr>Tensors</a></li>
 							</ul>
 						</section>
 					</div>
@@ -684,6 +686,128 @@
 						</li>
 					</ul>
 				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="similar" class="tsd-anchor"></a>
+					<h3>similar</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">similar<span class="tsd-signature-symbol">(</span>inputSequence<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span>, numSamples<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, similarity<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, temperature<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, chordProgression<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span>, extraControls<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">tf.Tensor2D</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1468">src/music_vae/model.ts:1468</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Generates similar <code>NoteSequence</code>s to an input <code>NoteSequence</code>.</p>
+								</div>
+								<p>This is done by sampling new Zs from a unit Gaussian and interpolating
+								between the encoded input <code>NoteSequence</code> and the sampled Zs.</p>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>inputSequence: <span class="tsd-signature-type">INoteSequence</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The input <code>NoteSequence</code>.</p>
+									</div>
+								</li>
+								<li>
+									<h5>numSamples: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The number of samples to return.</p>
+									</div>
+								</li>
+								<li>
+									<h5>similarity: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The degree of similarity between the generated sequences
+											and the input sequence. Must be between 0 and 1, where 1 is most similar
+										and 0 is least similar.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> temperature: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The softmax temperature to use when sampling.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> chordProgression: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>(Optional) Chord progression to use as
+										conditioning.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> extraControls: <span class="tsd-signature-type">tf.Tensor2D</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>(Optional) Additional control tensors to use as
+										conditioning.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>An array of generated <code>NoteSequence</code> objects.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="similartensors" class="tsd-anchor"></a>
+					<h3>similar<wbr>Tensors</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">similar<wbr>Tensors<span class="tsd-signature-symbol">(</span>inputTensor<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">tf.Tensor2D</span>, numSamples<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, similarity<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, temperature<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Tensor</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R3</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1422">src/music_vae/model.ts:1422</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Generates similar tensors to an input tensor.</p>
+								</div>
+								<p>This is done by sampling new Zs from a unit Gaussian and interpolating
+								between the encoded input tensor and the sampled Zs.</p>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>inputTensor: <span class="tsd-signature-type">tf.Tensor2D</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The input tensor, a <code>Tensor2D</code>.</p>
+									</div>
+								</li>
+								<li>
+									<h5>numSamples: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The number of samples to return.</p>
+									</div>
+								</li>
+								<li>
+									<h5>similarity: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The degree of similarity between the generated tensors
+											and the input tensor. Must be between 0 and 1, where 1 is most similar and
+										0 is least similar.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> temperature: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The softmax temperature to use when sampling.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Tensor</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R3</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A <code>Tensor3D</code> of samples.</p>
+						</li>
+					</ul>
+				</section>
 			</section>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
@@ -754,6 +878,12 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_music_vae_model_.musicvae.html#sampletensors" class="tsd-kind-icon">sample<wbr>Tensors</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_music_vae_model_.musicvae.html#similar" class="tsd-kind-icon">similar</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_music_vae_model_.musicvae.html#similartensors" class="tsd-kind-icon">similar<wbr>Tensors</a>
 							</li>
 						</ul>
 					</li>
