@@ -31,6 +31,8 @@ const MEL_SHAPE_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_shape`;
 
 const MEL_MULTI_DIR = `${CHECKPOINTS_DIR}/music_vae/mel_multicontrol`;
 const MEL_MULTI_CONTROLS = `${MEL_MULTI_DIR}/mel_2bar_multicontrol_tiny_fb16`;
+const MEL_MULTI_CONTROLS_KEY =
+    `${MEL_MULTI_DIR}/mel_2bar_multicontrol_key_tiny_fb16`;
 const MEL_MULTI_RHYTHM = `${MEL_MULTI_DIR}/mel_rhythm_2bar_tiny_fb16`;
 const MEL_MULTI_SHAPE = `${MEL_MULTI_DIR}/mel_shape_2bar_tiny_fb16`;
 
@@ -141,11 +143,14 @@ async function runMelShape() {
 
 async function runMelMulti() {
   const mvaeMel = new mm.MusicVAE(MEL_MULTI_CONTROLS);
+  const mvaeMelKey = new mm.MusicVAE(MEL_MULTI_CONTROLS_KEY);
   const mvaeRhythm = new mm.MusicVAE(MEL_MULTI_RHYTHM);
   const mvaeShape = new mm.MusicVAE(MEL_MULTI_SHAPE);
 
-  await Promise.all(
-      [mvaeMel.initialize(), mvaeRhythm.initialize(), mvaeShape.initialize()]);
+  await Promise.all([
+    mvaeMel.initialize(), mvaeMelKey.initialize(), mvaeRhythm.initialize(),
+    mvaeShape.initialize()
+  ]);
 
   let start = performance.now();
 
@@ -165,6 +170,19 @@ async function runMelMulti() {
 
   writeTimer('mel-multi-sample-time', start);
   writeNoteSeqs('mel-multi-seqs', [rhythmSeq, shapeSeq, melodySeqs[0]]);
+
+  const melodySeqsIonian = await mvaeMelKey.sample(
+      1, null, ['C'], undefined, undefined, controlTensor, 0);
+  const zKey =
+      await mvaeMelKey.encode(melodySeqsIonian, ['C'], controlTensor, 0);
+  const melodySeqsLydian = await mvaeMelKey.decode(
+      zKey, null, ['C'], undefined, undefined, controlTensor, 7);
+  const melodySeqsMixolydian = await mvaeMelKey.decode(
+      zKey, null, ['C'], undefined, undefined, controlTensor, 5);
+
+  writeNoteSeqs(
+      'mel-multi-key-seqs',
+      [melodySeqsIonian[0], melodySeqsLydian[0], melodySeqsMixolydian[0]]);
 
   start = performance.now();
 
