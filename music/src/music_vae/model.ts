@@ -969,10 +969,10 @@ class MusicVAE {
           'Multiple chords not supported when using variable-length segments.');
     }
 
-    const chordDepth =
+    const chordDepth: number =
         controlArgs.chordProgression ? this.chordEncoder.depth : 0;
-    const keyDepth = controlArgs.key != null ? 12 : 0;
-    const extraDepth =
+    const keyDepth: number = controlArgs.key != null ? 12 : 0;
+    const extraDepth: number =
         controlArgs.extraControls ? controlArgs.extraControls.shape[1] : 0;
 
     if (chordDepth + keyDepth + extraDepth !== this.controlDepth) {
