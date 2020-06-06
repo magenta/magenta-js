@@ -73,14 +73,16 @@ async function runMelControls() {
   const teapotControls = tf.concat([teapotRhythm, teapotShape], 1);
 
   let start = performance.now();
-  const interp = await mvae.interpolate(inputs, 5, null, ['A'], teapotControls);
+  const interp = await mvae.interpolate(
+      inputs, 5, null,
+      {chordProgression: ['A'], extraControls: teapotControls});
   writeTimer('mel-controls-interp-time', start);
   writeNoteSeqs('mel-controls-interp', interp);
 
   const sampleControls = tf.concat([DOTTED_RHYTHM, UDUDF_SHAPE], 1);
   start = performance.now();
-  const sample =
-      await mvae.sample(4, null, ['C'], undefined, undefined, sampleControls);
+  const sample = await mvae.sample(
+      4, null, {chordProgression: ['C'], extraControls: sampleControls});
   writeTimer('mel-controls-sample-time', start);
   writeNoteSeqs('mel-controls-samples', sample);
 
@@ -163,8 +165,8 @@ async function runMelMulti() {
   const controlTensor =
       tf.concat([rhythmTensor, shapeTensor, registerTensor], 1);
 
-  const melodySeqs =
-      await mvaeMel.sample(1, null, ['C'], undefined, undefined, controlTensor);
+  const melodySeqs = await mvaeMel.sample(
+      1, null, {chordProgression: ['C'], extraControls: controlTensor});
   const rhythmSeq = await mvaeRhythm.dataConverter.toNoteSequence(rhythmTensor);
   const shapeSeq = await mvaeShape.dataConverter.toNoteSequence(shapeTensor);
 
@@ -172,13 +174,16 @@ async function runMelMulti() {
   writeNoteSeqs('mel-multi-seqs', [rhythmSeq, shapeSeq, melodySeqs[0]]);
 
   const melodySeqsIonian = await mvaeMelKey.sample(
-      1, null, ['C'], undefined, undefined, controlTensor, 0);
-  const zKey =
-      await mvaeMelKey.encode(melodySeqsIonian, ['C'], controlTensor, 0);
+      1, null, {chordProgression: ['C'], key: 0, extraControls: controlTensor});
+  const zKey = await mvaeMelKey.encode(
+      melodySeqsIonian,
+      {chordProgression: ['C'], key: 0, extraControls: controlTensor});
   const melodySeqsLydian = await mvaeMelKey.decode(
-      zKey, null, ['C'], undefined, undefined, controlTensor, 7);
+      zKey, null,
+      {chordProgression: ['C'], key: 7, extraControls: controlTensor});
   const melodySeqsMixolydian = await mvaeMelKey.decode(
-      zKey, null, ['C'], undefined, undefined, controlTensor, 5);
+      zKey, null,
+      {chordProgression: ['C'], key: 5, extraControls: controlTensor});
 
   writeNoteSeqs(
       'mel-multi-key-seqs',
@@ -186,7 +191,8 @@ async function runMelMulti() {
 
   start = performance.now();
 
-  const z = await mvaeMel.encode(melodySeqs, ['C'], controlTensor);
+  const z = await mvaeMel.encode(
+      melodySeqs, {chordProgression: ['C'], extraControls: controlTensor});
 
   const similarRhythmTensors =
       await mvaeRhythm.similarTensors(rhythmTensor, 4, 0.8);
@@ -206,7 +212,8 @@ async function runMelMulti() {
             ],
             1));
     const similarSeq = await mvaeMel.decode(
-        z, null, ['C'], undefined, undefined, similarControlTensor);
+        z, null,
+        {chordProgression: ['C'], extraControls: similarControlTensor});
     similarSeqs.push(similarSeq[0]);
     similarRhythmTensorsSplit[i].dispose();
     similarShapeTensorsSplit[i].dispose();
