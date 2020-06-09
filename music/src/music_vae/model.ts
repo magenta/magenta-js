@@ -652,21 +652,38 @@ class Nade {
 }
 
 /**
+ * Interface for JSON specification of a `MusicVAE` control signal (other than
+ * chords and key).
+ *
+ * @property name Name of the control signal.
+ * @property depth Expected depth of the control signal tensors.
+ */
+export interface MusicVAEControlSpec {
+  name: string;
+  depth: number;
+}
+
+/**
  * Interface for JSON specification of a `MusicVAE` model.
  *
  * @property type The type of the model, `MusicVAE`.
  * @property dataConverter: A `DataConverterSpec` specifying the data
  * converter to use.
- * @property chordEncoder: (Optional) Type of chord encoder to use when
- * conditioning on chords.
  * @property useBooleanDecoder: If true, use a `BooleanDecoder` instead of a
  * `CategoricalDecoder`.
+ * @property chordEncoder: (Optional) Type of chord encoder to use when
+ * conditioning on chords.
+ * @property conditionOnKey: If true, model is key-conditioned.
+ * @property extraControls: (Optional) List of extra control signal names and
+ * depths.
  */
 export interface MusicVAESpec {
   type: 'MusicVAE';
   dataConverter: data.ConverterSpec;
-  chordEncoder?: chords.ChordEncoderType;
   useBooleanDecoder: boolean;
+  chordEncoder?: chords.ChordEncoderType;
+  conditionOnKey: boolean;
+  extraControls?: MusicVAEControlSpec[];
 }
 
 /**
@@ -676,12 +693,12 @@ export interface MusicVAESpec {
  * symbol strings like "Cmaj7", "Abdim", "C#m7", etc.
  * @property key (Optional) Key, an integer between 0 (C major / A minor) and 11
  * (B major / G# minor).
- * @property extraControls (Optional) Additional control tensors.
+ * @property extraControls (Optional) Additional named control tensors.
  */
 export interface MusicVAEControlArgs {
   chordProgression?: string[];
   key?: number;
-  extraControls?: tf.Tensor2D;
+  extraControls?: {[name: string]: tf.Tensor2D};
 }
 
 /**
@@ -956,6 +973,7 @@ class MusicVAE {
    */
   private checkControlArgs(controlArgs: MusicVAEControlArgs) {
     controlArgs = controlArgs || {};
+    controlArgs.extraControls = controlArgs.extraControls || {};
 
     if (this.chordEncoder && !controlArgs.chordProgression) {
       throw new Error('Chord progression expected but not provided.');
@@ -969,16 +987,42 @@ class MusicVAE {
           'Multiple chords not supported when using variable-length segments.');
     }
 
-    const chordDepth: number =
-        controlArgs.chordProgression ? this.chordEncoder.depth : 0;
-    const keyDepth: number = controlArgs.key != null ? 12 : 0;
-    const extraDepth: number =
-        controlArgs.extraControls ? controlArgs.extraControls.shape[1] : 0;
+    if (this.spec.conditionOnKey && controlArgs.key == null) {
+      throw new Error('Key expected but not provided.');
+    }
+    if (!this.spec.conditionOnKey && controlArgs.key != null) {
+      throw new Error('Unexpected key provided.');
+    }
 
-    if (chordDepth + keyDepth + extraDepth !== this.controlDepth) {
-      throw new Error(`Invalid control depth: chord (${chordDepth}) + key (${
-          keyDepth}) + extra (${extraDepth}) != expected (${
-          this.controlDepth})`);
+    // Make sure all control signals from the spec are present and have the
+    // correct depths.
+    if (this.spec.extraControls) {
+      for (const controlSpec of this.spec.extraControls) {
+        if (controlSpec.name in controlArgs.extraControls) {
+          if (controlArgs.extraControls[controlSpec.name].shape[1] !==
+              controlSpec.depth) {
+            throw new Error(
+                `Control signal ${controlSpec.name} has invalid depth: ${
+                    controlArgs.extraControls[controlSpec.name].shape[1]} != ${
+                    controlSpec.depth}`);
+          }
+        } else {
+          throw new Error(`Missing control signal: ${controlSpec.name}`);
+        }
+      }
+    }
+
+    // Warn about any extraneous control signals.
+    const controlNames = this.spec.extraControls ?
+        new Set<string>(
+            this.spec.extraControls.map((controlSpec) => controlSpec.name)) :
+        new Set<string>();
+    for (const name in controlArgs.extraControls) {
+      if (!controlNames.has(name)) {
+        logging.log(
+            `Unspecified control signal provided: ${name}`, 'MusicVAE',
+            logging.Level.WARN);
+      }
     }
   }
 
@@ -1006,7 +1050,9 @@ class MusicVAE {
         controls.push(encodedKey);
       }
       if (controlArgs.extraControls) {
-        controls.push(controlArgs.extraControls);
+        for (const controlSpec of this.spec.extraControls) {
+          controls.push(controlArgs.extraControls[controlSpec.name]);
+        }
       }
 
       // Concatenate controls depthwise.
