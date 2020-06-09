@@ -98,12 +98,13 @@ async function runMelChords() {
   await mvae.initialize();
 
   let start = performance.now();
-  const interp = await mvae.interpolate(inputs, 5, null, ['A', 'A', 'D', 'A']);
+  const interp = await mvae.interpolate(
+      inputs, 5, null, {chordProgression: ['A', 'A', 'D', 'A']});
   writeTimer('mel-chords-interp-time', start);
   writeNoteSeqs('mel-chords-interp', interp);
 
   start = performance.now();
-  const sample = await mvae.sample(4, null, ['C']);
+  const sample = await mvae.sample(4, null, {chordProgression: ['C']});
   writeTimer('mel-chords-sample-time', start);
   writeNoteSeqs('mel-chords-samples', sample);
 

@@ -86,14 +86,14 @@ async function runMultitrackChords() {
   await mvae.initialize();
 
   let start = performance.now();
-  const z = await mvae.encode(inputs, ['C']);
-  const recon = await mvae.decode(z, null, ['G'], 24);
+  const z = await mvae.encode(inputs, {chordProgression: ['C']});
+  const recon = await mvae.decode(z, null, {chordProgression: ['G']}, 24);
   z.dispose();
   writeTimer('multitrack-chords-recon-time', start);
   writeNoteSeqs('multitrack-chords-recon', recon, true);
 
   start = performance.now();
-  const sample = await mvae.sample(4, null, ['D'], 24);
+  const sample = await mvae.sample(4, null, {chordProgression: ['D']}, 24);
   writeTimer('multitrack-chords-sample-time', start);
   writeNoteSeqs('multitrack-chords-samples', sample, true);
 

@@ -219,7 +219,7 @@ export class DrumsConverter extends DataConverter {
         this.pitchToClass.set(p, c);
       });
     }
-    this.depth = this.pitchClasses.length;
+    this.depth = this.pitchClasses.length + 1;
   }
 
   toTensor(noteSequence: INoteSequence): tf.Tensor2D {
@@ -283,7 +283,8 @@ export class DrumRollConverter extends DrumsConverter {
         sequences.createQuantizedNoteSequence(stepsPerQuarter, qpm);
     const flatRoll = await roll.data() as Uint8Array;
     for (let s = 0; s < roll.shape[0]; ++s) {  // step
-      const pitches = flatRoll.slice(s * this.depth, (s + 1) * this.depth);
+      const pitches = flatRoll.slice(
+          s * this.pitchClasses.length, (s + 1) * this.pitchClasses.length);
       for (let p = 0; p < pitches.length; ++p) {  // pitch class
         if (pitches[p]) {
           noteSequence.notes.push(NoteSequence.Note.create({
