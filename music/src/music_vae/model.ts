@@ -973,7 +973,7 @@ class MusicVAE {
    */
   private checkControlArgs(controlArgs: MusicVAEControlArgs) {
     controlArgs = controlArgs || {};
-    controlArgs.extraControls = controlArgs.extraControls || {};
+    const extraControls = controlArgs.extraControls || {};
 
     if (this.chordEncoder && !controlArgs.chordProgression) {
       throw new Error('Chord progression expected but not provided.');
@@ -998,12 +998,11 @@ class MusicVAE {
     // correct depths.
     if (this.spec.extraControls) {
       for (const controlSpec of this.spec.extraControls) {
-        if (controlSpec.name in controlArgs.extraControls) {
-          if (controlArgs.extraControls[controlSpec.name].shape[1] !==
-              controlSpec.depth) {
+        if (controlSpec.name in extraControls) {
+          if (extraControls[controlSpec.name].shape[1] !== controlSpec.depth) {
             throw new Error(
                 `Control signal ${controlSpec.name} has invalid depth: ${
-                    controlArgs.extraControls[controlSpec.name].shape[1]} != ${
+                    extraControls[controlSpec.name].shape[1]} != ${
                     controlSpec.depth}`);
           }
         } else {
@@ -1017,7 +1016,7 @@ class MusicVAE {
         new Set<string>(
             this.spec.extraControls.map((controlSpec) => controlSpec.name)) :
         new Set<string>();
-    for (const name in controlArgs.extraControls) {
+    for (const name in extraControls) {
       if (!controlNames.has(name)) {
         logging.log(
             `Unspecified control signal provided: ${name}`, 'MusicVAE',
