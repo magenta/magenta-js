@@ -339,9 +339,10 @@ export class Visualizer extends PianoRollCanvasVisualizer {
 }
 
 /**
- * HTML data attribute key-value pair.
+ * HTML/CSS key-value pairs.
  */
 type DataAttribute = [string, any];  // tslint:disable-line:no-any
+type CSSProperty = [string, string | null];
 
 /**
  * Abstract base class for a `NoteSequence` visualizer.
@@ -438,8 +439,13 @@ export abstract class BaseSVGVisualizer extends BaseVisualizer {
         ['isDrum', note.isDrum === true],
         ['pitch', note.pitch],
       ];
+      const cssProperties: CSSProperty[] = [
+        ['--midi-velocity',
+         String(note.velocity !== undefined ? note.velocity : 127)]
+      ];
 
-      this.drawNote(size.x, size.y, size.w, size.h, fill, dataAttributes);
+      this.drawNote(size.x, size.y, size.w, size.h, fill,
+                    dataAttributes, cssProperties);
     }
     this.drawn = true;
   }
@@ -455,12 +461,13 @@ export abstract class BaseSVGVisualizer extends BaseVisualizer {
 
   private drawNote(
       x: number, y: number, w: number, h: number, fill: string,
-      dataAttributes: DataAttribute[]) {
+      dataAttributes: DataAttribute[], cssProperties: CSSProperty[]) {
     if (!this.svg) {
       return;
     }
     const rect: SVGRectElement =
         document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.classList.add('note');
     rect.setAttribute('fill', fill);
 
     // Round values to the nearest integer to avoid partially filled pixels.
@@ -472,6 +479,9 @@ export abstract class BaseSVGVisualizer extends BaseVisualizer {
       if (value !== undefined) {
         rect.dataset[key] = `${value}`;
       }
+    });
+    cssProperties.forEach(([key, value]: CSSProperty) => {
+      rect.style.setProperty(key, value);
     });
     this.svg.appendChild(rect);
   }
