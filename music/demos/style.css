@@ -44,16 +44,18 @@ button, .button {
   font-size: 16px;
   padding: 4px 14px;
   margin-right: 8px;
-  border: 3px solid #222;
   background: transparent;
-  outline: none;
-  color: #222;
-  background: white;
   cursor: pointer;
 }
-button:hover {
+button:hover, .button:hover {
   background: #6FC9C6;
   color: white;
+}
+button, .button, textarea {
+  outline: none;
+  border: 3px solid #222;
+  color: #222;
+  background: white;
 }
 
 .player-container {

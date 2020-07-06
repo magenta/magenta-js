@@ -42,6 +42,7 @@ const player = new mm.SoundFontPlayer(
 const playBtn = document.getElementById('playBtn') as HTMLButtonElement;
 const urlBtn = document.getElementById('urlBtn') as HTMLButtonElement;
 const seqBtn = document.getElementById('seqBtn') as HTMLButtonElement;
+const seqVelBtn = document.getElementById('seqVelBtn') as HTMLButtonElement;
 const tempoInput = document.getElementById('tempoInput') as HTMLInputElement;
 const tempoValue = document.getElementById('tempoValue') as HTMLDivElement;
 const fileInput = document.getElementById('fileInput') as HTMLInputElement;
@@ -51,6 +52,9 @@ const waterfall = document.querySelector('#waterfall') as HTMLDivElement;
 const staff = document.getElementById('staff') as HTMLDivElement;
 const waterfallCheckbox =
     document.getElementById('waterfallCheckbox') as HTMLInputElement;
+const styleInput = document.getElementById('styleInput') as HTMLTextAreaElement;
+const applyStyleBtn = document.getElementById('applyStyleBtn') as HTMLButtonElement;
+const customStyle = document.getElementById('customStyle') as HTMLStyleElement;
 
 // Set up some event listeners
 urlBtn.addEventListener('click', () => fetchMidi(MIDI_URL));
@@ -71,6 +75,17 @@ waterfallCheckbox.addEventListener('change', () => {
         currentSequence, waterfall,
         {showOnlyOctavesUsed: waterfallCheckbox.checked});
   }
+});
+seqVelBtn.addEventListener('click', () => {
+  const ns = mm.sequences.clone(FULL_TWINKLE_UNQUANTIZED);
+  for (const note of ns.notes) {
+    note.velocity = Math.round((Math.sin(note.startTime) + 1.5) / 2.5 * 120);
+  }
+  initPlayerAndVisualizer(ns);
+});
+applyStyleBtn.addEventListener('click', () => {
+  customStyle.textContent = styleInput.value;
+  document.getElementById('PianoRollSVGVisualizer').scrollIntoView();
 });
 
 function fetchMidi(url: string) {

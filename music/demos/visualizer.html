@@ -25,6 +25,14 @@ limitations under the License.
       cursor: pointer;
       display: none;
     }
+
+    textarea {
+      display: block;
+      margin-bottom: 4px;
+    }
+  </style>
+
+  <style id="customStyle">
   </style>
 </head>
 <body>
@@ -52,7 +60,7 @@ limitations under the License.
     </span>
   </section>
 
-  <h2>mm.PianoRollSVGVisualizer</h2>
+  <h2 id="PianoRollSVGVisualizer">mm.PianoRollSVGVisualizer</h2>
   <section>
     <div class="visualizer-container">
       <svg id="svg"></svg>
@@ -91,6 +99,43 @@ limitations under the License.
     </div>
   </section>
 
+  <h2>Styling SVG visualizers</h2>
+  <section>
+    <p>
+      SVG visualizers (piano roll and waterfall) support CSS! Use a selector like
+      <code>svg rect.note</code> to match notes, and style them using the
+      <a href="https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/Presentation">
+        available CSS properties</a>. More advanced styling is possible:
+      <ul>
+        <li>Currently playing notes can be matched using the <code>.active</code> class.</li>
+        <li>Notes can also be matched based on properties like instrument or pitch (using
+            <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/Attribute_selectors">
+              attribute selectors</a>), thanks to the
+            data attributes <code>data-instrument</code>, <code>data-program</code>,
+            <code>data-is-drum</code> and <code>data-pitch</code>.</li>
+        <li>A <code>--midi-velocity</code> custom property is defined on every note and can be
+            accessed using the
+            <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/var">
+              <code>var()</code> CSS function</a>.</li>
+      </ul>
+    </p>
+    <p>
+      To demonstrate this, we need a slightly juiced up version of our <code>NoteSequence</code>:
+      <button id="seqVelBtn">Load</button>
+    </p>
+    <p>Click below to apply the following style sheet:
+    <textarea id="styleInput" rows="10" cols="100">
+svg rect.note {
+  fill: rgb(calc(var(--midi-velocity) * 1.2 + 100), 30, calc(255 - var(--midi-velocity)));
+}
+
+svg rect.note.active {
+  stroke: black;
+  stroke-width: 1.5;
+  stroke-opacity: 0.5;
+}</textarea>
+    <button id="applyStyleBtn">Apply</button></p>
+  </section>
 
   <script src="visualizer_bundle.js"></script>
 </body>
