@@ -19,6 +19,7 @@ import * as tf from '@tensorflow/tfjs';
 import * as clone from 'clone';
 
 import * as mm from '../src/index';
+import * as timer from '../src/core/timer';
 
 import {CHECKPOINTS_DIR, DRUM_SEQS, MEL_TWINKLE, writeMemory} from './common';
 import {writeNoteSeqs, writeTimer} from './common';
@@ -63,14 +64,14 @@ async function runMultitrack() {
   const mvae = new mm.MusicVAE(MULTITRACK_CKPT);
   await mvae.initialize();
 
-  let start = performance.now();
+  let start = timer.now();
   const z = await mvae.encode(inputs);
   const recon = await mvae.decode(z, null, null, 24);
   z.dispose();
   writeTimer('multitrack-recon-time', start);
   writeNoteSeqs('multitrack-recon', recon, true);
 
-  start = performance.now();
+  start = timer.now();
   const sample = await mvae.sample(4, null, null, 24);
   writeTimer('multitrack-sample-time', start);
   writeNoteSeqs('multitrack-samples', sample, true);
@@ -85,14 +86,14 @@ async function runMultitrackChords() {
   const mvae = new mm.MusicVAE(MULTITRACK_CHORDS_CKPT);
   await mvae.initialize();
 
-  let start = performance.now();
+  let start = timer.now();
   const z = await mvae.encode(inputs, {chordProgression: ['C']});
   const recon = await mvae.decode(z, null, {chordProgression: ['G']}, 24);
   z.dispose();
   writeTimer('multitrack-chords-recon-time', start);
   writeNoteSeqs('multitrack-chords-recon', recon, true);
 
-  start = performance.now();
+  start = timer.now();
   const sample = await mvae.sample(4, null, {chordProgression: ['D']}, 24);
   writeTimer('multitrack-chords-sample-time', start);
   writeNoteSeqs('multitrack-chords-samples', sample, true);

@@ -18,6 +18,7 @@
 import {saveAs} from 'file-saver';
 import * as mm from '../src/index';
 import {sequences} from '../src/core/index';
+import * as timer from '../src/core/timer';
 
 export const CHECKPOINTS_DIR =
     'https://storage.googleapis.com/magentadata/js/checkpoints';
@@ -424,7 +425,7 @@ mm.sequences.concatenate([DRUM_SEQS[0], DRUM_SEQS[0]], [32, 32])
 
 export function writeTimer(elementId: string, startTime: number) {
   document.getElementById(elementId).innerHTML =
-      ((performance.now() - startTime) / 1000).toString() + 's';
+      ((timer.now() - startTime) / 1000).toString() + 's';
 }
 
 export function writeNoteSeqs(
