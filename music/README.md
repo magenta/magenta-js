@@ -93,7 +93,7 @@ The node-specific bundles (that don't transpile the CommonJS modules) are under
 `@magenta/music/node`. For example:
 
 ```js
-const model = require('@magenta/music/node/music_vae');
+const mvae = require('@magenta/music/node/music_vae');
 const core = require('@magenta/music/node/core');
 
 // These hacks below are needed because the library uses performance and fetch which
@@ -103,7 +103,7 @@ globalAny.performance = Date;
 globalAny.fetch = require('node-fetch');
 
 // Your code:
-const model = new mode.MusicVAE('/path/to/checkpoint');
+const model = new mvae.MusicVAE('/path/to/checkpoint');
 const player = new core.Player();
 model
   .initialize()
