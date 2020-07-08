@@ -18,6 +18,7 @@
 import * as tf from '@tensorflow/tfjs';
 
 import * as mm from '../src/index';
+import * as timer from '../src/core/timer';
 
 import {CHECKPOINTS_DIR, TRIO_EXAMPLE, writeMemory} from './common';
 import {DRUM_SEQS, MEL_A_QUARTERS, MEL_TEAPOT, MEL_TWINKLE} from './common';
@@ -38,12 +39,12 @@ async function runDrums() {
   const mvae = new mm.MusicVAE(DRUMS_CKPT);
   await mvae.initialize();
 
-  let start = performance.now();
+  let start = timer.now();
   const interp = await mvae.interpolate(DRUM_SEQS, 3);
   writeTimer('drums-interp-time', start);
   writeNoteSeqs('drums-interp', interp);
 
-  start = performance.now();
+  start = timer.now();
   const sample = await mvae.sample(4);
   writeTimer('drums-sample-time', start);
   writeNoteSeqs('drums-samples', sample);
@@ -57,12 +58,12 @@ async function runDrumsNade() {
   const mvae = new mm.MusicVAE(DRUMS_NADE_CKPT);
   await mvae.initialize();
 
-  let start = performance.now();
+  let start = timer.now();
   const interp = await mvae.interpolate(DRUM_SEQS, 3);
   writeTimer('nade-interp-time', start);
   writeNoteSeqs('nade-interp', interp);
 
-  start = performance.now();
+  start = timer.now();
   const sample = await mvae.sample(4);
   writeTimer('nade-sample-time', start);
   writeNoteSeqs('nade-samples', sample);
@@ -77,12 +78,12 @@ async function runMel() {
   const mvae = new mm.MusicVAE(MEL_CKPT);
   await mvae.initialize();
 
-  let start = performance.now();
+  let start = timer.now();
   const interp = await mvae.interpolate(inputs, 5);
   writeTimer('mel-interp-time', start);
   writeNoteSeqs('mel-interp', interp);
 
-  start = performance.now();
+  start = timer.now();
   const sample = await mvae.sample(4);
   writeTimer('mel-sample-time', start);
   writeNoteSeqs('mel-samples', sample);
@@ -97,13 +98,13 @@ async function runMelChords() {
   const mvae = new mm.MusicVAE(MEL_CHORDS_CKPT);
   await mvae.initialize();
 
-  let start = performance.now();
+  let start = timer.now();
   const interp = await mvae.interpolate(
       inputs, 5, null, {chordProgression: ['A', 'A', 'D', 'A']});
   writeTimer('mel-chords-interp-time', start);
   writeNoteSeqs('mel-chords-interp', interp);
 
-  start = performance.now();
+  start = timer.now();
   const sample = await mvae.sample(4, null, {chordProgression: ['C']});
   writeTimer('mel-chords-sample-time', start);
   writeNoteSeqs('mel-chords-samples', sample);
@@ -132,12 +133,12 @@ async function runMel16() {
   const mvae = new mm.MusicVAE(MEL_16_CKPT);
   await mvae.initialize();
 
-  let start = performance.now();
+  let start = timer.now();
   const interp = await mvae.interpolate(inputs, 5);
   writeTimer('mel16-interp-time', start);
   writeNoteSeqs('mel16-interp', interp);
 
-  start = performance.now();
+  start = timer.now();
   const sample = await mvae.sample(4);
   writeTimer('mel16-sample-time', start);
   writeNoteSeqs('mel16-samples', sample);
@@ -153,14 +154,14 @@ async function runTrio() {
   const mvae = new mm.MusicVAE(TRIO_CKPT);
   await mvae.initialize();
 
-  let start = performance.now();
+  let start = timer.now();
   const z = await mvae.encode(inputs);
   const recon = await mvae.decode(z);
   z.dispose();
   writeTimer('trio-recon-time', start);
   writeNoteSeqs('trio-recon', recon);
 
-  start = performance.now();
+  start = timer.now();
   const sample = await mvae.sample(4);
   writeTimer('trio-sample-time', start);
   writeNoteSeqs('trio-samples', sample);

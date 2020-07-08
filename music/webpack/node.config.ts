@@ -1,4 +1,5 @@
 import * as path from 'path';
+import * as webpack from 'webpack';
 import * as nodeExternals from 'webpack-node-externals';
 import {baseConfig} from './es6.base.config';
 
@@ -27,4 +28,10 @@ module.exports = {
   },
   // If bundling for Node/Webpack usage, don't bundle node_modules.
   externals: nodeExternals(),
+  plugins: [
+    new webpack.NormalModuleReplacementPlugin(
+      /\/core\/timer\.ts/,
+      path.resolve(__dirname, '../src/core/timer_node.ts')
+    ),
+  ]
 };

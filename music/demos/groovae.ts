@@ -18,6 +18,7 @@
 import * as tf from '@tensorflow/tfjs';
 
 import * as mm from '../src/index';
+import * as timer from '../src/core/timer';
 
 import {CHECKPOINTS_DIR, DRUM_SEQS, writeMemory} from './common';
 import {writeNoteSeqs, writeTimer} from './common';
@@ -32,14 +33,14 @@ async function runHumanize() {
   const mvae = new mm.MusicVAE(HUMANIZE_CKPT);
   await mvae.initialize();
 
-  let start = performance.now();
+  let start = timer.now();
   const z = await mvae.encode(inputs);
   const recon = await mvae.decode(z);
   z.dispose();
   writeTimer('humanize-recon-time', start);
   writeNoteSeqs('humanize-recon', recon, true, true);
 
-  start = performance.now();
+  start = timer.now();
   const sample = await mvae.sample(4);
   writeTimer('humanize-sample-time', start);
   writeNoteSeqs('humanize-samples', sample, true, true);
@@ -57,14 +58,14 @@ async function runTap2Drum() {
           mvae.dataConverter.toNoteSequence(mvae.dataConverter.toTensor(ns))));
   writeNoteSeqs('tap2drum-inputs', inputs, true);
 
-  let start = performance.now();
+  let start = timer.now();
   const z = await mvae.encode(inputs);
   const recon = await mvae.decode(z);
   z.dispose();
   writeTimer('tap2drum-recon-time', start);
   writeNoteSeqs('tap2drum-recon', recon, true, true);
 
-  start = performance.now();
+  start = timer.now();
   const sample = await mvae.sample(4);
   writeTimer('tap2drum-sample-time', start);
   writeNoteSeqs('tap2drum-samples', sample, true, true);

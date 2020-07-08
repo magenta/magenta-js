@@ -20,6 +20,7 @@ import * as tf from '@tensorflow/tfjs-core';
 import {mergeConsecutiveNotes, replaceInstruments} from '../src/core/sequences';
 import * as mm from '../src/index';
 import {NoteSequence} from '../src/index';
+import * as timer from '../src/core/timer';
 
 // tslint:disable-next-line:max-line-length
 import {CHECKPOINTS_DIR, MEL_TWINKLE, writeMemory, writeNoteSeqs, writeTimer} from './common';
@@ -29,7 +30,7 @@ async function infillFirstVoice() {
   await model.initialize();
   writeNoteSeqs('input-1', [MEL_TWINKLE], true);
 
-  const start = performance.now();
+  const start = timer.now();
   const output = await model.infill(MEL_TWINKLE);
   // Optionally, merge the held notes and restore the original melody timing
   // since the model chunks up the melody in 16ths.
@@ -50,7 +51,7 @@ async function infillSecondVoice() {
   }
   writeNoteSeqs('input-2', [ns], true);
 
-  const start = performance.now();
+  const start = timer.now();
   // A smaller temperature means the output is more random. Fewer sampling
   // iterations means the process is faster, but the results are less good.
   const output = await model.infill(ns, {temperature: 0.5, numIterations: 10});
@@ -98,7 +99,7 @@ async function infillSection() {
   }
   writeNoteSeqs('input-3', [ns], true);
 
-  const start = performance.now();
+  const start = timer.now();
   const output = await model.infill(ns, {infillMask: mask});
 
   // Optionally, treat any consecutive notes as merged.

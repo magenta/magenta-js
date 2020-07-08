@@ -20,6 +20,7 @@
 
 import * as tf from '@tensorflow/tfjs';
 import * as logging from '../core/logging';
+import * as timer from '../core/timer';
 export {MidiMe};
 
 /**
@@ -125,7 +126,7 @@ class MidiMe {
   initialize() {
     this.dispose();
 
-    const startTime = performance.now();
+    const startTime = timer.now();
     const x = tf.input({shape: [this.config['input_size']]});
 
     // Encoder model, goes from the original input, returns an output.
@@ -150,7 +151,7 @@ class MidiMe {
    * training epoch, containing the training errors for that epoch.
    */
   async train(xTrain: tf.Tensor, callback?: Function) {
-    const startTime = performance.now();
+    const startTime = timer.now();
     this.trained = false;
 
     // On float16 devices, use a smaller learning rate to avoid NaNs.
