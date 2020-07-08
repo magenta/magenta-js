@@ -18,7 +18,7 @@
 import * as tf from '@tensorflow/tfjs';
 
 import * as mm from '../src/index';
-import * as timer from '../src/core/timer';
+import * as timer from '../src/core/compat/timer';
 import {blobToNoteSequence, MidiMe, MusicVAE, NoteSequence} from '../src/index';
 import {quantizeNoteSequence} from '../src/core/sequences';
 

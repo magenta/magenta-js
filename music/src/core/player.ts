@@ -28,7 +28,7 @@ import {sequences} from '.';
 import * as constants from './constants';
 import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
 import * as soundfont from './soundfont';
-import * as timer from './timer';
+import * as timer from './compat/timer';
 
 function compareQuantizedNotes(a: NoteSequence.INote, b: NoteSequence.INote) {
   if (a.quantizedStartStep < b.quantizedStartStep) {

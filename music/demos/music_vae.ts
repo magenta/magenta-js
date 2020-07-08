@@ -18,7 +18,7 @@
 import * as tf from '@tensorflow/tfjs';
 
 import * as mm from '../src/index';
-import * as timer from '../src/core/timer';
+import * as timer from '../src/core/compat/timer';
 
 import {CHECKPOINTS_DIR, TRIO_EXAMPLE, writeMemory} from './common';
 import {DRUM_SEQS, MEL_A_QUARTERS, MEL_TEAPOT, MEL_TWINKLE} from './common';

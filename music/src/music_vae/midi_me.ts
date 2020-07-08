@@ -20,7 +20,7 @@
 
 import * as tf from '@tensorflow/tfjs';
 import * as logging from '../core/logging';
-import * as timer from '../core/timer';
+import * as timer from '../core/compat/timer';
 export {MidiMe};
 
 /**

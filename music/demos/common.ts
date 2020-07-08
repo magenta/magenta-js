@@ -18,7 +18,7 @@
 import {saveAs} from 'file-saver';
 import * as mm from '../src/index';
 import {sequences} from '../src/core/index';
-import * as timer from '../src/core/timer';
+import * as timer from '../src/core/compat/timer';
 
 export const CHECKPOINTS_DIR =
     'https://storage.googleapis.com/magentadata/js/checkpoints';

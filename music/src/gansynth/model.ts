@@ -22,8 +22,9 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
+import {fetch} from '../core/compat/fetch';
 import * as logging from '../core/logging';
-import * as timer from '../core/timer';
+import * as timer from '../core/compat/timer';
 import {specgramsToAudio} from './audio_utils';
 import {boxUpscale, initialPad, pixelNorm} from './custom_layers';
 

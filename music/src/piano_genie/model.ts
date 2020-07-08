@@ -18,6 +18,8 @@
 
 import * as tf from '@tensorflow/tfjs';
 
+import {fetch} from '../core/compat/fetch';
+
 /**
  * Constants.
  */

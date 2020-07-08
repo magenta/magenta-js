@@ -30,8 +30,12 @@ module.exports = {
   externals: nodeExternals(),
   plugins: [
     new webpack.NormalModuleReplacementPlugin(
-      /\/core\/timer\.ts/,
-      path.resolve(__dirname, '../src/core/timer_node.ts')
+      /\/core\/compat\/timer\.ts/,
+      path.resolve(__dirname, '../src/core/compat/timer_node.ts')
+    ),
+    new webpack.NormalModuleReplacementPlugin(
+      /\/core\/compat\/fetch\.ts/,
+      path.resolve(__dirname, '../src/core/compat/fetch_node.ts')
     ),
   ]
 };

@@ -23,6 +23,7 @@
  */
 import { Midi } from '@tonejs/midi';
 
+import {fetch} from '../core/compat/fetch';
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import * as constants from './constants';

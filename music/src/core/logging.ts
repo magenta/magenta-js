@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import * as timer from './timer';
+import * as timer from './compat/timer';
 
 /**
  * The different verbosity levels.
