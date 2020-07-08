@@ -18,4 +18,16 @@
  * limitations under the License.
  */
 
-export const fetch = window.fetch;
+const isNode = typeof global !== 'undefined';
+
+export interface Performance {
+  now(): number;
+  timing: {
+    navigationStart: number;
+  };
+}
+
+// tslint:disable:no-require-imports
+export const fetch = isNode ? require('node-fetch') as (typeof window.fetch) :  window.fetch;
+export const performance: Performance = isNode ? require('./performance_node') : window.performance;
+export const navigator = isNode ? require('./navigator_node') : window.navigator;

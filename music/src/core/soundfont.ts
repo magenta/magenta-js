@@ -22,7 +22,7 @@
  */
 import * as Tone from 'tone';
 import * as constants from './constants';
-import {fetch} from '../core/compat/fetch';
+import {fetch} from '../core/compat/global';
 import * as logging from './logging';
 
 /**

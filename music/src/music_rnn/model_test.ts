@@ -39,15 +39,6 @@ const MEL_TEAPOT: INoteSequence = {
   totalQuantizedSteps: 32,
 };
 
-// These hacks below are because we use performance and fetch which
-// exist in browsers but not in node.
-// TODO: figure out a way to wrap these so that users don't have to.
-// tslint:disable-next-line:no-any
-const globalAny: any = global;
-globalAny.performance = Date;
-// tslint:disable-next-line:no-require-imports
-globalAny.fetch = require('node-fetch');
-
 let model: MusicRNN;
 let initialBytes: number;
 

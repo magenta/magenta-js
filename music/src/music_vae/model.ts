@@ -25,9 +25,8 @@ import * as tf from '@tensorflow/tfjs';
 import * as chords from '../core/chords';
 import * as constants from '../core/constants';
 import * as data from '../core/data';
-import {fetch} from '../core/compat/fetch';
+import {fetch, performance} from '../core/compat/global';
 import * as logging from '../core/logging';
-import * as timer from '../core/compat/timer';
 import {INoteSequence} from '../protobuf/index';
 
 /**
@@ -786,7 +785,7 @@ class MusicVAE {
    */
   async initialize() {
     this.dispose();
-    const startTime = timer.now();
+    const startTime = performance.now();
 
     if (!this.spec) {
       await fetch(`${this.checkpointURL}/config.json`)
@@ -1273,7 +1272,7 @@ class MusicVAE {
       await this.initialize();
     }
 
-    const startTime = timer.now();
+    const startTime = performance.now();
 
     const inputTensors = tf.tidy(
         () => tf.stack(inputSequences.map(
@@ -1350,7 +1349,7 @@ class MusicVAE {
     if (!this.initialized) {
       await this.initialize();
     }
-    const startTime = timer.now();
+    const startTime = performance.now();
     const numSteps = this.dataConverter.numSteps;
 
     const ohSeqs: tf.Tensor2D[] = tf.tidy(() => {
@@ -1469,7 +1468,7 @@ class MusicVAE {
     if (!this.initialized) {
       await this.initialize();
     }
-    const startTime = timer.now();
+    const startTime = performance.now();
 
     const randZs: tf.Tensor2D =
         tf.tidy(() => tf.randomNormal([numSamples, this.decoder.zDims]));

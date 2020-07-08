@@ -18,7 +18,7 @@
 import * as tf from '@tensorflow/tfjs';
 
 import * as mm from '../src/index';
-import * as timer from '../src/core/compat/timer';
+import {performance} from '../src/core/compat/global';
 import {blobToNoteSequence, MidiMe, MusicVAE, NoteSequence} from '../src/index';
 import {quantizeNoteSequence} from '../src/core/sequences';
 
@@ -87,7 +87,7 @@ function trainTrio() {
 
 async function train(
     mel: NoteSequence[], vae: MusicVAE, midime: MidiMe, prefix: string) {
-  const start = timer.now();
+  const start = performance.now();
 
   // 1. Encode the input into MusicVAE, get back a z.
   const quantizedMels: NoteSequence[] = [];

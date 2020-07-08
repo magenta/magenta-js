@@ -19,8 +19,7 @@ import * as tf from '@tensorflow/tfjs';
 import * as MediaRecorder from 'audio-recorder-polyfill';
 
 import * as mm from '../src/index';
-import * as timer from '../src/core/compat/timer';
-import {fetch} from '../src/core/compat/fetch';
+import {fetch, performance} from '../src/core/compat/global';
 import {INoteSequence} from '../src/index';
 
 // tslint:disable-next-line:max-line-length
@@ -116,7 +115,7 @@ async function transcribe(oaf: mm.OnsetsAndFrames, chunkLength: number) {
   const melSpec: number[][] =
       await fetch(MEL_SPEC_URL).then((response) => response.json());
 
-  const start = timer.now();
+  const start = performance.now();
   oaf.chunkLength = chunkLength;
   const ns = await oaf.transcribeFromMelSpec(melSpec);
   writeTimer(`${chunkLength}-time`, start);
@@ -128,7 +127,7 @@ async function transcribe(oaf: mm.OnsetsAndFrames, chunkLength: number) {
 }
 
 async function transcribeFromAudio(oaf: mm.OnsetsAndFrames) {
-  const start = timer.now();
+  const start = performance.now();
   const ns = await oaf.transcribeFromAudioURL(ORIGINAL_AUDIO_URL);
   writeTimer('audio-time', start);
   writeNoteSeqs('audio-results', [ns], true, true);
@@ -149,7 +148,7 @@ async function transcribeFromFile(blob: Blob, prefix = 'file') {
   const oafA = new mm.OnsetsAndFrames(CKPT_URL);
   oafA.initialize()
       .then(async () => {
-        const start = timer.now();
+        const start = performance.now();
         const ns = await oafA.transcribeFromAudioFile(blob);
         writeTimer(`${prefix}-time`, start);
         writeNoteSeqs(`${prefix}-results`, [ns], true, true);

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import * as timer from './compat/timer';
+import {performance} from '../core/compat/global';
 
 /**
  * The different verbosity levels.
@@ -67,6 +67,6 @@ export function log(msg: string, prefix = 'Magenta.js', level = Level.INFO) {
  */
 export function logWithDuration(
     msg: string, startTime: number, prefix = 'Magenta.js', level = Level.INFO) {
-  const durationSeconds = (timer.now() - startTime) / 1000;
+  const durationSeconds = (performance.now() - startTime) / 1000;
   log(`${msg} in ${durationSeconds.toPrecision(3)}s`, prefix, level);
 }

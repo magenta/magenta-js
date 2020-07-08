@@ -18,4 +18,6 @@
  * limitations under the License.
  */
 
-export const now = performance.now;
+export const fetch = window.fetch;
+export const performance = window.performance;
+export const navigator = window.navigator;

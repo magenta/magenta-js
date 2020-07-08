@@ -25,7 +25,7 @@ import {NoteSequence} from '../protobuf/index';
 import {DEFAULT_QUARTERS_PER_MINUTE} from './constants';
 
 import * as logging from './logging';
-import * as timer from './compat/timer';
+import {performance} from '../core/compat/global';
 
 /**
  * An interface for providing configurable properties to a Recorder.
@@ -319,7 +319,7 @@ export class Recorder {
     if (event.timeStamp !== undefined && event.timeStamp !== 0) {
       timeStampOffset = event.timeStamp;
     } else {
-      timeStampOffset = timer.now();
+      timeStampOffset = performance.now();
     }
     const timeStamp = timeStampOffset + performance.timing.navigationStart;
 

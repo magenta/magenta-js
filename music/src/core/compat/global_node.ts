@@ -18,4 +18,7 @@
  * limitations under the License.
  */
 
-export * as fetch from "node-fetch";
+// tslint:disable:no-require-imports
+export const fetch = require('node-fetch');
+export const performance = require('./performance_node');
+export const navigator = require('./navigator_node');

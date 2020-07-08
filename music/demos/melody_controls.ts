@@ -19,7 +19,7 @@ import * as tf from '@tensorflow/tfjs';
 
 import * as mm from '../src/index';
 import {INoteSequence} from '../src/index';
-import * as timer from '../src/core/compat/timer';
+import {performance} from '../src/core/compat/global';
 
 import {CHECKPOINTS_DIR, MEL_TEAPOT, MEL_TWINKLE} from './common';
 import {writeMemory, writeNoteSeqs, writeTimer} from './common';
@@ -72,7 +72,7 @@ async function runMelControls() {
   const teapotRhythm = RHYTHM.extract(teapotMel);
   const teapotShape = SHAPE.extract(teapotMel);
 
-  let start = timer.now();
+  let start = performance.now();
   const interp = await mvae.interpolate(inputs, 5, null, {
     chordProgression: ['A'],
     extraControls: {rhythm: teapotRhythm, shape: teapotShape}
@@ -80,7 +80,7 @@ async function runMelControls() {
   writeTimer('mel-controls-interp-time', start);
   writeNoteSeqs('mel-controls-interp', interp);
 
-  start = timer.now();
+  start = performance.now();
   const sample = await mvae.sample(4, null, {
     chordProgression: ['C'],
     extraControls: {rhythm: DOTTED_RHYTHM, shape: UDUDF_SHAPE}
@@ -98,19 +98,19 @@ async function runMelRhythm() {
   const mvae = new mm.MusicVAE(MEL_RHYTHM_CKPT);
   await mvae.initialize();
 
-  let start = timer.now();
+  let start = performance.now();
   const interp = await mvae.interpolate(inputs, 5);
   writeTimer('mel-rhythm-interp-time', start);
   writeNoteSeqs('mel-rhythm-interp', interp);
 
   const source = MEL_TEAPOT;
   writeNoteSeqs('mel-rhythm-source', [source]);
-  start = timer.now();
+  start = performance.now();
   const similar = await mvae.similar(source, 4, 0.8);
   writeTimer('mel-rhythm-similar-time', start);
   writeNoteSeqs('mel-rhythm-similar', similar);
 
-  start = timer.now();
+  start = performance.now();
   const sample = await mvae.sample(4);
   writeTimer('mel-rhythm-sample-time', start);
   writeNoteSeqs('mel-rhythm-samples', sample);
@@ -125,19 +125,19 @@ async function runMelShape() {
   const mvae = new mm.MusicVAE(MEL_SHAPE_CKPT);
   await mvae.initialize();
 
-  let start = timer.now();
+  let start = performance.now();
   const interp = await mvae.interpolate(inputs, 5);
   writeTimer('mel-shape-interp-time', start);
   writeNoteSeqs('mel-shape-interp', interp);
 
   const source = MEL_TEAPOT;
   writeNoteSeqs('mel-shape-source', [source]);
-  start = timer.now();
+  start = performance.now();
   const similar = await mvae.similar(source, 4, 0.8);
   writeTimer('mel-shape-similar-time', start);
   writeNoteSeqs('mel-shape-similar', similar);
 
-  start = timer.now();
+  start = performance.now();
   const sample = await mvae.sample(4);
   writeTimer('mel-shape-sample-time', start);
   writeNoteSeqs('mel-shape-samples', sample);
@@ -156,7 +156,7 @@ async function runMelMulti() {
     mvaeShape.initialize()
   ]);
 
-  let start = timer.now();
+  let start = performance.now();
 
   const rhythmTensors = await mvaeRhythm.sampleTensors(1);
   const shapeTensors = await mvaeShape.sampleTensors(1);
@@ -191,7 +191,7 @@ async function runMelMulti() {
       'mel-multi-key-seqs',
       [melodySeqsIonian[0], melodySeqsLydian[0], melodySeqsMixolydian[0]]);
 
-  start = timer.now();
+  start = performance.now();
 
   const z = await mvaeMel.encode(
       melodySeqs, {chordProgression: ['C'], extraControls});
