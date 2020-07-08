@@ -23,7 +23,7 @@ import * as ndarray from 'ndarray';
 //@ts-ignore
 import * as resample from 'ndarray-resample';
 
-import {fetch} from '../core/fetch';
+import {fetch} from '../core/compat/fetch';
 import * as logging from './logging';
 
 // Safari Webkit only supports 44.1kHz audio.

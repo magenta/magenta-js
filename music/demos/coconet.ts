@@ -20,7 +20,7 @@ import * as tf from '@tensorflow/tfjs-core';
 import {mergeConsecutiveNotes, replaceInstruments} from '../src/core/sequences';
 import * as mm from '../src/index';
 import {NoteSequence} from '../src/index';
-import * as timer from '../src/core/timer';
+import * as timer from '../src/core/compat/timer';
 
 // tslint:disable-next-line:max-line-length
 import {CHECKPOINTS_DIR, MEL_TWINKLE, writeMemory, writeNoteSeqs, writeTimer} from './common';

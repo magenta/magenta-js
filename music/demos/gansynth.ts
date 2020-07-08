@@ -16,7 +16,7 @@
  */
 import * as tf from '@tensorflow/tfjs';
 import * as Tone from 'tone';
-import * as timer from '../src/core/timer';
+import * as timer from '../src/core/compat/timer';
 
 import * as mm from '../src/index';
 

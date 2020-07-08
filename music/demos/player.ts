@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 import * as mm from '../src/index';
-import {fetch} from '../src/core/fetch';
+import {fetch} from '../src/core/compat/fetch';
 
 // tslint:disable-next-line:max-line-length
 import {DRUM_SEQ_WITH_VELOCITIES, DRUM_SEQS, FULL_TWINKLE, FULL_TWINKLE_UNQUANTIZED, MEL_TWINKLE_WITH_VELOCITIES, SOUNDFONT_URL, writeNoteSeqs} from './common';

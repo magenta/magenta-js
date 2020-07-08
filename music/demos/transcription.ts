@@ -19,8 +19,8 @@ import * as tf from '@tensorflow/tfjs';
 import * as MediaRecorder from 'audio-recorder-polyfill';
 
 import * as mm from '../src/index';
-import * as timer from '../src/core/timer';
-import {fetch} from '../src/core/fetch';
+import * as timer from '../src/core/compat/timer';
+import {fetch} from '../src/core/compat/fetch';
 import {INoteSequence} from '../src/index';
 
 // tslint:disable-next-line:max-line-length

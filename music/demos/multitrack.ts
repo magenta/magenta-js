@@ -19,7 +19,7 @@ import * as tf from '@tensorflow/tfjs';
 import * as clone from 'clone';
 
 import * as mm from '../src/index';
-import * as timer from '../src/core/timer';
+import * as timer from '../src/core/compat/timer';
 
 import {CHECKPOINTS_DIR, DRUM_SEQS, MEL_TWINKLE, writeMemory} from './common';
 import {writeNoteSeqs, writeTimer} from './common';

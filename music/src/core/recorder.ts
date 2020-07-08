@@ -25,7 +25,7 @@ import {NoteSequence} from '../protobuf/index';
 import {DEFAULT_QUARTERS_PER_MINUTE} from './constants';
 
 import * as logging from './logging';
-import * as timer from './timer';
+import * as timer from './compat/timer';
 
 /**
  * An interface for providing configurable properties to a Recorder.
