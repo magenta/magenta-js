@@ -37,9 +37,5 @@ module.exports = {
       /\/core\/compat\/fetch\.ts/,
       path.resolve(__dirname, '../src/core/compat/fetch_node.ts')
     ),
-    new webpack.NormalModuleReplacementPlugin(
-      /\/core\/fetch\.ts/,
-      path.resolve(__dirname, '../src/core/fetch_node.ts')
-    ),
   ]
 };
