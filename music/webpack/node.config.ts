@@ -33,5 +33,9 @@ module.exports = {
       /\/core\/timer\.ts/,
       path.resolve(__dirname, '../src/core/timer_node.ts')
     ),
+    new webpack.NormalModuleReplacementPlugin(
+      /\/core\/fetch\.ts/,
+      path.resolve(__dirname, '../src/core/fetch_node.ts')
+    ),
   ]
 };

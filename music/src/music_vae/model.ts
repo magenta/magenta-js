@@ -25,6 +25,7 @@ import * as tf from '@tensorflow/tfjs';
 import * as chords from '../core/chords';
 import * as constants from '../core/constants';
 import * as data from '../core/data';
+import {fetch} from '../core/fetch';
 import * as logging from '../core/logging';
 import * as timer from '../core/timer';
 import {INoteSequence} from '../protobuf/index';

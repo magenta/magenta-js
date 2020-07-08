@@ -25,6 +25,7 @@ import * as tf from '@tensorflow/tfjs';
 import * as aux_inputs from '../core/aux_inputs';
 import * as chords from '../core/chords';
 import * as data from '../core/data';
+import {fetch} from '../core/fetch';
 import * as logging from '../core/logging';
 import * as sequences from '../core/sequences';
 import * as timer from '../core/timer';

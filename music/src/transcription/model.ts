@@ -23,6 +23,7 @@
 import * as tf from '@tensorflow/tfjs';
 
 import {loadAudioFromFile, loadAudioFromUrl} from '../core/audio_utils';
+import {fetch} from '../core/fetch';
 import * as logging from '../core/logging';
 import * as timer from '../core/timer';
 import {INoteSequence} from '../protobuf/index';

@@ -96,11 +96,6 @@ The node-specific bundles (that don't transpile the CommonJS modules) are under
 const mvae = require('@magenta/music/node/music_vae');
 const core = require('@magenta/music/node/core');
 
-// These hacks below are needed because the library uses fetch which
-// exists in browsers but not in node. We are working on simplifying this!
-const globalAny: any = global;
-globalAny.fetch = require('node-fetch');
-
 // Your code:
 const model = new mvae.MusicVAE('/path/to/checkpoint');
 const player = new core.Player();

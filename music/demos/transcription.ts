@@ -20,6 +20,7 @@ import * as MediaRecorder from 'audio-recorder-polyfill';
 
 import * as mm from '../src/index';
 import * as timer from '../src/core/timer';
+import {fetch} from '../src/core/fetch';
 import {INoteSequence} from '../src/index';
 
 // tslint:disable-next-line:max-line-length

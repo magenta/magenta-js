@@ -22,6 +22,7 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
+import {fetch} from '../core/fetch';
 import * as logging from '../core/logging';
 import * as timer from '../core/timer';
 import {specgramsToAudio} from './audio_utils';

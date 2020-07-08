@@ -20,6 +20,7 @@
  */
 import * as tf from '@tensorflow/tfjs-core';
 
+import {fetch} from '../core/fetch';
 import * as logging from '../core/logging';
 import * as sequences from '../core/sequences';
 import * as timer from '../core/timer';
