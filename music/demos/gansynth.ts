@@ -16,7 +16,7 @@
  */
 import * as tf from '@tensorflow/tfjs';
 import * as Tone from 'tone';
-import * as timer from '../src/core/compat/timer';
+import {performance} from '../src/core/compat/global';
 
 import * as mm from '../src/index';
 
@@ -49,7 +49,7 @@ async function runGANSynth() {
   const gansynth = new mm.GANSynth(GANSYNTH_CHECKPOINT);
   await gansynth.initialize();
 
-  const start = timer.now();
+  const start = performance.now();
   const specgrams = await gansynth.randomSample(60);
   const audio = await gansynth.specgramsToAudio(specgrams);
   await writeTimer('single-sample-gen-time', start);

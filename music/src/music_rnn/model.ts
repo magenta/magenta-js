@@ -25,10 +25,9 @@ import * as tf from '@tensorflow/tfjs';
 import * as aux_inputs from '../core/aux_inputs';
 import * as chords from '../core/chords';
 import * as data from '../core/data';
-import {fetch} from '../core/compat/fetch';
+import {fetch, performance} from '../core/compat/global';
 import * as logging from '../core/logging';
 import * as sequences from '../core/sequences';
-import * as timer from '../core/compat/timer';
 import {INoteSequence} from '../protobuf/index';
 
 import {ATTENTION_PREFIX, AttentionWrapper} from './attention';
@@ -127,7 +126,7 @@ export class MusicRNN {
    */
   async initialize() {
     this.dispose();
-    const startTime = timer.now();
+    const startTime = performance.now();
 
     if (!this.spec) {
       await fetch(`${this.checkpointURL}/config.json`)
@@ -254,7 +253,7 @@ export class MusicRNN {
       await this.initialize();
     }
 
-    const startTime = timer.now();
+    const startTime = performance.now();
 
     const oh = tf.tidy(() => {
       const inputs = this.dataConverter.toTensor(sequence);

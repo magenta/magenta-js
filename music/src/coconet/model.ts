@@ -20,10 +20,9 @@
  */
 import * as tf from '@tensorflow/tfjs-core';
 
-import {fetch} from '../core/compat/fetch';
+import {fetch, performance} from '../core/compat/global';
 import * as logging from '../core/logging';
 import * as sequences from '../core/sequences';
-import * as timer from '../core/compat/timer';
 import {INoteSequence} from '../protobuf/index';
 
 import {IS_IOS, NUM_PITCHES, pianorollToSequence, sequenceToPianoroll} from './coconet_utils';
@@ -337,7 +336,7 @@ class Coconet {
   async initialize() {
     this.dispose();
 
-    const startTime = timer.now();
+    const startTime = performance.now();
     this.instantiateFromSpec();
     const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
                      .then((response) => response.json())

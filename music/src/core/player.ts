@@ -28,7 +28,7 @@ import {sequences} from '.';
 import * as constants from './constants';
 import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
 import * as soundfont from './soundfont';
-import * as timer from './compat/timer';
+import {performance} from '../core/compat/global';
 
 function compareQuantizedNotes(a: NoteSequence.INote, b: NoteSequence.INote) {
   if (a.quantizedStartStep < b.quantizedStartStep) {
@@ -725,7 +725,7 @@ export class MIDIPlayer extends BasePlayer {
     for (let i = 0; i < outputs.length; i++) {
       this.sendMessageToOutput(outputs[i], msgOn);
       this.sendMessageToOutput(
-          outputs[i], msgOff, timer.now() + length);
+          outputs[i], msgOff, performance.now() + length);
     }
   }
 

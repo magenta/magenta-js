@@ -22,9 +22,8 @@
  */
 import * as tf from '@tensorflow/tfjs';
 
-import {fetch} from '../core/compat/fetch';
 import * as logging from '../core/logging';
-import * as timer from '../core/compat/timer';
+import {fetch, performance} from '../core/compat/global';
 import {specgramsToAudio} from './audio_utils';
 import {boxUpscale, initialPad, pixelNorm} from './custom_layers';
 
@@ -55,7 +54,7 @@ class GANSynth {
    * Loads variables from the checkpoint and builds the model graph.
    */
   async initialize() {
-    const startTime = timer.now();
+    const startTime = performance.now();
     const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
                      .then((response) => response.json())
                      .then(

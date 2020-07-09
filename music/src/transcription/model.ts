@@ -23,9 +23,8 @@
 import * as tf from '@tensorflow/tfjs';
 
 import {loadAudioFromFile, loadAudioFromUrl} from '../core/audio_utils';
-import {fetch} from '../core/compat/fetch';
 import * as logging from '../core/logging';
-import * as timer from '../core/compat/timer';
+import {fetch, performance} from '../core/compat/global';
 import {INoteSequence} from '../protobuf/index';
 
 import {preprocessAudio} from './audio_utils';
@@ -65,7 +64,7 @@ class OnsetsAndFrames {
    */
   async initialize() {
     this.dispose();
-    const startTime = timer.now();
+    const startTime = performance.now();
 
     const vars = await fetch(`${this.checkpointURL}/weights_manifest.json`)
                      .then((response) => response.json())
@@ -117,7 +116,7 @@ class OnsetsAndFrames {
     if (!this.isInitialized()) {
       this.initialize();
     }
-    const startTime = timer.now();
+    const startTime = performance.now();
     logging.log(
         'Computing onsets, frames, and velocities...', 'O&F',
         logging.Level.DEBUG);
@@ -150,7 +149,7 @@ class OnsetsAndFrames {
    * @returns A `NoteSequence` containing the transcribed piano performance.
    */
   async transcribeFromAudioBuffer(audioBuffer: AudioBuffer, batchSize = 4) {
-    const startTime = timer.now();
+    const startTime = performance.now();
     const melSpec = preprocessAudio(audioBuffer);
     melSpec.then(
         () => logging.logWithDuration(

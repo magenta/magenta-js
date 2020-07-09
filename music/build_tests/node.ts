@@ -22,14 +22,6 @@ const proto = require('../node/protobuf');
 const test = require('tape');
 const tf = require('@tensorflow/tfjs');
 
-// These hacks below are because we use performance and fetch which
-// exist in browsers but not in node.
-// TODO: figure out a way to wrap these so that users don't have to.
-// tslint:disable-next-line:no-any
-const globalAny: any = global;
-globalAny.performance = Date;
-globalAny.fetch = require('node-fetch');
-
 const MEL_CKPT =
     // tslint:disable-next-line:max-line-length
     'https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_2bar_small';

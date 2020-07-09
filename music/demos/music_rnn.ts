@@ -18,7 +18,7 @@
 import * as tf from '@tensorflow/tfjs';
 
 import * as mm from '../src/index';
-import * as timer from '../src/core/compat/timer';
+import {performance} from '../src/core/compat/global';
 
 import {CHECKPOINTS_DIR} from './common';
 import {writeMemory, writeNoteSeqs, writeTimer} from './common';
@@ -123,7 +123,7 @@ async function runMelodyRnn() {
   const melodyRnn = new mm.MusicRNN(MEL_CHECKPOINT);
   await melodyRnn.initialize();
 
-  const start = timer.now();
+  const start = performance.now();
   const continuation = await melodyRnn.continueSequence(qns, 20);
   writeTimer('melody-cont-time', start);
   writeNoteSeqs('melody-cont-results', [continuation]);
@@ -138,7 +138,7 @@ async function runDrumsRnn() {
   const drumsRnn = new mm.MusicRNN(DRUMS_CHECKPOINT);
   await drumsRnn.initialize();
 
-  const start = timer.now();
+  const start = performance.now();
   const continuation = await drumsRnn.continueSequence(qns, 20);
   writeTimer('drums-cont-time', start);
   writeNoteSeqs('drums-cont-results', [continuation]);
@@ -153,7 +153,7 @@ async function runImprovRnn() {
   const improvRnn = new mm.MusicRNN(IMPROV_CHECKPOINT);
   await improvRnn.initialize();
 
-  const start = timer.now();
+  const start = performance.now();
   const continuation = await improvRnn.continueSequence(qns, 20, 1.0, ['Cm']);
   writeTimer('improv-cont-time', start);
   writeNoteSeqs('improv-cont-results', [continuation]);
