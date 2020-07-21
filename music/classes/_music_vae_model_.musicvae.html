@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>MusicVAE | @magenta/music - v1.16.0</title>
+	<title>MusicVAE | @magenta/music - v1.18.0</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">@magenta/music - v1.16.0</a>
+					<a href="../index.html" class="title">@magenta/music - v1.18.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -99,6 +99,7 @@
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_music_vae_model_.musicvae.html#dataconverter" class="tsd-kind-icon">data<wbr>Converter</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_music_vae_model_.musicvae.html#initialized" class="tsd-kind-icon">initialized</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_music_vae_model_.musicvae.html#zdims" class="tsd-kind-icon">z<wbr>Dims</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
@@ -134,7 +135,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L692">src/music_vae/model.ts:692</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L728">src/music_vae/model.ts:728</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -175,7 +176,7 @@
 					<div class="tsd-signature tsd-kind-icon">data<wbr>Converter<span class="tsd-signature-symbol">:</span> <a href="_core_data_.dataconverter.html" class="tsd-signature-type">DataConverter</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L685">src/music_vae/model.ts:685</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L718">src/music_vae/model.ts:718</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -185,7 +186,17 @@
 					<div class="tsd-signature tsd-kind-icon">initialized<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L692">src/music_vae/model.ts:692</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L728">src/music_vae/model.ts:728</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="zdims" class="tsd-anchor"></a>
+					<h3>z<wbr>Dims</h3>
+					<div class="tsd-signature tsd-kind-icon">z<wbr>Dims<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L726">src/music_vae/model.ts:726</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -196,13 +207,13 @@
 					<a name="decode" class="tsd-anchor"></a>
 					<h3>decode</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">decode<span class="tsd-signature-symbol">(</span>z<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">tf.Tensor2D</span>, temperature<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, chordProgression<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span>, stepsPerQuarter<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, qpm<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, extraControls<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">tf.Tensor2D</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">decode<span class="tsd-signature-symbol">(</span>z<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">tf.Tensor2D</span>, temperature<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, controlArgs<span class="tsd-signature-symbol">?: </span><a href="../interfaces/_music_vae_model_.musicvaecontrolargs.html" class="tsd-signature-type">MusicVAEControlArgs</a>, stepsPerQuarter<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, qpm<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1241">src/music_vae/model.ts:1241</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1343">src/music_vae/model.ts:1343</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -226,9 +237,9 @@
 									</div>
 								</li>
 								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> chordProgression: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> controlArgs: <a href="../interfaces/_music_vae_model_.musicvaecontrolargs.html" class="tsd-signature-type">MusicVAEControlArgs</a></h5>
 									<div class="tsd-comment tsd-typography">
-										<p>(Optional) Chord progression to use as
+										<p>(Optional) MusicVAEControlArgs object to use as
 										conditioning.</p>
 									</div>
 								</li>
@@ -243,13 +254,6 @@
 									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> qpm: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = constants.DEFAULT_QUARTERS_PER_MINUTE</span></h5>
 									<div class="tsd-comment tsd-typography">
 										<p>The tempo of the resulting <code>NoteSequence</code>s.</p>
-									</div>
-								</li>
-								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> extraControls: <span class="tsd-signature-type">tf.Tensor2D</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>(Optional) Additional control tensors to use as
-										conditioning.</p>
 									</div>
 								</li>
 							</ul>
@@ -268,7 +272,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1214">src/music_vae/model.ts:1214</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1318">src/music_vae/model.ts:1318</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -307,7 +311,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L720">src/music_vae/model.ts:720</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L756">src/music_vae/model.ts:756</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -323,13 +327,13 @@
 					<a name="encode" class="tsd-anchor"></a>
 					<h3>encode</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">encode<span class="tsd-signature-symbol">(</span>inputSequences<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span>, chordProgression<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span>, extraControls<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">tf.Tensor2D</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Tensor</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R2</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">encode<span class="tsd-signature-symbol">(</span>inputSequences<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span>, controlArgs<span class="tsd-signature-symbol">?: </span><a href="../interfaces/_music_vae_model_.musicvaecontrolargs.html" class="tsd-signature-type">MusicVAEControlArgs</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Tensor</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R2</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1141">src/music_vae/model.ts:1141</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1267">src/music_vae/model.ts:1267</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -346,17 +350,10 @@
 									</div>
 								</li>
 								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> chordProgression: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> controlArgs: <a href="../interfaces/_music_vae_model_.musicvaecontrolargs.html" class="tsd-signature-type">MusicVAEControlArgs</a></h5>
 									<div class="tsd-comment tsd-typography">
-										<p>(Optional) Chord progression to use as
+										<p>(Optional) MusicVAEControlArgs object to use as
 										conditioning.</p>
-									</div>
-								</li>
-								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> extraControls: <span class="tsd-signature-type">tf.Tensor2D</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>(Optional) Extra control tensors to use as
-										conditioning. Will be concatenated depthwise to the input tensors.</p>
 									</div>
 								</li>
 							</ul>
@@ -376,7 +373,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1117">src/music_vae/model.ts:1117</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1244">src/music_vae/model.ts:1244</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -409,7 +406,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L750">src/music_vae/model.ts:750</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L786">src/music_vae/model.ts:786</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -426,13 +423,13 @@
 					<a name="interpolate" class="tsd-anchor"></a>
 					<h3>interpolate</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">interpolate<span class="tsd-signature-symbol">(</span>inputSequences<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span>, numInterps<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span>, temperature<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, chordProgression<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span>, extraControls<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">tf.Tensor2D</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">interpolate<span class="tsd-signature-symbol">(</span>inputSequences<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span>, numInterps<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span>, temperature<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, controlArgs<span class="tsd-signature-symbol">?: </span><a href="../interfaces/_music_vae_model_.musicvaecontrolargs.html" class="tsd-signature-type">MusicVAEControlArgs</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1006">src/music_vae/model.ts:1006</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1142">src/music_vae/model.ts:1142</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -479,16 +476,9 @@
 									</div>
 								</li>
 								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> chordProgression: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> controlArgs: <a href="../interfaces/_music_vae_model_.musicvaecontrolargs.html" class="tsd-signature-type">MusicVAEControlArgs</a></h5>
 									<div class="tsd-comment tsd-typography">
-										<p>(Optional) Chord progression to use as
-										conditioning.</p>
-									</div>
-								</li>
-								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> extraControls: <span class="tsd-signature-type">tf.Tensor2D</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>(Optional) Additional control tensors to use as
+										<p>(Optional) MusicVAEControlArgs object to use as
 										conditioning.</p>
 									</div>
 								</li>
@@ -509,7 +499,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L954">src/music_vae/model.ts:954</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1092">src/music_vae/model.ts:1092</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -571,7 +561,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L921">src/music_vae/model.ts:921</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L968">src/music_vae/model.ts:968</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -587,13 +577,13 @@
 					<a name="sample" class="tsd-anchor"></a>
 					<h3>sample</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">sample<span class="tsd-signature-symbol">(</span>numSamples<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, temperature<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, chordProgression<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span>, stepsPerQuarter<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, qpm<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, extraControls<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">tf.Tensor2D</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">sample<span class="tsd-signature-symbol">(</span>numSamples<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, temperature<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, controlArgs<span class="tsd-signature-symbol">?: </span><a href="../interfaces/_music_vae_model_.musicvaecontrolargs.html" class="tsd-signature-type">MusicVAEControlArgs</a>, stepsPerQuarter<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, qpm<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1378">src/music_vae/model.ts:1378</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1462">src/music_vae/model.ts:1462</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -616,9 +606,9 @@
 									</div>
 								</li>
 								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> chordProgression: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> controlArgs: <a href="../interfaces/_music_vae_model_.musicvaecontrolargs.html" class="tsd-signature-type">MusicVAEControlArgs</a></h5>
 									<div class="tsd-comment tsd-typography">
-										<p>(Optional) Chord progression to use as
+										<p>(Optional) MusicVAEControlArgs object to use as
 										conditioning.</p>
 									</div>
 								</li>
@@ -633,13 +623,6 @@
 									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> qpm: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = constants.DEFAULT_QUARTERS_PER_MINUTE</span></h5>
 									<div class="tsd-comment tsd-typography">
 										<p>The tempo of the resulting <code>NoteSequence</code>s.</p>
-									</div>
-								</li>
-								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> extraControls: <span class="tsd-signature-type">tf.Tensor2D</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>(Optional) Additional control tensors to use as
-										conditioning.</p>
 									</div>
 								</li>
 							</ul>
@@ -658,7 +641,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1349">src/music_vae/model.ts:1349</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1435">src/music_vae/model.ts:1435</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -690,13 +673,13 @@
 					<a name="similar" class="tsd-anchor"></a>
 					<h3>similar</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">similar<span class="tsd-signature-symbol">(</span>inputSequence<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span>, numSamples<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, similarity<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, temperature<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, chordProgression<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span>, extraControls<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">tf.Tensor2D</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">similar<span class="tsd-signature-symbol">(</span>inputSequence<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span>, numSamples<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, similarity<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, temperature<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, controlArgs<span class="tsd-signature-symbol">?: </span><a href="../interfaces/_music_vae_model_.musicvaecontrolargs.html" class="tsd-signature-type">MusicVAEControlArgs</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">INoteSequence</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1468">src/music_vae/model.ts:1468</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1543">src/music_vae/model.ts:1543</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -735,16 +718,9 @@
 									</div>
 								</li>
 								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> chordProgression: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> controlArgs: <a href="../interfaces/_music_vae_model_.musicvaecontrolargs.html" class="tsd-signature-type">MusicVAEControlArgs</a></h5>
 									<div class="tsd-comment tsd-typography">
-										<p>(Optional) Chord progression to use as
-										conditioning.</p>
-									</div>
-								</li>
-								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> extraControls: <span class="tsd-signature-type">tf.Tensor2D</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>(Optional) Additional control tensors to use as
+										<p>(Optional) MusicVAEControlArgs object to use as
 										conditioning.</p>
 									</div>
 								</li>
@@ -764,7 +740,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1422">src/music_vae/model.ts:1422</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L1499">src/music_vae/model.ts:1499</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -846,6 +822,9 @@
 							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="_music_vae_model_.musicvae.html#initialized" class="tsd-kind-icon">initialized</a>
 							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="_music_vae_model_.musicvae.html#zdims" class="tsd-kind-icon">z<wbr>Dims</a>
+							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_music_vae_model_.musicvae.html#decode" class="tsd-kind-icon">decode</a>
 							</li>
@@ -891,6 +870,12 @@
 				<ul class="after-current">
 					<li class=" tsd-kind-class tsd-parent-kind-external-module">
 						<a href="_music_vae_model_.nade.html" class="tsd-kind-icon">Nade</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="../interfaces/_music_vae_model_.musicvaecontrolargs.html" class="tsd-kind-icon">MusicVAEControl<wbr>Args</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="../interfaces/_music_vae_model_.musicvaecontrolspec.html" class="tsd-kind-icon">MusicVAEControl<wbr>Spec</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="../interfaces/_music_vae_model_.musicvaespec.html" class="tsd-kind-icon">MusicVAESpec</a>

@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>MusicVAESpec | @magenta/music - v1.16.0</title>
+	<title>MusicVAESpec | @magenta/music - v1.18.0</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">@magenta/music - v1.16.0</a>
+					<a href="../index.html" class="title">@magenta/music - v1.18.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -79,12 +79,19 @@
 							converter to use.</p>
 						</dd>
 						<dt>property</dt>
+						<dd><p>useBooleanDecoder: If true, use a <code>BooleanDecoder</code> instead of a
+							<code>CategoricalDecoder</code>.</p>
+						</dd>
+						<dt>property</dt>
 						<dd><p>chordEncoder: (Optional) Type of chord encoder to use when
 							conditioning on chords.</p>
 						</dd>
 						<dt>property</dt>
-						<dd><p>useBooleanDecoder: If true, use a <code>BooleanDecoder</code> instead of a
-							<code>CategoricalDecoder</code>.</p>
+						<dd><p>conditionOnKey: If true, model is key-conditioned.</p>
+						</dd>
+						<dt>property</dt>
+						<dd><p>extraControls: (Optional) List of extra control signal names and
+							depths.</p>
 						</dd>
 					</dl>
 				</div>
@@ -105,7 +112,9 @@
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_music_vae_model_.musicvaespec.html#chordencoder" class="tsd-kind-icon">chord<wbr>Encoder</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_music_vae_model_.musicvaespec.html#conditiononkey" class="tsd-kind-icon">condition<wbr>OnKey</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_music_vae_model_.musicvaespec.html#dataconverter" class="tsd-kind-icon">data<wbr>Converter</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_music_vae_model_.musicvaespec.html#extracontrols" class="tsd-kind-icon">extra<wbr>Controls</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_music_vae_model_.musicvaespec.html#type" class="tsd-kind-icon">type</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_music_vae_model_.musicvaespec.html#usebooleandecoder" class="tsd-kind-icon">use<wbr>Boolean<wbr>Decoder</a></li>
 							</ul>
@@ -121,7 +130,17 @@
 					<div class="tsd-signature tsd-kind-icon">chord<wbr>Encoder<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">chords.ChordEncoderType</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L668">src/music_vae/model.ts:668</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L685">src/music_vae/model.ts:685</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="conditiononkey" class="tsd-anchor"></a>
+					<h3>condition<wbr>OnKey</h3>
+					<div class="tsd-signature tsd-kind-icon">condition<wbr>OnKey<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L686">src/music_vae/model.ts:686</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -131,7 +150,17 @@
 					<div class="tsd-signature tsd-kind-icon">data<wbr>Converter<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">data.ConverterSpec</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L667">src/music_vae/model.ts:667</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L683">src/music_vae/model.ts:683</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="extracontrols" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> extra<wbr>Controls</h3>
+					<div class="tsd-signature tsd-kind-icon">extra<wbr>Controls<span class="tsd-signature-symbol">:</span> <a href="_music_vae_model_.musicvaecontrolspec.html" class="tsd-signature-type">MusicVAEControlSpec</a><span class="tsd-signature-symbol">[]</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L687">src/music_vae/model.ts:687</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -141,7 +170,7 @@
 					<div class="tsd-signature tsd-kind-icon">type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"MusicVAE"</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L666">src/music_vae/model.ts:666</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L682">src/music_vae/model.ts:682</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -151,7 +180,7 @@
 					<div class="tsd-signature tsd-kind-icon">use<wbr>Boolean<wbr>Decoder<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L669">src/music_vae/model.ts:669</a></li>
+							<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/music_vae/model.ts#L684">src/music_vae/model.ts:684</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -185,6 +214,12 @@
 					<li class=" tsd-kind-class tsd-parent-kind-external-module">
 						<a href="../classes/_music_vae_model_.nade.html" class="tsd-kind-icon">Nade</a>
 					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_music_vae_model_.musicvaecontrolargs.html" class="tsd-kind-icon">MusicVAEControl<wbr>Args</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_music_vae_model_.musicvaecontrolspec.html" class="tsd-kind-icon">MusicVAEControl<wbr>Spec</a>
+					</li>
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-interface tsd-parent-kind-external-module">
@@ -194,7 +229,13 @@
 								<a href="_music_vae_model_.musicvaespec.html#chordencoder" class="tsd-kind-icon">chord<wbr>Encoder</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="_music_vae_model_.musicvaespec.html#conditiononkey" class="tsd-kind-icon">condition<wbr>OnKey</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
 								<a href="_music_vae_model_.musicvaespec.html#dataconverter" class="tsd-kind-icon">data<wbr>Converter</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="_music_vae_model_.musicvaespec.html#extracontrols" class="tsd-kind-icon">extra<wbr>Controls</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
 								<a href="_music_vae_model_.musicvaespec.html#type" class="tsd-kind-icon">type</a>
