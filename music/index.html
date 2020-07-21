@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>@magenta/music - v1.16.0</title>
+	<title>@magenta/music - v1.18.0</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="assets/css/main.css">
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="index.html" class="title">@magenta/music - v1.16.0</a>
+					<a href="index.html" class="title">@magenta/music - v1.18.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -52,7 +52,7 @@
 					<a href="globals.html">Globals</a>
 				</li>
 			</ul>
-			<h1>@magenta/music - v1.16.0</h1>
+			<h1>@magenta/music - v1.18.0</h1>
 		</div>
 	</div>
 </header>
@@ -159,17 +159,11 @@
 				(by calling <code>npm install --save @magenta/music</code>).</p>
 				<p>The node-specific bundles (that don&#39;t transpile the CommonJS modules) are under
 				<code>@magenta/music/node</code>. For example:</p>
-				<pre><code class="language-js"><span class="hljs-keyword">const</span> model = <span class="hljs-built_in">require</span>(<span class="hljs-string">'@magenta/music/node/music_vae'</span>);
+				<pre><code class="language-js"><span class="hljs-keyword">const</span> mvae = <span class="hljs-built_in">require</span>(<span class="hljs-string">'@magenta/music/node/music_vae'</span>);
 <span class="hljs-keyword">const</span> core = <span class="hljs-built_in">require</span>(<span class="hljs-string">'@magenta/music/node/core'</span>);
 
-<span class="hljs-comment">// These hacks below are needed because the library uses performance and fetch which</span>
-<span class="hljs-comment">// exist in browsers but not in node. We are working on simplifying this!</span>
-<span class="hljs-keyword">const</span> globalAny: any = global;
-globalAny.performance = <span class="hljs-built_in">Date</span>;
-globalAny.fetch = <span class="hljs-built_in">require</span>(<span class="hljs-string">'node-fetch'</span>);
-
 <span class="hljs-comment">// Your code:</span>
-<span class="hljs-keyword">const</span> model = <span class="hljs-keyword">new</span> mode.MusicVAE(<span class="hljs-string">'/path/to/checkpoint'</span>);
+<span class="hljs-keyword">const</span> model = <span class="hljs-keyword">new</span> mvae.MusicVAE(<span class="hljs-string">'/path/to/checkpoint'</span>);
 <span class="hljs-keyword">const</span> player = <span class="hljs-keyword">new</span> core.Player();
 model
   .initialize()
@@ -321,7 +315,7 @@ worker.onmessage = <span class="hljs-function">(<span class="hljs-params">event<
 importScripts(<span class="hljs-string">"https://cdn.jsdelivr.net/npm/@magenta/music@^1.12.0/es6/core.js"</span>);
 importScripts(<span class="hljs-string">"https://cdn.jsdelivr.net/npm/@magenta/music@^1.12.0/es6/music_vae.js"</span>);
 
-<span class="hljs-keyword">const</span> mvae = <span class="hljs-keyword">new</span> music_vae.MusicVAE(<span class="hljs-string">'https://storage.googleapis.com/magentadata/js/checkpoints/musicvae/mel_2bar_small'</span>);
+<span class="hljs-keyword">const</span> mvae = <span class="hljs-keyword">new</span> music_vae.MusicVAE(<span class="hljs-string">'https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_2bar_small'</span>);
 
 <span class="hljs-comment">// Main script asks for work.</span>
 self.onmessage = <span class="hljs-keyword">async</span> (e) =&gt; {
@@ -330,7 +324,7 @@ self.onmessage = <span class="hljs-keyword">async</span> (e) =&gt; {
     postMessage({<span class="hljs-attr">fyi</span>: <span class="hljs-string">'model initialized'</span>});
   }
 
-  <span class="hljs-keyword">const</span> output = <span class="hljs-keyword">await</span> mvae.sample(<span class="hljs-number">1</span>);s
+  <span class="hljs-keyword">const</span> output = <span class="hljs-keyword">await</span> mvae.sample(<span class="hljs-number">1</span>);
   <span class="hljs-comment">// Send main script the result.</span>
   postMessage({<span class="hljs-attr">sample</span>: output[<span class="hljs-number">0</span>]});
 };</code></pre>
@@ -427,6 +421,21 @@ self.addEventListener(<span class="hljs-string">'fetch'</span>, e =&gt; {
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="modules/_core_chords_.html">&quot;core/chords&quot;</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_core_compat_global_.html">&quot;core/compat/global&quot;</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_core_compat_global_browser_.html">&quot;core/compat/global_<wbr>browser&quot;</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_core_compat_global_node_.html">&quot;core/compat/global_<wbr>node&quot;</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_core_compat_navigator_node_.html">&quot;core/compat/navigator_<wbr>node&quot;</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_core_compat_performance_node_.html">&quot;core/compat/performance_<wbr>node&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="modules/_core_constants_.html">&quot;core/constants&quot;</a>
