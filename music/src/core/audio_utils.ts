@@ -23,20 +23,11 @@ import * as ndarray from 'ndarray';
 //@ts-ignore
 import * as resample from 'ndarray-resample';
 
-import {fetch} from '../core/compat/global';
+import { fetch, getOfflineAudioContext, isSafari } from '../core/compat/global';
 import * as logging from './logging';
 
-// Safari Webkit only supports 44.1kHz audio.
-const WEBKIT_SAMPLE_RATE = 44100;
 const SAMPLE_RATE = 16000;
-// tslint:disable-next-line:no-any
-const appeaseTsLintWindow = (window as any);
-const isSafari = appeaseTsLintWindow.webkitOfflineAudioContext as boolean;
-// tslint:disable-next-line:variable-name
-const offlineCtx = isSafari ?
-    new appeaseTsLintWindow.webkitOfflineAudioContext(
-        1, WEBKIT_SAMPLE_RATE, WEBKIT_SAMPLE_RATE) :
-    new appeaseTsLintWindow.OfflineAudioContext(1, SAMPLE_RATE, SAMPLE_RATE);
+const offlineCtx = getOfflineAudioContext(SAMPLE_RATE);
 
 /**
  * Parameters for computing a spectrogram from audio.
@@ -63,8 +54,8 @@ export interface SpecParams {
  */
 export async function loadAudioFromUrl(url: string): Promise<AudioBuffer> {
   return fetch(url)
-      .then(body => body.arrayBuffer())
-      .then(buffer => offlineCtx.decodeAudioData(buffer));
+    .then(body => body.arrayBuffer())
+    .then(buffer => offlineCtx.decodeAudioData(buffer));
 }
 
 /**
@@ -92,7 +83,7 @@ export async function loadAudioFromFile(blob: Blob): Promise<AudioBuffer> {
 }
 
 export function melSpectrogram(
-    y: Float32Array, params: SpecParams): Float32Array[] {
+  y: Float32Array, params: SpecParams): Float32Array[] {
   if (!params.power) {
     params.power = 2.0;
   }
@@ -147,7 +138,7 @@ function getMonoAudio(audioBuffer: AudioBuffer) {
   }
   if (audioBuffer.numberOfChannels !== 2) {
     throw Error(
-        `${audioBuffer.numberOfChannels} channel audio is not supported.`);
+      `${audioBuffer.numberOfChannels} channel audio is not supported.`);
   }
   const ch0 = audioBuffer.getChannelData(0);
   const ch1 = audioBuffer.getChannelData(1);
@@ -160,7 +151,7 @@ function getMonoAudio(audioBuffer: AudioBuffer) {
 }
 
 export async function resampleAndMakeMono(
-    audioBuffer: AudioBuffer, targetSr = SAMPLE_RATE) {
+  audioBuffer: AudioBuffer, targetSr = SAMPLE_RATE) {
   if (audioBuffer.sampleRate === targetSr) {
     return getMonoAudio(audioBuffer);
   }
@@ -172,18 +163,18 @@ export async function resampleAndMakeMono(
     bufferSource.connect(offlineCtx.destination);
     bufferSource.start();
     return offlineCtx.startRendering().then(
-        (buffer: AudioBuffer) => buffer.getChannelData(0));
+      (buffer: AudioBuffer) => buffer.getChannelData(0));
   } else {
     // Safari does not support resampling with WebAudio.
     logging.log(
-        'Safari does not support WebAudio resampling, so this may be slow.',
-        'O&F', logging.Level.WARN);
+      'Safari does not support WebAudio resampling, so this may be slow.',
+      'O&F', logging.Level.WARN);
 
     const originalAudio = getMonoAudio(audioBuffer);
     const resampledAudio = new Float32Array(lengthRes);
     resample(
-        ndarray(resampledAudio, [lengthRes]),
-        ndarray(originalAudio, [originalAudio.length]));
+      ndarray(resampledAudio, [lengthRes]),
+      ndarray(originalAudio, [originalAudio.length]));
     return resampledAudio;
   }
 }
@@ -197,7 +188,7 @@ interface MelParams {
 }
 
 function magSpectrogram(
-    stft: Float32Array[], power: number): [Float32Array[], number] {
+  stft: Float32Array[], power: number): [Float32Array[], number] {
   const spec = stft.map(fft => pow(mag(fft), power));
   const nFft = stft[0].length - 1;
   return [spec, nFft];
@@ -240,7 +231,7 @@ function stft(y: Float32Array, params: SpecParams): Float32Array[] {
 }
 
 function applyWholeFilterbank(
-    spec: Float32Array[], filterbank: Float32Array[]): Float32Array[] {
+  spec: Float32Array[], filterbank: Float32Array[]): Float32Array[] {
   // Apply a point-wise dot product between the array of arrays.
   const out: Float32Array[] = [];
   for (let i = 0; i < spec.length; i++) {
@@ -250,12 +241,12 @@ function applyWholeFilterbank(
 }
 
 function applyFilterbank(
-    mags: Float32Array, filterbank: Float32Array[]): Float32Array {
+  mags: Float32Array, filterbank: Float32Array[]): Float32Array {
   if (mags.length !== filterbank[0].length) {
     throw new Error(
-        `Each entry in filterbank should have dimensions ` +
-        `matching FFT. |mags| = ${mags.length}, ` +
-        `|filterbank[0]| = ${filterbank[0].length}.`);
+      `Each entry in filterbank should have dimensions ` +
+      `matching FFT. |mags| = ${mags.length}, ` +
+      `|filterbank[0]| = ${filterbank[0].length}.`);
   }
 
   // Apply each filter to the whole FFT signal to get one value.
@@ -273,7 +264,7 @@ function applyFilterbank(
 export function applyWindow(buffer: Float32Array, win: Float32Array) {
   if (buffer.length !== win.length) {
     console.error(
-        `Buffer length ${buffer.length} != window length ${win.length}.`);
+      `Buffer length ${buffer.length} != window length ${win.length}.`);
     return null;
   }
 
@@ -295,7 +286,7 @@ export function padCenterToLength(data: Float32Array, length: number) {
   return padConstant(data, [paddingLeft, paddingRight]);
 }
 
-export function padConstant(data: Float32Array, padding: number|number[]) {
+export function padConstant(data: Float32Array, padding: number | number[]) {
   let padLeft, padRight;
   if (typeof (padding) === 'object') {
     [padLeft, padRight] = padding;
@@ -323,11 +314,11 @@ function padReflect(data: Float32Array, padding: number) {
  * according to the params specified.
  */
 export function frame(
-    data: Float32Array, frameLength: number,
-    hopLength: number): Float32Array[] {
+  data: Float32Array, frameLength: number,
+  hopLength: number): Float32Array[] {
   const bufferCount = Math.floor((data.length - frameLength) / hopLength) + 1;
   const buffers = Array.from(
-      {length: bufferCount}, (x, i) => new Float32Array(frameLength));
+    { length: bufferCount }, (x, i) => new Float32Array(frameLength));
   for (let i = 0; i < bufferCount; i++) {
     const ind = i * hopLength;
     const buffer = data.slice(ind, ind + frameLength);
@@ -429,7 +420,7 @@ function calculateFftFreqs(sampleRate: number, nFft: number) {
 }
 
 function calculateMelFreqs(
-    nMels: number, fMin: number, fMax: number): Float32Array {
+  nMels: number, fMin: number, fMax: number): Float32Array {
   const melMin = hzToMel(fMin);
   const melMax = hzToMel(fMax);
 
