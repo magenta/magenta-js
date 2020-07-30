@@ -18,6 +18,12 @@
  * limitations under the License.
  */
 
+/**
+ * This file acts as a stand-in used during development to ensure type safety
+ * and proper use of global functions/objects. We use webpack to swap it out
+ * with the `global_browser` and `global_node` files that export proper code
+ * for the various global functions/objects
+ */
 const isNode = typeof global !== 'undefined';
 
 export interface Performance {
@@ -31,3 +37,5 @@ export interface Performance {
 export const fetch: typeof window.fetch = isNode ? require('node-fetch') : window.fetch.bind(window);
 export const performance: Performance = isNode ? require('./performance_node') : window.performance;
 export const navigator = isNode ? require('./navigator_node') : window.navigator;
+
+export { isSafari, getOfflineAudioContext } from './global_browser';
