@@ -23,9 +23,9 @@
 import * as tf from '@tensorflow/tfjs';
 
 import * as chords from '../core/chords';
+import {fetch, performance} from '../core/compat/global';
 import * as constants from '../core/constants';
 import * as data from '../core/data';
-import {fetch, performance} from '../core/compat/global';
 import * as logging from '../core/logging';
 import {INoteSequence} from '../protobuf/index';
 
@@ -499,13 +499,73 @@ class GrooveDecoder extends BaseDecoder {
 }
 
 /**
+ * Split decoder that concatenates the outputs from its component decoders
+ * depth-wise.
+ */
+class SplitDecoder extends Decoder {
+  private coreDecoders: Decoder[];
+  readonly numDecoders: number;
+  readonly zDims: number;
+  readonly outputDims: number;
+
+  /**
+   * `SplitDecoder` contructor.
+   * @param coreDecoders Lower-level `Decoder` objects, each of which gets the
+   * same `z`.
+   */
+  constructor(coreDecoders: Decoder[]) {
+    super();
+    this.coreDecoders = coreDecoders;
+    this.numDecoders = this.coreDecoders.length;
+    this.zDims = this.coreDecoders[0].zDims;
+    this.outputDims =
+        this.coreDecoders.reduce((dims, dec) => dims + dec.outputDims, 0);
+  }
+
+  decodeSeparately(
+      z: tf.Tensor2D, length: number, initialInput?: tf.Tensor2D[],
+      temperature?: number, controls?: tf.Tensor2D): tf.Tensor3D[] {
+    const samples: tf.Tensor3D[] = [];
+    for (let i = 0; i < this.coreDecoders.length; ++i) {
+      samples.push(this.coreDecoders[i].decode(
+          z, length, initialInput[i], temperature, controls));
+    }
+    return samples;
+  }
+
+  /**
+   * Decodes a batch of latent vectors, `z`.
+   *
+   * @param z A batch of latent vectors to decode, sized `[batchSize, zDims]`.
+   * @param length The length of decoded sequences.
+   * @param temperature (Optional) The softmax temperature to use when
+   * sampling from the logits. Argmax is used if not provided.
+   * @param controls (Optional) Control tensors to use for conditioning, sized
+   * `[length, controlDepth]`.
+   *
+   * @returns A boolean tensor containing the decoded sequences, shaped
+   * `[batchSize, length, depth]`.
+   */
+  decode(
+      z: tf.Tensor2D, length: number, initialInput?: tf.Tensor2D,
+      temperature?: number, controls?: tf.Tensor2D) {
+    return tf.tidy(() => {
+      const samples: tf.Tensor3D[] = this.decodeSeparately(
+          z, length, this.coreDecoders.map(_ => initialInput), temperature,
+          controls);
+      return tf.concat(samples, -1);
+    });
+  }
+}
+
+/**
  * Hierarchical decoder that produces intermediate embeddings to pass to
  * lower-level `Decoder` objects. The outputs from different decoders are
  * concatenated depth-wise (axis 3), and the outputs from different steps of
  * the conductor are concatenated across time (axis 1).
  */
 class ConductorDecoder extends Decoder {
-  private coreDecoders: Decoder[];
+  private splitDecoder: SplitDecoder;
   private lstmCellVars: LayerVars[];
   private zToInitStateVars: LayerVars;
   readonly numSteps: number;
@@ -526,13 +586,12 @@ class ConductorDecoder extends Decoder {
       coreDecoders: Decoder[], lstmCellVars: LayerVars[],
       zToInitStateVars: LayerVars, numSteps: number) {
     super();
-    this.coreDecoders = coreDecoders;
+    this.splitDecoder = new SplitDecoder(coreDecoders);
     this.lstmCellVars = lstmCellVars;
     this.zToInitStateVars = zToInitStateVars;
     this.numSteps = numSteps;
     this.zDims = this.zToInitStateVars.kernel.shape[0];
-    this.outputDims =
-        this.coreDecoders.reduce((dims, dec) => dims + dec.outputDims, 0);
+    this.outputDims = this.splitDecoder.outputDims;
   }
 
   /**
@@ -560,20 +619,18 @@ class ConductorDecoder extends Decoder {
 
       // Generate embeddings.
       const samples: tf.Tensor3D[] = [];
-      let initialInput: tf.Tensor2D[] = this.coreDecoders.map(_ => undefined);
+      let initialInput: tf.Tensor2D[] =
+          new Array(this.splitDecoder.numDecoders).fill(undefined);
       const dummyInput: tf.Tensor2D = tf.zeros([batchSize, 1]);
       const splitControls =
           controls ? tf.split(controls, this.numSteps) : undefined;
       for (let i = 0; i < this.numSteps; ++i) {
         [lstmCell.c, lstmCell.h] =
             tf.multiRNNCell(lstmCell.cell, dummyInput, lstmCell.c, lstmCell.h);
-        const currSamples: tf.Tensor3D[] = [];
-        for (let j = 0; j < this.coreDecoders.length; ++j) {
-          currSamples.push(this.coreDecoders[j].decode(
-              lstmCell.h[lstmCell.h.length - 1], length / this.numSteps,
-              initialInput[j], temperature,
-              splitControls ? splitControls[i] : undefined));
-        }
+        const currSamples = this.splitDecoder.decodeSeparately(
+            lstmCell.h[lstmCell.h.length - 1], length / this.numSteps,
+            initialInput, temperature,
+            splitControls ? splitControls[i] : undefined);
         samples.push(tf.concat(currSamples, -1));
         initialInput = currSamples.map(
             s => s.slice(
@@ -875,16 +932,28 @@ class MusicVAE {
 
     const decVarPrefixes: string[] = [];
     if (this.dataConverter.NUM_SPLITS) {
-      if (hasControlBidiLayers) {
-        throw Error(
-            'Control preprocessing bidirectional LSTM currently not ' +
-            'supported in hierarchical decoder.');
-      }
       for (let i = 0; i < this.dataConverter.NUM_SPLITS; ++i) {
         decVarPrefixes.push(`${decVarPrefix}core_decoder_${i}/decoder/`);
       }
     } else {
       decVarPrefixes.push(`${decVarPrefix}decoder/`);
+    }
+
+    let controlLstmFwLayers: LayerVars[] = [null];
+    let controlLstmBwLayers: LayerVars[] = [null];
+    if (hasControlBidiLayers) {
+      controlLstmFwLayers =
+          this.getLstmLayers(CONTROL_BIDI_LSTM_CELL.replace('%s', 'fw'), vars);
+      controlLstmBwLayers =
+          this.getLstmLayers(CONTROL_BIDI_LSTM_CELL.replace('%s', 'bw'), vars);
+      if (controlLstmFwLayers.length !== controlLstmBwLayers.length ||
+          controlLstmFwLayers.length !== 1) {
+        throw Error(
+            'Only single-layer bidirectional control preprocessing is ' +
+            'supported. Got ' +
+            `${controlLstmFwLayers.length} forward and ${
+                controlLstmBwLayers.length} backward.`);
+      }
     }
 
     const baseDecoders = decVarPrefixes.map((varPrefix) => {
@@ -896,23 +965,6 @@ class MusicVAE {
       const decOutputProjection = new LayerVars(
           vars[`${varPrefix}output_projection/kernel`] as tf.Tensor2D,
           vars[`${varPrefix}output_projection/bias`] as tf.Tensor1D);
-
-      let controlLstmFwLayers: LayerVars[] = [null];
-      let controlLstmBwLayers: LayerVars[] = [null];
-      if (hasControlBidiLayers) {
-        controlLstmFwLayers = this.getLstmLayers(
-            CONTROL_BIDI_LSTM_CELL.replace('%s', 'fw'), vars);
-        controlLstmBwLayers = this.getLstmLayers(
-            CONTROL_BIDI_LSTM_CELL.replace('%s', 'bw'), vars);
-        if (controlLstmFwLayers.length !== controlLstmBwLayers.length ||
-            controlLstmFwLayers.length !== 1) {
-          throw Error(
-              'Only single-layer bidirectional control preprocessing is ' +
-              'supported. Got ' +
-              `${controlLstmFwLayers.length} forward and ${
-                  controlLstmBwLayers.length} backward.`);
-        }
-      }
 
       if (`${varPrefix}nade/w_enc` in vars) {
         return new NadeDecoder(
@@ -951,9 +1003,7 @@ class MusicVAE {
     } else if (baseDecoders.length === 1) {
       this.decoder = baseDecoders[0];
     } else {
-      throw Error(
-          'Unexpected number of base decoders without conductor: ' +
-          `${baseDecoders.length}`);
+      this.decoder = new SplitDecoder(baseDecoders);
     }
 
     this.zDims = this.decoder.zDims;
