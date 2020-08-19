@@ -304,6 +304,23 @@ test('Test TrioConverter', (t: test.Test) => {
   t.end();
 });
 
+test('Test TrioRhythmConverter', (t: test.Test) => {
+  const trioRhythmConverter = new data.TrioRhythmConverter({
+    numSteps: 32,
+    melArgs: {minPitch: 21, maxPitch: 108},
+    bassArgs: {minPitch: 21, maxPitch: 108},
+    drumsArgs: {},
+  });
+
+  const trioRhythmTensor = trioRhythmConverter.toTensor(TRIO_NS);
+  t.deepEqual(trioRhythmTensor.shape, [32, 3]);
+
+  trioRhythmConverter.toNoteSequence(trioRhythmTensor, 2);
+
+  trioRhythmTensor.dispose();
+  t.end();
+});
+
 test('Test MultitrackConverter', (t: test.Test) => {
   const multitrackConverter = new data.MultitrackConverter({
     'numSteps': 512,
