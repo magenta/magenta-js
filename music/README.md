@@ -54,8 +54,8 @@ either in the browser, or in Node:
 ### In the browser
 The models and the core library is split into smaller ES6 bundles (not ESModules, unfortunately 😢), so that you can use a model independent of the rest of the
 library. These bundles don't package the `Tone.js` or `TensorFlow.js` dependencies (since
-there would be a risk of downloading multiple copies on the same page). Here is an example (or
-[click here](https://codepen.io/adarob/pen/gzwJZL) for a CodePen version):
+there would be a risk of downloading multiple copies on the same page). Here is an abbreviated example (or
+[click here](https://hello-magenta-one-file.glitch.me/) to view or remix the code on Glitch):
 
 ```html
 <html>
@@ -75,7 +75,7 @@ there would be a risk of downloading multiple copies on the same page). Here is 
   //...
   const mvae = new music_vae.MusicVAE('https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_2bar_small');
   mvae.initialize().then(() => {
-    model.sample(1).then((samples) => player.start(samples[0]));
+    mvae.sample(1).then((samples) => player.start(samples[0]));
   });
 </script>
 </html>
