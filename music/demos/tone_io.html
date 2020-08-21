@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Hello!</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        font-family: "Press Start 2P", helvetica, arial, sans-serif;
+      }
+
+      body {
+        margin: 2rem;
+        max-width: 600px;
+      }
+
+      h1 {
+        font-style: italic;
+        color: #D33D8F;
+      }
+      
+      p {
+        line-height: 1.5;
+      }
+      .canvas-container {
+        border: 5px solid #F5DDEE !important;
+        overflow-x: auto;
+        margin-top: -5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Hi Magenta!</h1>
+
+    <p>
+      New melodies are generated every time the page is refreshed.
+    </p>
+    
+    
+    <p id="PianoRollSVGVisualizer">mm.PianoRollSVGVisualizer</p>
+    <section>
+      <div class="canvas-container">
+        <canvas id="canvas"></canvas>
+      </div>
+    </section>
+
+    <button id="playButton">
+      loading...
+    </button>
+
+    <div class="glitchButton" style="position:fixed;top:20px;right:20px;"></div>
+    <script src="https://button.glitch.me/button.js"></script>
+    <script src="tone_io_bundle.js"></script>
+  </body>
+</html>
