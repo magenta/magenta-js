@@ -12,8 +12,14 @@
       rel="stylesheet"
     />
     <style>
+      :root {
+        --h-fonts: "Press Start 2P", helvetica, arial, sans-serif;
+        --p-fonts: "Benton Sans", "Helvetica Neue", helvetica, arial, sans-serif;
+        --pink: #F5DDEE;
+      }
+
       * {
-        font-family: "Press Start 2P", helvetica, arial, sans-serif;
+        font-family: var(--h-fonts);
       }
 
       body {
@@ -27,6 +33,7 @@
       }
       
       p {
+        font-family: var(--p-fonts);
         line-height: 1.5;
       }
       .canvas-container {
@@ -34,29 +41,48 @@
         overflow-x: auto;
         margin-top: -5px;
       }
+
+      button {
+        -webkit-appearance: none;
+        font-family: var(--default-fonts);
+        display: inline-block;
+        padding: 6px 14px;
+        text-transform: uppercase;
+        cursor: pointer;
+        background: white;
+        color: #292A36;
+        min-width: 100px;
+        border: 4px solid var(--pink);
+        font-weight: bold;
+        letter-spacing: 1px;
+        font-size: 12px;
+      }
+
+      button:hover {
+        background-color: var(--pink);
+      }
     </style>
   </head>
   <body>
     <h1>Hi Magenta!</h1>
 
+
     <p>
-      New melodies are generated every time the page is refreshed.
+      New melodies are generated every time the page is refreshed. The visualization is created with mm.PianoRollSVGVisualizer.
     </p>
-    
-    
-    <p id="PianoRollSVGVisualizer">mm.PianoRollSVGVisualizer</p>
+
+    <button id="playButton">
+      loading...
+    </button>
     <section>
       <div class="canvas-container">
         <canvas id="canvas"></canvas>
       </div>
     </section>
 
-    <button id="playButton">
-      loading...
-    </button>
 
     <div class="glitchButton" style="position:fixed;top:20px;right:20px;"></div>
     <script src="https://button.glitch.me/button.js"></script>
-    <script src="tone_io_bundle.js"></script>
+    <script src="tone_io_demo_bundle.js"></script>
   </body>
 </html>
