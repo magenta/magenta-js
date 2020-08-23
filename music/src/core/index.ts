@@ -40,3 +40,4 @@ export * from './midi_io';
 export * from './player';
 export * from './recorder';
 export * from './visualizer';
+export * from './tone_io';
