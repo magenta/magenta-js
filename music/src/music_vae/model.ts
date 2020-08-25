@@ -774,7 +774,6 @@ class MusicVAE {
 
   public dataConverter: data.DataConverter;
   private chordEncoder?: chords.ChordEncoder;
-  private controlDepth: number;
 
   private encoder: Encoder;
   private decoder: Decoder;
@@ -898,10 +897,6 @@ class MusicVAE {
       this.encoder = new HierarchicalEncoder(
           baseEncoders, [this.dataConverter.numSegments, 1], encMu);
 
-      const layerSize = fwLayers[0].kernel.shape[1] / 4;
-      this.controlDepth =
-          fwLayers[0].kernel.shape[0] - layerSize - this.dataConverter.depth;
-
     } else {
       const fwLayers =
           this.getLstmLayers(ENCODER_FORMAT.replace('%s', 'fw'), vars);
@@ -915,10 +910,6 @@ class MusicVAE {
       }
       this.encoder =
           new BidirectionalLstmEncoder(fwLayers[0], bwLayers[0], encMu);
-
-      const layerSize = fwLayers[0].kernel.shape[1] / 4;
-      this.controlDepth =
-          fwLayers[0].kernel.shape[0] - layerSize - this.dataConverter.depth;
     }
 
     // Whether or not we have variables for bidirectional control preprocessing.
@@ -1136,23 +1127,22 @@ class MusicVAE {
    * `[columnCount, rowCount]` array to specify a rectangle.
    * @param temperature (Optional) The softmax temperature to use when
    * sampling from the logits. Argmax is used if not provided.
+   * @param controlArgs (Optional) MusicVAEControlArgs object to use as
+   * conditioning.
    *
    * @returns A 3D `Tensor` of interpolations.
    */
   async interpolateTensors(
       inputTensors: tf.Tensor3D, numInterps: number|number[],
-      temperature?: number) {
-    if (this.controlDepth) {
-      throw new Error(
-          'Controls currently unsupported when interpolating tensors.');
-    }
+      temperature?: number, controlArgs?: MusicVAEControlArgs) {
     if (!this.initialized) {
       await this.initialize();
     }
-    const inputZs = await this.encodeTensors(inputTensors);
+    const inputZs = await this.encodeTensors(inputTensors, controlArgs);
     const interpZs = tf.tidy(() => this.getInterpolatedZs(inputZs, numInterps));
     inputZs.dispose();
-    const outputTensors = await this.decodeTensors(interpZs, temperature);
+    const outputTensors =
+        await this.decodeTensors(interpZs, temperature, controlArgs);
     interpZs.dispose();
     return outputTensors;
   }
@@ -1288,20 +1278,38 @@ class MusicVAE {
    * Encodes the input `Tensor`s into latent vectors.
    *
    * @param inputTensors A 3D `Tensor` of sequences to encode.
+   * @param controlArgs (Optional) MusicVAEControlArgs object to use as
+   * conditioning.
    * @returns A `Tensor` containing the batch of latent vectors, sized
    * `[inputTensors.shape[0], zSize]`.
    */
-  async encodeTensors(inputTensors: tf.Tensor3D) {
-    if (this.controlDepth) {
-      throw new Error('Controls currently unsupported when encoding tensors.');
-    }
+  async encodeTensors(
+      inputTensors: tf.Tensor3D, controlArgs: MusicVAEControlArgs) {
+    this.checkControlArgs(controlArgs);
+
     if (!this.initialized) {
       await this.initialize();
     }
+
     const segmentLengths = this.dataConverter.endTensor ?
         await this.getSegmentLengths(inputTensors) :
         undefined;
-    return this.encoder.encode(inputTensors, segmentLengths);
+
+    return tf.tidy(() => {
+      const controlTensor = this.controlArgsToTensor(controlArgs);
+
+      // Stack input tensors and control tensor (with batch dimension added)
+      // depthwise.
+      const inputsAndControls: tf.Tensor3D[] = [inputTensors];
+      if (controlTensor) {
+        inputsAndControls.push(tf.tile(
+            tf.expandDims(controlTensor, 0), [inputTensors.shape[0], 1, 1]));
+      }
+      const inputTensorsWithControls = tf.concat3d(inputsAndControls, 2);
+
+      // Use the mean `mu` of the latent variable as the best estimate of `z`.
+      return this.encoder.encode(inputTensorsWithControls, segmentLengths);
+    });
   }
 
   /**
@@ -1316,8 +1324,6 @@ class MusicVAE {
    */
   async encode(
       inputSequences: INoteSequence[], controlArgs?: MusicVAEControlArgs) {
-    this.checkControlArgs(controlArgs);
-
     if (!this.initialized) {
       await this.initialize();
     }
@@ -1329,25 +1335,7 @@ class MusicVAE {
                   t => this.dataConverter.toTensor(t) as tf.Tensor2D)) as
             tf.Tensor3D);
 
-    const segmentLengths = this.dataConverter.endTensor ?
-        await this.getSegmentLengths(inputTensors) :
-        undefined;
-
-    const z = tf.tidy(() => {
-      const controlTensor = this.controlArgsToTensor(controlArgs);
-
-      // Stack input tensors and control tensor (with batch dimension added)
-      // depthwise.
-      const inputsAndControls: tf.Tensor3D[] = [inputTensors];
-      if (controlTensor) {
-        inputsAndControls.push(tf.tile(
-            tf.expandDims(controlTensor, 0), [inputSequences.length, 1, 1]));
-      }
-      const inputTensorsWithControls = tf.concat3d(inputsAndControls, 2);
-
-      // Use the mean `mu` of the latent variable as the best estimate of `z`.
-      return this.encoder.encode(inputTensorsWithControls, segmentLengths);
-    });
+    const z = await this.encodeTensors(inputTensors, controlArgs);
 
     inputTensors.dispose();
 
@@ -1362,18 +1350,25 @@ class MusicVAE {
    * @param z The latent vectors to decode, sized `[batchSize, zSize]`.
    * @param temperature (Optional) The softmax temperature to use when
    * sampling. The argmax is used if not provided.
+   * @param controlArgs (Optional) MusicVAEControlArgs object to use as
+   * conditioning.
    *
    * @returns The decoded tensors.
    */
-  async decodeTensors(z: tf.Tensor2D, temperature?: number) {
-    if (this.controlDepth) {
-      throw new Error('Controls currently unsupported when decoding tensors.');
-    }
+  async decodeTensors(
+      z: tf.Tensor2D, temperature?: number, controlArgs?: MusicVAEControlArgs) {
+    this.checkControlArgs(controlArgs);
+
     if (!this.initialized) {
       await this.initialize();
     }
-    return this.decoder.decode(
-        z, this.dataConverter.numSteps, undefined, temperature);
+
+    return tf.tidy(() => {
+      const controlTensor = this.controlArgsToTensor(controlArgs);
+      return this.decoder.decode(
+          z, this.dataConverter.numSteps, undefined, temperature,
+          controlTensor);
+    });
   }
 
   /**
@@ -1394,19 +1389,15 @@ class MusicVAE {
       z: tf.Tensor2D, temperature?: number, controlArgs?: MusicVAEControlArgs,
       stepsPerQuarter = constants.DEFAULT_STEPS_PER_QUARTER,
       qpm = constants.DEFAULT_QUARTERS_PER_MINUTE) {
-    this.checkControlArgs(controlArgs);
-
     if (!this.initialized) {
       await this.initialize();
     }
-    const startTime = performance.now();
-    const numSteps = this.dataConverter.numSteps;
 
+    const startTime = performance.now();
+
+    const tensors = await this.decodeTensors(z, temperature, controlArgs);
     const ohSeqs: tf.Tensor2D[] = tf.tidy(() => {
-      const controlTensor = this.controlArgsToTensor(controlArgs);
-      const ohSeqs = this.decoder.decode(
-          z, numSteps, undefined, temperature, controlTensor);
-      return tf.split(ohSeqs, ohSeqs.shape[0])
+      return tf.split(tensors, tensors.shape[0])
           .map(oh => oh.squeeze([0]) as tf.Tensor2D);
     });
 
@@ -1416,6 +1407,8 @@ class MusicVAE {
           await this.dataConverter.toNoteSequence(oh, stepsPerQuarter, qpm));
       oh.dispose();
     }
+
+    tensors.dispose();
 
     logging.logWithDuration(
         'Decoding completed', startTime, 'MusicVAE', logging.Level.DEBUG);
@@ -1479,19 +1472,23 @@ class MusicVAE {
    *
    * @param numSamples The number of samples to return.
    * @param temperature The softmax temperature to use when sampling.
+   * @param controlArgs (Optional) MusicVAEControlArgs object to use as
+   * conditioning.
    *
    * @returns A `Tensor3D` of samples.
    */
-  async sampleTensors(numSamples: number, temperature = 0.5) {
-    if (this.controlDepth) {
-      throw new Error('Controls currently unsupported when sampling tensors.');
-    }
+  async sampleTensors(
+      numSamples: number, temperature = 0.5,
+      controlArgs?: MusicVAEControlArgs) {
+    this.checkControlArgs(controlArgs);
+
     if (!this.initialized) {
       await this.initialize();
     }
     const randZs: tf.Tensor2D =
         tf.tidy(() => tf.randomNormal([numSamples, this.decoder.zDims]));
-    const outputTensors = await this.decodeTensors(randZs, temperature);
+    const outputTensors =
+        await this.decodeTensors(randZs, temperature, controlArgs);
     randZs.dispose();
     return outputTensors;
   }
@@ -1543,16 +1540,14 @@ class MusicVAE {
    * and the input tensor. Must be between 0 and 1, where 1 is most similar and
    * 0 is least similar.
    * @param temperature The softmax temperature to use when sampling.
+   * @param controlArgs (Optional) MusicVAEControlArgs object to use as
+   * conditioning.
    *
    * @returns A `Tensor3D` of samples.
    */
   async similarTensors(
       inputTensor: tf.Tensor2D, numSamples: number, similarity: number,
-      temperature?: number) {
-    if (this.controlDepth) {
-      throw new Error(
-          'Controls currently unsupported when generating similar tensors.');
-    }
+      temperature?: number, controlArgs?: MusicVAEControlArgs) {
     if (similarity < 0 || similarity > 1) {
       throw new Error('Similarity must be between 0 and 1.');
     }
@@ -1560,7 +1555,7 @@ class MusicVAE {
       await this.initialize();
     }
     const inputTensors = tf.expandDims(inputTensor, 0) as tf.Tensor3D;
-    const inputZs = await this.encodeTensors(inputTensors);
+    const inputZs = await this.encodeTensors(inputTensors, controlArgs);
     inputTensors.dispose();
     const similarZs: tf.Tensor2D = tf.tidy(() => {
       const randZs = tf.randomNormal([numSamples, this.decoder.zDims]);
@@ -1568,7 +1563,8 @@ class MusicVAE {
       return tf.add(inputZs.mul(similarity), randZs.mul(1 - similarity));
     });
     inputZs.dispose();
-    const outputTensors = await this.decodeTensors(similarZs, temperature);
+    const outputTensors =
+        await this.decodeTensors(similarZs, temperature, controlArgs);
     similarZs.dispose();
     return outputTensors;
   }
