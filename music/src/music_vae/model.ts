@@ -1396,9 +1396,10 @@ class MusicVAE {
     const startTime = performance.now();
 
     const tensors = await this.decodeTensors(z, temperature, controlArgs);
-    const ohSeqs: tf.Tensor2D[] =
-        tf.split(tensors, tensors.shape[0])
-            .map(oh => oh.squeeze([0]) as tf.Tensor2D);
+    const ohSeqs: tf.Tensor2D[] = tf.tidy(() => {
+      return tf.split(tensors, tensors.shape[0])
+          .map(oh => oh.squeeze([0]) as tf.Tensor2D);
+    });
 
     const outputSequences: INoteSequence[] = [];
     for (const oh of ohSeqs) {
