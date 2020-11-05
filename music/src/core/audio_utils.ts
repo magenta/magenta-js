@@ -158,12 +158,19 @@ export async function resampleAndMakeMono(
   const sourceSr = audioBuffer.sampleRate;
   const lengthRes = audioBuffer.length * targetSr / sourceSr;
   if (!isSafari) {
-    const bufferSource = offlineCtx.createBufferSource();
+    const _offlineCtx = new OfflineAudioContext(
+      audioBuffer.numberOfChannels,
+      audioBuffer.duration * targetSr,
+      targetSr
+    );
+    const bufferSource = _offlineCtx.createBufferSource();
     bufferSource.buffer = audioBuffer;
-    bufferSource.connect(offlineCtx.destination);
+    bufferSource.connect(_offlineCtx.destination);
     bufferSource.start();
-    return offlineCtx.startRendering().then(
-      (buffer: AudioBuffer) => buffer.getChannelData(0));
+    return _offlineCtx
+      .startRendering()
+      .then((buffer: AudioBuffer) => buffer.getChannelData(0));
+
   } else {
     // Safari does not support resampling with WebAudio.
     logging.log(

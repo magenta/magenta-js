@@ -1,6 +1,7 @@
 /**
+ *
  * @license
- * Copyright 2018 Google Inc. All Rights Reserved.
+ * Copyright 2020 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,18 +13,23 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * =============================================================================
  */
 
-import * as tf from '@tensorflow/tfjs';
-export { tf };
+export interface AudioFeatures {
+  f0_hz: number[];
+  loudness_db: number[];
+  confidences?: number[];
+  originalRecordedBufferLength?: number;
+}
 
-export * from './core';
-export * from './coconet';
-export * from './music_rnn';
-export * from './music_vae';
-export * from './piano_genie';
-export * from './protobuf';
-export * from './transcription';
-export * from './gansynth';
-export * from './ddsp';
+type AudioData = any[] | Float32Array | Float64Array;
+
+type CUSTOM_MODEL = {
+  averageMaxLoudness: number;
+  loudnessThreshold: number;
+  meanLoudness: number;
+  meanPitch: number;
+  postGain: number;
+  modelMaxFrameLength: number;
+  modelUrl: string;
+};
