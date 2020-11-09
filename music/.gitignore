@@ -5,3 +5,5 @@ es6/
 node/
 dist/
 yarn-error.log
+report.*.json
+tsconfig.json
