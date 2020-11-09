@@ -24,12 +24,12 @@ export interface AudioFeatures {
 
 type AudioData = any[] | Float32Array | Float64Array;
 
-type CUSTOM_MODEL = {
-  averageMaxLoudness: number;
-  loudnessThreshold: number;
-  meanLoudness: number;
-  meanPitch: number;
-  postGain: number;
-  modelMaxFrameLength: number;
-  modelUrl: string;
+type ModelValues = {
+  averageMaxLoudness?: number;
+  loudnessThreshold?: number;
+  meanLoudness?: number;
+  meanPitch?: number;
+  postGain?: number;
+  modelMaxFrameLength?: number;
+  checkpointUrl?: string;
 };

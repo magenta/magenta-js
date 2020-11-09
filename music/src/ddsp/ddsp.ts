@@ -26,15 +26,13 @@ import {
   CONF_SMOOTH_SIZE,
   CONF_THRESHOLD,
   LD_CONF_REDUCTION,
-  MODEL,
   PRESET_MODELS,
   MODEL_FRAME_RATE,
   MIN_VRAM,
 } from './constants';
-import { AudioFeatures, CUSTOM_MODEL } from './interfaces';
+import { AudioFeatures, ModelValues } from './interfaces';
 import { computePower } from './loudness_utils';
 import { getPitches, upsample_f0, shiftF0 } from './pitch_utils';
-import { startSpice } from './spice';
 import { Tensor3D, Tensor } from '@tensorflow/tfjs';
 import { addReverb } from './add_reverb';
 import { arrayBufferToAudioBuffer } from './buffer_utils';
@@ -89,9 +87,9 @@ async function getModel(url: string) {
 }
 
 async function getAudioFeatures(
-  inputAudioBuffer: AudioBuffer
+  inputAudioBuffer: AudioBuffer,
+  spiceModel: tf.GraphModel
 ): Promise<AudioFeatures> {
-  const spiceModel = await startSpice();
   if (tf.getBackend() !== 'webgl') {
     throw new Error('Device does not support webgl.');
   }
@@ -148,7 +146,7 @@ async function ddsp_process(
   inputs: AudioFeatures,
   inputDataLength: number,
   model: tf.GraphModel,
-  modelValues: CUSTOM_MODEL
+  modelValues: ModelValues
 ) {
   // we have to process the audio in chunks according
   // to the model max frame length
@@ -249,7 +247,7 @@ async function ddsp_process(
   return bufferWithReverbData;
 }
 
-async function normalizeAudioFeatures(af: AudioFeatures, model: CUSTOM_MODEL) {
+async function normalizeAudioFeatures(af: AudioFeatures, model: ModelValues) {
   const SELECTED_LD_AVG_MAX = model.averageMaxLoudness;
   const SELECTED_LD_MEAN = model.meanLoudness;
   const SELECTED_LD_THRESH = model.loudnessThreshold;
@@ -372,20 +370,29 @@ async function normalizeAudioFeatures(af: AudioFeatures, model: CUSTOM_MODEL) {
     mask.dispose();
     confMask.dispose();
   }
+
   return { f0_hz, loudness_db };
 }
 
+function getModelValues(checkpointUrl: string): ModelValues {
+  const presetModelValues = PRESET_MODELS.filter(
+    (modelValues: ModelValues): boolean =>
+      modelValues.checkpointUrl === checkpointUrl
+  );
+  return presetModelValues.length > 0 ? presetModelValues[0] : {};
+}
+
 async function synthesize(
-  selectedModel: MODEL | CUSTOM_MODEL,
-  af: AudioFeatures
+  checkpointUrl: string,
+  af: AudioFeatures,
+  options?: ModelValues
 ) {
   const { f0_hz, loudness_db, confidences } = af;
-  let modelValues;
 
-  if (typeof selectedModel === 'string') {
-    modelValues = PRESET_MODELS[selectedModel];
-  } else {
-    modelValues = selectedModel;
+  let modelValues = getModelValues(checkpointUrl);
+
+  if (options !== null) {
+    modelValues = { ...modelValues, ...options };
   }
 
   // we need to upsample pitches because spice
@@ -401,7 +408,7 @@ async function synthesize(
     modelValues.modelMaxFrameLength
   );
 
-  const model = await getModel(modelValues.modelUrl);
+  const model = await getModel(checkpointUrl);
 
   const normalizedAudioFeatures = await normalizeAudioFeatures(
     { f0_hz: upsampledPitches, loudness_db, confidences: upsampledConfidences },

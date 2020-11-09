@@ -31,44 +31,44 @@ export const LOWEST_LD = -120;
 export const CROSSFADE_DURATION = 1;
 export const OUTPUT_SAMPLE_RATE = 48000;
 
-export const PRESET_MODELS = {
-  [MODEL.VIOLIN]: {
+export const PRESET_MODELS = [
+  {
     averageMaxLoudness: -48.6,
     loudnessThreshold: -100.0,
     meanLoudness: -68.5,
     meanPitch: 62.0,
     postGain: 2,
     modelMaxFrameLength: 1250,
-    modelUrl: `${MODEL_URL}/${MODEL.VIOLIN}/model.json`,
+    checkpointUrl: `${MODEL_URL}/${MODEL.VIOLIN}/model.json`,
   },
-  [MODEL.TENOR_SAXOPHONE]: {
+  {
     averageMaxLoudness: -44.7,
     loudnessThreshold: -100.0,
     meanLoudness: -56,
     meanPitch: 58.9,
     postGain: 0.9,
     modelMaxFrameLength: 1250,
-    modelUrl: `${MODEL_URL}/${MODEL.TENOR_SAXOPHONE}/model.json`,
+    checkpointUrl: `${MODEL_URL}/${MODEL.TENOR_SAXOPHONE}/model.json`,
   },
-  [MODEL.TRUMPET]: {
+  {
     averageMaxLoudness: -61.7,
     loudnessThreshold: -100.0,
     meanLoudness: -72.5,
     meanPitch: 68.6,
     postGain: 1.5,
     modelMaxFrameLength: 1250,
-    modelUrl: `${MODEL_URL}/${MODEL.TRUMPET}/model.json`,
+    checkpointUrl: `${MODEL_URL}/${MODEL.TRUMPET}/model.json`,
   },
-  [MODEL.FLUTE]: {
+  {
     averageMaxLoudness: -45.9,
     loudnessThreshold: -100.0,
     meanLoudness: -70.6,
     meanPitch: 63.2,
     postGain: 4,
     modelMaxFrameLength: 1250,
-    modelUrl: `${MODEL_URL}/${MODEL.FLUTE}/model.json`,
+    checkpointUrl: `${MODEL_URL}/${MODEL.FLUTE}/model.json`,
   },
-};
+];
 
 //optimal value
 export const CONF_THRESHOLD = 0.7;

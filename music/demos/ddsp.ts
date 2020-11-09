@@ -18,6 +18,24 @@
 import { MODEL } from '../src/ddsp/constants';
 import * as mm from '../src/index';
 
+export const MODEL_URL =
+  'https://storage.googleapis.com/magentadata/js/checkpoints/ddsp';
+
+export const PRESET_MODELS = {
+  [MODEL.VIOLIN]: {
+    checkpointUrl: `${MODEL_URL}/${MODEL.VIOLIN}/model.json`,
+  },
+  [MODEL.TENOR_SAXOPHONE]: {
+    checkpointUrl: `${MODEL_URL}/${MODEL.TENOR_SAXOPHONE}/model.json`,
+  },
+  [MODEL.TRUMPET]: {
+    checkpointUrl: `${MODEL_URL}/${MODEL.TRUMPET}/model.json`,
+  },
+  [MODEL.FLUTE]: {
+    checkpointUrl: `${MODEL_URL}/${MODEL.FLUTE}/model.json`,
+  },
+};
+
 function floatTo16BitPCM(output, offset, input) {
   for (let i = 0; i < input.length; i++, offset += 2) {
     const s = Math.max(-1, Math.min(1, input[i]));
@@ -74,6 +92,7 @@ window.onload = () => {
 
   document.getElementById('initialize').addEventListener('click', async () => {
     ddsp = new mm.DDSP();
+    await ddsp.initialize();
     audioCtx = new AudioContext();
     const isBrowserSupported = await ddsp.memCheck();
     if (isBrowserSupported) {
@@ -103,22 +122,30 @@ window.onload = () => {
 
     document
       .getElementById('button_violin')
-      .addEventListener('click', () => toneTransfer(MODEL.VIOLIN));
+      .addEventListener('click', () =>
+        toneTransfer(PRESET_MODELS[MODEL.VIOLIN].checkpointUrl)
+      );
     document
       .getElementById('button_tenor_saxophone')
-      .addEventListener('click', () => toneTransfer(MODEL.TENOR_SAXOPHONE));
+      .addEventListener('click', () =>
+        toneTransfer(PRESET_MODELS[MODEL.TENOR_SAXOPHONE].checkpointUrl)
+      );
     document
       .getElementById('button_flute')
-      .addEventListener('click', () => toneTransfer(MODEL.FLUTE));
+      .addEventListener('click', () =>
+        toneTransfer(PRESET_MODELS[MODEL.FLUTE].checkpointUrl)
+      );
     document
       .getElementById('button_trumpet')
-      .addEventListener('click', () => toneTransfer(MODEL.TRUMPET));
+      .addEventListener('click', () =>
+        toneTransfer(PRESET_MODELS[MODEL.TRUMPET].checkpointUrl)
+      );
   }
 
-  async function toneTransfer(model: MODEL) {
+  async function toneTransfer(checkpointUrl: string) {
     document.getElementById('player').style.display = 'none';
     const toneTransferredAudioData = await ddsp.synthesize(
-      model,
+      checkpointUrl,
       audioFeatures
     );
 

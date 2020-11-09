@@ -24,20 +24,18 @@ import * as tf from '@tensorflow/tfjs';
 import '@tensorflow/tfjs-backend-webgl';
 
 import { getAudioFeatures, synthesize, memCheck } from './ddsp';
-import { MODEL } from './constants';
-import { AudioFeatures } from './interfaces';
+import { AudioFeatures, ModelValues } from './interfaces';
+import { startSpice } from './spice';
 
 class DDSP {
   private initialized: boolean;
+  private spiceModel: tf.GraphModel;
+  private checkpointUrl: string;
 
   /**
    * `DDSP` constructor.
-   *
-   * @param model The model to use
    */
-  constructor() {
-    this.initialize();
-  }
+  constructor() {}
 
   /**
    * Loads variables from the checkpoint and builds the model graph.
@@ -52,6 +50,8 @@ class DDSP {
     tf.env().set('WEBGL_PACK', false);
     tf.env().set('WEBGL_CONV_IM2COL', false);
     tf.env().set('WEBGL_DELETE_TEXTURE_THRESHOLD', 100 * 1024 * 1024);
+
+    this.spiceModel = await startSpice();
   }
 
   /**
@@ -62,6 +62,7 @@ class DDSP {
       return;
     }
     this.initialized = false;
+    this.spiceModel.dispose();
   }
 
   /**
@@ -90,7 +91,7 @@ class DDSP {
   async getAudioFeatures(
     inputAudioBuffer: AudioBuffer
   ): Promise<AudioFeatures> {
-    return await getAudioFeatures(inputAudioBuffer);
+    return await getAudioFeatures(inputAudioBuffer, this.spiceModel);
   }
 
   /**
@@ -100,10 +101,11 @@ class DDSP {
    * @returns Audio Features of provided audio buffer
    */
   async synthesize(
-    model: MODEL,
-    audioFeatures: AudioFeatures
+    checkpointUrl: string,
+    audioFeatures: AudioFeatures,
+    options?: ModelValues
   ): Promise<Float32Array> {
-    return await synthesize(model, audioFeatures);
+    return await synthesize(checkpointUrl, audioFeatures, options);
   }
 }
 
