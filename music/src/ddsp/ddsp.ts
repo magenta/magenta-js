@@ -16,8 +16,8 @@
  */
 import * as Tone from 'tone';
 import * as tf from '@tensorflow/tfjs';
-import { resampleAndMakeMono } from '../core/audio_utils';
-import { hzToMidi, mixAndJoinAudioData, shiftF0 } from './audio_utils';
+import { resampleAndMakeMono, hzToMidi } from '../core/audio_utils';
+import { mixAndJoinAudioData } from './audio_utils';
 import {
   CROSSFADE_DURATION,
   MODEL_SAMPLE_RATE,
@@ -33,9 +33,9 @@ import {
 } from './constants';
 import { AudioFeatures, CUSTOM_MODEL } from './interfaces';
 import { computePower } from './loudness_utils';
-import { getPitches, upsample_f0 } from './pitch_utils';
+import { getPitches, upsample_f0, shiftF0 } from './pitch_utils';
 import { startSpice } from './spice';
-import { Tensor3D, Tensor, TypedArray } from '@tensorflow/tfjs';
+import { Tensor3D, Tensor } from '@tensorflow/tfjs';
 import { addReverb } from './add_reverb';
 import { arrayBufferToAudioBuffer } from './buffer_utils';
 
@@ -53,7 +53,7 @@ async function memCheck() {
 
   // 50MB limit
   if (!isNaN(vramSize) && vramSize < MIN_VRAM) {
-    throw new Error('insufficient memory');
+    throw new Error('Insufficient memory');
   }
 
   // loading a model and then executing it tests if
@@ -107,7 +107,7 @@ async function getAudioFeatures(
 
   return {
     f0_hz: pitches,
-    loudness_db: powerTmp,
+    loudness_db: powerTmp as number[],
     confidences,
     originalRecordedBufferLength,
   };
@@ -138,7 +138,6 @@ function resizeAudioFeatures(
       counter += 1;
     }
 
-    // @ts-ignore
     resolve(resizedAudioFeatures);
   });
 }
@@ -276,11 +275,10 @@ async function normalizeAudioFeatures(af: AudioFeatures, model: CUSTOM_MODEL) {
     // Further adjust the average loudness above a threshold.
     const ldShiftedGreater = ldShifted.greater(SELECTED_LD_THRESH);
     const ldGreater = await tf.booleanMaskAsync(ldShifted, ldShiftedGreater);
+    const ldGreaterVal = await ldGreater.array();
 
     const ldFinal = tf.tidy(() => {
-      const ldMean =
-        // @ts-ignore
-        ldGreater.arraySync().length > 0 ? ldGreater.mean() : ldShifted.mean();
+      const ldMean = ldGreaterVal > 0 ? ldGreater.mean() : ldShifted.mean();
 
       const ldDiffMean = tf.sub(SELECTED_LD_MEAN, ldMean);
       const ldDiffMeanAdded = ldShifted.add(ldDiffMean);
@@ -319,8 +317,7 @@ async function normalizeAudioFeatures(af: AudioFeatures, model: CUSTOM_MODEL) {
       return finalMaskedPower;
     });
 
-    // @ts-ignore
-    loudness_db = await maskedPower.data();
+    loudness_db = (await maskedPower.array()) as number[];
 
     ldShiftedGreater.dispose();
     ldShifted.dispose();
@@ -335,19 +332,16 @@ async function normalizeAudioFeatures(af: AudioFeatures, model: CUSTOM_MODEL) {
   let f0_hz: number[] = [];
   if (af.f0_hz.length > 0) {
     // shift the pitch register.
+    const _p = await hzToMidi(af.f0_hz);
 
     const p = tf.tidy(() => {
-      const p = hzToMidi(af.f0_hz);
-      // @ts-ignore
-      for (let i = 0, n = p.length; i < n; ++i) {
-        // @ts-ignore
-        if (p[i] === -Infinity) {
-          // @ts-ignore
-          p[i] = 0;
+      for (let i = 0, n = _p.length; i < n; ++i) {
+        if (_p[i] === -Infinity) {
+          _p[i] = 0;
         }
       }
 
-      return p;
+      return _p;
     });
 
     const confMask = tf.lessEqual(af.confidences, CONF_THRESHOLD);
@@ -356,12 +350,10 @@ async function normalizeAudioFeatures(af: AudioFeatures, model: CUSTOM_MODEL) {
     const pMask = await tf.booleanMaskAsync(p, mask);
     const pMean = pMask.mean();
     const pDiff = await tf.sub(SELECTED_P_MEAN, pMean);
-
-    const pDiffVal = await pDiff.data();
+    const pDiffVal = await pDiff.array();
 
     const finalf0 = tf.tidy(() => {
-      // @ts-ignore
-      let pDiffOctave = pDiffVal / 12;
+      let pDiffOctave = (pDiffVal as number) / 12;
       pDiffOctave = Math.round(pDiffOctave);
       const shiftedF0WithOctave = shiftF0(af.f0_hz, pDiffOctave);
       return shiftedF0WithOctave;
@@ -370,7 +362,6 @@ async function normalizeAudioFeatures(af: AudioFeatures, model: CUSTOM_MODEL) {
     f0_hz = (await finalf0.array()) as number[];
 
     maskedPower.dispose();
-    p.dispose();
     pMean.dispose();
     pMask.dispose();
     pDiff.dispose();

@@ -23,7 +23,16 @@ import {
   PITCH_CONF_JITTER,
 } from './constants';
 import { AudioData } from './interfaces';
+import { midiToHz } from '../core/audio_utils';
 import { Tensor } from '@tensorflow/tfjs';
+
+function shiftF0(f0Hz: number[], f0OctaveShift = 0.0) {
+  return tf.tidy(() => {
+    let tempF0 = tf.mul(f0Hz, tf.pow(2, f0OctaveShift));
+    tempF0 = tempF0.clipByValue(0.0, midiToHz(110.0).dataSync()[0]);
+    return tempF0;
+  });
+}
 
 function upsample_linear(
   spicePitchesOutput: number[],
@@ -106,10 +115,8 @@ async function getPitches(spiceModel: tf.GraphModel, inputData: AudioData) {
   const output = await spiceModel.execute({
     input_audio_samples: fullInputWithPadding,
   });
-  // @ts-ignore
-  let uncertainties = await output[0].data();
-  // @ts-ignore
-  const pitches = await output[1].data();
+  let uncertainties = await (output as Tensor[])[0].data();
+  const pitches = await (output as Tensor[])[1].data();
 
   //spice extracts 1 pitch for every 32ms, so to get duration,
   // we multiply it by 32
@@ -125,12 +132,12 @@ async function getPitches(spiceModel: tf.GraphModel, inputData: AudioData) {
         lastPitch = getPitchHz(pitches[i]);
         spicePitchesOutput.push(lastPitch);
       } else {
-        const noise = tf.truncatedNormal([1], 0.0, PITCH_CONF_JITTER);
+        const noiseT = tf.truncatedNormal([1], 0.0, PITCH_CONF_JITTER);
+        const noise = await noiseT.array();
 
-        // @ts-ignore
-        const jitter = 1.0 - noise.dataSync();
+        const jitter = 1.0 - (noise as number);
         spicePitchesOutput.push(lastPitch * jitter);
-        noise.dispose();
+        noiseT.dispose();
       }
     }
   } else {
@@ -146,18 +153,14 @@ async function getPitches(spiceModel: tf.GraphModel, inputData: AudioData) {
       const partialOutput = await spiceModel.execute({
         input_audio_samples: partialInput,
       });
-      // @ts-ignore
-      const partialUncertainties = await partialOutput[0].data();
-      // @ts-ignore
-      const partialPitches = await partialOutput[1].data();
+      const partialUncertainties = await (partialOutput as Tensor[])[0].data();
+      const partialPitches = await (partialOutput as Tensor[])[1].data();
       const index = Math.floor(i / SPICE_MODEL_MULTIPLE);
       uncertainties.set(partialUncertainties, index);
       stitchedPitches.set(partialPitches, index);
       partialInput.dispose();
-      // @ts-ignore
-      partialOutput[0].dispose();
-      // @ts-ignore
-      partialOutput[1].dispose();
+      (partialOutput as Tensor[])[0].dispose();
+      (partialOutput as Tensor[])[1].dispose();
     }
 
     let lastPitch = 20.0;
@@ -169,23 +172,21 @@ async function getPitches(spiceModel: tf.GraphModel, inputData: AudioData) {
         lastPitch = getPitchHz(stitchedPitches[i]);
         spicePitchesOutput.push(lastPitch);
       } else {
-        const noise = tf.truncatedNormal([1], 0.0, PITCH_CONF_JITTER);
+        const noiseT = tf.truncatedNormal([1], 0.0, PITCH_CONF_JITTER);
+        const noise = await noiseT.array();
 
-        // @ts-ignore
-        const jitter = 1.0 - noise.dataSync();
+        const jitter = 1.0 - (noise as number);
         spicePitchesOutput.push(lastPitch * jitter);
-        noise.dispose();
+        noiseT.dispose();
       }
     }
   }
 
-  // @ts-ignore
-  output[0].dispose();
-  // @ts-ignore
-  output[1].dispose();
+  (output as Tensor[])[0].dispose();
+  (output as Tensor[])[1].dispose();
   inputTensor.dispose();
   fullInputWithPadding.dispose();
   return { pitches: spicePitchesOutput, confidences: allConfidences };
 }
 
-export { getPitches, upsample_f0, upsample_linear };
+export { getPitches, shiftF0, upsample_f0, upsample_linear };

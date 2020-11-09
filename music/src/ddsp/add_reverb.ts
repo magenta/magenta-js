@@ -34,43 +34,28 @@ export async function addReverb({
     arrayBuffer,
     sampleRate
   );
-  let limiter: AudioNode,
-    reverb: AudioNode,
-    filter: AudioNode,
-    player: AudioBufferSourceNode;
   const renderingPromise = Tone.Offline(() => {
     // prevent sounds from going too loud
-    limiter = new Tone.Compressor({
+    const limiter = new Tone.Compressor({
       attack: 0.001,
       release: 0.001,
       threshold: -6,
     }).toDestination();
-    reverb = new Tone.Reverb({
+    const reverb = new Tone.Reverb({
       wet: 0.3,
       decay: 3,
     }).connect(limiter);
-    filter = new Tone.Filter(8000, 'lowpass', -24).connect(reverb);
-    player = new Tone.Player({
+    const filter = new Tone.Filter(8000, 'lowpass', -24).connect(reverb);
+    const player = new Tone.Player({
       url: resampledAudioBuffer,
     }).connect(filter);
     player.start();
-    // @ts-ignore
     return reverb.ready;
   }, arrayBuffer.length / sampleRate);
   bufferWithReverb = await renderingPromise;
   const bufferWithReverbData = bufferWithReverb.getChannelData(0);
-  // manual cleanup for safari
   resampledAudioBuffer = null;
-  // @ts-ignore
-  limiter.dispose();
-  // @ts-ignore
-  reverb.dispose();
-  // @ts-ignore
-  filter.dispose();
-  // @ts-ignore
-  player.dispose();
   bufferWithReverb.dispose();
   bufferWithReverb = null;
-  // audioCtx.close();
   return bufferWithReverbData;
 }

@@ -15,57 +15,9 @@
  * =============================================================================
  */
 
-import * as tf from '@tensorflow/tfjs';
+import { TypedArray } from '@tensorflow/tfjs';
 
-function getMonoAudio(audioBuffer: AudioBuffer): Float32Array {
-  if (audioBuffer.numberOfChannels === 1) {
-    return audioBuffer.getChannelData(0);
-  }
-  if (audioBuffer.numberOfChannels !== 2) {
-    throw Error(
-      `${audioBuffer.numberOfChannels} channel audio is not supported.`
-    );
-  }
-  const ch0 = audioBuffer.getChannelData(0);
-  const ch1 = audioBuffer.getChannelData(1);
-
-  const mono = new Float32Array(audioBuffer.length);
-  for (let i = 0; i < audioBuffer.length; ++i) {
-    mono[i] = (ch0[i] + ch1[i]) / 2;
-  }
-  return mono;
-}
-
-function midiToHz(notes: number) {
-  let notesTensor = tf.sub(notes, 69.0);
-  notesTensor = tf.div(notesTensor, 12.0);
-  notesTensor = tf.pow(2.0, notesTensor);
-  notesTensor = tf.mul(440.0, notesTensor);
-  return notesTensor;
-}
-
-function hzToMidi(frequencies: number[]) {
-  let frequenciesTensor: tf.Tensor = tf.sub(
-    tf.div(tf.log(frequencies), tf.log(2)),
-    tf.div(tf.log(440.0), tf.log(2))
-  );
-  frequenciesTensor = tf.mul(12, frequenciesTensor);
-  frequenciesTensor = tf.add(frequenciesTensor, 69);
-  return frequenciesTensor;
-}
-
-function shiftF0(f0Hz: number[], f0OctaveShift = 0.0) {
-  return tf.tidy(
-    // @ts-ignore
-    () => {
-      let tempF0 = tf.mul(f0Hz, tf.pow(2, f0OctaveShift));
-      tempF0 = tempF0.clipByValue(0.0, midiToHz(110.0).dataSync()[0]);
-      return tempF0;
-    }
-  );
-}
-
-function mixAndJoinAudioData(buffers: any[], mixLength: number) {
+function mixAndJoinAudioData(buffers: TypedArray[], mixLength: number) {
   const finalFrameLength = buffers.reduce(
     // tslint:disable-next-line: restrict-plus-operands
     (acc, buffer) => acc + buffer.length,
@@ -114,4 +66,4 @@ function mixAndJoinAudioData(buffers: any[], mixLength: number) {
   return mixedAndJoinedBuffer;
 }
 
-export { mixAndJoinAudioData, shiftF0, getMonoAudio, hzToMidi, midiToHz };
+export { mixAndJoinAudioData };

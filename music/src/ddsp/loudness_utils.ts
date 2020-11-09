@@ -19,7 +19,7 @@ import * as tf from '@tensorflow/tfjs';
 import { MODEL_SAMPLE_RATE } from './constants';
 import { Tensor3D } from '@tensorflow/tfjs';
 
-async function computePower(audioChannelData: number[]): Promise<number[]> {
+async function computePower(audioChannelData: Float32Array): Promise<number[]> {
   const frameRate = 250;
   const frameSize = 1024;
   const refDb = 20.7;
@@ -56,8 +56,7 @@ async function computePower(audioChannelData: number[]): Promise<number[]> {
   const powerDbShifted = powerDb.sub(refDb);
   const powerDbClipped = tf.maximum(powerDbShifted, -ldRange);
 
-  // @ts-ignore
-  const output: number[] = await powerDbClipped.array();
+  const output = await powerDbClipped.array();
 
   audioTensor.dispose();
   sq.dispose();
@@ -66,7 +65,7 @@ async function computePower(audioChannelData: number[]): Promise<number[]> {
   powerDbShifted.dispose();
   powerDbClipped.dispose();
 
-  return output;
+  return output as number[];
 }
 
 export { computePower };
