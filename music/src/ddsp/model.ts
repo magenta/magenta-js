@@ -30,7 +30,6 @@ import { startSpice } from './spice';
 class DDSP {
   private initialized: boolean;
   private spiceModel: tf.GraphModel;
-  private checkpointUrl: string;
 
   /**
    * `DDSP` constructor.

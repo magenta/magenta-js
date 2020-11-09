@@ -17,6 +17,8 @@
 
 import { MODEL } from '../src/ddsp/constants';
 import * as mm from '../src/index';
+import { DDSP } from '../src/index';
+import { AudioFeatures } from '../src/ddsp/interfaces';
 
 export const MODEL_URL =
   'https://storage.googleapis.com/magentadata/js/checkpoints/ddsp';
@@ -36,20 +38,24 @@ export const PRESET_MODELS = {
   },
 };
 
-function floatTo16BitPCM(output, offset, input) {
+function floatTo16BitPCM(
+  output: DataView,
+  offset: number,
+  input: Float32Array
+) {
   for (let i = 0; i < input.length; i++, offset += 2) {
     const s = Math.max(-1, Math.min(1, input[i]));
     output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
   }
 }
 
-function writeString(view, offset: number, str) {
+function writeString(view: DataView, offset: number, str: string) {
   for (let i = 0; i < str.length; i++) {
     view.setUint8(offset + i, str.charCodeAt(i));
   }
 }
 
-function encodeWAV(samples, sampleRate) {
+function encodeWAV(samples: Float32Array, sampleRate: number) {
   const buffer = new ArrayBuffer(44 + samples.length * 2);
   const view = new DataView(buffer);
 
@@ -88,7 +94,7 @@ function encodeWAV(samples, sampleRate) {
 }
 
 window.onload = () => {
-  let audioCtx, ddsp, audioFeatures;
+  let audioCtx: AudioContext, ddsp: DDSP, audioFeatures: AudioFeatures;
 
   document.getElementById('initialize').addEventListener('click', async () => {
     ddsp = new mm.DDSP();
@@ -108,7 +114,7 @@ window.onload = () => {
     .getElementById('upload')
     .addEventListener('change', handleFileUpload);
 
-  async function readFileAndProcessAudio(src) {
+  async function readFileAndProcessAudio(src: string) {
     const audioFile = await fetch(src);
     const arrayBuffer = await audioFile.arrayBuffer();
     const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
@@ -144,7 +150,7 @@ window.onload = () => {
 
   async function toneTransfer(checkpointUrl: string) {
     document.getElementById('player').style.display = 'none';
-    const toneTransferredAudioData = await ddsp.synthesize(
+    const toneTransferredAudioData: Float32Array = await ddsp.synthesize(
       checkpointUrl,
       audioFeatures
     );
@@ -157,7 +163,7 @@ window.onload = () => {
     (document.getElementById('player') as HTMLAudioElement).src = url;
   }
 
-  function printJSONObj(elementId: string, obj) {
+  function printJSONObj(elementId: string, obj: AudioFeatures) {
     const element = document.getElementById(elementId);
 
     const details = document.createElement('details');
@@ -171,19 +177,19 @@ window.onload = () => {
     element.appendChild(details);
   }
 
-  async function handleFileUpload(e) {
-    if (e.currentTarget.files.length > 0) {
-      const file = e.currentTarget.files[0];
+  async function handleFileUpload(e: Event) {
+    if ((e.currentTarget as HTMLInputElement).files.length > 0) {
+      const file = (e.currentTarget as HTMLInputElement).files[0];
       const reader = new FileReader();
 
       reader.addEventListener(
         'load',
         async () => {
           // convert uploaded file to blob
-          const fileBlob = await fetch(`${reader.result}`)
+          await fetch(`${reader.result}`)
             .then((res) => res.blob())
             .then((res) => {
-              readFileAndProcessAudio(reader.result);
+              readFileAndProcessAudio(reader.result as string);
               return {
                 src: reader.result,
                 type: file.type,
