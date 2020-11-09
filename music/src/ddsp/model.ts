@@ -23,7 +23,7 @@
 import * as tf from '@tensorflow/tfjs';
 import '@tensorflow/tfjs-backend-webgl';
 
-import { getAudioFeatures, toneTransfer, memCheck } from './ddsp';
+import { getAudioFeatures, synthesize, memCheck } from './ddsp';
 import { MODEL } from './constants';
 import { AudioFeatures } from './interfaces';
 
@@ -103,7 +103,7 @@ class DDSP {
     model: MODEL,
     audioFeatures: AudioFeatures
   ): Promise<Float32Array> {
-    return await toneTransfer(model, audioFeatures);
+    return await synthesize(model, audioFeatures);
   }
 }
 

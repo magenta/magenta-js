@@ -23,7 +23,9 @@ export enum MODEL {
   TRUMPET = 'trumpet',
   FLUTE = 'flute',
 }
-export const LARGEST_MODEL = MODEL.TENOR_SAXOPHONE;
+
+export const MODEL_URL =
+  'https://storage.googleapis.com/magentadata/js/checkpoints/ddsp';
 
 export const LOWEST_LD = -120;
 export const CROSSFADE_DURATION = 1;
@@ -37,7 +39,7 @@ export const PRESET_MODELS = {
     meanPitch: 62.0,
     postGain: 2,
     modelMaxFrameLength: 1250,
-    modelUrl: `./ddsp/models/${MODEL.VIOLIN}/model.json`, // TODO: use bucket url
+    modelUrl: `${MODEL_URL}/${MODEL.VIOLIN}/model.json`,
   },
   [MODEL.TENOR_SAXOPHONE]: {
     averageMaxLoudness: -44.7,
@@ -46,7 +48,7 @@ export const PRESET_MODELS = {
     meanPitch: 58.9,
     postGain: 0.9,
     modelMaxFrameLength: 1250,
-    modelUrl: `./ddsp/models/${MODEL.TENOR_SAXOPHONE}/model.json`, // TODO: use bucket url
+    modelUrl: `${MODEL_URL}/${MODEL.TENOR_SAXOPHONE}/model.json`,
   },
   [MODEL.TRUMPET]: {
     averageMaxLoudness: -61.7,
@@ -55,7 +57,7 @@ export const PRESET_MODELS = {
     meanPitch: 68.6,
     postGain: 1.5,
     modelMaxFrameLength: 1250,
-    modelUrl: `./ddsp/models/${MODEL.TRUMPET}/model.json`, // TODO: use bucket url
+    modelUrl: `${MODEL_URL}/${MODEL.TRUMPET}/model.json`,
   },
   [MODEL.FLUTE]: {
     averageMaxLoudness: -45.9,
@@ -64,7 +66,7 @@ export const PRESET_MODELS = {
     meanPitch: 63.2,
     postGain: 4,
     modelMaxFrameLength: 1250,
-    modelUrl: `./ddsp/models/${MODEL.FLUTE}/model.json`, // TODO: use bucket url
+    modelUrl: `${MODEL_URL}/${MODEL.FLUTE}/model.json`,
   },
 };
 

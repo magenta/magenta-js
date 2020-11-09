@@ -382,7 +382,7 @@ async function normalizeAudioFeatures(af: AudioFeatures, model: CUSTOM_MODEL) {
   return { f0_hz, loudness_db };
 }
 
-async function toneTransfer(
+async function synthesize(
   selectedModel: MODEL | CUSTOM_MODEL,
   af: AudioFeatures
 ) {
@@ -430,4 +430,4 @@ function convertFrameToSecs(frameLength: number) {
   return frameLength / MODEL_FRAME_RATE;
 }
 
-export { getAudioFeatures, memCheck, toneTransfer };
+export { getAudioFeatures, memCheck, synthesize };
