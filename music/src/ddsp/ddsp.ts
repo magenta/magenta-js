@@ -53,7 +53,9 @@ async function memCheck() {
 
   // 50MB limit
   if (!isNaN(vramSize) && vramSize < MIN_VRAM) {
-    throw new Error('Insufficient memory');
+    throw new Error(
+      `Insufficient memory! Your device has ${vramSize} and recommended memory is ${MIN_VRAM}`
+    );
   }
 
   // loading a model and then executing it tests if
@@ -63,7 +65,7 @@ async function memCheck() {
     await tf.ready();
 
     if (tf.getBackend() !== 'webgl') {
-      throw new Error('browser does not support webgl');
+      throw new Error('It looks like your browser does not support webgl.');
     }
   } catch (err) {
     throw new Error(`insufficient memory - ${err}`);
