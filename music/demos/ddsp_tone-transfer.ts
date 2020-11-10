@@ -17,7 +17,7 @@
 
 import { MODEL } from '../src/ddsp/constants';
 import * as mm from '../src/index';
-import { DDSP } from '../src/index';
+import { DDSP, SPICE } from '../src/index';
 import { AudioFeatures } from '../src/ddsp/interfaces';
 
 export const MODEL_URL =
@@ -94,20 +94,18 @@ function encodeWAV(samples: Float32Array, sampleRate: number) {
 }
 
 window.onload = () => {
-  let audioCtx: AudioContext, ddsp: DDSP, audioFeatures: AudioFeatures;
+  let audioCtx: AudioContext, audioFeatures: AudioFeatures, spice: SPICE;
 
   document.getElementById('initialize').addEventListener('click', async () => {
-    ddsp = new mm.DDSP();
-    await ddsp.initialize();
+    spice = new mm.SPICE();
+    document.getElementById('initialize').style.display = 'none';
+    document.getElementById('spice_initialized').textContent =
+      'Loading SPICE model.';
+    await spice.initialize();
+    document.getElementById('spice_initialized').textContent =
+      'SPICE model is ready.';
     audioCtx = new AudioContext();
-    const isBrowserSupported = await ddsp.memCheck();
-    if (isBrowserSupported) {
-      document.getElementById('browser_supported').textContent =
-        'Device is supported!';
-    } else {
-      document.getElementById('browser_supported').textContent =
-        'Device is not supported.';
-    }
+    document.getElementById('extract_features').style.display = 'block';
   });
 
   document
@@ -118,7 +116,7 @@ window.onload = () => {
     const audioFile = await fetch(src);
     const arrayBuffer = await audioFile.arrayBuffer();
     const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-    audioFeatures = await ddsp.getAudioFeatures(audioBuffer);
+    audioFeatures = await spice.getAudioFeatures(audioBuffer);
     printJSONObj('audio_features', audioFeatures);
     displayButtons();
   }
@@ -150,17 +148,19 @@ window.onload = () => {
 
   async function toneTransfer(checkpointUrl: string) {
     document.getElementById('player').style.display = 'none';
+    const ddsp = new mm.DDSP(checkpointUrl);
+    await ddsp.initialize();
     const toneTransferredAudioData: Float32Array = await ddsp.synthesize(
-      checkpointUrl,
       audioFeatures
     );
 
     document.getElementById('player').style.display = 'block';
-    // const player = new Tone.Player(toneTransferredAudioData).toDestination();
     const dataview = encodeWAV(toneTransferredAudioData, audioCtx.sampleRate);
     const blob = new Blob([dataview], { type: 'audio/wav' }),
       url = window.URL.createObjectURL(blob);
     (document.getElementById('player') as HTMLAudioElement).src = url;
+
+    ddsp.dispose();
   }
 
   function printJSONObj(elementId: string, obj: AudioFeatures) {

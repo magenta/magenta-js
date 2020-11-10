@@ -71,17 +71,7 @@ export const PRESET_MODELS = [
 ];
 
 //optimal value
-export const CONF_THRESHOLD = 0.7;
 export const LD_CONF_REDUCTION = -25.0;
 export const CONF_SMOOTH_SIZE = 100;
-export const PITCH_CONF_JITTER = 0.002;
 export const PITCHES_HOP = 8192;
-
-// SPICE SPECIFIC CONSTANTS
-export const NUM_INPUT_SAMPLES_MAX = 239616; // multiple of 512 and closes to 240000 which is no. of frames for 15s
-export const MODEL_SAMPLE_RATE = 16000;
-export const MODEL_FRAME_RATE = 250;
-export const PT_OFFSET = 25.58;
-export const PT_SLOPE = 63.07;
-export const SPICE_MODEL_URL =
-  'https://tfhub.dev/google/tfjs-model/spice/2/default/1';
+export const CONF_THRESHOLD = 0.7;

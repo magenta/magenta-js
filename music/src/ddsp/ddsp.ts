@@ -20,22 +20,20 @@ import { resampleAndMakeMono, hzToMidi } from '../core/audio_utils';
 import { mixAndJoinAudioData } from './audio_utils';
 import {
   CROSSFADE_DURATION,
-  MODEL_SAMPLE_RATE,
   OUTPUT_SAMPLE_RATE,
   LOWEST_LD,
   CONF_SMOOTH_SIZE,
   CONF_THRESHOLD,
   LD_CONF_REDUCTION,
   PRESET_MODELS,
-  MODEL_FRAME_RATE,
   MIN_VRAM,
 } from './constants';
 import { AudioFeatures, ModelValues } from './interfaces';
-import { computePower } from './loudness_utils';
-import { getPitches, upsample_f0, shiftF0 } from './pitch_utils';
+import { upsample_f0, shiftF0 } from '../spice/pitch_utils';
 import { Tensor3D, Tensor } from '@tensorflow/tfjs';
 import { addReverb } from './add_reverb';
 import { arrayBufferToAudioBuffer } from './buffer_utils';
+import { MODEL_SAMPLE_RATE, MODEL_FRAME_RATE } from '../spice/spice';
 
 async function memCheck() {
   const bytesPerMB = 1024 * 1024;
@@ -72,45 +70,9 @@ async function memCheck() {
   return true;
 }
 
-async function getModel(url: string) {
-  tf.registerOp('Roll', (node) => {
-    const tensors = tf.split(node.inputs[0], 2, 2);
-    const result = tf.concat([tensors[1], tensors[0]], 2);
-    tensors.forEach((tensor) => tensor.dispose());
-    return result;
-  });
-  tf.env().set('WEBGL_PACK', false);
-  tf.env().set('WEBGL_CONV_IM2COL', false);
-  tf.env().set('WEBGL_DELETE_TEXTURE_THRESHOLD', 100 * 1024 * 1024);
+export async function getModel(url: string) {
   const model = await tf.loadGraphModel(url);
   return model;
-}
-
-async function getAudioFeatures(
-  inputAudioBuffer: AudioBuffer,
-  spiceModel: tf.GraphModel
-): Promise<AudioFeatures> {
-  if (tf.getBackend() !== 'webgl') {
-    throw new Error('Device does not support webgl.');
-  }
-
-  // spice requires 16k sample rate and mono,
-  // so we need to downsample and make mono
-  const audioData = await resampleAndMakeMono(
-    inputAudioBuffer,
-    MODEL_SAMPLE_RATE
-  );
-  const originalRecordedBufferLength = audioData.length;
-
-  const powerTmp = await computePower(audioData);
-  const { pitches, confidences } = await getPitches(spiceModel, audioData);
-
-  return {
-    f0_hz: pitches,
-    loudness_db: powerTmp as number[],
-    confidences,
-    originalRecordedBufferLength,
-  };
 }
 
 function resizeAudioFeatures(
@@ -374,7 +336,7 @@ async function normalizeAudioFeatures(af: AudioFeatures, model: ModelValues) {
   return { f0_hz, loudness_db };
 }
 
-function getModelValues(checkpointUrl: string): ModelValues {
+export function getModelValues(checkpointUrl: string): ModelValues {
   const presetModelValues = PRESET_MODELS.filter(
     (modelValues: ModelValues): boolean =>
       modelValues.checkpointUrl === checkpointUrl
@@ -383,43 +345,35 @@ function getModelValues(checkpointUrl: string): ModelValues {
 }
 
 async function synthesize(
-  checkpointUrl: string,
+  model: tf.GraphModel,
   af: AudioFeatures,
   options?: ModelValues
 ) {
   const { f0_hz, loudness_db, confidences } = af;
-
-  let modelValues = getModelValues(checkpointUrl);
-
-  if (options !== null) {
-    modelValues = { ...modelValues, ...options };
-  }
 
   // we need to upsample pitches because spice
   // gives back something that is smaller
   const upsampledPitches = upsample_f0(
     f0_hz,
     loudness_db.length,
-    modelValues.modelMaxFrameLength
+    options.modelMaxFrameLength
   );
   const upsampledConfidences = upsample_f0(
     confidences,
     loudness_db.length,
-    modelValues.modelMaxFrameLength
+    options.modelMaxFrameLength
   );
-
-  const model = await getModel(checkpointUrl);
 
   const normalizedAudioFeatures = await normalizeAudioFeatures(
     { f0_hz: upsampledPitches, loudness_db, confidences: upsampledConfidences },
-    modelValues
+    options
   );
 
   return await ddsp_process(
     normalizedAudioFeatures,
     af.originalRecordedBufferLength,
     model,
-    modelValues
+    options
   );
 }
 
@@ -430,4 +384,4 @@ function convertFrameToSecs(frameLength: number) {
   return frameLength / MODEL_FRAME_RATE;
 }
 
-export { getAudioFeatures, memCheck, synthesize };
+export { memCheck, synthesize };

@@ -23,18 +23,20 @@
 import * as tf from '@tensorflow/tfjs';
 import '@tensorflow/tfjs-backend-webgl';
 
-import { getAudioFeatures, synthesize, memCheck } from './ddsp';
+import { synthesize, memCheck, getModelValues, getModel } from './ddsp';
 import { AudioFeatures, ModelValues } from './interfaces';
-import { startSpice } from './spice';
 
 class DDSP {
   private initialized: boolean;
-  private spiceModel: tf.GraphModel;
+  private checkpointUrl: string;
+  private model: tf.GraphModel;
 
   /**
    * `DDSP` constructor.
    */
-  constructor() {}
+  constructor(checkpointUrl: string) {
+    this.checkpointUrl = checkpointUrl;
+  }
 
   /**
    * Loads variables from the checkpoint and builds the model graph.
@@ -50,7 +52,7 @@ class DDSP {
     tf.env().set('WEBGL_CONV_IM2COL', false);
     tf.env().set('WEBGL_DELETE_TEXTURE_THRESHOLD', 100 * 1024 * 1024);
 
-    this.spiceModel = await startSpice();
+    this.model = await getModel(this.checkpointUrl);
   }
 
   /**
@@ -60,8 +62,9 @@ class DDSP {
     if (!this.initialized) {
       return;
     }
+    this.model.dispose();
+    this.checkpointUrl = null;
     this.initialized = false;
-    this.spiceModel.dispose();
   }
 
   /**
@@ -82,29 +85,21 @@ class DDSP {
   }
 
   /**
-   * Include getAudioFeatures as a member method for API/export.
-   *
-   * @param inputAudioBuffer An AudioBuffer
-   * @returns Audio Features of provided audio buffer
-   */
-  async getAudioFeatures(
-    inputAudioBuffer: AudioBuffer
-  ): Promise<AudioFeatures> {
-    return await getAudioFeatures(inputAudioBuffer, this.spiceModel);
-  }
-
-  /**
    * Synthesizes audio features based on model.
    *
    * @param inputAudioBuffer An AudioBuffer
    * @returns Audio Features of provided audio buffer
    */
   async synthesize(
-    checkpointUrl: string,
     audioFeatures: AudioFeatures,
     options?: ModelValues
   ): Promise<Float32Array> {
-    return await synthesize(checkpointUrl, audioFeatures, options);
+    let modelValues = getModelValues(this.checkpointUrl);
+
+    if (options !== null) {
+      modelValues = { ...modelValues, ...options };
+    }
+    return await synthesize(this.model, audioFeatures, modelValues);
   }
 }
 

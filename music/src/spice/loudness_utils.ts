@@ -16,15 +16,14 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
-import { MODEL_SAMPLE_RATE } from './constants';
+import { MODEL_SAMPLE_RATE, MODEL_FRAME_RATE } from './spice';
 import { Tensor3D } from '@tensorflow/tfjs';
 
 async function computePower(audioChannelData: Float32Array): Promise<number[]> {
-  const frameRate = 250;
   const frameSize = 1024;
   const refDb = 20.7;
   const ldRange = 120.0;
-  const hopSize = Math.floor(MODEL_SAMPLE_RATE / frameRate);
+  const hopSize = Math.floor(MODEL_SAMPLE_RATE / MODEL_FRAME_RATE);
 
   const audioTensor = tf.tensor1d(audioChannelData, 'float32');
   const newSamplesCount = audioChannelData.length;

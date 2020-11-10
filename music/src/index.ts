@@ -26,4 +26,5 @@ export * from './piano_genie';
 export * from './protobuf';
 export * from './transcription';
 export * from './gansynth';
+export * from './spice';
 export * from './ddsp';

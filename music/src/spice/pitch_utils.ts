@@ -21,8 +21,8 @@ import {
   PT_SLOPE,
   PT_OFFSET,
   PITCH_CONF_JITTER,
-} from './constants';
-import { AudioData } from './interfaces';
+} from './spice';
+import { AudioData } from '../ddsp/interfaces';
 import { midiToHz } from '../core/audio_utils';
 import { Tensor } from '@tensorflow/tfjs';
 
@@ -34,18 +34,13 @@ function shiftF0(f0Hz: number[], f0OctaveShift = 0.0) {
   });
 }
 
-function upsample_linear(
-  spicePitchesOutput: number[],
-  newSampleRateLength: number
-) {
+function upsample_linear(buffer: number[], newSampleRateLength: number) {
   const pitchedInput = [];
-  const dupCountPitches = Math.floor(
-    newSampleRateLength / spicePitchesOutput.length
-  );
-  const modulos = newSampleRateLength % spicePitchesOutput.length;
+  const dupCountPitches = Math.floor(newSampleRateLength / buffer.length);
+  const modulos = newSampleRateLength % buffer.length;
 
-  for (let i = 0; i < spicePitchesOutput.length; i++) {
-    pitchedInput.push(spicePitchesOutput[i]);
+  for (let i = 0; i < buffer.length; i++) {
+    pitchedInput.push(buffer[i]);
     for (let j = 1; j < dupCountPitches; j++) {
       pitchedInput.push(-1);
     }
@@ -95,7 +90,11 @@ function getPitchHz(modelPitch: number) {
   return fmin * Math.pow(2.0, (1.0 * cqtBin) / binsPerOctave);
 }
 
-async function getPitches(spiceModel: tf.GraphModel, inputData: AudioData) {
+async function getPitches(
+  spiceModel: tf.GraphModel,
+  inputData: AudioData,
+  confidenceThreshold = CONF_THRESHOLD
+) {
   const SPICE_SAMPLE_RATE = 16000;
   const SPICE_MODEL_MULTIPLE = 512;
   const spicePitchesOutput = [];
@@ -168,7 +167,7 @@ async function getPitches(spiceModel: tf.GraphModel, inputData: AudioData) {
     for (let i = 0; i < stitchedPitches.length; ++i) {
       const confidence = 1.0 - uncertainties[i];
       allConfidences.push(confidence);
-      if (confidence >= CONF_THRESHOLD) {
+      if (confidence >= confidenceThreshold) {
         lastPitch = getPitchHz(stitchedPitches[i]);
         spicePitchesOutput.push(lastPitch);
       } else {
