@@ -17,7 +17,7 @@
 
 import { MODEL } from '../src/ddsp/constants';
 import * as mm from '../src/index';
-import { DDSP, SPICE } from '../src/index';
+import { SPICE } from '../src/index';
 import { AudioFeatures } from '../src/ddsp/interfaces';
 
 export const MODEL_URL =
