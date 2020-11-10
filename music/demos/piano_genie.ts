@@ -17,7 +17,7 @@
 
 import * as Tone from 'tone';
 import * as mm from '../src/index';
-import {CHECKPOINTS_DIR} from './common';
+import { CHECKPOINTS_DIR } from './common';
 
 // tslint:disable-next-line:max-line-length
 const GENIE_CHECKPOINT = `${CHECKPOINTS_DIR}/piano_genie/model/epiano/stp_iq_auto_contour_dt_166006`;
@@ -27,9 +27,9 @@ const TEMPERATURE = 0.25;
 
 const genie = new mm.PianoGenie(GENIE_CHECKPOINT);
 
-function initControlsAndAudio () {
+function initControlsAndAudio() {
   const heldButtonToMidiNote = new Map<number, number>();
-  const synth = new Tone.PolySynth(NUM_BUTTONS, Tone.FMSynth).toMaster();
+  const synth = new Tone.PolySynth(Tone.FMSynth).toDestination();
 
   // Bind keyboard controls
   document.onkeydown = (evt: KeyboardEvent) => {
@@ -46,7 +46,7 @@ function initControlsAndAudio () {
       const output = genie.next(button, TEMPERATURE);
       const note = output + LOWEST_PIANO_KEY_MIDI_NOTE;
 
-      synth.triggerAttack(Tone.Frequency(note, 'midi'));
+      synth.triggerAttack(Tone.Frequency(note, 'midi').toFrequency());
       heldButtonToMidiNote.set(button, note);
     }
   };
@@ -58,7 +58,7 @@ function initControlsAndAudio () {
       if (heldButtonToMidiNote.has(button)) {
         const note = heldButtonToMidiNote.get(button);
 
-        synth.triggerRelease(Tone.Frequency(note, 'midi'));
+        synth.triggerRelease(Tone.Frequency(note, 'midi').toFrequency());
         heldButtonToMidiNote.delete(button);
       }
     }

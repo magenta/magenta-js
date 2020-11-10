@@ -22,13 +22,13 @@
 // @ts-ignore
 import * as Tone from 'tone';
 
-import {INoteSequence, NoteSequence} from '../protobuf/index';
+import { INoteSequence, NoteSequence } from '../protobuf/index';
 
-import {sequences} from '.';
+import { sequences } from '.';
 import * as constants from './constants';
-import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
+import { DEFAULT_DRUM_PITCH_CLASSES } from './data';
 import * as soundfont from './soundfont';
-import {performance} from '../core/compat/global';
+import { performance } from '../core/compat/global';
 
 function compareQuantizedNotes(a: NoteSequence.INote, b: NoteSequence.INote) {
   if (a.quantizedStartStep < b.quantizedStartStep) {
@@ -65,7 +65,7 @@ export abstract class BasePlayerCallback {
  * Abstract base class for a `NoteSequence` player based on Tone.js.
  */
 export abstract class BasePlayer {
-  protected currentPart: any;  // tslint:disable-line:no-any
+  protected currentPart: any; // tslint:disable-line:no-any
   protected scheduledStop: number;
   protected playClick: boolean;
   protected callbackObject: BasePlayerCallback;
@@ -105,15 +105,15 @@ export abstract class BasePlayer {
    */
   private makeClickSequence(seq: INoteSequence): INoteSequence {
     const clickSeq = sequences.clone(seq);
-    const sixteenthEnds = clickSeq.notes.map(n => n.quantizedEndStep);
+    const sixteenthEnds = clickSeq.notes.map((n) => n.quantizedEndStep);
     const lastSixteenth = Math.max(...sixteenthEnds);
     for (let i = 0; i < lastSixteenth; i += 4) {
       const click: NoteSequence.INote = {
-        pitch: i % 16 === 0 ? constants.LO_CLICK_PITCH :
-                              constants.HI_CLICK_PITCH,
+        pitch:
+          i % 16 === 0 ? constants.LO_CLICK_PITCH : constants.HI_CLICK_PITCH,
         quantizedStartStep: i,
         isDrum: true,
-        quantizedEndStep: i + 1
+        quantizedEndStep: i + 1,
       };
       clickSeq.notes.push(click);
     }
@@ -151,7 +151,8 @@ export abstract class BasePlayer {
     }
     if (Tone.Transport.state !== 'stopped') {
       throw new Error(
-        'Cannot start playback while `Tone.Transport` is in use.');
+        'Cannot start playback while `Tone.Transport` is in use.'
+      );
     }
 
     this.resumeContext();
@@ -172,23 +173,28 @@ export abstract class BasePlayer {
       throw new Error('Cannot specify a `qpm` for a non-quantized sequence.');
     }
 
-    const thisPart = new Tone.Part((t: number, n: NoteSequence.INote) => {
-      // Prevent playback after the part has been removed.
-      if (this.currentPart !== thisPart) {
-        return;
-      }
+    const thisPart = new Tone.Part(
+      (t: number, n: NoteSequence.INote) => {
+        // Prevent playback after the part has been removed.
+        if (this.currentPart !== thisPart) {
+          return;
+        }
 
-      if (this.playClick ||
+        if (
+          this.playClick ||
           (n.pitch !== constants.LO_CLICK_PITCH &&
-           n.pitch !== constants.HI_CLICK_PITCH)) {
-        this.playNote(t, n);
-      }
-      if (this.callbackObject) {
-        Tone.Draw.schedule(() => {
-          this.callbackObject.run(n, t);
-        }, t);
-      }
-    }, seq.notes.map(n => [n.startTime, n]));
+            n.pitch !== constants.HI_CLICK_PITCH)
+        ) {
+          this.playNote(t, n);
+        }
+        if (this.callbackObject) {
+          Tone.Draw.schedule(() => {
+            this.callbackObject.run(n, t);
+          }, t);
+        }
+      },
+      seq.notes.map((n) => [n.startTime, n])
+    );
     this.currentPart = thisPart;
 
     if (this.desiredQPM) {
@@ -198,7 +204,7 @@ export abstract class BasePlayer {
     if (Tone.Transport.state !== 'started') {
       Tone.Transport.start();
     }
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       this.scheduledStop = Tone.Transport.schedule(() => {
         this.stop();
         resolve();
@@ -283,112 +289,96 @@ export abstract class BasePlayer {
 class DrumKit {
   private static instance: DrumKit;
   private DRUM_PITCH_TO_CLASS = new Map<number, number>();
-  private kick = new Tone.MembraneSynth().toMaster();
-  private tomLow = new Tone
-                       .MembraneSynth({
-                         pitchDecay: 0.008,
-                         envelope: {attack: 0.01, decay: 0.5, sustain: 0}
-                       })
-                       .toMaster();
-  private tomMid = new Tone
-                       .MembraneSynth({
-                         pitchDecay: 0.008,
-                         envelope: {attack: 0.01, decay: 0.5, sustain: 0}
-                       })
-                       .toMaster();
-  private tomHigh = new Tone
-                        .MembraneSynth({
-                          pitchDecay: 0.008,
-                          envelope: {attack: 0.01, decay: 0.5, sustain: 0}
-                        })
-                        .toMaster();
-  private closedHihat =
-      new Tone
-          .MetalSynth({
-            frequency: 400,
-            envelope: {attack: 0.001, decay: 0.1, release: 0.8},
-            harmonicity: 5.1,
-            modulationIndex: 32,
-            resonance: 4000,
-            octaves: 1
-          })
-          .toMaster();
-  private openHihat =
-      new Tone
-          .MetalSynth({
-            frequency: 400,
-            envelope: {attack: 0.001, decay: 0.5, release: 0.8, sustain: 1},
-            harmonicity: 5.1,
-            modulationIndex: 32,
-            resonance: 4000,
-            octaves: 1
-          })
-          .toMaster();
-  private ride = new Tone.MetalSynth().toMaster();
-  private crash = new Tone
-                      .MetalSynth({
-                        frequency: 300,
-                        envelope: {attack: 0.001, decay: 1, release: 3},
-                        harmonicity: 5.1,
-                        modulationIndex: 64,
-                        resonance: 4000,
-                        octaves: 1.5
-                      })
-                      .toMaster();
-  private snare =
-      new Tone
-          .NoiseSynth({
-            noise: {type: 'white'},
-            envelope: {attack: 0.005, decay: 0.05, sustain: 0.1, release: 0.4}
-          })
-          .toMaster();
-  private loClick = new Tone
-                        .MembraneSynth({
-                          pitchDecay: 0.008,
-                          envelope: {attack: 0.001, decay: 0.3, sustain: 0}
-                        })
-                        .toMaster();
-  private hiClick = new Tone
-                        .MembraneSynth({
-                          pitchDecay: 0.008,
-                          envelope: {attack: 0.001, decay: 0.3, sustain: 0}
-                        })
-                        .toMaster();
+  private kick = new Tone.MembraneSynth().toDestination();
+  private tomLow = new Tone.MembraneSynth({
+    pitchDecay: 0.008,
+    envelope: { attack: 0.01, decay: 0.5, sustain: 0 },
+  }).toDestination();
+  private tomMid = new Tone.MembraneSynth({
+    pitchDecay: 0.008,
+    envelope: { attack: 0.01, decay: 0.5, sustain: 0 },
+  }).toDestination();
+  private tomHigh = new Tone.MembraneSynth({
+    pitchDecay: 0.008,
+    envelope: { attack: 0.01, decay: 0.5, sustain: 0 },
+  }).toDestination();
+  private closedHihat = new Tone.MetalSynth({
+    frequency: 400,
+    envelope: { attack: 0.001, decay: 0.1, release: 0.8 },
+    harmonicity: 5.1,
+    modulationIndex: 32,
+    resonance: 4000,
+    octaves: 1,
+  }).toDestination();
+  private openHihat = new Tone.MetalSynth({
+    frequency: 400,
+    envelope: { attack: 0.001, decay: 0.5, release: 0.8, sustain: 1 },
+    harmonicity: 5.1,
+    modulationIndex: 32,
+    resonance: 4000,
+    octaves: 1,
+  }).toDestination();
+  private ride = new Tone.MetalSynth().toDestination();
+  private crash = new Tone.MetalSynth({
+    frequency: 300,
+    envelope: { attack: 0.001, decay: 1, release: 3 },
+    harmonicity: 5.1,
+    modulationIndex: 64,
+    resonance: 4000,
+    octaves: 1.5,
+  }).toDestination();
+  private snare = new Tone.NoiseSynth({
+    noise: { type: 'white' },
+    envelope: { attack: 0.005, decay: 0.05, sustain: 0.1, release: 0.4 },
+  }).toDestination();
+  private loClick = new Tone.MembraneSynth({
+    pitchDecay: 0.008,
+    envelope: { attack: 0.001, decay: 0.3, sustain: 0 },
+  }).toDestination();
+  private hiClick = new Tone.MembraneSynth({
+    pitchDecay: 0.008,
+    envelope: { attack: 0.001, decay: 0.3, sustain: 0 },
+  }).toDestination();
   private pitchPlayers = [
     (time: number, velocity = 1) =>
-        this.kick.triggerAttackRelease('C2', '8n', time, velocity),
+      this.kick.triggerAttackRelease('C2', '8n', time, velocity),
     (time: number, velocity = 1) =>
-        this.snare.triggerAttackRelease('16n', time, velocity),
+      this.snare.triggerAttackRelease('16n', time, velocity),
     (time: number, velocity = 1) =>
-        this.closedHihat.triggerAttack(time, 0.3, velocity),
+      this.closedHihat.triggerAttack(time, 0.3, velocity),
     (time: number, velocity = 1) =>
-        this.openHihat.triggerAttack(time, 0.3, velocity),
+      this.openHihat.triggerAttack(time, 0.3, velocity),
     (time: number, velocity = 0.5) =>
-        this.tomLow.triggerAttack('G3', time, velocity),
+      this.tomLow.triggerAttack('G3', time, velocity),
     (time: number, velocity = 0.5) =>
-        this.tomMid.triggerAttack('C4', time, velocity),
+      this.tomMid.triggerAttack('C4', time, velocity),
     (time: number, velocity = 0.5) =>
-        this.tomHigh.triggerAttack('F4', time, velocity),
+      this.tomHigh.triggerAttack('F4', time, velocity),
     (time: number, velocity = 1) =>
-        this.crash.triggerAttack(time, 1.0, velocity),
+      this.crash.triggerAttack(time, 1.0, velocity),
     (time: number, velocity = 1) =>
-        this.ride.triggerAttack(time, 0.5, velocity),
+      this.ride.triggerAttack(time, 0.5, velocity),
     (time: number, velocity = 0.5) =>
-        this.loClick.triggerAttack('G5', time, velocity),
+      this.loClick.triggerAttack('G5', time, velocity),
     (time: number, velocity = 0.5) =>
-        this.hiClick.triggerAttack('C6', time, velocity)
+      this.hiClick.triggerAttack('C6', time, velocity),
   ];
 
   private constructor() {
-    for (let c = 0; c < DEFAULT_DRUM_PITCH_CLASSES.length; ++c) {  // class
+    for (let c = 0; c < DEFAULT_DRUM_PITCH_CLASSES.length; ++c) {
+      // class
       DEFAULT_DRUM_PITCH_CLASSES[c].forEach((p) => {
         this.DRUM_PITCH_TO_CLASS.set(p, c);
       });
     }
     this.DRUM_PITCH_TO_CLASS.set(
-        constants.LO_CLICK_PITCH, constants.LO_CLICK_CLASS);
+      constants.LO_CLICK_PITCH,
+      constants.LO_CLICK_CLASS
+    );
     this.DRUM_PITCH_TO_CLASS.set(
-        constants.HI_CLICK_PITCH, constants.HI_CLICK_CLASS);
+      constants.HI_CLICK_PITCH,
+      constants.HI_CLICK_CLASS
+    );
   }
 
   static getInstance() {
@@ -409,29 +399,35 @@ class DrumKit {
 export class Player extends BasePlayer {
   private drumKit = DrumKit.getInstance();
 
-  private bassSynth =
-      new Tone.Synth({volume: 5, oscillator: {type: 'triangle'}}).toMaster();
+  private bassSynth = new Tone.Synth({
+    volume: 5,
+    oscillator: { type: 'triangle' },
+  }).toDestination();
 
-  private polySynth = new Tone.PolySynth(10).toMaster();
+  private polySynth = new Tone.PolySynth().toDestination();
 
   /**
    * The Tone module being used.
    */
-  static readonly tone = Tone;  // tslint:disable-line:no-any
+  static readonly tone = Tone; // tslint:disable-line:no-any
 
   protected playNote(time: number, note: NoteSequence.INote) {
     // If there's a velocity, use it.
-    const velocity = note.hasOwnProperty('velocity') ?
-        note.velocity / constants.MAX_MIDI_VELOCITY :
-        undefined;
+    const velocity = note.hasOwnProperty('velocity')
+      ? note.velocity / constants.MAX_MIDI_VELOCITY
+      : undefined;
 
     if (note.isDrum) {
       this.drumKit.playNote(note.pitch, time, velocity);
     } else {
-      const freq = new Tone.Frequency(note.pitch, 'midi');
+      const freq = Tone.Frequency(note.pitch, 'midi').toFrequency();
       const dur = note.endTime - note.startTime;
-      this.getSynth(note.instrument, note.program)
-          .triggerAttackRelease(freq, dur, time, velocity);
+      this.getSynth(note.instrument, note.program).triggerAttackRelease(
+        freq,
+        dur,
+        time,
+        velocity
+      );
     }
   }
 
@@ -469,15 +465,18 @@ export class Player extends BasePlayer {
  */
 export class SoundFontPlayer extends BasePlayer {
   private soundFont: soundfont.SoundFont;
-  private output: any;                       // tslint:disable-line:no-any
-  private programOutputs: Map<number, any>;  // tslint:disable-line:no-any
-  private drumOutputs: Map<number, any>;     // tslint:disable-line:no-any
+  private output: any; // tslint:disable-line:no-any
+  private programOutputs: Map<number, any>; // tslint:disable-line:no-any
+  private drumOutputs: Map<number, any>; // tslint:disable-line:no-any
 
   constructor(
-      soundFontURL: string, output = Tone.Master,
-      programOutputs?: Map<number, any>,      // tslint:disable-line:no-any
-      drumOutputs?: Map<number, any>,         // tslint:disable-line:no-any
-      callbackObject?: BasePlayerCallback) {  // tslint:disable-line:no-any
+    soundFontURL: string,
+    output = Tone.Master,
+    programOutputs?: Map<number, any>, // tslint:disable-line:no-any
+    drumOutputs?: Map<number, any>, // tslint:disable-line:no-any
+    callbackObject?: BasePlayerCallback
+  ) {
+    // tslint:disable-line:no-any
     super(false, callbackObject);
     this.soundFont = new soundfont.SoundFont(soundFontURL);
     this.output = output;
@@ -491,12 +490,13 @@ export class SoundFontPlayer extends BasePlayer {
    */
   async loadSamples(seq: INoteSequence): Promise<void> {
     await this.soundFont.loadSamples(
-        seq.notes.map((note) => ({
-                        pitch: note.pitch,
-                        velocity: note.velocity,
-                        program: note.program || 0,
-                        isDrum: note.isDrum || false
-                      })));
+      seq.notes.map((note) => ({
+        pitch: note.pitch,
+        velocity: note.velocity,
+        program: note.program || 0,
+        isDrum: note.isDrum || false,
+      }))
+    );
   }
 
   /**
@@ -522,9 +522,12 @@ export class SoundFontPlayer extends BasePlayer {
     const min = isDrum ? constants.MIN_DRUM_PITCH : constants.MIN_PIANO_PITCH;
     const max = isDrum ? constants.MAX_DRUM_PITCH : constants.MAX_PIANO_PITCH;
     for (let i = min; i <= max; i++) {
-      for (let j = constants.MIN_MIDI_VELOCITY; j < constants.MAX_MIDI_VELOCITY;
-           j++) {
-        ns.notes.push({pitch: i, velocity: j, program, isDrum});
+      for (
+        let j = constants.MIN_MIDI_VELOCITY;
+        j < constants.MAX_MIDI_VELOCITY;
+        j++
+      ) {
+        ns.notes.push({ pitch: i, velocity: j, program, isDrum });
       }
     }
     return this.loadSamples(ns);
@@ -548,8 +551,14 @@ export class SoundFontPlayer extends BasePlayer {
 
   protected playNote(time: number, note: NoteSequence.INote) {
     this.soundFont.playNote(
-        note.pitch, note.velocity, time, note.endTime - note.startTime,
-        note.program, note.isDrum, this.getAudioNodeOutput(note));
+      note.pitch,
+      note.velocity,
+      time,
+      note.endTime - note.startTime,
+      note.program,
+      note.isDrum,
+      this.getAudioNodeOutput(note)
+    );
   }
 
   /*
@@ -561,8 +570,12 @@ export class SoundFontPlayer extends BasePlayer {
    */
   public playNoteDown(note: NoteSequence.INote) {
     this.soundFont.playNoteDown(
-        note.pitch, note.velocity, note.program, note.isDrum,
-        this.getAudioNodeOutput(note));
+      note.pitch,
+      note.velocity,
+      note.program,
+      note.isDrum,
+      this.getAudioNodeOutput(note)
+    );
   }
 
   /*
@@ -575,8 +588,12 @@ export class SoundFontPlayer extends BasePlayer {
    */
   public playNoteUp(note: NoteSequence.INote) {
     this.soundFont.playNoteUp(
-        note.pitch, note.velocity, note.program, note.isDrum,
-        this.getAudioNodeOutput(note));
+      note.pitch,
+      note.velocity,
+      note.program,
+      note.isDrum,
+      this.getAudioNodeOutput(note)
+    );
   }
 
   getAudioNodeOutput(note: NoteSequence.INote) {
@@ -691,13 +708,17 @@ export class MIDIPlayer extends BasePlayer {
   async requestMIDIAccess() {
     if (navigator.requestMIDIAccess) {
       return new Promise((resolve, reject) => {
-        navigator.requestMIDIAccess().then((midi) => {
-          // Also react to device changes.
-          midi.addEventListener(
+        navigator.requestMIDIAccess().then(
+          (midi) => {
+            // Also react to device changes.
+            midi.addEventListener(
               'statechange',
-              (event: WebMidi.MIDIMessageEvent) => this.initOutputs(midi));
-          resolve(this.initOutputs(midi));
-        }, (err) => console.log('Something went wrong', reject(err)));
+              (event: WebMidi.MIDIMessageEvent) => this.initOutputs(midi)
+            );
+            resolve(this.initOutputs(midi));
+          },
+          (err) => console.log('Something went wrong', reject(err))
+        );
       });
     } else {
       return null;
@@ -706,8 +727,11 @@ export class MIDIPlayer extends BasePlayer {
 
   private initOutputs(midi: WebMidi.MIDIAccess) {
     const outputs = midi.outputs.values();
-    for (let output = outputs.next(); output && !output.done;
-         output = outputs.next()) {
+    for (
+      let output = outputs.next();
+      output && !output.done;
+      output = outputs.next()
+    ) {
       this.availableOutputs.push(output.value);
     }
     return this.availableOutputs;
@@ -716,7 +740,7 @@ export class MIDIPlayer extends BasePlayer {
   protected playNote(time: number, note: NoteSequence.INote) {
     // Some good defaults.
     const velocity = note.velocity || 100;
-    const length = (note.endTime - note.startTime) * 1000;  // in ms.
+    const length = (note.endTime - note.startTime) * 1000; // in ms.
 
     const msgOn = [this.NOTE_ON + this.outputChannel, note.pitch, velocity];
     const msgOff = [this.NOTE_OFF + this.outputChannel, note.pitch, velocity];
@@ -724,13 +748,15 @@ export class MIDIPlayer extends BasePlayer {
     const outputs = this.outputs ? this.outputs : this.availableOutputs;
     for (let i = 0; i < outputs.length; i++) {
       this.sendMessageToOutput(outputs[i], msgOn);
-      this.sendMessageToOutput(
-          outputs[i], msgOff, performance.now() + length);
+      this.sendMessageToOutput(outputs[i], msgOff, performance.now() + length);
     }
   }
 
   private sendMessageToOutput(
-      output: WebMidi.MIDIOutput, message: number[], time?: number) {
+    output: WebMidi.MIDIOutput,
+    message: number[],
+    time?: number
+  ) {
     if (output) {
       output.send(message, time);
     }
@@ -760,7 +786,10 @@ export class MIDIPlayer extends BasePlayer {
     const outputs = this.outputs ? this.outputs : this.availableOutputs;
     for (let i = 0; i < outputs.length; i++) {
       this.sendMessageToOutput(
-          outputs[i], msgOff, note.endTime - note.startTime);
+        outputs[i],
+        msgOff,
+        note.endTime - note.startTime
+      );
     }
   }
 }

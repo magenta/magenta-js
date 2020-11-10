@@ -88,7 +88,7 @@ export class Instrument {
    */
   constructor(baseURL: string) {
     this.baseURL = baseURL;
-    this.buffers = new Tone.Buffers([]);
+    this.buffers = new Tone.ToneAudioBuffers();
     this.sourceMap = new Map<number, any>();  // tslint:disable-line:no-any
     this.initialized = false;
   }
@@ -195,7 +195,7 @@ export class Instrument {
     if (sampleNamesAndURLs.length > 0) {
       sampleNamesAndURLs.forEach(
           (nameAndURL) => this.buffers.add(nameAndURL.name, nameAndURL.url));
-      await new Promise(resolve => Tone.Buffer.on('load', resolve));
+      await Tone.loaded();
       logging.log(`Loaded samples for ${this.name}.`, 'SoundFont');
     }
   }
@@ -220,19 +220,21 @@ export class Instrument {
     }
 
     const source = new Tone
-                       .BufferSource({
-                         buffer,
+                       .ToneBufferSource({
+                         url: buffer,
                          fadeOut: this.FADE_SECONDS,
                        })
                        .connect(output);
-    source.start(startTime, 0, undefined, 1, 0);
+    source.start(startTime, 0, undefined, 1);
     if (!this.percussive && duration < this.durationSeconds) {
       // Fade to the note release.
-      const releaseSource = new Tone.BufferSource(buffer).connect(output);
+      const releaseSource = new Tone.ToneBufferSource({
+        url:buffer, 
+        fadeOut: this.FADE_SECONDS,
+      }).connect(output);
       source.stop(startTime + duration + this.FADE_SECONDS);
       releaseSource.start(
-          startTime + duration, this.durationSeconds, undefined, 1,
-          this.FADE_SECONDS);
+          startTime + duration, this.durationSeconds, undefined, 1);
     }
   }
 
@@ -249,8 +251,8 @@ export class Instrument {
       pitch: number, velocity: number,
       output: any) {  // tslint:disable-line:no-any
     const buffer = this.getBuffer(pitch, velocity);
-    const source = new Tone.BufferSource(buffer).connect(output);
-    source.start(0, 0, undefined, 1, 0);
+    const source = new Tone.ToneBufferSource(buffer).connect(output);
+    source.start(0, 0, undefined, 1);
     if (this.sourceMap.has(pitch)) {
       this.sourceMap.get(pitch).stop(
           (Tone.now() as number) + this.FADE_SECONDS, this.FADE_SECONDS);
@@ -277,9 +279,12 @@ export class Instrument {
     const buffer = this.getBuffer(pitch, velocity);
 
     // Fade to the note release.
-    const releaseSource = new Tone.BufferSource(buffer).connect(output);
+    const releaseSource = new Tone.ToneBufferSource({
+      url:buffer, 
+      fadeOut: this.FADE_SECONDS,
+    }).connect(output);
     releaseSource.start(
-        0, this.durationSeconds, undefined, 1, this.FADE_SECONDS);
+        0, this.durationSeconds, undefined, 1);
     this.sourceMap.get(pitch).stop(
         (Tone.now() as number) + this.FADE_SECONDS, this.FADE_SECONDS);
     this.sourceMap.delete(pitch);

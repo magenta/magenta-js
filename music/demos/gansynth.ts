@@ -16,23 +16,26 @@
  */
 import * as tf from '@tensorflow/tfjs';
 import * as Tone from 'tone';
-import {performance} from '../src/core/compat/global';
+import { performance } from '../src/core/compat/global';
 
 import * as mm from '../src/index';
 
-import {CHECKPOINTS_DIR, writeMemory, writeTimer} from './common';
+import { CHECKPOINTS_DIR, writeMemory, writeTimer } from './common';
 
 const GANSYNTH_CHECKPOINT = `${CHECKPOINTS_DIR}/gansynth/acoustic_only`;
 
 mm.logging.verbosity = mm.logging.Level.DEBUG;
 
 async function plotSpectra(
-    spectra: tf.Tensor4D, canvasId: string, channel: number) {
+  spectra: tf.Tensor4D,
+  canvasId: string,
+  channel: number
+) {
   const spectraPlot = tf.tidy(() => {
     // Slice a single example.
-    const spectraSlice = tf.slice(spectra, [0, 0, 0, channel], [
-                             1, -1, -1, 1
-                           ]).reshape([128, 1024]);
+    const spectraSlice = tf
+      .slice(spectra, [0, 0, 0, channel], [1, -1, -1, 1])
+      .reshape([128, 1024]);
     let spectraPlot = spectraSlice as tf.Tensor3D;
     // Scale to [0, 1].
     spectraPlot = tf.sub(spectraPlot, tf.min(spectraPlot));
@@ -60,13 +63,13 @@ async function runGANSynth() {
 
   const audioBuffer = Tone.context.createBuffer(1, T * SR, SR);
   audioBuffer.copyToChannel(audio, 0, 0);
-  const options = {'url': audioBuffer, 'loop': true, 'volume': -24};
-  const player = new Tone.Player(options).toMaster();
+  const options = { url: audioBuffer, loop: true, volume: -24 };
+  const player = new Tone.Player(options).toDestination();
 
   // Plotting.
   await Promise.all([
     plotSpectra(specgrams, 'mag-canvas', 0),
-    plotSpectra(specgrams, 'ifreq-canvas', 1)
+    plotSpectra(specgrams, 'ifreq-canvas', 1),
   ]);
 
   // Connect GUI actions.
@@ -83,11 +86,7 @@ async function runGANSynth() {
 }
 
 try {
-  Promise
-      .all([
-        runGANSynth(),
-      ])
-      .then(() => writeMemory(tf.memory().numBytes));
+  Promise.all([runGANSynth()]).then(() => writeMemory(tf.memory().numBytes));
 } catch (err) {
   console.error(err);
 }
