@@ -6,7 +6,7 @@ export const baseConfig = {
     rules: [{
       test: /\.ts$/,
       exclude: /node_modules/,
-      use: {loader: 'ts-loader', options: {configFile: 'tsconfig.es5.json'}}
+      use: {loader: 'ts-loader', options: {configFile: 'tsconfig.es6.json'}}
     }],
   },
   node: {fs: 'empty'},

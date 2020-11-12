@@ -25,7 +25,7 @@ import {INoteSequence} from '../src/index';
 // tslint:disable-next-line:max-line-length
 import {CHECKPOINTS_DIR, notesMatch, writeMemory, writeNoteSeqs, writeTimer} from './common';
 
-mm.logging.verbosity = mm.logging.Level.DEBUG;
+mm.logging.setVerbosity(mm.logging.Level.DEBUG);
 
 const CKPT_URL = `${CHECKPOINTS_DIR}/transcription/onsets_frames_uni`;
 const MEL_SPEC_URL =

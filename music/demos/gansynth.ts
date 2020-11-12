@@ -24,7 +24,7 @@ import { CHECKPOINTS_DIR, writeMemory, writeTimer } from './common';
 
 const GANSYNTH_CHECKPOINT = `${CHECKPOINTS_DIR}/gansynth/acoustic_only`;
 
-mm.logging.verbosity = mm.logging.Level.DEBUG;
+mm.logging.setVerbosity(mm.logging.Level.DEBUG);
 
 async function plotSpectra(
   spectra: tf.Tensor4D,
