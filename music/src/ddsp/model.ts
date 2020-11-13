@@ -23,19 +23,21 @@
 import * as tf from '@tensorflow/tfjs';
 import '@tensorflow/tfjs-backend-webgl';
 
-import { synthesize, memCheck, getModelValues, getModel } from './ddsp';
+import { synthesize, memCheck, getModel } from './ddsp';
 import { AudioFeatures, ModelValues } from './interfaces';
 
 class DDSP {
   private initialized: boolean;
   private checkpointUrl: string;
   private model: tf.GraphModel;
+  private settings: ModelValues;
 
   /**
    * `DDSP` constructor.
    */
-  constructor(checkpointUrl: string) {
+  constructor(checkpointUrl: string, settings: ModelValues) {
     this.checkpointUrl = checkpointUrl;
+    this.settings = settings;
   }
 
   /**
@@ -92,14 +94,13 @@ class DDSP {
    */
   async synthesize(
     audioFeatures: AudioFeatures,
-    options?: ModelValues
+    settings?: ModelValues
   ): Promise<Float32Array> {
-    let modelValues = getModelValues(this.checkpointUrl);
-
-    if (options !== null) {
-      modelValues = { ...modelValues, ...options };
+    if (settings !== null) {
+      this.settings = { ...this.settings, ...settings };
     }
-    return await synthesize(this.model, audioFeatures, modelValues);
+
+    return await synthesize(this.model, audioFeatures, this.settings);
   }
 }
 

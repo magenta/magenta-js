@@ -15,26 +15,32 @@
  * limitations under the License.
  */
 
-import { MODEL } from '../src/ddsp/constants';
 import * as mm from '../src/index';
 import { SPICE } from '../src/index';
 import { AudioFeatures } from '../src/ddsp/interfaces';
 
-export const MODEL_URL =
+enum MODEL {
+  VIOLIN = 'violin',
+  TENOR_SAXOPHONE = 'tenor_saxophone',
+  TRUMPET = 'trumpet',
+  FLUTE = 'flute',
+}
+
+export const PRESET_MODEL_URL =
   'https://storage.googleapis.com/magentadata/js/checkpoints/ddsp';
 
 export const PRESET_MODELS = {
   [MODEL.VIOLIN]: {
-    checkpointUrl: `${MODEL_URL}/${MODEL.VIOLIN}/model.json`,
+    checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.VIOLIN}/model.json`,
   },
   [MODEL.TENOR_SAXOPHONE]: {
-    checkpointUrl: `${MODEL_URL}/${MODEL.TENOR_SAXOPHONE}/model.json`,
+    checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.TENOR_SAXOPHONE}/model.json`,
   },
   [MODEL.TRUMPET]: {
-    checkpointUrl: `${MODEL_URL}/${MODEL.TRUMPET}/model.json`,
+    checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.TRUMPET}/model.json`,
   },
   [MODEL.FLUTE]: {
-    checkpointUrl: `${MODEL_URL}/${MODEL.FLUTE}/model.json`,
+    checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.FLUTE}/model.json`,
   },
 };
 

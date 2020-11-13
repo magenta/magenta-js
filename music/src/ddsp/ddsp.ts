@@ -25,7 +25,6 @@ import {
   CONF_SMOOTH_SIZE,
   CONF_THRESHOLD,
   LD_CONF_REDUCTION,
-  PRESET_MODELS,
   MIN_VRAM,
 } from './constants';
 import { AudioFeatures, ModelValues } from './interfaces';
@@ -334,14 +333,6 @@ async function normalizeAudioFeatures(af: AudioFeatures, model: ModelValues) {
   }
 
   return { f0_hz, loudness_db };
-}
-
-export function getModelValues(checkpointUrl: string): ModelValues {
-  const presetModelValues = PRESET_MODELS.filter(
-    (modelValues: ModelValues): boolean =>
-      modelValues.checkpointUrl === checkpointUrl
-  );
-  return presetModelValues.length > 0 ? presetModelValues[0] : {};
 }
 
 async function synthesize(
