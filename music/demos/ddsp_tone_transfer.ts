@@ -17,7 +17,7 @@
 
 import * as mm from '../src/index';
 import { SPICE } from '../src/index';
-import { AudioFeatures } from '../src/ddsp/interfaces';
+import { AudioFeatures, ModelValues } from '../src/ddsp/interfaces';
 
 enum MODEL {
   VIOLIN = 'violin',
@@ -32,15 +32,47 @@ export const PRESET_MODEL_URL =
 export const PRESET_MODELS = {
   [MODEL.VIOLIN]: {
     checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.VIOLIN}/model.json`,
+    settings: {
+      averageMaxLoudness: -48.6,
+      loudnessThreshold: -100.0,
+      meanLoudness: -68.5,
+      meanPitch: 62.0,
+      postGain: 2,
+      modelMaxFrameLength: 1250,
+    },
   },
   [MODEL.TENOR_SAXOPHONE]: {
     checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.TENOR_SAXOPHONE}/model.json`,
+    settings: {
+      averageMaxLoudness: -44.7,
+      loudnessThreshold: -100.0,
+      meanLoudness: -56,
+      meanPitch: 58.9,
+      postGain: 0.9,
+      modelMaxFrameLength: 1250,
+    },
   },
   [MODEL.TRUMPET]: {
     checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.TRUMPET}/model.json`,
+    settings: {
+      averageMaxLoudness: -61.7,
+      loudnessThreshold: -100.0,
+      meanLoudness: -72.5,
+      meanPitch: 68.6,
+      postGain: 1.5,
+      modelMaxFrameLength: 1250,
+    },
   },
   [MODEL.FLUTE]: {
     checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.FLUTE}/model.json`,
+    settings: {
+      averageMaxLoudness: -45.9,
+      loudnessThreshold: -100.0,
+      meanLoudness: -70.6,
+      meanPitch: 63.2,
+      postGain: 4,
+      modelMaxFrameLength: 1250,
+    },
   },
 };
 
@@ -133,28 +165,34 @@ window.onload = () => {
     document
       .getElementById('button_violin')
       .addEventListener('click', () =>
-        toneTransfer(PRESET_MODELS[MODEL.VIOLIN].checkpointUrl)
+        toneTransfer(PRESET_MODELS[MODEL.VIOLIN])
       );
     document
       .getElementById('button_tenor_saxophone')
       .addEventListener('click', () =>
-        toneTransfer(PRESET_MODELS[MODEL.TENOR_SAXOPHONE].checkpointUrl)
+        toneTransfer(PRESET_MODELS[MODEL.TENOR_SAXOPHONE])
       );
     document
       .getElementById('button_flute')
       .addEventListener('click', () =>
-        toneTransfer(PRESET_MODELS[MODEL.FLUTE].checkpointUrl)
+        toneTransfer(PRESET_MODELS[MODEL.FLUTE])
       );
     document
       .getElementById('button_trumpet')
       .addEventListener('click', () =>
-        toneTransfer(PRESET_MODELS[MODEL.TRUMPET].checkpointUrl)
+        toneTransfer(PRESET_MODELS[MODEL.TRUMPET])
       );
   }
 
-  async function toneTransfer(checkpointUrl: string) {
+  async function toneTransfer({
+    checkpointUrl,
+    settings,
+  }: {
+    checkpointUrl: string;
+    settings: ModelValues;
+  }) {
     document.getElementById('player').style.display = 'none';
-    const ddsp = new mm.DDSP(checkpointUrl);
+    const ddsp = new mm.DDSP(checkpointUrl, settings);
     await ddsp.initialize();
     const toneTransferredAudioData: Float32Array = await ddsp.synthesize(
       audioFeatures

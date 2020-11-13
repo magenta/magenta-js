@@ -22,9 +22,25 @@
  */
 import * as tf from '@tensorflow/tfjs';
 import '@tensorflow/tfjs-backend-webgl';
+import * as Tone from 'tone';
 
-import { synthesize, memCheck, getModel } from './ddsp';
+import {
+  memCheck,
+  getModel,
+  normalizeAudioFeatures,
+  convertFrameToSecs,
+  convertSecsToFrame,
+  resizeAudioFeatures,
+} from './ddsp';
 import { AudioFeatures, ModelValues } from './interfaces';
+import { Tensor } from '@tensorflow/tfjs';
+import { mixAndJoinAudioData } from './audio_utils';
+import { arrayBufferToAudioBuffer } from './buffer_utils';
+import { OUTPUT_SAMPLE_RATE, CROSSFADE_DURATION } from './constants';
+import { addReverb } from './add_reverb';
+import { resampleAndMakeMono } from '../core/audio_utils';
+import { MODEL_SAMPLE_RATE } from '../spice/spice';
+import { upsample_f0 } from '../spice/pitch_utils';
 
 class DDSP {
   private initialized: boolean;
@@ -100,7 +116,127 @@ class DDSP {
       this.settings = { ...this.settings, ...settings };
     }
 
-    return await synthesize(this.model, audioFeatures, this.settings);
+    const { f0_hz, loudness_db, confidences } = audioFeatures;
+
+    // we need to upsample pitches because spice
+    // gives back something that is smaller
+    const upsampledPitches = upsample_f0(
+      f0_hz,
+      loudness_db.length,
+      this.settings.modelMaxFrameLength
+    );
+    const upsampledConfidences = upsample_f0(
+      confidences,
+      loudness_db.length,
+      this.settings.modelMaxFrameLength
+    );
+
+    const normalizedAudioFeatures = await normalizeAudioFeatures(
+      {
+        f0_hz: upsampledPitches,
+        loudness_db,
+        confidences: upsampledConfidences,
+      },
+      this.settings
+    );
+
+    // we have to process the audio in chunks according
+    // to the model max frame length
+    // eg. if we have a 10s input and a 5s model, we'll have
+    // to splice our input into 2, process it twice, and then stitch it
+    // stitching the inputs require a linear mask to prevent an audible blip
+    // we overlap the last second and the first second of 2 conjoining chunks.
+    // eg. for a 10s input [1,2,3,4,5] + [5,6,7,8,9] + [9,10]
+    const audioChunks = [];
+    const inputFrameLength = normalizedAudioFeatures.loudness_db.length;
+    const inputAudioLengthInSecs = convertFrameToSecs(inputFrameLength);
+    let isLastChunks = false;
+    const usableAudioDuration = convertFrameToSecs(
+      this.settings.modelMaxFrameLength
+    );
+    let audioBuffer;
+
+    const mixBufferLength = CROSSFADE_DURATION * MODEL_SAMPLE_RATE;
+    for (
+      let i = 0;
+      i < inputAudioLengthInSecs;
+      i += usableAudioDuration - CROSSFADE_DURATION
+    ) {
+      const startFrameIndex = Math.floor(convertSecsToFrame(i));
+      const endFrameIndex = convertSecsToFrame(i + usableAudioDuration);
+      if (endFrameIndex > inputFrameLength) {
+        isLastChunks = true;
+      }
+
+      // tslint:disable-next-line: variable-name
+      const { f0_hz, loudness_db }: AudioFeatures = await resizeAudioFeatures(
+        normalizedAudioFeatures,
+        startFrameIndex,
+        endFrameIndex,
+        isLastChunks,
+        inputFrameLength
+      );
+
+      // tslint:disable-next-line: variable-name
+      const f0hzTensor = tf.tensor1d(f0_hz, 'float32');
+      // tslint:disable-next-line: variable-name
+      const loudnessTensor = tf.tensor1d(loudness_db, 'float32');
+
+      const result = await this.model.predict({
+        f0_hz: f0hzTensor,
+        loudness_db: loudnessTensor,
+      });
+
+      // apply a loudness modifier here to make some
+      // models louder/softer
+      const resultModified = (result as Tensor).mul(
+        this.settings.postGain || 1
+      );
+      const resultModifiedData = await resultModified.data();
+      audioChunks.push(resultModifiedData);
+
+      resultModified.dispose();
+      (result as Tensor).dispose();
+      f0hzTensor.dispose();
+      loudnessTensor.dispose();
+    }
+
+    // does not require stiching
+    if (inputAudioLengthInSecs <= usableAudioDuration) {
+      audioBuffer = audioChunks[0];
+    } else {
+      const buffers = [];
+      for (let i = 0; i < audioChunks.length; i++) {
+        const ac = audioChunks[i];
+        buffers.push(ac);
+      }
+      audioBuffer = mixAndJoinAudioData(buffers, mixBufferLength);
+    }
+
+    // trim off the extra bits
+    // tslint:disable-next-line: max-line-length
+    const trimmedAudioChannelData: Float32Array = (audioBuffer as Float32Array).slice(
+      0,
+      audioFeatures.originalRecordedBufferLength
+    );
+
+    const audioCtx = new Tone.Context();
+    const trimmedAudioBuffer = arrayBufferToAudioBuffer(
+      audioCtx,
+      trimmedAudioChannelData,
+      MODEL_SAMPLE_RATE
+    );
+    const resampledAudio = await resampleAndMakeMono(
+      trimmedAudioBuffer,
+      OUTPUT_SAMPLE_RATE
+    );
+    const bufferWithReverbData = await addReverb({
+      audioCtx,
+      arrayBuffer: resampledAudio,
+      sampleRate: OUTPUT_SAMPLE_RATE,
+    });
+
+    return bufferWithReverbData;
   }
 }
 
