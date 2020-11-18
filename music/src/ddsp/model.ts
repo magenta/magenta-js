@@ -90,8 +90,8 @@ class DDSP {
       ...settings,
       ...this.settings,
     };
-    console.log('settings', settings);
-    console.log('this.settings', this.settings);
+
+    this.initialized = true;
   }
 
   /**

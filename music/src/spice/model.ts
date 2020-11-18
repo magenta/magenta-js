@@ -48,6 +48,7 @@ class SPICE {
    */
   async initialize() {
     this.spiceModel = await startSpice(this.modelUrl);
+    this.initialized = true;
   }
 
   /**
