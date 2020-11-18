@@ -22,7 +22,7 @@ export interface AudioFeatures {
   originalRecordedBufferLength?: number;
 }
 
-type AudioData = any[] | Float32Array | Float64Array;
+type AudioData = any[]|Float32Array|Float64Array;
 
 type ModelValues = {
   averageMaxLoudness?: number;

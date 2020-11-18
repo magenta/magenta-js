@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 
-import { performance } from '../core/compat/global';
+import {performance} from '../core/compat/global';
 
 /**
  * The different verbosity levels.
  */
 export const enum Level {
-  NONE = 0, // No messages will be logged.
-  WARN = 5, // WARN messages will be logged.
-  INFO = 10, // INFO and WARN messages will be logged.
-  DEBUG = 20, // DEBUG, INFO, and WARN messages will be logged.
+  NONE = 0,    // No messages will be logged.
+  WARN = 5,    // WARN messages will be logged.
+  INFO = 10,   // INFO and WARN messages will be logged.
+  DEBUG = 20,  // DEBUG, INFO, and WARN messages will be logged.
 }
 
 /**
@@ -77,11 +77,7 @@ export function log(msg: string, prefix = 'Magenta.js', level = Level.INFO) {
  * logged if this level is greater than the `verbosity` setting.
  */
 export function logWithDuration(
-  msg: string,
-  startTime: number,
-  prefix = 'Magenta.js',
-  level = Level.INFO
-) {
+    msg: string, startTime: number, prefix = 'Magenta.js', level = Level.INFO) {
   const durationSeconds = (performance.now() - startTime) / 1000;
   log(`${msg} in ${durationSeconds.toPrecision(3)}s`, prefix, level);
 }

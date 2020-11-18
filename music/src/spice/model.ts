@@ -21,11 +21,13 @@
  * Imports.
  */
 import * as tf from '@tensorflow/tfjs';
-import { startSpice, getAudioFeatures } from './spice';
-import { AudioFeatures } from '../ddsp/interfaces';
+
+import {AudioFeatures} from '../ddsp/interfaces';
+
+import {getAudioFeatures, startSpice} from './spice';
 
 const TFHUB_SPICE_MODEL_URL =
-  'https://tfhub.dev/google/tfjs-model/spice/2/default/1';
+    'https://tfhub.dev/google/tfjs-model/spice/2/default/1';
 
 class SPICE {
   private initialized: boolean;
@@ -58,14 +60,10 @@ class SPICE {
    * @returns Audio Features of provided audio buffer
    */
   async getAudioFeatures(
-    inputAudioBuffer: AudioBuffer,
-    confidenceThreshold?: number
-  ): Promise<AudioFeatures> {
+      inputAudioBuffer: AudioBuffer,
+      confidenceThreshold?: number): Promise<AudioFeatures> {
     return await getAudioFeatures(
-      inputAudioBuffer,
-      this.spiceModel,
-      confidenceThreshold
-    );
+        inputAudioBuffer, this.spiceModel, confidenceThreshold);
   }
 
   /**
@@ -87,4 +85,4 @@ class SPICE {
   }
 }
 
-export { SPICE };
+export {SPICE};

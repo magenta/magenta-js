@@ -16,10 +16,12 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
-import { resampleAndMakeMono } from '../core/audio_utils';
-import { computePower } from './loudness_utils';
-import { AudioFeatures } from '../ddsp/interfaces';
-import { getPitches } from './pitch_utils';
+
+import {resampleAndMakeMono} from '../core/audio_utils';
+import {AudioFeatures} from '../ddsp/interfaces';
+
+import {computePower} from './loudness_utils';
+import {getPitches} from './pitch_utils';
 
 // SPICE SPECIFIC CONSTANTS
 export const MODEL_SAMPLE_RATE = 16000;
@@ -42,28 +44,21 @@ async function startSpice(modelUrl: string) {
 }
 
 async function getAudioFeatures(
-  inputAudioBuffer: AudioBuffer,
-  spiceModel: tf.GraphModel,
-  confidenceThreshold?: number
-): Promise<AudioFeatures> {
+    inputAudioBuffer: AudioBuffer, spiceModel: tf.GraphModel,
+    confidenceThreshold?: number): Promise<AudioFeatures> {
   if (tf.getBackend() !== 'webgl') {
     throw new Error('Device does not support webgl.');
   }
 
   // spice requires 16k sample rate and mono,
   // so we need to downsample and make mono
-  const audioData = await resampleAndMakeMono(
-    inputAudioBuffer,
-    MODEL_SAMPLE_RATE
-  );
+  const audioData =
+      await resampleAndMakeMono(inputAudioBuffer, MODEL_SAMPLE_RATE);
   const originalRecordedBufferLength = audioData.length;
 
   const powerTmp = await computePower(audioData);
-  const { pitches, confidences } = await getPitches(
-    spiceModel,
-    audioData,
-    confidenceThreshold
-  );
+  const {pitches, confidences} =
+      await getPitches(spiceModel, audioData, confidenceThreshold);
 
   return {
     f0_hz: pitches,
@@ -73,4 +68,4 @@ async function getAudioFeatures(
   };
 }
 
-export { startSpice, getAudioFeatures };
+export {startSpice, getAudioFeatures};

@@ -62,15 +62,19 @@ export class Metronome {
   public clicksPerQuarter = 1;
   public muted = false;
   // The sound for the regular click.
-  protected loClick = new Tone.MembraneSynth({
-    pitchDecay: 0.008,
-    envelope: { attack: 0.001, decay: 0.3, sustain: 0 },
-  }).toDestination();
+  protected loClick = new Tone
+                          .MembraneSynth({
+                            pitchDecay: 0.008,
+                            envelope: {attack: 0.001, decay: 0.3, sustain: 0},
+                          })
+                          .toDestination();
   // The sound for the click that occurs on a new bar.
-  protected hiClick = new Tone.MembraneSynth({
-    pitchDecay: 0.008,
-    envelope: { attack: 0.001, decay: 0.3, sustain: 0 },
-  }).toDestination();
+  protected hiClick = new Tone
+                          .MembraneSynth({
+                            pitchDecay: 0.008,
+                            envelope: {attack: 0.001, decay: 0.3, sustain: 0},
+                          })
+                          .toDestination();
   protected loClickNote = 'c5';
   protected hiClickNote = 'g5';
   private ticking = false;

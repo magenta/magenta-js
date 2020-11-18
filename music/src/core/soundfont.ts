@@ -21,8 +21,10 @@
  * Imports
  */
 import * as Tone from 'tone';
-import * as constants from './constants';
+
 import {fetch} from '../core/compat/global';
+
+import * as constants from './constants';
 import * as logging from './logging';
 
 /**
@@ -173,7 +175,8 @@ export class Instrument {
               if (info.pitch < this.minPitch || info.pitch > this.maxPitch) {
                 logging.log(
                     `Pitch ${info.pitch} is outside the valid range for ${
-                         this.name}, ignoring.`, 'SoundFont');
+                        this.name}, ignoring.`,
+                    'SoundFont');
                 return false;
               } else {
                 return true;
@@ -215,8 +218,10 @@ export class Instrument {
     const buffer = this.getBuffer(pitch, velocity);
 
     if (duration > this.durationSeconds) {
-      logging.log(`Requested note duration longer than sample duration: ${
-          duration} > ${this.durationSeconds}`, 'SoundFont');
+      logging.log(
+          `Requested note duration longer than sample duration: ${duration} > ${
+              this.durationSeconds}`,
+          'SoundFont');
     }
 
     const source = new Tone
@@ -228,10 +233,12 @@ export class Instrument {
     source.start(startTime, 0, undefined, 1);
     if (!this.percussive && duration < this.durationSeconds) {
       // Fade to the note release.
-      const releaseSource = new Tone.ToneBufferSource({
-        url:buffer, 
-        fadeOut: this.FADE_SECONDS,
-      }).connect(output);
+      const releaseSource = new Tone
+                                .ToneBufferSource({
+                                  url: buffer,
+                                  fadeOut: this.FADE_SECONDS,
+                                })
+                                .connect(output);
       source.stop(startTime + duration + this.FADE_SECONDS);
       releaseSource.start(
           startTime + duration, this.durationSeconds, undefined, 1);
@@ -279,12 +286,13 @@ export class Instrument {
     const buffer = this.getBuffer(pitch, velocity);
 
     // Fade to the note release.
-    const releaseSource = new Tone.ToneBufferSource({
-      url:buffer, 
-      fadeOut: this.FADE_SECONDS,
-    }).connect(output);
-    releaseSource.start(
-        0, this.durationSeconds, undefined, 1);
+    const releaseSource = new Tone
+                              .ToneBufferSource({
+                                url: buffer,
+                                fadeOut: this.FADE_SECONDS,
+                              })
+                              .connect(output);
+    releaseSource.start(0, this.durationSeconds, undefined, 1);
     this.sourceMap.get(pitch).stop(
         (Tone.now() as number) + this.FADE_SECONDS, this.FADE_SECONDS);
     this.sourceMap.delete(pitch);
@@ -303,8 +311,10 @@ export class Instrument {
       throw new Error('Instrument is not initialized.');
     }
     if (pitch < this.minPitch || pitch > this.maxPitch) {
-      logging.log(`Pitch ${pitch} is outside the valid range for ${
-          this.name} (${this.minPitch}-${this.maxPitch})`, 'SoundFont');
+      logging.log(
+          `Pitch ${pitch} is outside the valid range for ${this.name} (${
+              this.minPitch}-${this.maxPitch})`,
+          'SoundFont');
       return;
     }
 
@@ -459,8 +469,10 @@ export class SoundFont {
       const sampleInfo = {pitch: info.pitch, velocity: info.velocity};
       if (!instrumentSamples.has(instrument)) {
         if (!this.instruments.has(instrument)) {
-          logging.log(`No instrument in ${this.name} for: program=${
-              info.program}, isDrum=${info.isDrum}`, 'SoundFont');
+          logging.log(
+              `No instrument in ${this.name} for: program=${
+                  info.program}, isDrum=${info.isDrum}`,
+              'SoundFont');
         } else {
           instrumentSamples.set(instrument, [sampleInfo]);
         }
@@ -495,8 +507,10 @@ export class SoundFont {
       throw new Error('SoundFont is not initialized.');
     }
     if (!this.instruments.has(instrument)) {
-      logging.log(`No instrument in ${this.name} for: program=${
-          program}, isDrum=${isDrum}`, 'SoundFont');
+      logging.log(
+          `No instrument in ${this.name} for: program=${program}, isDrum=${
+              isDrum}`,
+          'SoundFont');
       return;
     }
 
@@ -523,8 +537,10 @@ export class SoundFont {
       throw new Error('SoundFont is not initialized.');
     }
     if (!this.instruments.has(instrument)) {
-      logging.log(`No instrument in ${this.name} for: program=${
-          program}, isDrum=${isDrum}`, 'SoundFont');
+      logging.log(
+          `No instrument in ${this.name} for: program=${program}, isDrum=${
+              isDrum}`,
+          'SoundFont');
       return;
     }
 
@@ -551,8 +567,10 @@ export class SoundFont {
       throw new Error('SoundFont is not initialized.');
     }
     if (!this.instruments.has(instrument)) {
-      logging.log(`No instrument in ${this.name} for: program=${
-          program}, isDrum=${isDrum}`, 'SoundFont');
+      logging.log(
+          `No instrument in ${this.name} for: program=${program}, isDrum=${
+              isDrum}`,
+          'SoundFont');
       return;
     }
 

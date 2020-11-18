@@ -15,34 +15,27 @@
  * limitations under the License.
  */
 
-export const arrayBufferToAudioBuffer = (
-  audioCtx: AudioContext,
-  arrayBuffer: Float32Array,
-  sampleRate: number
-): AudioBuffer => {
-  const newBuffer = audioCtx.createBuffer(1, arrayBuffer.length, sampleRate);
+export const arrayBufferToAudioBuffer =
+    (audioCtx: AudioContext, arrayBuffer: Float32Array, sampleRate: number):
+        AudioBuffer => {
+          const newBuffer =
+              audioCtx.createBuffer(1, arrayBuffer.length, sampleRate);
 
-  newBuffer.copyToChannel(arrayBuffer, 0);
+          newBuffer.copyToChannel(arrayBuffer, 0);
 
-  return newBuffer;
-};
+          return newBuffer;
+        };
 
-export const sliceAudioBuffer = (
-  audioCtx: AudioContext,
-  audioBuffer: AudioBuffer,
-  start = 0,
-  end = audioBuffer.length,
-  sampleRate: number
-): AudioBuffer => {
-  const newBuffer = audioCtx.createBuffer(
-    audioBuffer.numberOfChannels,
-    end - start,
-    sampleRate
-  );
+export const sliceAudioBuffer =
+    (audioCtx: AudioContext, audioBuffer: AudioBuffer, start = 0,
+     end = audioBuffer.length, sampleRate: number): AudioBuffer => {
+      const newBuffer = audioCtx.createBuffer(
+          audioBuffer.numberOfChannels, end - start, sampleRate);
 
-  for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
-    newBuffer.copyToChannel(audioBuffer.getChannelData(i).slice(start, end), i);
-  }
+      for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
+        newBuffer.copyToChannel(
+            audioBuffer.getChannelData(i).slice(start, end), i);
+      }
 
-  return newBuffer;
-};
+      return newBuffer;
+    };

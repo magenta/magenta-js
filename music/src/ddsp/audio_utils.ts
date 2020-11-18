@@ -15,14 +15,12 @@
  * =============================================================================
  */
 
-import { TypedArray } from '@tensorflow/tfjs';
+import {TypedArray} from '@tensorflow/tfjs';
 
 function mixAndJoinAudioData(buffers: TypedArray[], mixLength: number) {
   const finalFrameLength = buffers.reduce(
-    // tslint:disable-next-line: restrict-plus-operands
-    (acc, buffer) => acc + buffer.length,
-    0
-  );
+      // tslint:disable-next-line: restrict-plus-operands
+      (acc, buffer) => acc + buffer.length, 0);
   const mixedAndJoinedBuffer = new Float32Array(finalFrameLength);
 
   const getCrossFadedValue = (a: number, b: number, _ratio: number) => {
@@ -44,19 +42,14 @@ function mixAndJoinAudioData(buffers: TypedArray[], mixLength: number) {
       const nextBuffer = buffers[bufferCount + 1];
       const offset = bufferLengthCount - mixLength;
 
-      for (
-        let i = offset,
-          j = 0,
-          currentBufferCounter = currentBuffer.length - mixLength;
-        i < bufferLengthCount && j < nextBuffer.length;
-        i++, j++, currentBufferCounter++
-      ) {
+      for (let i = offset, j = 0,
+               currentBufferCounter = currentBuffer.length - mixLength;
+           i < bufferLengthCount && j < nextBuffer.length;
+           i++, j++, currentBufferCounter++) {
         const ratioPercentage = (i - offset) / (bufferLengthCount - offset);
         mixedAndJoinedBuffer[i] = getCrossFadedValue(
-          currentBuffer[currentBufferCounter],
-          nextBuffer[j],
-          ratioPercentage
-        );
+            currentBuffer[currentBufferCounter], nextBuffer[j],
+            ratioPercentage);
       }
       mixedAndJoinedBuffer.set(nextBuffer.slice(mixLength), bufferLengthCount);
       bufferLengthCount += nextBuffer.slice(mixLength).length;
@@ -66,4 +59,4 @@ function mixAndJoinAudioData(buffers: TypedArray[], mixLength: number) {
   return mixedAndJoinedBuffer;
 }
 
-export { mixAndJoinAudioData };
+export {mixAndJoinAudioData};

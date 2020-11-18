@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-export const MIN_VRAM = 50; // used for memory check
+export const MIN_VRAM = 50;  // used for memory check
 
 export const LOWEST_LD = -120;
 export const CROSSFADE_DURATION = 1;

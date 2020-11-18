@@ -15,18 +15,14 @@
  * limitations under the License.
  */
 import * as tf from '@tensorflow/tfjs';
-import { hzToMidi } from '../core/audio_utils';
-import {
-  LOWEST_LD,
-  CONF_SMOOTH_SIZE,
-  CONF_THRESHOLD,
-  LD_CONF_REDUCTION,
-  MIN_VRAM,
-} from './constants';
-import { AudioFeatures, ModelValues } from './interfaces';
-import { shiftF0 } from '../spice/pitch_utils';
-import { Tensor3D } from '@tensorflow/tfjs';
-import { MODEL_FRAME_RATE } from '../spice/spice';
+import {Tensor3D} from '@tensorflow/tfjs';
+
+import {hzToMidi} from '../core/audio_utils';
+import {shiftF0} from '../spice/pitch_utils';
+import {MODEL_FRAME_RATE} from '../spice/spice';
+
+import {CONF_SMOOTH_SIZE, CONF_THRESHOLD, LD_CONF_REDUCTION, LOWEST_LD, MIN_VRAM,} from './constants';
+import {AudioFeatures, ModelValues} from './interfaces';
 
 async function memCheck() {
   const bytesPerMB = 1024 * 1024;
@@ -36,15 +32,13 @@ async function memCheck() {
 
   // checking of vram ensures that the device can hold
   // all the models and operations
-  const vramSize = Math.round(
-    (screenSize * DPI * screenResToVRAMFactor) / bytesPerMB
-  );
+  const vramSize =
+      Math.round((screenSize * DPI * screenResToVRAMFactor) / bytesPerMB);
 
   // 50MB limit
   if (!isNaN(vramSize) && vramSize < MIN_VRAM) {
-    throw new Error(
-      `Insufficient memory! Your device has ${vramSize} and recommended memory is ${MIN_VRAM}`
-    );
+    throw new Error(`Insufficient memory! Your device has ${
+        vramSize} and recommended memory is ${MIN_VRAM}`);
   }
 
   // loading a model and then executing it tests if
@@ -69,12 +63,8 @@ export async function getModel(url: string) {
 }
 
 function resizeAudioFeatures(
-  audioFeatures: AudioFeatures,
-  startingFrame: number,
-  endingFrame: number,
-  isLastChunks: boolean,
-  resizedLength: number
-): Promise<AudioFeatures> {
+    audioFeatures: AudioFeatures, startingFrame: number, endingFrame: number,
+    isLastChunks: boolean, resizedLength: number): Promise<AudioFeatures> {
   return new Promise((resolve) => {
     const resizedAudioFeatures = {
       loudness_db: [0],
@@ -87,7 +77,7 @@ function resizeAudioFeatures(
         resizedAudioFeatures.f0_hz[counter] = -1;
       } else {
         resizedAudioFeatures.loudness_db[counter] =
-          audioFeatures.loudness_db[i];
+            audioFeatures.loudness_db[i];
         resizedAudioFeatures.f0_hz[counter] = audioFeatures.f0_hz[i];
       }
       counter += 1;
@@ -119,7 +109,7 @@ async function normalizeAudioFeatures(af: AudioFeatures, model: ModelValues) {
       ldMax.dispose();
       ldDiffMax.dispose();
 
-      return final; //af.loudness_db.add(ldDiffMax)
+      return final;  // af.loudness_db.add(ldDiffMax)
     });
 
     // Further adjust the average loudness above a threshold.
@@ -141,20 +131,15 @@ async function normalizeAudioFeatures(af: AudioFeatures, model: ModelValues) {
       // rescale
       const oldMin = ldClipped.min();
       const subOldMin = ldMean.sub(oldMin);
-      return ldClipped
-        .sub(oldMin)
-        .div(subOldMin)
-        .mul(SELECTED_LD_MEAN - LOWEST_LD)
-        .add(LOWEST_LD);
+      return ldClipped.sub(oldMin)
+          .div(subOldMin)
+          .mul(SELECTED_LD_MEAN - LOWEST_LD)
+          .add(LOWEST_LD);
     });
 
     const reshapedConf = tf.reshape(af.confidences, [-1, 1, 1]);
-    const smoothConf = tf.pool(
-      reshapedConf as Tensor3D,
-      [CONF_SMOOTH_SIZE, 1],
-      'avg',
-      'same'
-    );
+    const smoothConf =
+        tf.pool(reshapedConf as Tensor3D, [CONF_SMOOTH_SIZE, 1], 'avg', 'same');
     const smoothConfReshaped = smoothConf.reshape([-1]);
     const confMask = tf.lessEqual(smoothConfReshaped, CONF_THRESHOLD);
 
@@ -221,7 +206,7 @@ async function normalizeAudioFeatures(af: AudioFeatures, model: ModelValues) {
     confMask.dispose();
   }
 
-  return { f0_hz, loudness_db };
+  return {f0_hz, loudness_db};
 }
 
 function convertSecsToFrame(secs: number) {

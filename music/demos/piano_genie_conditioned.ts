@@ -16,7 +16,7 @@
  */
 
 import * as mm from '../src/index';
-import { CHECKPOINTS_DIR } from './common';
+import {CHECKPOINTS_DIR} from './common';
 
 /*
 In addition to the recommended checkpoints below, there are a number of
@@ -175,32 +175,25 @@ function initModelControls() {
     (genie as mm.PianoGenieChord).setChordFamily(Number(ccf.value));
   };
 
-  const kcfk = document.getElementById(
-    'keysig_chordfamily_keysig'
-  ) as HTMLSelectElement;
-  const kcfcf = document.getElementById(
-    'keysig_chordfamily_chordfamily'
-  ) as HTMLSelectElement;
+  const kcfk =
+      document.getElementById('keysig_chordfamily_keysig') as HTMLSelectElement;
+  const kcfcf = document.getElementById('keysig_chordfamily_chordfamily') as
+      HTMLSelectElement;
   kcfk.onchange = () => {
-    (genie as mm.PianoGenieKeysigChordFamily).setKeySignature(
-      Number(kcfk.value)
-    );
+    (genie as mm.PianoGenieKeysigChordFamily)
+        .setKeySignature(Number(kcfk.value));
   };
   kcfcf.onchange = () => {
-    (genie as mm.PianoGenieKeysigChordFamily).setChordFamily(
-      Number(kcfcf.value)
-    );
+    (genie as mm.PianoGenieKeysigChordFamily)
+        .setChordFamily(Number(kcfcf.value));
   };
 
-  const kck = document.getElementById(
-    'keysig_chord_keysig'
-  ) as HTMLSelectElement;
-  const kccr = document.getElementById(
-    'keysig_chord_chordroot'
-  ) as HTMLSelectElement;
-  const kccf = document.getElementById(
-    'keysig_chord_chordfamily'
-  ) as HTMLSelectElement;
+  const kck =
+      document.getElementById('keysig_chord_keysig') as HTMLSelectElement;
+  const kccr =
+      document.getElementById('keysig_chord_chordroot') as HTMLSelectElement;
+  const kccf =
+      document.getElementById('keysig_chord_chordfamily') as HTMLSelectElement;
   kck.onchange = () => {
     (genie as mm.PianoGenieKeysigChord).setKeySignature(Number(kck.value));
   };

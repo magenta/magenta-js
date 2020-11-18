@@ -16,7 +16,7 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
-export { tf };
+export {tf};
 
 export * from './core';
 export * from './coconet';

@@ -16,15 +16,12 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
-import {
-  CONF_THRESHOLD,
-  PT_SLOPE,
-  PT_OFFSET,
-  PITCH_CONF_JITTER,
-} from './spice';
-import { AudioData } from '../ddsp/interfaces';
-import { midiToHz } from '../core/audio_utils';
-import { Tensor } from '@tensorflow/tfjs';
+import {Tensor} from '@tensorflow/tfjs';
+
+import {midiToHz} from '../core/audio_utils';
+import {AudioData} from '../ddsp/interfaces';
+
+import {CONF_THRESHOLD, PITCH_CONF_JITTER, PT_OFFSET, PT_SLOPE,} from './spice';
 
 function shiftF0(f0Hz: number[], f0OctaveShift = 0.0) {
   return tf.tidy(() => {
@@ -49,7 +46,7 @@ function upsample_linear(buffer: number[], newSampleRateLength: number) {
     }
   }
 
-  //cover missing pitches
+  // cover missing pitches
   let lastPitch = -1;
   for (let i = 0; i < pitchedInput.length; i++) {
     if (pitchedInput[i] !== -1) {
@@ -65,7 +62,7 @@ function upsample_linear(buffer: number[], newSampleRateLength: number) {
       lastPitch = i;
     }
   }
-  //solve trailing -1
+  // solve trailing -1
   for (let i = lastPitch + 1; i < pitchedInput.length; i++) {
     pitchedInput[i] = lastPitch >= 0 ? pitchedInput[i - 1] : 0;
   }
@@ -74,10 +71,8 @@ function upsample_linear(buffer: number[], newSampleRateLength: number) {
 }
 
 function upsample_f0(
-  buffer: number[],
-  newSampleRateLength: number,
-  modelMaxFrameLength: number
-) {
+    buffer: number[], newSampleRateLength: number,
+    modelMaxFrameLength: number) {
   buffer.splice(modelMaxFrameLength);
 
   return upsample_linear(buffer, newSampleRateLength);
@@ -91,10 +86,8 @@ function getPitchHz(modelPitch: number) {
 }
 
 async function getPitches(
-  spiceModel: tf.GraphModel,
-  inputData: AudioData,
-  confidenceThreshold = CONF_THRESHOLD
-) {
+    spiceModel: tf.GraphModel, inputData: AudioData,
+    confidenceThreshold = CONF_THRESHOLD) {
   const SPICE_SAMPLE_RATE = 16000;
   const SPICE_MODEL_MULTIPLE = 512;
   const spicePitchesOutput = [];
@@ -103,8 +96,8 @@ async function getPitches(
 
   const inputTensor = tf.tensor(inputData);
   const inputSampleNum =
-    Math.ceil(audioChannelDataLength / SPICE_MODEL_MULTIPLE) *
-    SPICE_MODEL_MULTIPLE; //always multiple of 512;
+      Math.ceil(audioChannelDataLength / SPICE_MODEL_MULTIPLE) *
+      SPICE_MODEL_MULTIPLE;  // always multiple of 512;
   const fullInputWithPadding = inputTensor.pad([
     [0, inputSampleNum - audioChannelDataLength],
   ]);
@@ -117,10 +110,10 @@ async function getPitches(
   let uncertainties = await (output as Tensor[])[0].data();
   const pitches = await (output as Tensor[])[1].data();
 
-  //spice extracts 1 pitch for every 32ms, so to get duration,
+  // spice extracts 1 pitch for every 32ms, so to get duration,
   // we multiply it by 32
-  //we minus one to offset for the zero
-  //to convert it into seconds, we divide by 1000
+  // we minus one to offset for the zero
+  // to convert it into seconds, we divide by 1000
   if (((pitches.length - 1) * 32) / 1000 === expectedDuration) {
     let lastPitch = 20.0;
 
@@ -145,10 +138,8 @@ async function getPitches(
     const stitchedPitches = new Float32Array(finalPitchesLength);
     uncertainties = new Float32Array(finalPitchesLength);
     for (let i = 0; i < inputSampleNum; i += inputSampleNum / 4) {
-      const partialInput = fullInputWithPadding.slice(
-        [i],
-        [inputSampleNum / 4]
-      );
+      const partialInput =
+          fullInputWithPadding.slice([i], [inputSampleNum / 4]);
       const partialOutput = await spiceModel.execute({
         input_audio_samples: partialInput,
       });
@@ -185,7 +176,7 @@ async function getPitches(
   (output as Tensor[])[1].dispose();
   inputTensor.dispose();
   fullInputWithPadding.dispose();
-  return { pitches: spicePitchesOutput, confidences: allConfidences };
+  return {pitches: spicePitchesOutput, confidences: allConfidences};
 }
 
-export { getPitches, shiftF0, upsample_f0, upsample_linear };
+export {getPitches, shiftF0, upsample_f0, upsample_linear};
