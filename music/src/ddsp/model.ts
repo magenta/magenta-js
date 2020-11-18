@@ -207,16 +207,9 @@ class DDSP {
         f0_hz: f0hzTensor,
         loudness_db: loudnessTensor,
       });
+      const resultData = await (result as Tensor).data();
+      audioChunks.push(resultData);
 
-      // apply a loudness modifier here to make some
-      // models louder/softer
-      const resultModified = (result as Tensor).mul(
-        this.settings.postGain || 1
-      );
-      const resultModifiedData = await resultModified.data();
-      audioChunks.push(resultModifiedData);
-
-      resultModified.dispose();
       (result as Tensor).dispose();
       f0hzTensor.dispose();
       loudnessTensor.dispose();
@@ -241,10 +234,16 @@ class DDSP {
       audioFeatures.originalRecordedBufferLength
     );
 
+    // apply a loudness modifier here to make some
+    // models louder/softer
+    const trimmedACModified = trimmedAudioChannelData.map(
+      (val) => val * (this.settings.postGain || 1)
+    );
+
     const audioCtx = new Tone.Context();
     const trimmedAudioBuffer = arrayBufferToAudioBuffer(
       audioCtx,
-      trimmedAudioChannelData,
+      trimmedACModified,
       MODEL_SAMPLE_RATE
     );
     const resampledAudio = await resampleAndMakeMono(
