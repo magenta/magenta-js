@@ -24,20 +24,30 @@ import * as tf from '@tensorflow/tfjs';
 import { startSpice, getAudioFeatures } from './spice';
 import { AudioFeatures } from '../ddsp/interfaces';
 
+const TFHUB_SPICE_MODEL_URL =
+  'https://tfhub.dev/google/tfjs-model/spice/2/default/1';
+
 class SPICE {
   private initialized: boolean;
+  private modelUrl: string;
   private spiceModel: tf.GraphModel;
 
   /**
    * `SPICE` constructor.
    */
-  constructor() {}
+  constructor(modelUrl?: string) {
+    if (modelUrl) {
+      this.modelUrl = modelUrl;
+    } else {
+      this.modelUrl = TFHUB_SPICE_MODEL_URL;
+    }
+  }
 
   /**
    * Loads variables from the checkpoint and builds the model graph.
    */
   async initialize() {
-    this.spiceModel = await startSpice();
+    this.spiceModel = await startSpice(this.modelUrl);
   }
 
   /**

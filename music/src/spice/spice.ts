@@ -22,7 +22,6 @@ import { AudioFeatures } from '../ddsp/interfaces';
 import { getPitches } from './pitch_utils';
 
 // SPICE SPECIFIC CONSTANTS
-const SPICE_MODEL_URL = 'https://tfhub.dev/google/tfjs-model/spice/2/default/1';
 export const MODEL_SAMPLE_RATE = 16000;
 export const MODEL_FRAME_RATE = 250;
 export const PT_OFFSET = 25.58;
@@ -32,10 +31,10 @@ export const PT_SLOPE = 63.07;
 export const PITCH_CONF_JITTER = 0.002;
 export const CONF_THRESHOLD = 0.7;
 
-async function startSpice() {
+async function startSpice(modelUrl: string) {
   let spiceModel;
 
-  spiceModel = await tf.loadGraphModel(SPICE_MODEL_URL, {
+  spiceModel = await tf.loadGraphModel(modelUrl, {
     fromTFHub: true,
   });
 
