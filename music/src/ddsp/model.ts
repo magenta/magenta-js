@@ -51,9 +51,11 @@ class DDSP {
   /**
    * `DDSP` constructor.
    */
-  constructor(checkpointUrl: string, settings: ModelValues) {
+  constructor(checkpointUrl: string, settings?: ModelValues) {
     this.checkpointUrl = checkpointUrl;
-    this.settings = settings;
+    if (settings) {
+      this.settings = settings;
+    }
   }
 
   /**
@@ -70,7 +72,26 @@ class DDSP {
     tf.env().set('WEBGL_CONV_IM2COL', false);
     tf.env().set('WEBGL_DELETE_TEXTURE_THRESHOLD', 100 * 1024 * 1024);
 
-    this.model = await getModel(this.checkpointUrl);
+    this.model = await getModel(`${this.checkpointUrl}/model.json`);
+
+    let settings;
+    try {
+      settings = await fetch(
+        `${this.checkpointUrl}/settings.json`
+      ).then((res) => res.json());
+    } finally {
+      if (this.settings === null) {
+        throw new Error(
+          'Passing settings is required if you do not have a settings.json file.'
+        );
+      }
+    }
+    this.settings = {
+      ...settings,
+      ...this.settings,
+    };
+    console.log('settings', settings);
+    console.log('this.settings', this.settings);
   }
 
   /**

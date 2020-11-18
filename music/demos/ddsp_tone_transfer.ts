@@ -31,7 +31,7 @@ export const PRESET_MODEL_URL =
 
 export const PRESET_MODELS = {
   [MODEL.VIOLIN]: {
-    checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.VIOLIN}/model.json`,
+    checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.VIOLIN}`,
     settings: {
       averageMaxLoudness: -48.6,
       loudnessThreshold: -100.0,
@@ -42,7 +42,7 @@ export const PRESET_MODELS = {
     },
   },
   [MODEL.TENOR_SAXOPHONE]: {
-    checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.TENOR_SAXOPHONE}/model.json`,
+    checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.TENOR_SAXOPHONE}`,
     settings: {
       averageMaxLoudness: -44.7,
       loudnessThreshold: -100.0,
@@ -53,7 +53,7 @@ export const PRESET_MODELS = {
     },
   },
   [MODEL.TRUMPET]: {
-    checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.TRUMPET}/model.json`,
+    checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.TRUMPET}`,
     settings: {
       averageMaxLoudness: -61.7,
       loudnessThreshold: -100.0,
@@ -64,7 +64,7 @@ export const PRESET_MODELS = {
     },
   },
   [MODEL.FLUTE]: {
-    checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.FLUTE}/model.json`,
+    checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.FLUTE}`,
     settings: {
       averageMaxLoudness: -45.9,
       loudnessThreshold: -100.0,
