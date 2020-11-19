@@ -220,28 +220,28 @@
     "id": "ddsp_flute",
     "model": "DDSPFlute",
     "description": "A flute model for use with DDSP.",
-    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/ddsp/flute/model.json",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/ddsp/flute",
     "size_mb": 3.9
   },
   {
     "id": "ddsp_tenor_saxophone",
     "model": "DDSPTenorSaxophone",
     "description": "A tenor saxophone model for use with DDSP.",
-    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/ddsp/tenor_saxophone/model.json",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/ddsp/tenor_saxophone",
     "size_mb": 3.9
   },
   {
     "id": "ddsp_trumpet",
     "model": "DDSPTrumpet",
     "description": "A trumpet model for use with DDSP.",
-    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/ddsp/trumpet/model.json",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/ddsp/trumpet",
     "size_mb": 3.9
   },
   {
     "id": "ddsp_violin",
     "model": "DDSPViolin",
     "description": "A violin model for use with DDSP.",
-    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/ddsp/violin/model.json",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/ddsp/violin",
     "size_mb": 3.9
   }
 ]

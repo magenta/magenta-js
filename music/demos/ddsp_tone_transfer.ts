@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
+import {AudioFeatures, ModelValues} from '../src/ddsp/interfaces';
 import * as mm from '../src/index';
-import { SPICE } from '../src/index';
-import { AudioFeatures, ModelValues } from '../src/ddsp/interfaces';
+import {SPICE} from '../src/index';
 
 enum MODEL {
   VIOLIN = 'violin',
@@ -27,60 +27,25 @@ enum MODEL {
 }
 
 export const PRESET_MODEL_URL =
-  'https://storage.googleapis.com/magentadata/js/checkpoints/ddsp';
+    'https://storage.googleapis.com/magentadata/js/checkpoints/ddsp';
 
 export const PRESET_MODELS = {
   [MODEL.VIOLIN]: {
     checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.VIOLIN}`,
-    settings: {
-      averageMaxLoudness: -48.6,
-      loudnessThreshold: -100.0,
-      meanLoudness: -68.5,
-      meanPitch: 62.0,
-      postGain: 2,
-      modelMaxFrameLength: 1250,
-    },
   },
   [MODEL.TENOR_SAXOPHONE]: {
     checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.TENOR_SAXOPHONE}`,
-    settings: {
-      averageMaxLoudness: -44.7,
-      loudnessThreshold: -100.0,
-      meanLoudness: -56,
-      meanPitch: 58.9,
-      postGain: 0.9,
-      modelMaxFrameLength: 1250,
-    },
   },
   [MODEL.TRUMPET]: {
     checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.TRUMPET}`,
-    settings: {
-      averageMaxLoudness: -61.7,
-      loudnessThreshold: -100.0,
-      meanLoudness: -72.5,
-      meanPitch: 68.6,
-      postGain: 1.5,
-      modelMaxFrameLength: 1250,
-    },
   },
   [MODEL.FLUTE]: {
     checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.FLUTE}`,
-    settings: {
-      averageMaxLoudness: -45.9,
-      loudnessThreshold: -100.0,
-      meanLoudness: -70.6,
-      meanPitch: 63.2,
-      postGain: 4,
-      modelMaxFrameLength: 1250,
-    },
   },
 };
 
 function floatTo16BitPCM(
-  output: DataView,
-  offset: number,
-  input: Float32Array
-) {
+    output: DataView, offset: number, input: Float32Array) {
   for (let i = 0; i < input.length; i++, offset += 2) {
     const s = Math.max(-1, Math.min(1, input[i]));
     output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
@@ -138,17 +103,16 @@ window.onload = () => {
     spice = new mm.SPICE();
     document.getElementById('initialize').style.display = 'none';
     document.getElementById('spice_initialized').textContent =
-      'Loading SPICE model.';
+        'Loading SPICE model.';
     await spice.initialize();
     document.getElementById('spice_initialized').textContent =
-      'SPICE model is ready.';
+        'SPICE model is ready.';
     audioCtx = new AudioContext();
     document.getElementById('extract_features').style.display = 'block';
   });
 
-  document
-    .getElementById('upload')
-    .addEventListener('change', handleFileUpload);
+  document.getElementById('upload').addEventListener(
+      'change', handleFileUpload);
 
   async function readFileAndProcessAudio(src: string) {
     const audioFile = await fetch(src);
@@ -162,46 +126,34 @@ window.onload = () => {
   function displayButtons() {
     document.getElementById('buttons').style.display = 'block';
 
-    document
-      .getElementById('button_violin')
-      .addEventListener('click', () =>
-        toneTransfer(PRESET_MODELS[MODEL.VIOLIN])
-      );
-    document
-      .getElementById('button_tenor_saxophone')
-      .addEventListener('click', () =>
-        toneTransfer(PRESET_MODELS[MODEL.TENOR_SAXOPHONE])
-      );
-    document
-      .getElementById('button_flute')
-      .addEventListener('click', () =>
-        toneTransfer(PRESET_MODELS[MODEL.FLUTE])
-      );
-    document
-      .getElementById('button_trumpet')
-      .addEventListener('click', () =>
-        toneTransfer(PRESET_MODELS[MODEL.TRUMPET])
-      );
+    document.getElementById('button_violin')
+        .addEventListener(
+            'click', () => toneTransfer(PRESET_MODELS[MODEL.VIOLIN]));
+    document.getElementById('button_tenor_saxophone')
+        .addEventListener(
+            'click', () => toneTransfer(PRESET_MODELS[MODEL.TENOR_SAXOPHONE]));
+    document.getElementById('button_flute')
+        .addEventListener(
+            'click', () => toneTransfer(PRESET_MODELS[MODEL.FLUTE]));
+    document.getElementById('button_trumpet')
+        .addEventListener(
+            'click', () => toneTransfer(PRESET_MODELS[MODEL.TRUMPET]));
   }
 
   async function toneTransfer({
     checkpointUrl,
     settings,
-  }: {
-    checkpointUrl: string;
-    settings: ModelValues;
-  }) {
+  }: {checkpointUrl: string; settings: ModelValues;}) {
     document.getElementById('player').style.display = 'none';
     const ddsp = new mm.DDSP(checkpointUrl, settings);
     await ddsp.initialize();
-    const toneTransferredAudioData: Float32Array = await ddsp.synthesize(
-      audioFeatures
-    );
+    const toneTransferredAudioData: Float32Array =
+        await ddsp.synthesize(audioFeatures);
 
     document.getElementById('player').style.display = 'block';
     const dataview = encodeWAV(toneTransferredAudioData, audioCtx.sampleRate);
-    const blob = new Blob([dataview], { type: 'audio/wav' }),
-      url = window.URL.createObjectURL(blob);
+    const blob = new Blob([dataview], {type: 'audio/wav'}),
+          url = window.URL.createObjectURL(blob);
     (document.getElementById('player') as HTMLAudioElement).src = url;
 
     ddsp.dispose();
@@ -226,11 +178,9 @@ window.onload = () => {
       const file = (e.currentTarget as HTMLInputElement).files[0];
       const reader = new FileReader();
 
-      reader.addEventListener(
-        'load',
-        async () => {
-          // convert uploaded file to blob
-          await fetch(`${reader.result}`)
+      reader.addEventListener('load', async () => {
+        // convert uploaded file to blob
+        await fetch(`${reader.result}`)
             .then((res) => res.blob())
             .then((res) => {
               readFileAndProcessAudio(reader.result as string);
@@ -241,9 +191,7 @@ window.onload = () => {
               };
             })
             .catch((err) => console.log(err));
-        },
-        false
-      );
+      }, false);
 
       if (file) {
         reader.readAsDataURL(file);
