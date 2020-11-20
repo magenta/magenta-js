@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>@magenta/music - v1.20.0</title>
+	<title>@magenta/music - v1.21.0</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="assets/css/main.css">
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="index.html" class="title">@magenta/music - v1.20.0</a>
+					<a href="index.html" class="title">@magenta/music - v1.21.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -52,7 +52,7 @@
 					<a href="globals.html">Globals</a>
 				</li>
 			</ul>
-			<h1>@magenta/music - v1.20.0</h1>
+			<h1>@magenta/music - v1.21.0</h1>
 		</div>
 	</div>
 </header>
@@ -127,8 +127,7 @@
 				</a>
 				<p>The models and the core library is split into smaller ES6 bundles (not ESModules, unfortunately 😢), so that you can use a model independent of the rest of the
 					library. These bundles don&#39;t package the <code>Tone.js</code> or <code>TensorFlow.js</code> dependencies (since
-					there would be a risk of downloading multiple copies on the same page). Here is an example (or
-				<a href="https://codepen.io/adarob/pen/gzwJZL">click here</a> for a CodePen version):</p>
+				there would be a risk of downloading multiple copies on the same page). Here is an abbreviated example:</p>
 				<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">html</span>&gt;</span>
 <span class="hljs-tag">&lt;<span class="hljs-name">head</span>&gt;</span>
   ...
@@ -146,10 +145,14 @@
   <span class="hljs-comment">//...</span>
   <span class="hljs-keyword">const</span> mvae = <span class="hljs-keyword">new</span> music_vae.MusicVAE(<span class="hljs-string">'https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_2bar_small'</span>);
   mvae.initialize().then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
-    model.sample(<span class="hljs-number">1</span>).then(<span class="hljs-function">(<span class="hljs-params">samples</span>) =&gt;</span> player.start(samples[<span class="hljs-number">0</span>]));
+    mvae.sample(<span class="hljs-number">1</span>).then(<span class="hljs-function">(<span class="hljs-params">samples</span>) =&gt;</span> player.start(samples[<span class="hljs-number">0</span>]));
   });
 </span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
 <span class="hljs-tag">&lt;/<span class="hljs-name">html</span>&gt;</span></code></pre>
+				<ul>
+					<li><a href="https://codepen.io/adarob/pen/gzwJZL">click here</a> for a CodePen version</li>
+					<li><a href="https://hello-magenta-one-file.glitch.me/">click here</a> to remix the code on Glitch</li>
+				</ul>
 				<p>We also have an <a href="https://cdn.jsdelivr.net/npm/@magenta/music@%5E1.0.0">ES5 bundle</a> that contains all the models and the core functions, but using in production is not recommended due to its size.</p>
 				<a href="#in-node" id="in-node" style="color: inherit; text-decoration: none;">
 					<h3>In Node</h3>
@@ -474,6 +477,27 @@ self.addEventListener(<span class="hljs-string">'fetch'</span>, e =&gt; {
 						<a href="modules/_core_visualizer_.html">&quot;core/visualizer&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="modules/_ddsp_.html">&quot;ddsp&quot;</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_ddsp_add_reverb_.html">&quot;ddsp/add_<wbr>reverb&quot;</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_ddsp_audio_utils_.html">&quot;ddsp/audio_<wbr>utils&quot;</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_ddsp_buffer_utils_.html">&quot;ddsp/buffer_<wbr>utils&quot;</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_ddsp_constants_.html">&quot;ddsp/constants&quot;</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_ddsp_ddsp_.html">&quot;ddsp/ddsp&quot;</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_ddsp_model_.html">&quot;ddsp/model&quot;</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="modules/_gansynth_.html">&quot;gansynth&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -517,6 +541,18 @@ self.addEventListener(<span class="hljs-string">'fetch'</span>, e =&gt; {
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="modules/_protobuf_.html">&quot;protobuf&quot;</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_spice_loudness_utils_.html">&quot;spice/loudness_<wbr>utils&quot;</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_spice_model_.html">&quot;spice/model&quot;</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_spice_pitch_utils_.html">&quot;spice/pitch_<wbr>utils&quot;</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_spice_spice_.html">&quot;spice/spice&quot;</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="modules/_transcription_.html">&quot;transcription&quot;</a>
@@ -609,4 +645,4 @@ self.addEventListener(<span class="hljs-string">'fetch'</span>, e =&gt; {
 <script src="assets/js/main.js"></script>
 <script>if (location.protocol == 'file:') document.write('<script src="assets/js/search.js"><' + '/script>');</script>
 </body>
-</html><script> const toc = "core coconet music_rnn music_vae piano_genie protobuf transcription gansynth".split(' '); const links = document.querySelectorAll('.tsd-kind-external-module'); for (let i = 0; i < links.length; i++) { const name = links[i].textContent.trim().replace(/"/g, ''); if (toc.indexOf(name) === -1) { links[i].parentNode.removeChild(links[i]); } } </script>
+</html><script> const toc = "core coconet music_rnn music_vae piano_genie protobuf transcription gansynth spice ddsp".split(' '); const links = document.querySelectorAll('.tsd-kind-external-module'); for (let i = 0; i < links.length; i++) { const name = links[i].textContent.trim().replace(/"/g, ''); if (toc.indexOf(name) === -1) { links[i].parentNode.removeChild(links[i]); } } </script>
