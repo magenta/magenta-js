@@ -18,12 +18,14 @@
  * limitations under the License.
  */
 //@ts-ignore
+import * as tf from '@tensorflow/tfjs';
 import * as FFT from 'fft.js';
 import * as ndarray from 'ndarray';
 //@ts-ignore
 import * as resample from 'ndarray-resample';
 
-import { fetch, getOfflineAudioContext, isSafari } from '../core/compat/global';
+import {fetch, getOfflineAudioContext, isSafari} from '../core/compat/global';
+
 import * as logging from './logging';
 
 const SAMPLE_RATE = 16000;
@@ -54,8 +56,8 @@ export interface SpecParams {
  */
 export async function loadAudioFromUrl(url: string): Promise<AudioBuffer> {
   return fetch(url)
-    .then(body => body.arrayBuffer())
-    .then(buffer => offlineCtx.decodeAudioData(buffer));
+      .then((body) => body.arrayBuffer())
+      .then((buffer) => offlineCtx.decodeAudioData(buffer));
 }
 
 /**
@@ -79,11 +81,12 @@ export async function loadAudioFromFile(blob: Blob): Promise<AudioBuffer> {
     };
     fileReader.readAsArrayBuffer(blob);
   });
-  return loadFile.then(arrayBuffer => offlineCtx.decodeAudioData(arrayBuffer));
+  return loadFile.then(
+      (arrayBuffer) => offlineCtx.decodeAudioData(arrayBuffer));
 }
 
 export function melSpectrogram(
-  y: Float32Array, params: SpecParams): Float32Array[] {
+    y: Float32Array, params: SpecParams): Float32Array[] {
   if (!params.power) {
     params.power = 2.0;
   }
@@ -138,7 +141,7 @@ function getMonoAudio(audioBuffer: AudioBuffer) {
   }
   if (audioBuffer.numberOfChannels !== 2) {
     throw Error(
-      `${audioBuffer.numberOfChannels} channel audio is not supported.`);
+        `${audioBuffer.numberOfChannels} channel audio is not supported.`);
   }
   const ch0 = audioBuffer.getChannelData(0);
   const ch1 = audioBuffer.getChannelData(1);
@@ -151,30 +154,33 @@ function getMonoAudio(audioBuffer: AudioBuffer) {
 }
 
 export async function resampleAndMakeMono(
-  audioBuffer: AudioBuffer, targetSr = SAMPLE_RATE) {
+    audioBuffer: AudioBuffer, targetSr = SAMPLE_RATE) {
   if (audioBuffer.sampleRate === targetSr) {
     return getMonoAudio(audioBuffer);
   }
   const sourceSr = audioBuffer.sampleRate;
-  const lengthRes = audioBuffer.length * targetSr / sourceSr;
+  const lengthRes = (audioBuffer.length * targetSr) / sourceSr;
   if (!isSafari) {
-    const bufferSource = offlineCtx.createBufferSource();
+    const _offlineCtx = new OfflineAudioContext(
+        audioBuffer.numberOfChannels, audioBuffer.duration * targetSr,
+        targetSr);
+    const bufferSource = _offlineCtx.createBufferSource();
     bufferSource.buffer = audioBuffer;
-    bufferSource.connect(offlineCtx.destination);
+    bufferSource.connect(_offlineCtx.destination);
     bufferSource.start();
-    return offlineCtx.startRendering().then(
-      (buffer: AudioBuffer) => buffer.getChannelData(0));
+    return _offlineCtx.startRendering().then(
+        (buffer: AudioBuffer) => buffer.getChannelData(0));
   } else {
     // Safari does not support resampling with WebAudio.
     logging.log(
-      'Safari does not support WebAudio resampling, so this may be slow.',
-      'O&F', logging.Level.WARN);
+        'Safari does not support WebAudio resampling, so this may be slow.',
+        'O&F', logging.Level.WARN);
 
     const originalAudio = getMonoAudio(audioBuffer);
     const resampledAudio = new Float32Array(lengthRes);
     resample(
-      ndarray(resampledAudio, [lengthRes]),
-      ndarray(originalAudio, [originalAudio.length]));
+        ndarray(resampledAudio, [lengthRes]),
+        ndarray(originalAudio, [originalAudio.length]));
     return resampledAudio;
   }
 }
@@ -188,8 +194,8 @@ interface MelParams {
 }
 
 function magSpectrogram(
-  stft: Float32Array[], power: number): [Float32Array[], number] {
-  const spec = stft.map(fft => pow(mag(fft), power));
+    stft: Float32Array[], power: number): [Float32Array[], number] {
+  const spec = stft.map((fft) => pow(mag(fft), power));
   const nFft = stft[0].length - 1;
   return [spec, nFft];
 }
@@ -231,7 +237,7 @@ function stft(y: Float32Array, params: SpecParams): Float32Array[] {
 }
 
 function applyWholeFilterbank(
-  spec: Float32Array[], filterbank: Float32Array[]): Float32Array[] {
+    spec: Float32Array[], filterbank: Float32Array[]): Float32Array[] {
   // Apply a point-wise dot product between the array of arrays.
   const out: Float32Array[] = [];
   for (let i = 0; i < spec.length; i++) {
@@ -241,12 +247,12 @@ function applyWholeFilterbank(
 }
 
 function applyFilterbank(
-  mags: Float32Array, filterbank: Float32Array[]): Float32Array {
+    mags: Float32Array, filterbank: Float32Array[]): Float32Array {
   if (mags.length !== filterbank[0].length) {
     throw new Error(
-      `Each entry in filterbank should have dimensions ` +
-      `matching FFT. |mags| = ${mags.length}, ` +
-      `|filterbank[0]| = ${filterbank[0].length}.`);
+        `Each entry in filterbank should have dimensions ` +
+        `matching FFT. |mags| = ${mags.length}, ` +
+        `|filterbank[0]| = ${filterbank[0].length}.`);
   }
 
   // Apply each filter to the whole FFT signal to get one value.
@@ -264,7 +270,7 @@ function applyFilterbank(
 export function applyWindow(buffer: Float32Array, win: Float32Array) {
   if (buffer.length !== win.length) {
     console.error(
-      `Buffer length ${buffer.length} != window length ${win.length}.`);
+        `Buffer length ${buffer.length} != window length ${win.length}.`);
     return null;
   }
 
@@ -286,9 +292,9 @@ export function padCenterToLength(data: Float32Array, length: number) {
   return padConstant(data, [paddingLeft, paddingRight]);
 }
 
-export function padConstant(data: Float32Array, padding: number | number[]) {
+export function padConstant(data: Float32Array, padding: number|number[]) {
   let padLeft, padRight;
-  if (typeof (padding) === 'object') {
+  if (typeof padding === 'object') {
     [padLeft, padRight] = padding;
   } else {
     padLeft = padRight = padding;
@@ -314,11 +320,11 @@ function padReflect(data: Float32Array, padding: number) {
  * according to the params specified.
  */
 export function frame(
-  data: Float32Array, frameLength: number,
-  hopLength: number): Float32Array[] {
+    data: Float32Array, frameLength: number,
+    hopLength: number): Float32Array[] {
   const bufferCount = Math.floor((data.length - frameLength) / hopLength) + 1;
   const buffers = Array.from(
-    { length: bufferCount }, (x, i) => new Float32Array(frameLength));
+      {length: bufferCount}, (x, i) => new Float32Array(frameLength));
   for (let i = 0; i < bufferCount; i++) {
     const ind = i * hopLength;
     const buffer = data.slice(ind, ind + frameLength);
@@ -363,7 +369,7 @@ function createMelFilterbank(params: MelParams): Float32Array[] {
     // How much energy per channel.
     const enorm = 2.0 / (melFreqs[2 + i] - melFreqs[i]);
     // Normalize by that amount.
-    weights[i] = weights[i].map(val => val * enorm);
+    weights[i] = weights[i].map((val) => val * enorm);
   }
 
   return weights;
@@ -380,7 +386,7 @@ function fft(y: Float32Array) {
 export function hannWindow(length: number) {
   const win = new Float32Array(length);
   for (let i = 0; i < length; i++) {
-    win[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (length - 1)));
+    win[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (length - 1)));
   }
   return win;
 }
@@ -407,6 +413,23 @@ function mag(y: Float32Array) {
   return out;
 }
 
+export function midiToHz(notes: number) {
+  let notesTensor = tf.sub(notes, 69.0);
+  notesTensor = tf.div(notesTensor, 12.0);
+  notesTensor = tf.pow(2.0, notesTensor);
+  notesTensor = tf.mul(440.0, notesTensor);
+  return notesTensor;
+}
+
+export async function hzToMidi(frequencies: number[]): Promise<number[]> {
+  let frequenciesTensor: tf.Tensor = tf.sub(
+      tf.div(tf.log(frequencies), tf.log(2)), tf.div(tf.log(440.0), tf.log(2)));
+  frequenciesTensor = tf.mul(12, frequenciesTensor);
+  frequenciesTensor = tf.add(frequenciesTensor, 69);
+  const frequenciesVal = await frequenciesTensor.array();
+  return frequenciesVal as number[];
+}
+
 function hzToMel(hz: number): number {
   return 1125.0 * Math.log(1 + hz / 700.0);
 }
@@ -420,14 +443,14 @@ function calculateFftFreqs(sampleRate: number, nFft: number) {
 }
 
 function calculateMelFreqs(
-  nMels: number, fMin: number, fMax: number): Float32Array {
+    nMels: number, fMin: number, fMax: number): Float32Array {
   const melMin = hzToMel(fMin);
   const melMax = hzToMel(fMax);
 
   // Construct linearly spaced array of nMel intervals, between melMin and
   // melMax.
   const mels = linearSpace(melMin, melMax, nMels);
-  const hzs = mels.map(mel => melToHz(mel));
+  const hzs = mels.map((mel) => melToHz(mel));
   return hzs;
 }
 
@@ -453,7 +476,7 @@ function outerSubtract(arr: Float32Array, arr2: Float32Array): Float32Array[] {
 }
 
 function pow(arr: Float32Array, power: number) {
-  return arr.map(v => Math.pow(v, power));
+  return arr.map((v) => Math.pow(v, power));
 }
 
 function max(arr: Float32Array) {

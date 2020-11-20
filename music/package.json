@@ -8,14 +8,15 @@
   "jsdelivr": "dist/magentamusic.js",
   "unpkg": "dist/magentamusic.js",
   "dependencies": {
-    "@tensorflow/tfjs": "^1.1.2",
+    "@tensorflow/tfjs": "^2.7.0",
+    "@tensorflow/tfjs-backend-webgl": "^2.7.0",
     "@tonejs/midi": "^2.0.15",
     "fft.js": "^4.0.3",
     "ndarray-resample": "^1.0.1",
     "protobufjs": "^6.8.6",
     "staffrender": "^0.2.1",
     "tonal": "^2.0.0",
-    "tone": "^13.8.21"
+    "tone": "^14.7.58"
   },
   "devDependencies": {
     "@types/clone": "^0.1.30",

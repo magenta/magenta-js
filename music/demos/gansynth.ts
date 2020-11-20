@@ -24,7 +24,7 @@ import {CHECKPOINTS_DIR, writeMemory, writeTimer} from './common';
 
 const GANSYNTH_CHECKPOINT = `${CHECKPOINTS_DIR}/gansynth/acoustic_only`;
 
-mm.logging.verbosity = mm.logging.Level.DEBUG;
+mm.logging.setVerbosity(mm.logging.Level.DEBUG);
 
 async function plotSpectra(
     spectra: tf.Tensor4D, canvasId: string, channel: number) {
@@ -60,13 +60,13 @@ async function runGANSynth() {
 
   const audioBuffer = Tone.context.createBuffer(1, T * SR, SR);
   audioBuffer.copyToChannel(audio, 0, 0);
-  const options = {'url': audioBuffer, 'loop': true, 'volume': -24};
-  const player = new Tone.Player(options).toMaster();
+  const options = {url: audioBuffer, loop: true, volume: -24};
+  const player = new Tone.Player(options).toDestination();
 
   // Plotting.
   await Promise.all([
     plotSpectra(specgrams, 'mag-canvas', 0),
-    plotSpectra(specgrams, 'ifreq-canvas', 1)
+    plotSpectra(specgrams, 'ifreq-canvas', 1),
   ]);
 
   // Connect GUI actions.
@@ -83,11 +83,7 @@ async function runGANSynth() {
 }
 
 try {
-  Promise
-      .all([
-        runGANSynth(),
-      ])
-      .then(() => writeMemory(tf.memory().numBytes));
+  Promise.all([runGANSynth()]).then(() => writeMemory(tf.memory().numBytes));
 } catch (err) {
   console.error(err);
 }

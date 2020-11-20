@@ -15,8 +15,7 @@ export const baseConfig = {
   },
   plugins: [
     new webpack.NormalModuleReplacementPlugin(
-      /\/core\/compat\/global\.ts/,
-      path.resolve(__dirname, '../src/core/compat/global_browser.ts')
-    ),
+        /\/core\/compat\/global\.ts/,
+        path.resolve(__dirname, '../src/core/compat/global_browser.ts')),
   ]
 };

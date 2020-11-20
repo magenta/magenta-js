@@ -20,12 +20,11 @@
 // @ts-ignore
 import * as Tone from 'tone';
 
+import {performance} from '../core/compat/global';
 import {NoteSequence} from '../protobuf/index';
 
 import {DEFAULT_QUARTERS_PER_MINUTE} from './constants';
-
 import * as logging from './logging';
-import {performance} from '../core/compat/global';
 
 /**
  * An interface for providing configurable properties to a Recorder.
@@ -90,15 +89,15 @@ export class Recorder {
   private loClick = new Tone
                         .MembraneSynth({
                           pitchDecay: 0.008,
-                          envelope: {attack: 0.001, decay: 0.3, sustain: 0}
+                          envelope: {attack: 0.001, decay: 0.3, sustain: 0},
                         })
-                        .toMaster();
+                        .toDestination();
   private hiClick = new Tone
                         .MembraneSynth({
                           pitchDecay: 0.008,
-                          envelope: {attack: 0.001, decay: 0.3, sustain: 0}
+                          envelope: {attack: 0.001, decay: 0.3, sustain: 0},
                         })
-                        .toMaster();
+                        .toDestination();
   // tslint:disable-next-line:no-any
   private clickLoop: any;
 
@@ -115,7 +114,7 @@ export class Recorder {
       playClick: config.playClick,
       qpm: config.qpm || DEFAULT_QUARTERS_PER_MINUTE,
       playCountIn: config.playCountIn,
-      startRecordingAtFirstNote: config.startRecordingAtFirstNote || false
+      startRecordingAtFirstNote: config.startRecordingAtFirstNote || false,
     };
 
     this.callbackObject = callbackObject;
@@ -336,7 +335,7 @@ export class Recorder {
 
     const cmd = event.data[0] >> 4;
     const pitch = event.data[1];
-    const velocity = (event.data.length > 2) ? event.data[2] : 1;
+    const velocity = event.data.length > 2 ? event.data[2] : 1;
     const device = event.srcElement;
 
     // Some MIDI controllers don't send a separate NOTE_OFF command.

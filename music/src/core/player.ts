@@ -22,13 +22,13 @@
 // @ts-ignore
 import * as Tone from 'tone';
 
+import {performance} from '../core/compat/global';
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import {sequences} from '.';
 import * as constants from './constants';
 import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
 import * as soundfont from './soundfont';
-import {performance} from '../core/compat/global';
 
 function compareQuantizedNotes(a: NoteSequence.INote, b: NoteSequence.INote) {
   if (a.quantizedStartStep < b.quantizedStartStep) {
@@ -105,7 +105,7 @@ export abstract class BasePlayer {
    */
   private makeClickSequence(seq: INoteSequence): INoteSequence {
     const clickSeq = sequences.clone(seq);
-    const sixteenthEnds = clickSeq.notes.map(n => n.quantizedEndStep);
+    const sixteenthEnds = clickSeq.notes.map((n) => n.quantizedEndStep);
     const lastSixteenth = Math.max(...sixteenthEnds);
     for (let i = 0; i < lastSixteenth; i += 4) {
       const click: NoteSequence.INote = {
@@ -113,7 +113,7 @@ export abstract class BasePlayer {
                               constants.HI_CLICK_PITCH,
         quantizedStartStep: i,
         isDrum: true,
-        quantizedEndStep: i + 1
+        quantizedEndStep: i + 1,
       };
       clickSeq.notes.push(click);
     }
@@ -151,7 +151,7 @@ export abstract class BasePlayer {
     }
     if (Tone.Transport.state !== 'stopped') {
       throw new Error(
-        'Cannot start playback while `Tone.Transport` is in use.');
+          'Cannot start playback while `Tone.Transport` is in use.');
     }
 
     this.resumeContext();
@@ -188,7 +188,7 @@ export abstract class BasePlayer {
           this.callbackObject.run(n, t);
         }, t);
       }
-    }, seq.notes.map(n => [n.startTime, n]));
+    }, seq.notes.map((n) => [n.startTime, n]));
     this.currentPart = thisPart;
 
     if (this.desiredQPM) {
@@ -198,7 +198,7 @@ export abstract class BasePlayer {
     if (Tone.Transport.state !== 'started') {
       Tone.Transport.start();
     }
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       this.scheduledStop = Tone.Transport.schedule(() => {
         this.stop();
         resolve();
@@ -283,25 +283,25 @@ export abstract class BasePlayer {
 class DrumKit {
   private static instance: DrumKit;
   private DRUM_PITCH_TO_CLASS = new Map<number, number>();
-  private kick = new Tone.MembraneSynth().toMaster();
+  private kick = new Tone.MembraneSynth().toDestination();
   private tomLow = new Tone
                        .MembraneSynth({
                          pitchDecay: 0.008,
-                         envelope: {attack: 0.01, decay: 0.5, sustain: 0}
+                         envelope: {attack: 0.01, decay: 0.5, sustain: 0},
                        })
-                       .toMaster();
+                       .toDestination();
   private tomMid = new Tone
                        .MembraneSynth({
                          pitchDecay: 0.008,
-                         envelope: {attack: 0.01, decay: 0.5, sustain: 0}
+                         envelope: {attack: 0.01, decay: 0.5, sustain: 0},
                        })
-                       .toMaster();
+                       .toDestination();
   private tomHigh = new Tone
                         .MembraneSynth({
                           pitchDecay: 0.008,
-                          envelope: {attack: 0.01, decay: 0.5, sustain: 0}
+                          envelope: {attack: 0.01, decay: 0.5, sustain: 0},
                         })
-                        .toMaster();
+                        .toDestination();
   private closedHihat =
       new Tone
           .MetalSynth({
@@ -310,9 +310,9 @@ class DrumKit {
             harmonicity: 5.1,
             modulationIndex: 32,
             resonance: 4000,
-            octaves: 1
+            octaves: 1,
           })
-          .toMaster();
+          .toDestination();
   private openHihat =
       new Tone
           .MetalSynth({
@@ -321,10 +321,10 @@ class DrumKit {
             harmonicity: 5.1,
             modulationIndex: 32,
             resonance: 4000,
-            octaves: 1
+            octaves: 1,
           })
-          .toMaster();
-  private ride = new Tone.MetalSynth().toMaster();
+          .toDestination();
+  private ride = new Tone.MetalSynth().toDestination();
   private crash = new Tone
                       .MetalSynth({
                         frequency: 300,
@@ -332,28 +332,28 @@ class DrumKit {
                         harmonicity: 5.1,
                         modulationIndex: 64,
                         resonance: 4000,
-                        octaves: 1.5
+                        octaves: 1.5,
                       })
-                      .toMaster();
+                      .toDestination();
   private snare =
       new Tone
           .NoiseSynth({
             noise: {type: 'white'},
-            envelope: {attack: 0.005, decay: 0.05, sustain: 0.1, release: 0.4}
+            envelope: {attack: 0.005, decay: 0.05, sustain: 0.1, release: 0.4},
           })
-          .toMaster();
+          .toDestination();
   private loClick = new Tone
                         .MembraneSynth({
                           pitchDecay: 0.008,
-                          envelope: {attack: 0.001, decay: 0.3, sustain: 0}
+                          envelope: {attack: 0.001, decay: 0.3, sustain: 0},
                         })
-                        .toMaster();
+                        .toDestination();
   private hiClick = new Tone
                         .MembraneSynth({
                           pitchDecay: 0.008,
-                          envelope: {attack: 0.001, decay: 0.3, sustain: 0}
+                          envelope: {attack: 0.001, decay: 0.3, sustain: 0},
                         })
-                        .toMaster();
+                        .toDestination();
   private pitchPlayers = [
     (time: number, velocity = 1) =>
         this.kick.triggerAttackRelease('C2', '8n', time, velocity),
@@ -376,11 +376,12 @@ class DrumKit {
     (time: number, velocity = 0.5) =>
         this.loClick.triggerAttack('G5', time, velocity),
     (time: number, velocity = 0.5) =>
-        this.hiClick.triggerAttack('C6', time, velocity)
+        this.hiClick.triggerAttack('C6', time, velocity),
   ];
 
   private constructor() {
-    for (let c = 0; c < DEFAULT_DRUM_PITCH_CLASSES.length; ++c) {  // class
+    for (let c = 0; c < DEFAULT_DRUM_PITCH_CLASSES.length; ++c) {
+      // class
       DEFAULT_DRUM_PITCH_CLASSES[c].forEach((p) => {
         this.DRUM_PITCH_TO_CLASS.set(p, c);
       });
@@ -409,10 +410,14 @@ class DrumKit {
 export class Player extends BasePlayer {
   private drumKit = DrumKit.getInstance();
 
-  private bassSynth =
-      new Tone.Synth({volume: 5, oscillator: {type: 'triangle'}}).toMaster();
+  private bassSynth = new Tone
+                          .Synth({
+                            volume: 5,
+                            oscillator: {type: 'triangle'},
+                          })
+                          .toDestination();
 
-  private polySynth = new Tone.PolySynth(10).toMaster();
+  private polySynth = new Tone.PolySynth().toDestination();
 
   /**
    * The Tone module being used.
@@ -428,7 +433,7 @@ export class Player extends BasePlayer {
     if (note.isDrum) {
       this.drumKit.playNote(note.pitch, time, velocity);
     } else {
-      const freq = new Tone.Frequency(note.pitch, 'midi');
+      const freq = Tone.Frequency(note.pitch, 'midi').toFrequency();
       const dur = note.endTime - note.startTime;
       this.getSynth(note.instrument, note.program)
           .triggerAttackRelease(freq, dur, time, velocity);
@@ -475,9 +480,9 @@ export class SoundFontPlayer extends BasePlayer {
 
   constructor(
       soundFontURL: string, output = Tone.Master,
-      programOutputs?: Map<number, any>,      // tslint:disable-line:no-any
-      drumOutputs?: Map<number, any>,         // tslint:disable-line:no-any
-      callbackObject?: BasePlayerCallback) {  // tslint:disable-line:no-any
+      programOutputs?: Map<number, any>,  // tslint:disable-line:no-any
+      drumOutputs?: Map<number, any>,     // tslint:disable-line:no-any
+      callbackObject?: BasePlayerCallback) {
     super(false, callbackObject);
     this.soundFont = new soundfont.SoundFont(soundFontURL);
     this.output = output;
@@ -495,7 +500,7 @@ export class SoundFontPlayer extends BasePlayer {
                         pitch: note.pitch,
                         velocity: note.velocity,
                         program: note.program || 0,
-                        isDrum: note.isDrum || false
+                        isDrum: note.isDrum || false,
                       })));
   }
 
@@ -724,8 +729,7 @@ export class MIDIPlayer extends BasePlayer {
     const outputs = this.outputs ? this.outputs : this.availableOutputs;
     for (let i = 0; i < outputs.length; i++) {
       this.sendMessageToOutput(outputs[i], msgOn);
-      this.sendMessageToOutput(
-          outputs[i], msgOff, performance.now() + length);
+      this.sendMessageToOutput(outputs[i], msgOff, performance.now() + length);
     }
   }
 

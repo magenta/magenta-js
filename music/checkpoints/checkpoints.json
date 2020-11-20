@@ -215,5 +215,33 @@
     "description": "A unidirectional piano transcription model. Quantized to 2-byte weights.",
     "url": "https://storage.googleapis.com/magentadata/js/checkpoints/transcription/onsets_frames_uni_q2",
     "size_mb": 30
+  },
+  {
+    "id": "ddsp_flute",
+    "model": "DDSPFlute",
+    "description": "A flute model for use with DDSP.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/ddsp/flute",
+    "size_mb": 3.9
+  },
+  {
+    "id": "ddsp_tenor_saxophone",
+    "model": "DDSPTenorSaxophone",
+    "description": "A tenor saxophone model for use with DDSP.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/ddsp/tenor_saxophone",
+    "size_mb": 3.9
+  },
+  {
+    "id": "ddsp_trumpet",
+    "model": "DDSPTrumpet",
+    "description": "A trumpet model for use with DDSP.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/ddsp/trumpet",
+    "size_mb": 3.9
+  },
+  {
+    "id": "ddsp_violin",
+    "model": "DDSPViolin",
+    "description": "A violin model for use with DDSP.",
+    "url": "https://storage.googleapis.com/magentadata/js/checkpoints/ddsp/violin",
+    "size_mb": 3.9
   }
 ]

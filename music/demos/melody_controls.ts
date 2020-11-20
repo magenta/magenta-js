@@ -24,7 +24,7 @@ import {performance} from '../src/core/compat/global';
 import {CHECKPOINTS_DIR, MEL_TEAPOT, MEL_TWINKLE} from './common';
 import {writeMemory, writeNoteSeqs, writeTimer} from './common';
 
-mm.logging.verbosity = mm.logging.Level.DEBUG;
+mm.logging.setVerbosity(mm.logging.Level.DEBUG);
 
 const MEL_CONTROLS_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_controls`;
 const MEL_RHYTHM_CKPT = `${CHECKPOINTS_DIR}/music_vae/mel_rhythm`;

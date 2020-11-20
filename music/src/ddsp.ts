@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2018 Google Inc. All Rights Reserved.
+ * Copyright 2020 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,16 +15,4 @@
  * =============================================================================
  */
 
-import * as tf from '@tensorflow/tfjs';
-export {tf};
-
-export * from './core';
-export * from './coconet';
-export * from './music_rnn';
-export * from './music_vae';
-export * from './piano_genie';
-export * from './protobuf';
-export * from './transcription';
-export * from './gansynth';
-export * from './spice';
-export * from './ddsp';
+export * from './ddsp/index';

@@ -16,7 +16,7 @@
  */
 
 import * as mm from '../src/index';
-import { CHECKPOINTS_DIR } from './common';
+import {CHECKPOINTS_DIR} from './common';
 
 /*
 In addition to the recommended checkpoints below, there are a number of
@@ -74,23 +74,30 @@ keysig_chord
 const GENIE_DIR = `${CHECKPOINTS_DIR}/piano_genie/model`;
 const GENIE_CHECKPOINTS: Array<[string, string, string]> = [
   [
-    'No conditioning', 'dt_only',
-    `${GENIE_DIR}/epiano/stp_iq_auto_contour_dt_166006`],
+    'No conditioning',
+    'dt_only',
+    `${GENIE_DIR}/epiano/stp_iq_auto_contour_dt_166006`,
+  ],
+  ['Key signature', 'keysig', `${GENIE_DIR}/maestro/keysig/enc1_kp05_159962`],
+  ['Chord', 'chord', `${GENIE_DIR}/maestro/chord/enc1_kp05_153966`],
   [
-    'Key signature', 'keysig',
-    `${GENIE_DIR}/maestro/keysig/enc1_kp05_159962`],
+    'Key signature and chord family',
+    'keysig_chordfamily',
+    `${GENIE_DIR}/maestro/keysig_chordfamily/enc1_kp05_172469`,
+  ],
   [
-    'Chord', 'chord',
-    `${GENIE_DIR}/maestro/chord/enc1_kp05_153966`],
-  [
-    'Key signature and chord family', 'keysig_chordfamily',
-    `${GENIE_DIR}/maestro/keysig_chordfamily/enc1_kp05_172469`],
-  [
-    'Key signature and chord', 'keysig_chord',
-    `${GENIE_DIR}/maestro/keysig_chord/enc1_kp05_159786`],
+    'Key signature and chord',
+    'keysig_chord',
+    `${GENIE_DIR}/maestro/keysig_chord/enc1_kp05_159786`,
+  ],
 ];
 const COND_TYPES = [
-  'dt_only', 'keysig', 'chord', 'keysig_chordfamily', 'keysig_chord'];
+  'dt_only',
+  'keysig',
+  'chord',
+  'keysig_chordfamily',
+  'keysig_chord',
+];
 
 const NUM_BUTTONS = 8;
 const LOWEST_PIANO_KEY_MIDI_NOTE = 21;
@@ -168,25 +175,25 @@ function initModelControls() {
     (genie as mm.PianoGenieChord).setChordFamily(Number(ccf.value));
   };
 
-  const kcfk = document.getElementById(
-    'keysig_chordfamily_keysig') as HTMLSelectElement;
-  const kcfcf = document.getElementById(
-    'keysig_chordfamily_chordfamily') as HTMLSelectElement;
+  const kcfk =
+      document.getElementById('keysig_chordfamily_keysig') as HTMLSelectElement;
+  const kcfcf = document.getElementById('keysig_chordfamily_chordfamily') as
+      HTMLSelectElement;
   kcfk.onchange = () => {
-    (genie as mm.PianoGenieKeysigChordFamily).setKeySignature(
-      Number(kcfk.value));
+    (genie as mm.PianoGenieKeysigChordFamily)
+        .setKeySignature(Number(kcfk.value));
   };
   kcfcf.onchange = () => {
-    (genie as mm.PianoGenieKeysigChordFamily).setChordFamily(
-      Number(kcfcf.value));
+    (genie as mm.PianoGenieKeysigChordFamily)
+        .setChordFamily(Number(kcfcf.value));
   };
 
-  const kck = document.getElementById(
-    'keysig_chord_keysig') as HTMLSelectElement;
-  const kccr = document.getElementById(
-    'keysig_chord_chordroot') as HTMLSelectElement;
-  const kccf = document.getElementById(
-    'keysig_chord_chordfamily') as HTMLSelectElement;
+  const kck =
+      document.getElementById('keysig_chord_keysig') as HTMLSelectElement;
+  const kccr =
+      document.getElementById('keysig_chord_chordroot') as HTMLSelectElement;
+  const kccf =
+      document.getElementById('keysig_chord_chordfamily') as HTMLSelectElement;
   kck.onchange = () => {
     (genie as mm.PianoGenieKeysigChord).setKeySignature(Number(kck.value));
   };
@@ -217,7 +224,7 @@ function initModelSelector() {
 function initGlobalControlsAndAudio() {
   const heldButtonToMidiNote = new Map<number, number>();
   const tone = mm.Player.tone;
-  const synth = new tone.PolySynth(NUM_BUTTONS, tone.FMSynth).toMaster();
+  const synth = new tone.PolySynth(tone.FMSynth).toDestination();
 
   // Bind keyboard controls
   document.onkeydown = (evt: KeyboardEvent) => {
@@ -237,7 +244,7 @@ function initGlobalControlsAndAudio() {
       const output = genie.next(button, temperature);
       const note = output + LOWEST_PIANO_KEY_MIDI_NOTE;
 
-      synth.triggerAttack(tone.Frequency(note, 'midi'));
+      synth.triggerAttack(tone.Frequency(note, 'midi').toFrequency());
       heldButtonToMidiNote.set(button, note);
     }
   };
@@ -252,7 +259,7 @@ function initGlobalControlsAndAudio() {
       if (heldButtonToMidiNote.has(button)) {
         const note = heldButtonToMidiNote.get(button);
 
-        synth.triggerRelease(tone.Frequency(note, 'midi'));
+        synth.triggerRelease(tone.Frequency(note, 'midi').toFrequency());
         heldButtonToMidiNote.delete(button);
       }
     }

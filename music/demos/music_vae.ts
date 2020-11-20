@@ -25,7 +25,7 @@ import {CHECKPOINTS_DIR, TRIO_EXAMPLE, writeMemory} from './common';
 import {DRUM_SEQS, MEL_A_QUARTERS, MEL_TEAPOT, MEL_TWINKLE} from './common';
 import {writeNoteSeqs, writeTimer} from './common';
 
-mm.logging.verbosity = mm.logging.Level.DEBUG;
+mm.logging.setVerbosity(mm.logging.Level.DEBUG);
 
 const DRUMS_CKPT = `${CHECKPOINTS_DIR}/music_vae/drums_2bar_hikl_small`;
 const DRUMS_NADE_CKPT = `${CHECKPOINTS_DIR}/music_vae/drums_2bar_nade_9_q2`;
