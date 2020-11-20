@@ -130,8 +130,8 @@ class DDSP {
 
     const {f0_hz, loudness_db, confidences} = audioFeatures;
 
-    // we need to upsample pitches because spice
-    // gives back something that is smaller
+    // We need to upsample pitches because spice
+    // gives back something that is smaller.
     const upsampledPitches = upsample_f0(
         f0_hz, loudness_db.length, this.settings.modelMaxFrameLength);
     const upsampledConfidences = upsample_f0(
@@ -145,8 +145,8 @@ class DDSP {
         },
         this.settings);
 
-    // we have to process the audio in chunks according
-    // to the model max frame length
+    // We have to process the audio in chunks according
+    // to the model max frame length.
     // eg. if we have a 10s input and a 5s model, we'll have
     // to splice our input into 2, process it twice, and then stitch it
     // stitching the inputs require a linear mask to prevent an audible blip
@@ -191,7 +191,7 @@ class DDSP {
       loudnessTensor.dispose();
     }
 
-    // does not require stiching
+    // Does not require stiching.
     if (inputAudioLengthInSecs <= usableAudioDuration) {
       audioBuffer = audioChunks[0];
     } else {
@@ -203,14 +203,14 @@ class DDSP {
       audioBuffer = mixAndJoinAudioData(buffers, mixBufferLength);
     }
 
-    // trim off the extra bits
+    // Trim off the extra bits.
     // tslint:disable-next-line: max-line-length
     const trimmedAudioChannelData: Float32Array =
         (audioBuffer as Float32Array)
             .slice(0, audioFeatures.originalRecordedBufferLength);
 
-    // apply a loudness modifier here to make some
-    // models louder/softer
+    // Apply a loudness modifier here to make some
+    // models louder/softer.
     const trimmedACModified = trimmedAudioChannelData.map(
         (val) => val * (this.settings.postGain || 1));
 

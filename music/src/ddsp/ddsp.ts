@@ -30,20 +30,17 @@ async function memCheck() {
   const screenSize = window.screen.availWidth * window.screen.availHeight;
   const DPI = window.devicePixelRatio;
 
-  // checking of vram ensures that the device can hold
-  // all the models and operations
+  // Checking of vram ensures that the device can hold
+  // all the models and operations.
   const vramSize =
       Math.round((screenSize * DPI * screenResToVRAMFactor) / bytesPerMB);
 
-  // 50MB limit
   if (!isNaN(vramSize) && vramSize < MIN_VRAM) {
     throw new Error(`Insufficient memory! Your device has ${
         vramSize} and recommended memory is ${MIN_VRAM}`);
   }
 
-  // loading a model and then executing it tests if
-  // the device can hold the texture size needed by the model
-  // load the biggest model and test it
+  // Check if the browser supports the WebGL Engine.
   try {
     await tf.ready();
 

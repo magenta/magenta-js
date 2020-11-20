@@ -26,23 +26,8 @@ enum MODEL {
   FLUTE = 'flute',
 }
 
-export const PRESET_MODEL_URL =
+const PRESET_MODEL_URL =
     'https://storage.googleapis.com/magentadata/js/checkpoints/ddsp';
-
-export const PRESET_MODELS = {
-  [MODEL.VIOLIN]: {
-    checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.VIOLIN}`,
-  },
-  [MODEL.TENOR_SAXOPHONE]: {
-    checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.TENOR_SAXOPHONE}`,
-  },
-  [MODEL.TRUMPET]: {
-    checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.TRUMPET}`,
-  },
-  [MODEL.FLUTE]: {
-    checkpointUrl: `${PRESET_MODEL_URL}/${MODEL.FLUTE}`,
-  },
-};
 
 function floatTo16BitPCM(
     output: DataView, offset: number, input: Float32Array) {
@@ -128,22 +113,24 @@ window.onload = () => {
 
     document.getElementById('button_violin')
         .addEventListener(
-            'click', () => toneTransfer(PRESET_MODELS[MODEL.VIOLIN]));
+            'click', () => toneTransfer(`${PRESET_MODEL_URL}/${MODEL.VIOLIN}`));
     document.getElementById('button_tenor_saxophone')
         .addEventListener(
-            'click', () => toneTransfer(PRESET_MODELS[MODEL.TENOR_SAXOPHONE]));
+            'click',
+            () => toneTransfer(`${PRESET_MODEL_URL}/${MODEL.TENOR_SAXOPHONE}`));
     document.getElementById('button_flute')
         .addEventListener(
-            'click', () => toneTransfer(PRESET_MODELS[MODEL.FLUTE]));
+            'click', () => toneTransfer(`${PRESET_MODEL_URL}/${MODEL.FLUTE}`));
     document.getElementById('button_trumpet')
         .addEventListener(
-            'click', () => toneTransfer(PRESET_MODELS[MODEL.TRUMPET]));
+            'click',
+            () => toneTransfer(`${PRESET_MODEL_URL}/${MODEL.TRUMPET}`));
   }
 
-  async function toneTransfer({
-    checkpointUrl,
-    settings,
-  }: {checkpointUrl: string; settings: ModelValues;}) {
+  async function toneTransfer(
+      checkpointUrl: string,
+      settings?: ModelValues,
+  ) {
     document.getElementById('player').style.display = 'none';
     const ddsp = new mm.DDSP(checkpointUrl, settings);
     await ddsp.initialize();

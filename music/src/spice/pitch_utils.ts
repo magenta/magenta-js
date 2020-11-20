@@ -46,7 +46,7 @@ function upsample_linear(buffer: number[], newSampleRateLength: number) {
     }
   }
 
-  // cover missing pitches
+  // Cover missing pitches.
   let lastPitch = -1;
   for (let i = 0; i < pitchedInput.length; i++) {
     if (pitchedInput[i] !== -1) {
@@ -62,7 +62,7 @@ function upsample_linear(buffer: number[], newSampleRateLength: number) {
       lastPitch = i;
     }
   }
-  // solve trailing -1
+  // Solve trailing -1.
   for (let i = lastPitch + 1; i < pitchedInput.length; i++) {
     pitchedInput[i] = lastPitch >= 0 ? pitchedInput[i - 1] : 0;
   }
@@ -103,17 +103,17 @@ async function getPitches(
   ]);
   const expectedDuration = fullInputWithPadding.size / SPICE_SAMPLE_RATE;
 
-  // determine if slicing is needed
+  // Determine if slicing is needed.
   const output = await spiceModel.execute({
     input_audio_samples: fullInputWithPadding,
   });
   let uncertainties = await (output as Tensor[])[0].data();
   const pitches = await (output as Tensor[])[1].data();
 
-  // spice extracts 1 pitch for every 32ms, so to get duration,
-  // we multiply it by 32
-  // we minus one to offset for the zero
-  // to convert it into seconds, we divide by 1000
+  // Spice extracts 1 pitch for every 32ms, so to get duration,
+  // we multiply it by 32.
+  // We minus one to offset for the zero.
+  // To convert it into seconds, we divide by 1000.
   if (((pitches.length - 1) * 32) / 1000 === expectedDuration) {
     let lastPitch = 20.0;
 
@@ -133,7 +133,7 @@ async function getPitches(
       }
     }
   } else {
-    // we try splicing it into 4 parts to run spice again, then combine it all
+    // We try splicing it into 4 parts to run spice again, then combine it all.
     const finalPitchesLength = inputSampleNum / SPICE_MODEL_MULTIPLE + 1;
     const stitchedPitches = new Float32Array(finalPitchesLength);
     uncertainties = new Float32Array(finalPitchesLength);

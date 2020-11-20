@@ -483,7 +483,6 @@ export class SoundFontPlayer extends BasePlayer {
       programOutputs?: Map<number, any>,  // tslint:disable-line:no-any
       drumOutputs?: Map<number, any>,     // tslint:disable-line:no-any
       callbackObject?: BasePlayerCallback) {
-    // tslint:disable-line:no-any
     super(false, callbackObject);
     this.soundFont = new soundfont.SoundFont(soundFontURL);
     this.output = output;
