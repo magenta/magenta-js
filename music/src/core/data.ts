@@ -606,7 +606,7 @@ export class TrioConverter extends DataConverter {
 
   async toNoteSequence(
       th: tf.Tensor2D, stepsPerQuarter?: number, qpm?: number) {
-    const ohs = tf.split(
+    const ohs: tf.Tensor2D[] = tf.split(
         th,
         [
           this.melConverter.depth, this.bassConverter.depth,

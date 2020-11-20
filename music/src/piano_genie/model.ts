@@ -303,7 +303,7 @@ class PianoGenieBase {
     // Compute logits and sample.
     const [finalState, output]: [LSTMState, number] = tf.tidy(() => {
       // Project feats array through RNN input matrix.
-      let rnnInput = tf.matMul(
+      let rnnInput: tf.Tensor2D = tf.matMul(
         tf.expandDims(rnnInput1d, 0) as tf.Tensor2D,
         this.modelVars[
         'phero_model/decoder/rnn_input/dense/kernel'] as tf.Tensor2D);

@@ -230,7 +230,7 @@ class HierarchicalEncoder extends Encoder {
 
       for (let level = 0; level < this.baseEncoders.length; ++level) {
         const levelSteps = this.numSteps[level];
-        const splitInputs = tf.split(inputs, levelSteps, 1);
+        const splitInputs: tf.Tensor3D[] = tf.split(inputs, levelSteps, 1);
         const embeddings: tf.Tensor2D[] = [];
         for (let step = 0; step < levelSteps; ++step) {
           embeddings.push(this.baseEncoders[level].encode(
@@ -262,7 +262,7 @@ function initLstmCells(
   const lstmCells: tf.LSTMCellFunc[] = [];
   const c: tf.Tensor2D[] = [];
   const h: tf.Tensor2D[] = [];
-  const initialStates =
+  const initialStates: tf.Tensor2D[] =
       tf.split(dense(zToInitStateVars, z).tanh(), 2 * lstmCellVars.length, 1);
   for (let i = 0; i < lstmCellVars.length; ++i) {
     const lv = lstmCellVars[i];
@@ -622,7 +622,7 @@ class ConductorDecoder extends Decoder {
       let initialInput: tf.Tensor2D[] =
           new Array(this.splitDecoder.numDecoders).fill(undefined);
       const dummyInput: tf.Tensor2D = tf.zeros([batchSize, 1]);
-      const splitControls =
+      const splitControls: tf.Tensor2D[] | undefined =
           controls ? tf.split(controls, this.numSteps) : undefined;
       for (let i = 0; i < this.numSteps; ++i) {
         [lstmCell.c, lstmCell.h] =
@@ -1263,7 +1263,8 @@ class MusicVAE {
     const encodedChordProgression = this.dataConverter.SEGMENTED_BY_TRACK ?
         tf.concat2d(
             [
-              this.chordEncoder.encode(constants.NO_CHORD).expandDims(0),
+              this.chordEncoder.encode(constants.NO_CHORD)
+                .expandDims(0) as tf.Tensor2D,
               this.chordEncoder.encodeProgression(
                   chordProgression, numChordSteps - 1)
             ],
@@ -1302,8 +1303,10 @@ class MusicVAE {
       // depthwise.
       const inputsAndControls: tf.Tensor3D[] = [inputTensors];
       if (controlTensor) {
-        inputsAndControls.push(tf.tile(
-            tf.expandDims(controlTensor, 0), [inputTensors.shape[0], 1, 1]));
+        const tiles = tf.tile(
+          tf.expandDims(controlTensor, 0),
+            [inputTensors.shape[0], 1, 1]) as tf.Tensor3D;
+        inputsAndControls.push(tiles);
       }
       const inputTensorsWithControls = tf.concat3d(inputsAndControls, 2);
 
