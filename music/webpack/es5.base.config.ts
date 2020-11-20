@@ -6,7 +6,7 @@ export const baseConfig = {
     rules: [{
       test: /\.ts$/,
       exclude: /node_modules/,
-      use: {loader: 'ts-loader', options: {configFile: 'tsconfig.es6.json'}}
+      use: {loader: 'ts-loader', options: {configFile: 'tsconfig.es5.json'}}
     }],
   },
   node: {fs: 'empty'},
@@ -15,8 +15,7 @@ export const baseConfig = {
   },
   plugins: [
     new webpack.NormalModuleReplacementPlugin(
-      /\/core\/compat\/global\.ts/,
-      path.resolve(__dirname, '../src/core/compat/global_browser.ts')
-    ),
+        /\/core\/compat\/global\.ts/,
+        path.resolve(__dirname, '../src/core/compat/global_browser.ts')),
   ]
 };
