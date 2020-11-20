@@ -320,7 +320,7 @@ export class MusicRNN {
     inputs = inputs.toFloat();
     const samples: tf.Tensor1D[] = [];
     const probs: tf.Tensor1D[] = [];
-    const splitInputs = tf.split(inputs.toFloat(), length);
+    const splitInputs: tf.Tensor2D[] = tf.split(inputs.toFloat(), length);
     const splitControls =
         controls ? tf.split(controls, controls.shape[0]) : undefined;
     const splitAuxInputs =
@@ -362,7 +362,7 @@ export class MusicRNN {
       if (splitAuxInputs) {
         tensors.push(splitAuxInputs[i]);
       }
-      nextInput = tf.concat(tensors, 1);
+      nextInput = tf.concat(tensors, 1) as tf.Tensor2D;
 
       if (this.attentionWrapper) {
         const wrapperOutput =
