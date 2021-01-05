@@ -20,7 +20,7 @@ Complete API documentation is available [here](https://magenta.github.io/magenta
   - [MidiMe](#midime)
   - [Piano Genie](#piano-genie)
   - [GANSynth](#gansynth)
-  - [SPICE] (#spice)
+  - [SPICE](#spice)
   - [DDSP](#ddsp)
 - [Model Checkpoints](#model-checkpoints)
   - [Pre-trained hosted checkpoints](#pre-trained-hosted-checkpoints)
