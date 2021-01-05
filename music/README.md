@@ -30,6 +30,7 @@ Complete API documentation is available [here](https://magenta.github.io/magenta
   - [Use with TypeScript](#use-with-typescript)
 
 ## Getting started
+
 If you want to get hands-on with Magenta, we've put together a small
 [interactive tutorial](https://hello-magenta.glitch.me/) that takes you through
 generating a small melody in the browser using a Machine Learning model.
@@ -48,35 +49,39 @@ more complete list is available on the [Magenta site](https://magenta.tensorflow
 You can also try our [hosted demos](https://magenta.github.io/magenta-js/music/demos) for each model and have a look at their [code](./demos).
 
 ## Usage
+
 There are several ways to get `@magenta/music` in your JavaScript project,
 either in the browser, or in Node:
 
 ### In the browser
+
 The models and the core library is split into smaller ES6 bundles (not ESModules, unfortunately 😢), so that you can use a model independent of the rest of the
 library. These bundles don't package the `Tone.js` or `TensorFlow.js` dependencies (since
 there would be a risk of downloading multiple copies on the same page). Here is an abbreviated example:
 
 ```html
 <html>
-<head>
-  ...
-  <!-- You need to bring your own Tone.js for the player, and tfjs for the model -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/13.8.21/Tone.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/1.2.8/tf.min.js"></script>
-  <!-- Core library, since we're going to use a player -->
-  <script src="https://cdn.jsdelivr.net/npm/@magenta/music@^1.0.0/es6/core.js"></script>
-  <!--Model we want to use -->
-  <script src="https://cdn.jsdelivr.net/npm/@magenta/music@^1.0.0/es6/music_vae.js"></script>
-</head>
-<script>
-  // Each bundle exports a global object with the name of the bundle.
-  const player = new core.Player();
-  //...
-  const mvae = new music_vae.MusicVAE('https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_2bar_small');
-  mvae.initialize().then(() => {
-    mvae.sample(1).then((samples) => player.start(samples[0]));
-  });
-</script>
+  <head>
+    ...
+    <!-- You need to bring your own Tone.js for the player, and tfjs for the model -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.58/Tone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/2.7.0/tf.min.js"></script>
+    <!-- Core library, since we're going to use a player -->
+    <script src="https://cdn.jsdelivr.net/npm/@magenta/music@^1.0.0/es6/core.js"></script>
+    <!--Model we want to use -->
+    <script src="https://cdn.jsdelivr.net/npm/@magenta/music@^1.0.0/es6/music_vae.js"></script>
+  </head>
+  <script>
+    // Each bundle exports a global object with the name of the bundle.
+    const player = new core.Player();
+    //...
+    const mvae = new music_vae.MusicVAE(
+      "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_2bar_small"
+    );
+    mvae.initialize().then(() => {
+      mvae.sample(1).then((samples) => player.start(samples[0]));
+    });
+  </script>
 </html>
 ```
 
@@ -95,22 +100,23 @@ The node-specific bundles (that don't transpile the CommonJS modules) are under
 `@magenta/music/node`. For example:
 
 ```js
-const mvae = require('@magenta/music/node/music_vae');
-const core = require('@magenta/music/node/core');
+const mvae = require("@magenta/music/node/music_vae");
+const core = require("@magenta/music/node/core");
 
 // Your code:
-const model = new mvae.MusicVAE('/path/to/checkpoint');
+const model = new mvae.MusicVAE("/path/to/checkpoint");
 const player = new core.Player();
 model
   .initialize()
   .then(() => model.sample(1))
-  .then(samples => {
+  .then((samples) => {
     player.resumeContext();
-    player.start(samples[0])
+    player.start(samples[0]);
   });
 ```
 
 #### Example Commands
+
 `yarn install` to install dependencies.
 
 `yarn test` to run tests.
@@ -119,7 +125,7 @@ model
 
 `yarn run-demos` to build and serve the demos, with live reload.
 
-*(Note: the default behavior is to build/watch all demos - specific demos can be built by passing a comma-separated list of specific demo names as follows: `yarn run-demos --demos=transcription,visualizer`)*
+_(Note: the default behavior is to build/watch all demos - specific demos can be built by passing a comma-separated list of specific demo names as follows: `yarn run-demos --demos=transcription,visualizer`)_
 
 ## Supported Models
 
@@ -145,6 +151,7 @@ missing, or feel free to submit a Pull Request!
 **⭐️Demo:** [Endless Trios](https://goo.gl/magenta/endless-trios)
 
 ### MidiMe
+
 [MidiMe](https://g.co/magenta/pianogenie) allows you to personalize a pre-trained
 MusicVAE model by quickly training a smaller model directly in the browser,
 with very little user data.
@@ -152,20 +159,24 @@ with very little user data.
 **⭐️Demo:** [MidiMe](https://midi-me.glitch.me/)
 
 ### Piano Genie
+
 [Piano Genie](https://g.co/magenta/pianogenie) is a VQ-VAE model that maps 8-button input to a full 88-key piano in real time.
 
 **⭐️Demo:** [Piano Genie](https://goo.gl/magenta/piano-genie)
 
 ### GANSynth
+
 [GANSynth](https://magenta.tensorflow.org/gansynth) is a method for generating high-fidelity audio with Generative Adversarial Networks (GANs).
 
 **⭐️Demo:** [GANHarp](https://ganharp.ctpt.co/) by [Counterpoint](https://ctpt.co/).
 
 ## Model Checkpoints
+
 Most `@magenta/music` models (with the exception of MidiMe) do not support training in the browser
 (because they require a large amount of data, which would take an incredibly long time), and they use weights from a model trained with the Python-based [Magenta models][magenta-models]. We are also making available our own hosted pre-trained checkpoints.
 
 ### Pre-trained hosted checkpoints
+
 Several pre-trained checkpoints for all of our models are available and hosted on GCS. The full list is available in [this table](https://github.com/tensorflow/magenta-js/blob/master/music/checkpoints/README.md#table) and can be accessed programmatically via a JSON index [here](https://goo.gl/magenta/js-checkpoints-json).
 
 ### Your own checkpoints
@@ -203,20 +214,22 @@ The model configuration should be placed in a JSON file named `config.json` in t
 This configuration corresponds to a chord-conditioned melody MusicRNN model.
 
 ## SoundFonts
+
 There are several SoundFonts that you can use with the `mm.SoundFontPlayer`,
 for more realistic sounding instruments:
 
-| Instrument  | URL | License  |
-|---|---|---|
-| Piano | [salamander](https://storage.googleapis.com/magentadata/js/soundfonts/salamander) |Audio samples from [Salamander Grand Piano](https://archive.org/details/SalamanderGrandPianoV3)|
-| Multi | [sgm_plus](https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus) | Audio samples based on [SGM](https://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01) with modifications by [John Nebauer](https://sites.google.com/site/soundfonts4u/)|
-| Percussion | [jazz_kit](https://storage.googleapis.com/magentadata/js/soundfonts/jazz_kit) | Audio samples from [Jazz Kit (EXS)](https://musical-artifacts.com/artifacts/686) by Lithalean |
+| Instrument | URL                                                                               | License                                                                                                                                                                                        |
+| ---------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Piano      | [salamander](https://storage.googleapis.com/magentadata/js/soundfonts/salamander) | Audio samples from [Salamander Grand Piano](https://archive.org/details/SalamanderGrandPianoV3)                                                                                                |
+| Multi      | [sgm_plus](https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus)     | Audio samples based on [SGM](https://www.polyphone-soundfonts.com/en/files/27-instrument-sets/256-sgm-v2-01) with modifications by [John Nebauer](https://sites.google.com/site/soundfonts4u/) |
+| Percussion | [jazz_kit](https://storage.googleapis.com/magentadata/js/soundfonts/jazz_kit)     | Audio samples from [Jazz Kit (EXS)](https://musical-artifacts.com/artifacts/686) by Lithalean                                                                                                  |
 
 You can explore what each of them sounds like on this [demo page](https://magenta.github.io/magenta-js/music/demos/player.html#soundfonts).
 
 ## How Tos
 
 ### Use with a WebWorker
+
 A [WebWorker](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers) is a script that can run in the background,
 separate from the main UI thread. This allows you to perform expensive computatios (like
 model inference, etc) without blocking any of the user interaction (like animations, scrolling, etc).
@@ -228,10 +241,10 @@ from the actual inference code, but we don't currently have an example of this).
 Here is an example of using a MusicVAE model in a WebWorker. In your main `app.js`,
 
 ```js
-const worker = new Worker('worker.js');
+const worker = new Worker("worker.js");
 
 // Tell the worker to use the model
-worker.postMessage({sequence: someNoteSequence});
+worker.postMessage({ sequence: someNoteSequence });
 
 // Worker returns the result.
 worker.onmessage = (event) => {
@@ -247,26 +260,35 @@ worker.onmessage = (event) => {
 In your worker, `worker.js`,
 
 ```js
-importScripts("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.4.0/dist/tf.min.js");
-importScripts("https://cdn.jsdelivr.net/npm/@magenta/music@^1.12.0/es6/core.js");
-importScripts("https://cdn.jsdelivr.net/npm/@magenta/music@^1.12.0/es6/music_vae.js");
+importScripts(
+  "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.4.0/dist/tf.min.js"
+);
+importScripts(
+  "https://cdn.jsdelivr.net/npm/@magenta/music@^1.12.0/es6/core.js"
+);
+importScripts(
+  "https://cdn.jsdelivr.net/npm/@magenta/music@^1.12.0/es6/music_vae.js"
+);
 
-const mvae = new music_vae.MusicVAE('https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_2bar_small');
+const mvae = new music_vae.MusicVAE(
+  "https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_2bar_small"
+);
 
 // Main script asks for work.
 self.onmessage = async (e) => {
   if (!mvae.isInitialized()) {
     await mvae.initialize();
-    postMessage({fyi: 'model initialized'});
+    postMessage({ fyi: "model initialized" });
   }
 
   const output = await mvae.sample(1);
   // Send main script the result.
-  postMessage({sample: output[0]});
+  postMessage({ sample: output[0] });
 };
 ```
 
 ### Use with a ServiceWorker
+
 A [ServiceWorker](https://developers.google.com/web/fundamentals/primers/service-workers) is a script that your browser runs in the background, separate from a web page. In particular, ServiceWorkers allow
 you to provide offline interactions by controlling what data your browser caches (like soundfont files,
 model checkpoint chunks). For a full example, check out the [Piano Genie PWA](https://piano-genie-pwa.glitch.me/) code, that lets you install Piano Genie as a PWA app, and use it entirely offline.
@@ -277,62 +299,65 @@ don't want to download it every time you refresh the page.
 The main things to look out for are the [manifest.json](https://glitch.com/edit/#!/piano-genie-pwa?path=manifest.json:2:12) and the [meta tags](https://glitch.com/edit/#!/piano-genie-pwa?path=index.html:15:4). Then, in your main script, load the service worker:
 
 ```js
-  // Force HTTP.
-  if (location.protocol == 'http:') location.protocol = 'https:';
-  if('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('Service Worker registered', reg))
-      .catch(err => console.error('Service Worker **not** registered', err));
-  }
-  else {
-    console.warn('Service Worker not supported in this browser');
-  }
+// Force HTTP.
+if (location.protocol == "http:") location.protocol = "https:";
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register("/sw.js")
+    .then((reg) => console.log("Service Worker registered", reg))
+    .catch((err) => console.error("Service Worker **not** registered", err));
+} else {
+  console.warn("Service Worker not supported in this browser");
+}
 ```
 
 In `sw.js`,
 
 ```js
-self.addEventListener('install', e => {
+self.addEventListener("install", (e) => {
   e.waitUntil(
-  (async function() {
-    const cache = await caches.open("your-app-name-assets");
+    (async function () {
+      const cache = await caches.open("your-app-name-assets");
 
-    const resources = [
-      // Static files you want to cache.
-      "index.html",
-      "style.css",
-      "script.js",
-      "helpers.js",
-      "manifest.json",
-      // A built, minified bundle of dependencies.
-      "magenta-1.7.0.js",
-      // SoundFont manifest.
-      'https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus/soundfont.json',
-      // Model checkpoint.
-      "https://storage.googleapis.com/magentadata/js/checkpoints/piano_genie/model/epiano/stp_iq_auto_contour_dt_166006/weights_manifest.json",
-      "https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus/acoustic_grand_piano/instrument.json",
-      // List here all the actual shards of your model.
-      "https://storage.googleapis.com/magentadata/js/checkpoints/piano_genie/model/epiano/stp_iq_auto_contour_dt_166006/group1-shard1of1"
-    ];
-    // The actual SoundFont files you will use.
-    for (let i = 21; i < 105; i++) {
-      resources.push(`https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus/acoustic_grand_piano/p${i}_v79.mp3`)
-    }
+      const resources = [
+        // Static files you want to cache.
+        "index.html",
+        "style.css",
+        "script.js",
+        "helpers.js",
+        "manifest.json",
+        // A built, minified bundle of dependencies.
+        "magenta-1.7.0.js",
+        // SoundFont manifest.
+        "https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus/soundfont.json",
+        // Model checkpoint.
+        "https://storage.googleapis.com/magentadata/js/checkpoints/piano_genie/model/epiano/stp_iq_auto_contour_dt_166006/weights_manifest.json",
+        "https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus/acoustic_grand_piano/instrument.json",
+        // List here all the actual shards of your model.
+        "https://storage.googleapis.com/magentadata/js/checkpoints/piano_genie/model/epiano/stp_iq_auto_contour_dt_166006/group1-shard1of1",
+      ];
+      // The actual SoundFont files you will use.
+      for (let i = 21; i < 105; i++) {
+        resources.push(
+          `https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus/acoustic_grand_piano/p${i}_v79.mp3`
+        );
+      }
 
-    // Cache all of these
-    const local = cache.addAll(resources);
-    await Promise.all([local]);
-  })()
+      // Cache all of these
+      const local = cache.addAll(resources);
+      await Promise.all([local]);
+    })()
   );
 });
 
-self.addEventListener('fetch', e => {
+self.addEventListener("fetch", (e) => {
   // If the resource is cached, send it.
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)))
+  e.respondWith(caches.match(e.request).then((r) => r || fetch(e.request)));
 });
 ```
 
 ### Use with TypeScript
+
 If you want to use `@magenta/music` as a dependency in a TypeScript project,
 here is a [sample project](https://github.com/notwaldorf/example-magenta-in-ts/)
 that does that and uses webpack to build and transpile it.
