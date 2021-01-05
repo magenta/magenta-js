@@ -20,6 +20,8 @@ Complete API documentation is available [here](https://magenta.github.io/magenta
   - [MidiMe](#midime)
   - [Piano Genie](#piano-genie)
   - [GANSynth](#gansynth)
+  - [SPICE](#spice)
+  - [DDSP](#ddsp)
 - [Model Checkpoints](#model-checkpoints)
   - [Pre-trained hosted checkpoints](#pre-trained-hosted-checkpoints)
   - [Your own checkpoints](#your-own-checkpoints)
@@ -37,6 +39,7 @@ generating a small melody in the browser using a Machine Learning model.
 Here are some examples of applications that have been built with `@magenta/music`. A
 more complete list is available on the [Magenta site](https://magenta.tensorflow.org/demos).
 
+- [Tone Transfer](http://g.co/tonetransfer) by [AIUX x Magenta](http://g.co/tonetransfer)
 - [Fruit Genie](https://magenta.tensorflow.org/fruitgenie) by [Deeplocal](https://www.deeplocal.com/)
 - [Drumbot](https://drumbot.glitch.me) by [Monica Dinculescu](https://github.com/notwaldorf)
 - [Neural Drum Machine](https://goo.gl/magenta/neuraldrum) by [Tero Parviainen](https://github.com/teropa)
@@ -160,6 +163,13 @@ with very little user data.
 [GANSynth](https://magenta.tensorflow.org/gansynth) is a method for generating high-fidelity audio with Generative Adversarial Networks (GANs).
 
 **⭐️Demo:** [GANHarp](https://ganharp.ctpt.co/) by [Counterpoint](https://ctpt.co/).
+### SPICE
+SPICE is a wrapper method for extracting pitches from audio using the [SPICE](https://tfhub.dev/google/tfjs-model/spice/2/default/1) model.
+
+### DDSP
+[DDSP](https://magenta.tensorflow.org/ddsp) is a method for synthesizing audio into other instruments.
+
+**⭐️Demo:** [Tone Transfer](https://g.co/tonetransfer) by [AIUX x Magenta](https://g.co/tonetransfer).
 
 ## Model Checkpoints
 Most `@magenta/music` models (with the exception of MidiMe) do not support training in the browser
