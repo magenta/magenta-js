@@ -61,7 +61,7 @@ there would be a risk of downloading multiple copies on the same page). Here is 
 <head>
   ...
   <!-- You need to bring your own Tone.js for the player, and tfjs for the model -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/13.8.21/Tone.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.58/Tone.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/1.2.8/tf.min.js"></script>
   <!-- Core library, since we're going to use a player -->
   <script src="https://cdn.jsdelivr.net/npm/@magenta/music@^1.0.0/es6/core.js"></script>
