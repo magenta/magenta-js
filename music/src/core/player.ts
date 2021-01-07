@@ -195,7 +195,7 @@ export abstract class BasePlayer {
     if (this.desiredQPM) {
       Tone.Transport.bpm.value = this.desiredQPM;
     }
-    this.currentPart.start(undefined, offset);
+    this.currentPart.start(undefined /* immediately */, offset);
     if (Tone.Transport.state !== 'started') {
       Tone.Transport.start();
     }
