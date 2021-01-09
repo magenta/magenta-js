@@ -25,10 +25,9 @@ import * as Tone from 'tone';
 import {performance} from '../core/compat/global';
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
-import {sequences} from '.';
 import * as constants from './constants';
-import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
 import * as soundfont from './soundfont';
+import * as sequences from './sequences';
 
 function compareQuantizedNotes(a: NoteSequence.INote, b: NoteSequence.INote) {
   if (a.quantizedStartStep < b.quantizedStartStep) {
@@ -278,7 +277,7 @@ export abstract class BasePlayer {
 
 /**
  * A singleton drum kit synthesizer with 9 pitch classed defined by
- * data.DEFAULT_DRUM_PITCH_CLASSES.
+ * constants.DEFAULT_DRUM_PITCH_CLASSES.
  */
 class DrumKit {
   private static instance: DrumKit;
@@ -380,9 +379,9 @@ class DrumKit {
   ];
 
   private constructor() {
-    for (let c = 0; c < DEFAULT_DRUM_PITCH_CLASSES.length; ++c) {
+    for (let c = 0; c < constants.DEFAULT_DRUM_PITCH_CLASSES.length; ++c) {
       // class
-      DEFAULT_DRUM_PITCH_CLASSES[c].forEach((p) => {
+      constants.DEFAULT_DRUM_PITCH_CLASSES[c].forEach((p) => {
         this.DRUM_PITCH_TO_CLASS.set(p, c);
       });
     }
