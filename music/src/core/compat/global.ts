@@ -24,7 +24,7 @@
  * with the `global_browser` and `global_node` files that export proper code
  * for the various global functions/objects
  */
-const isNode = typeof global !== 'undefined';
+const isNode = typeof global !== 'undefined' && typeof global.process !== 'undefined';
 
 export interface Performance {
   now(): number;
