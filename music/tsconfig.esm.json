@@ -4,7 +4,7 @@
     "removeComments": true,
     "preserveConstEnums": true,
     "declaration": true,
-    "allowJs": true,
+    "allowJs": false,
     "sourceMap": true,
     "types": ["webmidi", "d3", "node"],
     "outDir": "./esm",
