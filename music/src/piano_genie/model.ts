@@ -214,7 +214,6 @@ class PianoGenieBase {
     return this.nextWithCustomSamplingFunction(button, sampleFunc);
   }
 
-
   /**
    * Given a button number and a list of piano keys, evaluates Piano Genie
    * to produce a piano key note {0, 1, ..., 87}. Use this if you would like to
