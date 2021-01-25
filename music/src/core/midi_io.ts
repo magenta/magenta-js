@@ -112,7 +112,7 @@ export function midiToSequenceProto(
       const time: number = controlChange.time;
       const controlValue: number = controlChange.value;
 
-      ns.controlChanges.push(NoteSequence.IControlChange.create({
+      ns.controlChanges.push(NoteSequence.ControlChange.create({
         time,
         controlNumber,
         controlValue,
