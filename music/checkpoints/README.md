@@ -69,3 +69,7 @@ drum_kit_rnn|MusicRNN|A 9-class onehot DrumsRNN model. Converted from http://dow
 chord_pitches_improv|MusicRNN|A 36-class onehot melody ImprovRNN model conditioned on chords as described at https://github.com/tensorflow/magenta/tree/master/magenta/models/improv_rnn#chord-pitches-improv. Converted from http://download.magenta.tensorflow.org/models/chord_pitches_improv.mag.|5.6|[Right Click to Copy](https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/chord_pitches_improv)
 onsets_frames_uni|OnsetsAndFrames|A unidirectional piano transcription model.|60|[Right Click to Copy](https://storage.googleapis.com/magentadata/js/checkpoints/transcription/onsets_frames_uni)
 onsets_frames_uni_q2|OnsetsAndFrames|A unidirectional piano transcription model. Quantized to 2-byte weights.|30|[Right Click to Copy](https://storage.googleapis.com/magentadata/js/checkpoints/transcription/onsets_frames_uni_q2)
+ddsp_flute|DDSPFlute|A flute model for use with DDSP.|3.9|[Right Click to Copy](https://storage.googleapis.com/magentadata/js/checkpoints/ddsp/flute)
+ddsp_tenor_saxophone|DDSPTenorSaxophone|A tenor saxophone model for use with DDSP.|3.9|[Right Click to Copy](https://storage.googleapis.com/magentadata/js/checkpoints/ddsp/tenor_saxophone)
+ddsp_trumpet|DDSPTrumpet|A trumpet model for use with DDSP.|3.9|[Right Click to Copy](https://storage.googleapis.com/magentadata/js/checkpoints/ddsp/trumpet)
+ddsp_violin|DDSPViolin|A violin model for use with DDSP.|3.9|[Right Click to Copy](https://storage.googleapis.com/magentadata/js/checkpoints/ddsp/violin)
