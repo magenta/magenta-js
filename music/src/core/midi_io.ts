@@ -105,16 +105,17 @@ export function midiToSequenceProto(
     }
 
     const controlChangeValues = Object.values(track.controlChanges);
-    const flattenedControlChangeValues = [].concat.apply([], controlChangeValues);
+    const flattenedControlChangeValues = [].concat.apply(
+      [], controlChangeValues);
     for (const controlChange of flattenedControlChangeValues) {
       const controlNumber: number = controlChange.number;
       const time: number = controlChange.time;
       const controlValue: number = controlChange.value;
 
       ns.controlChanges.push(NoteSequence.IControlChange.create({
-        time: time,
-        controlNumber: controlNumber,
-        controlValue: controlValue,
+        time,
+        controlNumber,
+        controlValue,
         instrument: instrumentNumber,
         program: track.instrument.number,
         isDrum: track.instrument.percussion
