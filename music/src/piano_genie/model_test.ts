@@ -96,7 +96,7 @@ test('Piano Genie Model Correctness', async (t: test.Test) => {
   genie.resetState();
 
   /**
-   * Tests PianoGenie note whitelist.
+   * Tests PianoGenie allowed notes.
    */
 
   tf.tidy(() => {
@@ -109,18 +109,18 @@ test('Piano Genie Model Correctness', async (t: test.Test) => {
     // Ascending pattern with sampling.
     for (let i = 0; i < 8; ++i) {
       genie.overrideDeltaTime(0.1);
-      keys.push(genie.nextFromKeyWhitelist(i, gMajTwoOctaves, 1., 1337));
+      keys.push(genie.nextFromKeyList(i, gMajTwoOctaves, 1., 1337));
     }
     // Descending pattern with argmax.
     for (let i = 7; i >= 0; --i) {
       genie.overrideDeltaTime(0.1);
-      keys.push(genie.nextFromKeyWhitelist(i, gMajTwoOctaves, 0.));
+      keys.push(genie.nextFromKeyList(i, gMajTwoOctaves, 0.));
     }
     // Fast trill with temperature 0.5.
     for (let i = 0; i < 8; ++i) {
       genie.overrideDeltaTime(0.05);
       keys.push(
-        genie.nextFromKeyWhitelist(3 + (i % 2), gMajTwoOctaves, 0.5, 1337));
+        genie.nextFromKeyList(3 + (i % 2), gMajTwoOctaves, 0.5, 1337));
     }
 
     const expectedKeys = [
