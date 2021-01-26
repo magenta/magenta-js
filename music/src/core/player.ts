@@ -231,20 +231,20 @@ export abstract class BasePlayer {
     noteSequence: INoteSequence,
     sustainControlNumber?: number= 64): INoteSequence {
 
-    const _SUSTAIN_ON = 0
-    const _SUSTAIN_OFF = 1
-    const _NOTE_ON = 2
-    const _NOTE_OFF = 3
+    const _SUSTAIN_ON = 0;
+    const _SUSTAIN_OFF = 1;
+    const _NOTE_ON = 2;
+    const _NOTE_OFF = 3;
 
     const isQuantized = sequences.isQuantizedSequence(noteSequence);
     if (isQuantized) {
       throw new Error('Can only apply sustain to unquantized NoteSequence.');
     }
 
-    let sequence = sequences.clone(noteSequence)
+    let sequence = sequences.clone(noteSequence);
 
     // Sort all note on/off and sustain on/off events.
-    let events = []
+    let events = [];
     sequence.notes.forEach(const note => {
       if (note.isDrum === false) {
         if (note.startTime !== null) {
@@ -252,20 +252,20 @@ export abstract class BasePlayer {
             time: note.startTime,
             type: _NOTE_ON,
             event: note
-          })
+          });
         }
         if (note.endTime !== null) {
           events.push({
             time: note.endTime,
             type: _NOTE_OFF,
             event: note
-          })
+          });
         }
       }
     });
     sequence.controlChanges.forEach(const cc => {
       if (cc.controlNumber === sustainControlNumber) {
-        const value = cc.controlValue
+        const value = cc.controlValue;
         if ( (value < 0) || (value > 127) ) {
           // warning: out of range
         }
@@ -274,73 +274,73 @@ export abstract class BasePlayer {
             time: cc.time,
             type: _SUSTAIN_ON,
             event: cc
-          })
+          });
         } else if (value < 64) {
           events.push({
             time: cc.time,
             type: _SUSTAIN_OFF,
             event: cc
-          })
+          });
         }
       }
     });
 
     // Sort, using the time and event type constants to ensure the order events
     // are processed.
-    events.sort((a,b) => a.time-b.time )
+    events.sort((a,b) => a.time-b.time );
 
     // Lists of active notes, keyed by instrument.
-    const activeNotes = {}
+    const activeNotes = {};
     // Whether sustain is active for a given instrument.
-    const susActive = {}
+    const susActive = {};
     // Iterate through all sustain on/off and note on/off events in order.
-    let time = 0
+    let time = 0;
     events.forEach(item => {
-      const time = item.time
-      const type = item.type
-      const event = item.event
+      const time = item.time;
+      const type = item.type;
+      const event = item.event;
 
       if (type === _SUSTAIN_ON) {
-        susActive[event.instrument] = true
+        susActive[event.instrument] = true;
       } else if (type === _SUSTAIN_OFF) {
-        susActive[event.instrument] = false
+        susActive[event.instrument] = false;
         // End all notes for the instrument that were being extended.
-        let newActiveNotes = []
+        let newActiveNotes = [];
         activeNotes[event.instrument].forEach(const note => {
           if (note.endTime < time) {
             // This note was being extended because of sustain.
             // Update the end time and don't keep it in the list.
-            note.endTime = time
+            note.endTime = time;
             if (time > sequence.totalTime) {
-              sequence.totalTime = time
+              sequence.totalTime = time;
             }
           } else {
             // This note is actually still active, keep it.
-            newActiveNotes.append(note)
+            newActiveNotes.append(note);
           }
         });
         activeNotes[event.instrument] = newActiveNotes;
       } else if (type === _NOTE_ON) {
         if (susActive[event.instrument] === true) {
           // If sustain is on, end all previous notes with the same pitch.
-          let newActiveNotes = []
+          let newActiveNotes = [];
           activeNotes[event.instrument].forEach(const note => {
             if (note.pitch === event.pitch) {
-              note.endTime = time
+              note.endTime = time;
               if (note.startTime == note.endTime) {
                 // This note now has no duration because another note of the
                 // same pitch started at the same time. Only one of these
                 // notes should be preserved, so delete this one.
-                sequence.notes.push(note)
+                sequence.notes.push(note);
               }
             } else {
-              newActiveNotes.push(note)
+              newActiveNotes.push(note);
             }
           })
-          activeNotes[event.instrument] = newActiveNotes
+          activeNotes[event.instrument] = newActiveNotes;
         }
         // Add this new note to the list of active notes.
-        activeNotes[event.instrument].push(event)
+        activeNotes[event.instrument].push(event);
       } else if(type === _NOTE_OFF) {
         if (susActive[event.instrument] === true) {
         //pass
@@ -348,9 +348,9 @@ export abstract class BasePlayer {
           // Remove this particular note from the active list.
           // It may have already been removed if a note of the same pitch was
           // played when sustain was active.
-          const index = activeNotes[event.instrument].indexOf(event)
+          const index = activeNotes[event.instrument].indexOf(event);
           if (index > -1) {
-            activeNotes[event.instrument].splice(index, 1)
+            activeNotes[event.instrument].splice(index, 1);
           }
         }
       } else {
@@ -360,11 +360,11 @@ export abstract class BasePlayer {
     // End any notes that were still active due to sustain.
     for (const instrument of activeNotes.values()) {
       for (const note of instrument) {
-        note.endTime = time
-        sequence.totalTime = time
+        note.endTime = time;
+        sequence.totalTime = time;
       }
     }
-    return sequence
+    return sequence;
   }
 
   /**
