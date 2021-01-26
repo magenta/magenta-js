@@ -227,7 +227,10 @@ export abstract class BasePlayer {
    * Sustain can only be applied to unquantized note sequences.
    */
 
-  applySustainControlChanges(noteSequence: INoteSequence, sustainControlNumber?: number): INoteSequence {
+  applySustainControlChanges(
+    noteSequence: INoteSequence,
+    sustainControlNumber?: number= 64): INoteSequence {
+
     const _SUSTAIN_ON = 0
     const _SUSTAIN_OFF = 1
     const _NOTE_ON = 2
@@ -238,7 +241,7 @@ export abstract class BasePlayer {
       throw new Error('Can only apply sustain to unquantized NoteSequence.');
     }
 
-    let sequence = Object.assign({}, noteSequence)
+    let sequence = sequences.clone(noteSequence)
 
     // Sort all note on/off and sustain on/off events.
     let events = []
