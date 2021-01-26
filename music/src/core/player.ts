@@ -228,8 +228,7 @@ export abstract class BasePlayer {
    */
 
   applySustainControlChanges(
-    noteSequence: INoteSequence,
-    sustainControlNumber?: number= 64): INoteSequence {
+    noteSequence: INoteSequence, sustainControlNumber? = 64): INoteSequence {
 
     const _SUSTAIN_ON = 0;
     const _SUSTAIN_OFF = 1;
@@ -241,10 +240,10 @@ export abstract class BasePlayer {
       throw new Error('Can only apply sustain to unquantized NoteSequence.');
     }
 
-    let sequence = sequences.clone(noteSequence);
+    const sequence = sequences.clone(noteSequence);
 
     // Sort all note on/off and sustain on/off events.
-    let events = [];
+    const events = [];
     sequence.notes.forEach(const note => {
       if (note.isDrum === false) {
         if (note.startTime !== null) {
@@ -262,7 +261,7 @@ export abstract class BasePlayer {
           });
         }
       }
-    });
+    })
     sequence.controlChanges.forEach(const cc => {
       if (cc.controlNumber === sustainControlNumber) {
         const value = cc.controlValue;
@@ -283,7 +282,7 @@ export abstract class BasePlayer {
           });
         }
       }
-    });
+    })
 
     // Sort, using the time and event type constants to ensure the order events
     // are processed.
@@ -296,7 +295,7 @@ export abstract class BasePlayer {
     // Iterate through all sustain on/off and note on/off events in order.
     let time = 0;
     events.forEach(item => {
-      const time = item.time;
+      time = item.time;
       const type = item.type;
       const event = item.event;
 
@@ -305,7 +304,7 @@ export abstract class BasePlayer {
       } else if (type === _SUSTAIN_OFF) {
         susActive[event.instrument] = false;
         // End all notes for the instrument that were being extended.
-        let newActiveNotes = [];
+        const newActiveNotes = [];
         activeNotes[event.instrument].forEach(const note => {
           if (note.endTime < time) {
             // This note was being extended because of sustain.
@@ -318,16 +317,16 @@ export abstract class BasePlayer {
             // This note is actually still active, keep it.
             newActiveNotes.append(note);
           }
-        });
+        })
         activeNotes[event.instrument] = newActiveNotes;
       } else if (type === _NOTE_ON) {
         if (susActive[event.instrument] === true) {
           // If sustain is on, end all previous notes with the same pitch.
-          let newActiveNotes = [];
+          const newActiveNotes = [];
           activeNotes[event.instrument].forEach(const note => {
             if (note.pitch === event.pitch) {
               note.endTime = time;
-              if (note.startTime == note.endTime) {
+              if (note.startTime === note.endTime) {
                 // This note now has no duration because another note of the
                 // same pitch started at the same time. Only one of these
                 // notes should be preserved, so delete this one.
@@ -356,7 +355,7 @@ export abstract class BasePlayer {
       } else {
         throw new Error(`Invalid event_type: ${event_type}`);
       }
-    });
+    })
     // End any notes that were still active due to sustain.
     for (const instrument of activeNotes.values()) {
       for (const note of instrument) {
