@@ -230,11 +230,12 @@ export abstract class BasePlayer {
   applySustainControlChanges(
     noteSequence: INoteSequence, sustainControlNumber = 64): INoteSequence {
 
-    const _SUSTAIN_ON = 0;
-    const _SUSTAIN_OFF = 1;
-    const _NOTE_ON = 2;
-    const _NOTE_OFF = 3;
-
+    enum MessageType {
+      SUSTAIN_ON,
+      SUSTAIN_OFF,
+      NOTE_ON,
+      NOTE_OFF
+    }
     const isQuantized = sequences.isQuantizedSequence(noteSequence);
     if (isQuantized) {
       throw new Error('Can only apply sustain to unquantized NoteSequence.');
@@ -243,20 +244,23 @@ export abstract class BasePlayer {
     const sequence = sequences.clone(noteSequence);
 
     // Sort all note on/off and sustain on/off events.
-    const events: Array<{ time: number, type: string, event:{} }> = [];
+    const events: Array<{ time: number, type: MessageType, event:{
+      instrument?: number,
+      pitch?: number
+    } }> = [];
     sequence.notes.forEach(note => {
       if (note.isDrum === false) {
         if (note.startTime !== null) {
           events.push({
             time: note.startTime,
-            type: _NOTE_ON,
+            type: MessageType.NOTE_ON,
             event: note
           });
         }
         if (note.endTime !== null) {
           events.push({
             time: note.endTime,
-            type: _NOTE_OFF,
+            type: MessageType.NOTE_OFF,
             event: note
           });
         }
@@ -271,13 +275,13 @@ export abstract class BasePlayer {
         if (value >= 64) {
           events.push({
             time: cc.time,
-            type: _SUSTAIN_ON,
+            type: MessageType.SUSTAIN_ON,
             event: cc
           });
         } else if (value < 64) {
           events.push({
             time: cc.time,
-            type: _SUSTAIN_OFF,
+            type: MessageType.SUSTAIN_OFF,
             event: cc
           });
         }
@@ -289,9 +293,9 @@ export abstract class BasePlayer {
     events.sort((a,b) => a.time-b.time );
 
     // Lists of active notes, keyed by instrument.
-    const activeNotes = {};
+    const activeNotes: { [key: number]: NoteSequence.INote[] } = {};
     // Whether sustain is active for a given instrument.
-    const susActive = {};
+    const susActive: { [key: number]: boolean } = {};
     // Iterate through all sustain on/off and note on/off events in order.
     let time = 0;
     events.forEach(item => {
@@ -299,12 +303,12 @@ export abstract class BasePlayer {
       const type = item.type;
       const event = item.event;
 
-      if (type === _SUSTAIN_ON) {
+      if (type === MessageType.SUSTAIN_ON) {
         susActive[event.instrument] = true;
-      } else if (type === _SUSTAIN_OFF) {
+      } else if (type === MessageType.SUSTAIN_OFF) {
         susActive[event.instrument] = false;
         // End all notes for the instrument that were being extended.
-        const newActiveNotes: INote[] = [];
+        const newActiveNotes: NoteSequence.INote[] = [];
         activeNotes[event.instrument].forEach(note => {
           if (note.endTime < time) {
             // This note was being extended because of sustain.
@@ -315,14 +319,14 @@ export abstract class BasePlayer {
             }
           } else {
             // This note is actually still active, keep it.
-            newActiveNotes.append(note);
+            newActiveNotes.push(note);
           }
         });
         activeNotes[event.instrument] = newActiveNotes;
-      } else if (type === _NOTE_ON) {
+      } else if (type === MessageType.NOTE_ON) {
         if (susActive[event.instrument] === true) {
           // If sustain is on, end all previous notes with the same pitch.
-          const newActiveNotes: INote[] = [];
+          const newActiveNotes: NoteSequence.INote[] = [];
           activeNotes[event.instrument].forEach(note => {
             if (note.pitch === event.pitch) {
               note.endTime = time;
@@ -340,7 +344,7 @@ export abstract class BasePlayer {
         }
         // Add this new note to the list of active notes.
         activeNotes[event.instrument].push(event);
-      } else if(type === _NOTE_OFF) {
+      } else if(type === MessageType.NOTE_OFF) {
         if (susActive[event.instrument] === true) {
         //pass
         } else {
@@ -352,12 +356,10 @@ export abstract class BasePlayer {
             activeNotes[event.instrument].splice(index, 1);
           }
         }
-      } else {
-        throw new Error(`Invalid event_type: ${event_type}`);
       }
     });
     // End any notes that were still active due to sustain.
-    for (const instrument of activeNotes.values()) {
+    for (const instrument of Object.values(activeNotes)) {
       for (const note of instrument) {
         note.endTime = time;
         sequence.totalTime = time;
