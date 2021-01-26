@@ -228,7 +228,7 @@ export abstract class BasePlayer {
    */
 
   applySustainControlChanges(
-    noteSequence: INoteSequence, sustainControlNumber? = 64): INoteSequence {
+    noteSequence: INoteSequence, sustainControlNumber = 64): INoteSequence {
 
     const _SUSTAIN_ON = 0;
     const _SUSTAIN_OFF = 1;
@@ -243,7 +243,7 @@ export abstract class BasePlayer {
     const sequence = sequences.clone(noteSequence);
 
     // Sort all note on/off and sustain on/off events.
-    const events = [];
+    const events: Array<{ time: number, type: string, event:{} }> = [];
     sequence.notes.forEach(note => {
       if (note.isDrum === false) {
         if (note.startTime !== null) {
@@ -261,7 +261,7 @@ export abstract class BasePlayer {
           });
         }
       }
-    })
+    });
     sequence.controlChanges.forEach(cc => {
       if (cc.controlNumber === sustainControlNumber) {
         const value = cc.controlValue;
@@ -282,7 +282,7 @@ export abstract class BasePlayer {
           });
         }
       }
-    })
+    });
 
     // Sort, using the time and event type constants to ensure the order events
     // are processed.
@@ -304,7 +304,7 @@ export abstract class BasePlayer {
       } else if (type === _SUSTAIN_OFF) {
         susActive[event.instrument] = false;
         // End all notes for the instrument that were being extended.
-        const newActiveNotes = [];
+        const newActiveNotes: INote[] = [];
         activeNotes[event.instrument].forEach(note => {
           if (note.endTime < time) {
             // This note was being extended because of sustain.
@@ -322,7 +322,7 @@ export abstract class BasePlayer {
       } else if (type === _NOTE_ON) {
         if (susActive[event.instrument] === true) {
           // If sustain is on, end all previous notes with the same pitch.
-          const newActiveNotes = [];
+          const newActiveNotes: INote[] = [];
           activeNotes[event.instrument].forEach(note => {
             if (note.pitch === event.pitch) {
               note.endTime = time;
