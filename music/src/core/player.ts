@@ -210,6 +210,20 @@ export abstract class BasePlayer {
   }
 
   /**
+   * Stop playing the currently playing sequence right away.
+   */
+  stop() {
+    if (this.isPlaying()) {
+      this.currentPart.stop();
+      Tone.Transport.stop();
+      this.currentPart = null;
+    }
+    Tone.Transport.clear(this.scheduledStop);
+    this.scheduledStop = undefined;
+    this.desiredQPM = undefined;
+  }
+
+  /**
    * Pause playing the currently playing sequence right away. Call resume()
    * to resume.
    * @throws {Error} If the player is stopped.
