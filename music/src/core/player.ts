@@ -210,6 +210,161 @@ export abstract class BasePlayer {
   }
 
   /**
+   * Returns a new NoteSequence with sustain pedal control changes applied.
+   * Extends each note within a sustain to either the beginning of the next
+   * note of the same pitch or the end of the sustain period, whichever happens
+   * first. This is done on a per instrument basis, so notes are only affected
+   * by sustain events for the same instrument. Drum notes will not be modified
+   * @param noteSequence The NoteSequence for which to apply sustain. This
+   * object will not be modified.
+   * @param sustainControlNumber The MIDI control number for sustain pedal.
+   * Control events with this number and value 0-63 will be treated as sustain
+   * pedal OFF events, and control events with this number and value 64-127
+   * will be treated as sustain pedal ON events.
+   * @returns A copy of `note_sequence` but with note end times extended to
+   * account for sustain.
+   * @throws {Error}: If `note_sequence` is quantized.
+   * Sustain can only be applied to unquantized note sequences.
+   */
+
+  applySustainControlChanges(noteSequence: INoteSequence, sustainControlNumber?: number): INoteSequence {
+    const _SUSTAIN_ON = 0
+    const _SUSTAIN_OFF = 1
+    const _NOTE_ON = 2
+    const _NOTE_OFF = 3
+
+    const isQuantized = sequences.isQuantizedSequence(noteSequence);
+    if (isQuantized) {
+      throw new Error('Can only apply sustain to unquantized NoteSequence.');
+    }
+
+    let sequence = Object.assign({}, noteSequence)
+
+    // Sort all note on/off and sustain on/off events.
+    let events = []
+    sequence.notes.forEach(const note => {
+      if (note.isDrum === false) {
+        if (note.startTime !== null) {
+          events.push({
+            time: note.startTime,
+            type: _NOTE_ON,
+            event: note
+          })
+        }
+        if (note.endTime !== null) {
+          events.push({
+            time: note.endTime,
+            type: _NOTE_OFF,
+            event: note
+          })
+        }
+      }
+    });
+    sequence.controlChanges.forEach(const cc => {
+      if (cc.controlNumber === sustainControlNumber) {
+        const value = cc.controlValue
+        if ( (value < 0) || (value > 127) ) {
+          // warning: out of range
+        }
+        if (value >= 64) {
+          events.push({
+            time: cc.time,
+            type: _SUSTAIN_ON,
+            event: cc
+          })
+        } else if (value < 64) {
+          events.push({
+            time: cc.time,
+            type: _SUSTAIN_OFF,
+            event: cc
+          })
+        }
+      }
+    });
+
+    // Sort, using the time and event type constants to ensure the order events
+    // are processed.
+    events.sort((a,b) => a.time-b.time )
+
+    // Lists of active notes, keyed by instrument.
+    const activeNotes = {}
+    // Whether sustain is active for a given instrument.
+    const susActive = {}
+    // Iterate through all sustain on/off and note on/off events in order.
+    let time = 0
+    events.forEach(item => {
+      const time = item.time
+      const type = item.type
+      const event = item.event
+
+      if (type === _SUSTAIN_ON) {
+        susActive[event.instrument] = true
+      } else if (type === _SUSTAIN_OFF) {
+        susActive[event.instrument] = false
+        // End all notes for the instrument that were being extended.
+        let newActiveNotes = []
+        activeNotes[event.instrument].forEach(const note => {
+          if (note.endTime < time) {
+            // This note was being extended because of sustain.
+            // Update the end time and don't keep it in the list.
+            note.endTime = time
+            if (time > sequence.totalTime) {
+              sequence.totalTime = time
+            }
+          } else {
+            // This note is actually still active, keep it.
+            newActiveNotes.append(note)
+          }
+        });
+        activeNotes[event.instrument] = newActiveNotes;
+      } else if (type === _NOTE_ON) {
+        if (susActive[event.instrument] === true) {
+          // If sustain is on, end all previous notes with the same pitch.
+          let newActiveNotes = []
+          activeNotes[event.instrument].forEach(const note => {
+            if (note.pitch === event.pitch) {
+              note.endTime = time
+              if (note.startTime == note.endTime) {
+                // This note now has no duration because another note of the
+                // same pitch started at the same time. Only one of these
+                // notes should be preserved, so delete this one.
+                sequence.notes.push(note)
+              }
+            } else {
+              newActiveNotes.push(note)
+            }
+          })
+          activeNotes[event.instrument] = newActiveNotes
+        }
+        // Add this new note to the list of active notes.
+        activeNotes[event.instrument].push(event)
+      } else if(type === _NOTE_OFF) {
+        if (susActive[event.instrument] === true) {
+        //pass
+        } else {
+          // Remove this particular note from the active list.
+          // It may have already been removed if a note of the same pitch was
+          // played when sustain was active.
+          const index = activeNotes[event.instrument].indexOf(event)
+          if (index > -1) {
+            activeNotes[event.instrument].splice(index, 1)
+          }
+        }
+      } else {
+        throw new Error(`Invalid event_type: ${event_type}`);
+      }
+    });
+    // End any notes that were still active due to sustain.
+    for (const instrument of activeNotes.values()) {
+      for (const note of instrument) {
+        note.endTime = time
+        sequence.totalTime = time
+      }
+    }
+    return sequence
+  }
+
+  /**
    * Stop playing the currently playing sequence right away.
    */
   stop() {
