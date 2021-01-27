@@ -34,6 +34,8 @@ import {Melody, MelodyControl, MelodyRhythm, MelodyShape} from './melodies';
 import * as performance from './performance';
 import * as sequences from './sequences';
 
+export {DEFAULT_DRUM_PITCH_CLASSES};
+
 export interface MelodyConverterSpec {
   type: 'MelodyConverter';
   args: MelodyConverterArgs;
