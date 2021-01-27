@@ -20,8 +20,9 @@ import * as sr from 'staffrender';
 
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
-import {logging, sequences} from '.';
 import {MAX_MIDI_PITCH, MIN_MIDI_PITCH} from './constants';
+import * as logging from './logging';
+import * as sequences from './sequences';
 
 const MIN_NOTE_LENGTH = 1;
 

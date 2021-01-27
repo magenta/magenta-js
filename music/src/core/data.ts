@@ -28,31 +28,13 @@ import * as tf from '@tensorflow/tfjs';
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
 import * as constants from './constants';
+import {DEFAULT_DRUM_PITCH_CLASSES} from './constants';
 import * as logging from './logging';
 import {Melody, MelodyControl, MelodyRhythm, MelodyShape} from './melodies';
 import * as performance from './performance';
 import * as sequences from './sequences';
 
-export const DEFAULT_DRUM_PITCH_CLASSES: number[][] = [
-  // bass drum
-  [36, 35],
-  // snare drum
-  [38, 27, 28, 31, 32, 33, 34, 37, 39, 40, 56, 65, 66, 75, 85],
-  // closed hi-hat
-  [42, 44, 54, 68, 69, 70, 71, 73, 78, 80],
-  // open hi-hat
-  [46, 67, 72, 74, 79, 81],
-  // low tom
-  [45, 29, 41, 61, 64, 84],
-  // mid tom
-  [48, 47, 60, 63, 77, 86, 87],
-  // high tom
-  [50, 30, 43, 62, 76, 83],
-  // crash cymbal
-  [49, 55, 57, 58],
-  // ride cymbal
-  [51, 52, 53, 59, 82]
-];
+export {DEFAULT_DRUM_PITCH_CLASSES};
 
 export interface MelodyConverterSpec {
   type: 'MelodyConverter';
