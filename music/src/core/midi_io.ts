@@ -184,20 +184,35 @@ export function sequenceProtoToMidi(ns: INoteSequence) {
 
   // TODO: Add key signatures.
 
-  // Add tracks.
-  const tracks = new Map<string, NoteSequence.INote[]>();
+  // Add tracks and control changes.
+  const tracks = new Map<string, {
+    notes: NoteSequence.INote[],
+    controlChanges: NoteSequence.IControlChange[]
+  }>();
   for (const note of ns.notes) {
     const instrument = note.instrument ? note.instrument : 0;
     const program = (note.program === undefined) ? constants.DEFAULT_PROGRAM :
-                                                   note.program;
+      note.program;
     const isDrum = !!note.isDrum;
     const key = JSON.stringify([instrument, program, isDrum]);
     if (!tracks.has(key)) {
-      tracks.set(key, []);
+      tracks.set(key, { notes: [], controlChanges: [] });
     }
-    tracks.get(key).push(note);
+    tracks.get(key).notes.push(note);
   }
-  tracks.forEach((notes, key) => {
+  for (const controlChange of ns.controlChanges) {
+    const instrument = controlChange.instrument ? controlChange.instrument : 0;
+    const program = (controlChange.program === undefined)
+      ? constants.DEFAULT_PROGRAM : controlChange.program;
+    const isDrum = !!controlChange.isDrum;
+    const key = JSON.stringify([instrument, program, isDrum]);
+    if (!tracks.has(key)) {
+      tracks.set(key, { notes: [], controlChanges: [] });
+    }
+    tracks.get(key).controlChanges.push(controlChange);
+  }
+
+  tracks.forEach((trackData, key) => {
     const [program, isDrum] = JSON.parse(key).slice(1);
     const track = midi.addTrack();
     // Cycle through non-drum channels. This is what pretty_midi does and it
@@ -209,10 +224,10 @@ export function sequenceProtoToMidi(ns: INoteSequence) {
         (midi.tracks.length - 1) % constants.NON_DRUM_CHANNELS.length];
     }
     track.instrument.number = program;
-    for (const note of notes) {
+    for (const note of trackData.notes) {
       const velocity = (note.velocity === undefined) ?
-          constants.DEFAULT_VELOCITY :
-          note.velocity;
+        constants.DEFAULT_VELOCITY :
+        note.velocity;
       track.addNote({
         midi: note.pitch,
         time: note.startTime,
@@ -220,9 +235,16 @@ export function sequenceProtoToMidi(ns: INoteSequence) {
         velocity: (velocity as number + 1) / constants.MIDI_VELOCITIES
       });
     }
+    for (const controlChange of trackData.controlChanges) {
+      track.addCC({
+        number: controlChange.controlNumber,
+        value: controlChange.controlValue,
+        time: controlChange.time
+      });
+    }
   });
 
-  // TODO: Support pitch bends & control changes.
+  // TODO: Support pitch bends.
 
   return midi.toArray();
 }
