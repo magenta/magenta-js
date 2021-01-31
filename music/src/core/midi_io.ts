@@ -111,11 +111,11 @@ export function midiToSequenceProto(
       const controlNumber: number = controlChange.number;
       const time: number = controlChange.time;
       const controlValue: number = controlChange.value;
-
       ns.controlChanges.push(NoteSequence.ControlChange.create({
         time,
         controlNumber,
-        controlValue,
+	controlValue: Math.floor(
+          controlChange.value * (constants.MIDI_VELOCITIES - 1)),
         instrument: instrumentNumber,
         program: track.instrument.number,
         isDrum: track.instrument.percussion
