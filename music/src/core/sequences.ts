@@ -618,16 +618,16 @@ export function applySustainControlChanges(
   for (const cc of sequence.controlChanges) {
     if (cc.controlNumber === sustainControlNumber) {
       const value = cc.controlValue;
-      if ( (value < 0) || (value > 1) ) {
+      if ( (value < 0) || (value > 127) ) {
         // warning: out of range
       }
-      if (value >= 0.5) {
+      if (value >= 64) {
         events.push({
           time: cc.time,
           type: MessageType.SUSTAIN_ON,
           event: cc
         });
-      } else if (value < 0.5) {
+      } else if (value < 64) {
         events.push({
           time: cc.time,
           type: MessageType.SUSTAIN_OFF,
