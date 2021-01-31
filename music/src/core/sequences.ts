@@ -658,6 +658,9 @@ export function applySustainControlChanges(
       susActive[event.instrument] = false;
       // End all notes for the instrument that were being extended.
       const newActiveNotes: NoteSequence.INote[] = [];
+      if (!(event.instrument in activeNotes)) {
+        activeNotes[event.instrument] = [];
+      }
       for (const note of activeNotes[event.instrument]) {
         if (note.endTime < time) {
           // This note was being extended because of sustain.
