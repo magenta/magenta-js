@@ -108,13 +108,10 @@ export function midiToSequenceProto(
     const flattenedControlChangeValues = [].concat.apply(
       [], controlChangeValues);
     for (const controlChange of flattenedControlChangeValues) {
-      const controlNumber: number = controlChange.number;
-      const time: number = controlChange.time;
-      const controlValue: number = controlChange.value;
       ns.controlChanges.push(NoteSequence.ControlChange.create({
-        time,
-        controlNumber,
-	controlValue: Math.floor(
+        time: controlChange.time,
+        controlNumber: controlChange.number,
+        controlValue: Math.floor(
           controlChange.value * (constants.MIDI_VELOCITIES - 1)),
         instrument: instrumentNumber,
         program: track.instrument.number,
