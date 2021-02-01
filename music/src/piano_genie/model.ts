@@ -19,6 +19,7 @@
 import * as tf from '@tensorflow/tfjs';
 
 import {fetch} from '../core/compat/global';
+import {logging} from '../core';
 
 /**
  * Constants.
@@ -214,28 +215,28 @@ class PianoGenieBase {
   }
 
   /**
-   * Given a button number and whitelist of piano keys, evaluates Piano Genie
+   * Given a button number and a list of piano keys, evaluates Piano Genie
    * to produce a piano key note {0, 1, ..., 87}. Use this if you would like to
    * restrict Piano Genie's outputs to a subset of the keys (e.g. a particular
    * scale or range of the piano). For example, if you wanted to restrict Piano
    * Genie's outputs to be C major from middle C to one octave above, you would
-   * pass [39, 41, 43, 44, 46, 48, 50, 51] as the whitelist.
+   * pass [39, 41, 43, 44, 46, 48, 50, 51] as the list.
    *
    * @param button Button number (one of {0, 1, 2, 3, 4, 5, 6, 7}).
-   * @param keyWhitelist Subset of keys restricting possible note outputs.
+   * @param keyList Subset of keys restricting possible note outputs.
    * @param temperature Temperature. From 0 to 1, goes from argmax to random.
    * @param seed Random seed. Use a fixed number to get reproducible output.
    */
-  nextFromKeyWhitelist(
+  nextFromKeyList(
     button: number,
-    keyWhitelist: number[],
+    keyList: number[],
     temperature?: number,
     seed?: number) {
     const sampleFunc = (logits: tf.Tensor1D) => {
-      const keySubsetTensor = tf.tensor1d(keyWhitelist, 'int32');
-      // Discard logits outside of the whitelist.
+      const keySubsetTensor = tf.tensor1d(keyList, 'int32');
+      // Discard logits outside of the allowed list.
       logits = tf.gather(logits, keySubsetTensor);
-      // Sample from whitelisted logits.
+      // Sample from allowed logits.
       let result = sampleLogits(logits, temperature, seed);
       // Map the subsampled logit ID back to the appropriate piano key.
       const result1d = tf.gather(keySubsetTensor, tf.reshape(result, [1]));
@@ -245,6 +246,21 @@ class PianoGenieBase {
     return this.nextWithCustomSamplingFunction(button, sampleFunc);
   }
 
+  /**
+   * @deprecated
+   * Alias for nextFromKeyList() to maintain backwards compatibility.
+   */
+  nextFromKeyWhitelist(button: number,
+    keyList: number[],
+    temperature?: number,
+    seed?: number) {
+      logging.log(
+        'nextFromKeyWhitelist() is deprecated, and will be removed in a future \
+         version. Please use nextFromKeyList() instead',
+        'PianoGenie', logging.Level.WARN);
+
+      return this.nextFromKeyList(button, keyList, temperature, seed);
+    }
   /**
    * Given a button number, evaluates Piano Genie to produce unnormalized logits
    * then samples from these logits with a custom function. Use this if you
