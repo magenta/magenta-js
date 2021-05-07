@@ -4943,8 +4943,8 @@ undeclared-identifiers@^1.1.2:
     xtend "^4.0.1"
 
 underscore@>=1.8.3, underscore@^1.9.1:
-  version "1.11.0"
-  resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.11.0.tgz#dd7c23a195db34267186044649870ff1bab5929e"
+  version "1.13.1"
+  resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.13.1.tgz#0c1c6bd2df54b6b69f2314066d65b6cde6fcf9d1"
 
 union-value@^1.0.0:
   version "1.0.1"
