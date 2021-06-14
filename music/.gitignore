@@ -2,6 +2,7 @@ node_modules/
 # builds
 es5/
 es6/
+esm/
 node/
 dist/
 yarn-error.log

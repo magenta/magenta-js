@@ -25,10 +25,9 @@ import * as Tone from 'tone';
 import {performance} from '../core/compat/global';
 import {INoteSequence, NoteSequence} from '../protobuf/index';
 
-import {sequences} from '.';
 import * as constants from './constants';
-import {DEFAULT_DRUM_PITCH_CLASSES} from './data';
 import * as soundfont from './soundfont';
+import * as sequences from './sequences';
 
 function compareQuantizedNotes(a: NoteSequence.INote, b: NoteSequence.INote) {
   if (a.quantizedStartStep < b.quantizedStartStep) {
@@ -139,11 +138,12 @@ export abstract class BasePlayer {
    * @param qpm (Optional) If specified, will play back at this qpm. If not
    * specified, will use either the qpm specified in the sequence or the
    * default of 120. Only valid for quantized sequences.
+   * @param offset (Optional) The time to start playing from.
    * @returns a Promise that resolves when playback is complete.
    * @throws {Error} If this or a different player is currently playing.
    */
 
-  start(seq: INoteSequence, qpm?: number): Promise<void> {
+  start(seq: INoteSequence, qpm?: number, offset = 0): Promise<void> {
     if (this.getPlayState() === 'started') {
       throw new Error('Cannot start playback; player is already playing.');
     } else if (this.getPlayState() === 'paused') {
@@ -194,7 +194,7 @@ export abstract class BasePlayer {
     if (this.desiredQPM) {
       Tone.Transport.bpm.value = this.desiredQPM;
     }
-    this.currentPart.start();
+    this.currentPart.start(undefined /* immediately */, offset);
     if (Tone.Transport.state !== 'started') {
       Tone.Transport.start();
     }
@@ -278,7 +278,7 @@ export abstract class BasePlayer {
 
 /**
  * A singleton drum kit synthesizer with 9 pitch classed defined by
- * data.DEFAULT_DRUM_PITCH_CLASSES.
+ * constants.DEFAULT_DRUM_PITCH_CLASSES.
  */
 class DrumKit {
   private static instance: DrumKit;
@@ -380,9 +380,9 @@ class DrumKit {
   ];
 
   private constructor() {
-    for (let c = 0; c < DEFAULT_DRUM_PITCH_CLASSES.length; ++c) {
+    for (let c = 0; c < constants.DEFAULT_DRUM_PITCH_CLASSES.length; ++c) {
       // class
-      DEFAULT_DRUM_PITCH_CLASSES[c].forEach((p) => {
+      constants.DEFAULT_DRUM_PITCH_CLASSES[c].forEach((p) => {
         this.DRUM_PITCH_TO_CLASS.set(p, c);
       });
     }
@@ -546,9 +546,9 @@ export class SoundFontPlayer extends BasePlayer {
     Tone.context.resume();
   }
 
-  start(seq: INoteSequence, qpm?: number): Promise<void> {
+  start(seq: INoteSequence, qpm?: number, offset = 0): Promise<void> {
     this.resumeContext();
-    return this.loadSamples(seq).then(() => super.start(seq, qpm));
+    return this.loadSamples(seq).then(() => super.start(seq, qpm, offset));
   }
 
   protected playNote(time: number, note: NoteSequence.INote) {
