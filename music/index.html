@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>@magenta/music - v1.21.0</title>
+	<title>@magenta/music - v1.22.1</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="assets/css/main.css">
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="index.html" class="title">@magenta/music - v1.21.0</a>
+					<a href="index.html" class="title">@magenta/music - v1.22.1</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -52,7 +52,7 @@
 					<a href="globals.html">Globals</a>
 				</li>
 			</ul>
-			<h1>@magenta/music - v1.21.0</h1>
+			<h1>@magenta/music - v1.22.1</h1>
 		</div>
 	</div>
 </header>
@@ -84,6 +84,8 @@
 							<li><a href="#midime">MidiMe</a></li>
 							<li><a href="#piano-genie">Piano Genie</a></li>
 							<li><a href="#gansynth">GANSynth</a></li>
+							<li><a href="#spice">SPICE</a></li>
+							<li><a href="#ddsp">DDSP</a></li>
 						</ul>
 					</li>
 					<li><a href="#model-checkpoints">Model Checkpoints</a><ul>
@@ -108,6 +110,7 @@
 				<p>Here are some examples of applications that have been built with <code>@magenta/music</code>. A
 				more complete list is available on the <a href="https://magenta.tensorflow.org/demos">Magenta site</a>.</p>
 				<ul>
+					<li><a href="http://g.co/tonetransfer">Tone Transfer</a> by <a href="http://g.co/tonetransfer">AIUX x Magenta</a></li>
 					<li><a href="https://magenta.tensorflow.org/fruitgenie">Fruit Genie</a> by <a href="https://www.deeplocal.com/">Deeplocal</a></li>
 					<li><a href="https://drumbot.glitch.me">Drumbot</a> by <a href="https://github.com/notwaldorf">Monica Dinculescu</a></li>
 					<li><a href="https://goo.gl/magenta/neuraldrum">Neural Drum Machine</a> by <a href="https://github.com/teropa">Tero Parviainen</a></li>
@@ -132,7 +135,7 @@
 <span class="hljs-tag">&lt;<span class="hljs-name">head</span>&gt;</span>
   ...
   <span class="hljs-comment">&lt;!-- You need to bring your own Tone.js for the player, and tfjs for the model --&gt;</span>
-  <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdnjs.cloudflare.com/ajax/libs/tone/13.8.21/Tone.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.58/Tone.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
   <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdnjs.cloudflare.com/ajax/libs/tensorflow/1.2.8/tf.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
   <span class="hljs-comment">&lt;!-- Core library, since we're going to use a player --&gt;</span>
   <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdn.jsdelivr.net/npm/@magenta/music@^1.0.0/es6/core.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
@@ -220,6 +223,15 @@ model
 				</a>
 				<p><a href="https://magenta.tensorflow.org/gansynth">GANSynth</a> is a method for generating high-fidelity audio with Generative Adversarial Networks (GANs).</p>
 				<p><strong>⭐️Demo:</strong> <a href="https://ganharp.ctpt.co/">GANHarp</a> by <a href="https://ctpt.co/">Counterpoint</a>.</p>
+				<a href="#spice" id="spice" style="color: inherit; text-decoration: none;">
+					<h3>SPICE</h3>
+				</a>
+				<p>SPICE is a wrapper method for extracting pitches from audio using the <a href="https://tfhub.dev/google/tfjs-model/spice/2/default/1">SPICE</a> model.</p>
+				<a href="#ddsp" id="ddsp" style="color: inherit; text-decoration: none;">
+					<h3>DDSP</h3>
+				</a>
+				<p><a href="https://magenta.tensorflow.org/ddsp">DDSP</a> is a method for synthesizing audio into other instruments.</p>
+				<p><strong>⭐️Demo:</strong> <a href="https://g.co/tonetransfer">Tone Transfer</a> by <a href="https://g.co/tonetransfer">AIUX x Magenta</a>.</p>
 				<a href="#model-checkpoints" id="model-checkpoints" style="color: inherit; text-decoration: none;">
 					<h2>Model Checkpoints</h2>
 				</a>
