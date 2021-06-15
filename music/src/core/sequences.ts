@@ -702,7 +702,7 @@ export function applySustainControlChanges(
         activeNotes[event.instrument] = [];
       }
       activeNotes[event.instrument].push(event);
-    } else if(type === MessageType.NOTE_OFF) {
+    } else if (type === MessageType.NOTE_OFF) {
       if (susActive[event.instrument] === true) {
       //pass
       } else {
