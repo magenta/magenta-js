@@ -178,11 +178,8 @@ export abstract class BasePlayer {
         return;
       }
 
-      if (this.playClick ||
-          (n.pitch !== constants.LO_CLICK_PITCH &&
-           n.pitch !== constants.HI_CLICK_PITCH)) {
-        this.playNote(t, n);
-      }
+      this.playNote(t, n);
+      
       if (this.callbackObject) {
         Tone.Draw.schedule(() => {
           this.callbackObject.run(n, t);
