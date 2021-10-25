@@ -58,7 +58,6 @@ export abstract class BaseVisualizer {
   protected config: VisualizerConfig;
   protected height: number;
   protected width: number;
-  protected sequenceIsQuantized: boolean;
   protected parentElement: HTMLElement;
 
   /**
@@ -89,9 +88,13 @@ export abstract class BaseVisualizer {
    * @param config (optional) Visualization configuration options.
    */
   constructor(sequence: INoteSequence, config: VisualizerConfig = {}) {
-    this.noteSequence = sequence;
-    this.sequenceIsQuantized = sequences.isQuantizedSequence(this.noteSequence);
-
+    // The core player (see player.ts line 169) can only play unquantized sequences,
+    // and will unquantize any quantized sequences. We must do the same here, or 
+    // else in the redrawing callback none of the visual notes will be found.
+    const isQuantized = sequences.isQuantizedSequence(sequence);
+    const qpm = (sequence.tempos && sequence.tempos.length > 0) ? sequence.tempos[0].qpm : undefined;
+    this.noteSequence = isQuantized ? sequences.unquantizeSequence(sequence, qpm) : sequence;
+    
     const defaultPixelsPerTimeStep = 30;
     this.config = {
       noteHeight: config.noteHeight || 6,
@@ -102,15 +105,6 @@ export abstract class BaseVisualizer {
       minPitch: config.minPitch,
       maxPitch: config.maxPitch,
     };
-
-    // Quantized sequences appear "longer" because there's usually more
-    // quantized per note (vs seconds), so pick a better default by using
-    // the steps per quarter.
-    if (this.sequenceIsQuantized) {
-      const spq = sequence.quantizationInfo.stepsPerQuarter;
-      this.config.pixelsPerTimeStep =
-          spq ? this.config.pixelsPerTimeStep / spq : 7;
-    }
 
     const size = this.getSize();
     this.width = size.width;
@@ -154,14 +148,12 @@ export abstract class BaseVisualizer {
     // playing.
     // Warn if there's no totalTime or quantized steps set, since it leads
     // to a bad size.
-    const endTime = this.sequenceIsQuantized ?
-        this.noteSequence.totalQuantizedSteps :
-        this.noteSequence.totalTime;
+    const endTime = this.noteSequence.totalTime;
     if (!endTime) {
       throw new Error(
           'The sequence you are using with the visualizer does not have a ' +
-          (this.sequenceIsQuantized ? 'totalQuantizedSteps' : 'totalTime') +
-          ' field set, so the visualizer can\'t be horizontally ' +
+          'totalQuantizedSteps or totalTime ' +
+          'field set, so the visualizer can\'t be horizontally ' +
           'sized correctly.');
     }
 
@@ -199,15 +191,11 @@ export abstract class BaseVisualizer {
   }
 
   protected getNoteStartTime(note: NoteSequence.INote) {
-    return this.sequenceIsQuantized ?
-        note.quantizedStartStep :
-        Math.round(note.startTime * 100000000) / 100000000;
+    return Math.round(note.startTime * 100000000) / 100000000;
   }
 
   protected getNoteEndTime(note: NoteSequence.INote) {
-    return this.sequenceIsQuantized ?
-        note.quantizedEndStep :
-        Math.round(note.endTime * 100000000) / 100000000;
+    return Math.round(note.endTime * 100000000) / 100000000;
   }
 
   protected isPaintingActiveNote(
@@ -767,14 +755,12 @@ export class WaterfallSVGVisualizer extends BaseSVGVisualizer {
     // playing.
     // Warn if there's no totalTime or quantized steps set, since it leads
     // to a bad size.
-    const endTime = this.sequenceIsQuantized ?
-        this.noteSequence.totalQuantizedSteps :
-        this.noteSequence.totalTime;
+    const endTime = this.noteSequence.totalTime;
     if (!endTime) {
       throw new Error(
           'The sequence you are using with the visualizer does not have a ' +
-          (this.sequenceIsQuantized ? 'totalQuantizedSteps' : 'totalTime') +
-          ' field set, so the visualizer can\'t be horizontally ' +
+          'totalQuantizedSteps or totalTime ' +
+          'field set, so the visualizer can\'t be horizontally ' +
           'sized correctly.');
     }
 
@@ -1077,18 +1063,9 @@ export class StaffSVGVisualizer extends BaseVisualizer {
     return Math.round(q * 16) / 16;  // Current resolution = 1/16 quarter.
   }
 
-  private quantizedStepsToQuarters(steps: number): number {
-    const q = steps / this.noteSequence.quantizationInfo.stepsPerQuarter;
-    return Math.round(q * 16) / 16;  // Current resolution = 1/16 quarter.
-  }
-
   private getNoteInfo(note: NoteSequence.INote): sr.NoteInfo {
-    const startQ = this.sequenceIsQuantized ?
-        this.quantizedStepsToQuarters(note.quantizedStartStep) :
-        this.timeToQuarters(note.startTime);
-    const endQ = this.sequenceIsQuantized ?
-        this.quantizedStepsToQuarters(note.quantizedEndStep) :
-        this.timeToQuarters(note.endTime);
+    const startQ = this.timeToQuarters(note.startTime);
+    const endQ = this.timeToQuarters(note.endTime);
     return {
       start: startQ,
       length: endQ - startQ,
