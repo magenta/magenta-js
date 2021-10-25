@@ -216,6 +216,9 @@ export class Instrument {
       pitch: number, velocity: number, startTime: number, duration: number,
       output: any) {  // tslint:disable-line:no-any
     const buffer = this.getBuffer(pitch, velocity);
+    if (!buffer) {
+      return;
+    }
 
     if (duration > this.durationSeconds) {
       logging.log(
@@ -258,6 +261,9 @@ export class Instrument {
       pitch: number, velocity: number,
       output: any) {  // tslint:disable-line:no-any
     const buffer = this.getBuffer(pitch, velocity);
+    if (!buffer) {
+      return;
+    }
     const source = new Tone.ToneBufferSource(buffer).connect(output);
     source.start(0, 0, undefined, 1);
     if (this.sourceMap.has(pitch)) {
@@ -284,6 +290,9 @@ export class Instrument {
       return;
     }
     const buffer = this.getBuffer(pitch, velocity);
+    if (!buffer) {
+      return;
+    }
 
     // Fade to the note release.
     const releaseSource = new Tone
