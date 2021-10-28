@@ -88,12 +88,14 @@ export abstract class BaseVisualizer {
    * @param config (optional) Visualization configuration options.
    */
   constructor(sequence: INoteSequence, config: VisualizerConfig = {}) {
-    // The core player (see player.ts line 169) can only play unquantized sequences,
-    // and will unquantize any quantized sequences. We must do the same here, or 
-    // else in the redrawing callback none of the visual notes will be found.
+    // The core player (see player.ts:169) can only play unquantized sequences,
+    // and will unquantize any quantized sequences. We must do the same here, 
+    // or else in the redrawing callback none of the visual notes will be found.
     const isQuantized = sequences.isQuantizedSequence(sequence);
-    const qpm = (sequence.tempos && sequence.tempos.length > 0) ? sequence.tempos[0].qpm : undefined;
-    this.noteSequence = isQuantized ? sequences.unquantizeSequence(sequence, qpm) : sequence;
+    const qpm = (sequence.tempos && sequence.tempos.length > 0) ? 
+        sequence.tempos[0].qpm : undefined;
+    this.noteSequence = isQuantized ? 
+        sequences.unquantizeSequence(sequence, qpm) : sequence;
     
     const defaultPixelsPerTimeStep = 30;
     this.config = {
