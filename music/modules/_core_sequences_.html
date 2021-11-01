@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>&quot;core/sequences&quot; | @magenta/music - v1.22.1</title>
+	<title>&quot;core/sequences&quot; | @magenta/music - v1.23.1</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">@magenta/music - v1.22.1</a>
+					<a href="../index.html" class="title">@magenta/music - v1.23.1</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -100,6 +100,7 @@
 						<section class="tsd-index-section ">
 							<h3>Functions</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#applysustaincontrolchanges" class="tsd-kind-icon">apply<wbr>Sustain<wbr>Control<wbr>Changes</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#assertisabsolutequantizedsequence" class="tsd-kind-icon">assert<wbr>IsAbsolute<wbr>Quantized<wbr>Sequence</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#assertisquantizedsequence" class="tsd-kind-icon">assert<wbr>IsQuantized<wbr>Sequence</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_core_sequences_.html#assertisrelativequantizedsequence" class="tsd-kind-icon">assert<wbr>IsRelative<wbr>Quantized<wbr>Sequence</a></li>
@@ -125,6 +126,60 @@
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Functions</h2>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
+					<a name="applysustaincontrolchanges" class="tsd-anchor"></a>
+					<h3>apply<wbr>Sustain<wbr>Control<wbr>Changes</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
+						<li class="tsd-signature tsd-kind-icon">apply<wbr>Sustain<wbr>Control<wbr>Changes<span class="tsd-signature-symbol">(</span>noteSequence<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">INoteSequence</span>, sustainControlNumber<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">NoteSequence</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L578">src/core/sequences.ts:578</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Create a new NoteSequence with sustain pedal control changes applied.</p>
+								</div>
+								<p>Extends each note within a sustain to either the beginning of the next
+									note of the same pitch or the end of the sustain period, whichever happens
+									first. This is done on a per instrument basis, so notes are only affected
+									by sustain events for the same instrument. Drum notes will not be
+								modified.</p>
+								<dl class="tsd-comment-tags">
+									<dt>throws</dt>
+									<dd><p>{Error}: If <code>note_sequence</code> is quantized.
+										Sustain can only be applied to unquantized note sequences.</p>
+									</dd>
+								</dl>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>noteSequence: <span class="tsd-signature-type">INoteSequence</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The NoteSequence for which to apply sustain. This
+										object will not be modified.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> sustainControlNumber: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 64</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The MIDI control number for sustain pedal.
+											Control events with this number and value 0-63 will be treated as sustain
+											pedal OFF events, and control events with this number and value 64-127
+										will be treated as sustain pedal ON events.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">NoteSequence</span></h4>
+							<p>A copy of <code>note_sequence</code> but with note end times extended to
+							account for sustain.</p>
+						</li>
+					</ul>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
 					<a name="assertisabsolutequantizedsequence" class="tsd-anchor"></a>
 					<h3>assert<wbr>IsAbsolute<wbr>Quantized<wbr>Sequence</h3>
@@ -242,7 +297,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L570">src/core/sequences.ts:570</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L743">src/core/sequences.ts:743</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -615,7 +670,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L700">src/core/sequences.ts:700</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L873">src/core/sequences.ts:873</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -687,7 +742,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L615">src/core/sequences.ts:615</a></li>
+									<li>Defined in <a href="https://github.com/tensorflow/magenta-js/tree/master/music/src/core/sequences.ts#L788">src/core/sequences.ts:788</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -802,6 +857,9 @@
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module">
 						<a href="../classes/_core_sequences_.quantizationstatusexception.html" class="tsd-kind-icon">Quantization<wbr>Status<wbr>Exception</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="_core_sequences_.html#applysustaincontrolchanges" class="tsd-kind-icon">apply<wbr>Sustain<wbr>Control<wbr>Changes</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
 						<a href="_core_sequences_.html#assertisabsolutequantizedsequence" class="tsd-kind-icon">assert<wbr>IsAbsolute<wbr>Quantized<wbr>Sequence</a>
