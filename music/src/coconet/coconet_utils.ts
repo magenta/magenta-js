@@ -34,6 +34,10 @@ export const MIN_PITCH = 36;
 // 2 Tenor and 3 is Bass.
 export const NUM_VOICES = 4;
 
+function mod(a, b): number {
+  return ((a % b) + b) % b
+}
+
 /**
  * Converts a pianoroll representation to a `NoteSequence`. Note that since
  * the pianoroll representation can't distinguish between multiple eighth notes
@@ -102,10 +106,10 @@ export function sequenceToPianoroll(
           number[][][]);
   const notes = ns.notes;
   notes.forEach(note => {
-    const pitchIndex = note.pitch - MIN_PITCH;
+    const pitchIndex = mod(note.pitch - MIN_PITCH, NUM_PITCHES);
     const stepIndex = note.quantizedStartStep;
     const duration = note.quantizedEndStep - note.quantizedStartStep;
-    const voice = note.instrument;
+    const voice = mod(note.instrument, NUM_VOICES);
 
     if (voice < 0 || voice >= NUM_VOICES) {
       logging.log(
