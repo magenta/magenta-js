@@ -3741,8 +3741,8 @@ promise-inflight@^1.0.1:
   resolved "https://registry.yarnpkg.com/promise-inflight/-/promise-inflight-1.0.1.tgz#98472870bf228132fcbdd868129bad12c3c029e3"
 
 protobufjs@^6.8.6:
-  version "6.10.1"
-  resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-6.10.1.tgz#e6a484dd8f04b29629e9053344e3970cccf13cd2"
+  version "6.10.3"
+  resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-6.10.3.tgz#11ed1dd02acbfcb330becf1611461d4b407f9eef"
   dependencies:
     "@protobufjs/aspromise" "^1.1.2"
     "@protobufjs/base64" "^1.1.2"
