@@ -240,6 +240,8 @@ export class Instrument {
                                 .ToneBufferSource({
                                   url: buffer,
                                   fadeOut: this.FADE_SECONDS,
+                                  fadeIn: this.FADE_SECONDS,
+
                                 })
                                 .connect(output);
       source.stop(startTime + duration + this.FADE_SECONDS);
