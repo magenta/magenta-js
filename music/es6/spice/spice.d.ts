@@ -1,0 +1,11 @@
+import * as tf from '@tensorflow/tfjs';
+import { AudioFeatures } from '../ddsp/interfaces';
+export declare const MODEL_SAMPLE_RATE = 16000;
+export declare const MODEL_FRAME_RATE = 250;
+export declare const PT_OFFSET = 25.58;
+export declare const PT_SLOPE = 63.07;
+export declare const PITCH_CONF_JITTER = 0.002;
+export declare const CONF_THRESHOLD = 0.7;
+declare function startSpice(modelUrl: string): Promise<tf.GraphModel>;
+declare function getAudioFeatures(inputAudioBuffer: AudioBuffer, spiceModel: tf.GraphModel, confidenceThreshold?: number): Promise<AudioFeatures>;
+export { startSpice, getAudioFeatures };

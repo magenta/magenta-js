@@ -1,0 +1,1 @@
+export { MusicRNN } from './model';
