@@ -202,7 +202,7 @@ export abstract class BasePlayer {
         if (this.callbackObject) {
           this.callbackObject.stop();
         }
-      }, `+${seq.totalTime}`);
+      }, `+${seq.totalTime - offset}`);
     });
   }
 
