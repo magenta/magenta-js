@@ -148,7 +148,7 @@ missing, or feel free to submit a Pull Request!
 **⭐️Demo:** [Endless Trios](https://goo.gl/magenta/endless-trios)
 
 ### MidiMe
-[MidiMe](https://g.co/magenta/pianogenie) allows you to personalize a pre-trained
+[MidiMe](https://g.co/magenta/midime) allows you to personalize a pre-trained
 MusicVAE model by quickly training a smaller model directly in the browser,
 with very little user data.
 
