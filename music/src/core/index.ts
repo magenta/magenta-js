@@ -23,6 +23,7 @@ import * as logging from './logging';
 import * as melodies from './melodies';
 import * as performance from './performance';
 import * as sequences from './sequences';
+import * as soundfont from './soundfont';
 
 export {
   aux_inputs,
@@ -32,7 +33,8 @@ export {
   logging,
   melodies,
   performance,
-  sequences
+  sequences,
+  soundfont
 };
 
 export * from './metronome';
