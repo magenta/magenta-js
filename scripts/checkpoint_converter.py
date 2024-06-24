@@ -64,7 +64,7 @@ def dump_checkpoint(
     [entries],
     output_dir,
     write_manifest=True,
-    quantization_dtype=quantization_dtype,
+    quantization_dtype_map=quantization_dtype,
     shard_size_bytes=shard_mb * 1024 * 1024)
 
 if __name__ == '__main__':
