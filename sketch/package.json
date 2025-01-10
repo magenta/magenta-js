@@ -35,7 +35,7 @@
     "typescript": "^3.3.3333",
     "webpack": "^4.24.0",
     "webpack-cli": "^3.1.2",
-    "webpack-dev-server": "^3.1.14"
+    "webpack-dev-server": "^5.0.4"
   },
   "scripts": {
     "prepublish": "yarn lint && yarn build && yarn bundle",
