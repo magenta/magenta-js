@@ -34,9 +34,9 @@
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/@protobufjs/base64/-/base64-1.1.2.tgz#4c85730e59b9a1f1f349047dbf24296034bb2735"
 
-"@protobufjs/codegen@^2.0.4":
-  version "2.0.4"
-  resolved "https://registry.yarnpkg.com/@protobufjs/codegen/-/codegen-2.0.4.tgz#7ef37f0d010fb028ad1ad59722e506d9262815cb"
+"@protobufjs/codegen@^2.0.5":
+  version "2.0.5"
+  resolved "https://registry.yarnpkg.com/@protobufjs/codegen/-/codegen-2.0.5.tgz#d9315ad7cf3f30aac70bda3c068443dc6f143659"
 
 "@protobufjs/eventemitter@^1.1.0":
   version "1.1.0"
@@ -53,9 +53,9 @@
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/@protobufjs/float/-/float-1.0.2.tgz#5e9e1abdcb73fc0a7cb8b291df78c8cbd97b87d1"
 
-"@protobufjs/inquire@^1.1.0":
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@protobufjs/inquire/-/inquire-1.1.0.tgz#ff200e3e7cf2429e2dcafc1140828e8cc638f089"
+"@protobufjs/inquire@^1.1.0", "@protobufjs/inquire@^1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@protobufjs/inquire/-/inquire-1.1.1.tgz#6cb936f4ac50965230af1e9d0bbfd57ea3675aa4"
 
 "@protobufjs/path@^1.1.2":
   version "1.1.2"
@@ -65,9 +65,9 @@
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@protobufjs/pool/-/pool-1.1.0.tgz#09fd15f2d6d3abfa9b65bc366506d6ad7846ff54"
 
-"@protobufjs/utf8@^1.1.0":
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@protobufjs/utf8/-/utf8-1.1.0.tgz#a777360b5b39a1a2e5106f8e858f2fd2d060c570"
+"@protobufjs/utf8@^1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@protobufjs/utf8/-/utf8-1.1.1.tgz#eaee5900122c110a3dbcb728c0597014a2621774"
 
 "@tensorflow/tfjs-backend-cpu@2.7.0":
   version "2.7.0"
@@ -338,10 +338,6 @@
     "@types/minimatch" "*"
     "@types/node" "*"
 
-"@types/long@^4.0.1":
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/@types/long/-/long-4.0.1.tgz#459c65fa1867dafe6a8f322c4c51695663cc55e9"
-
 "@types/minimatch@*", "@types/minimatch@3.0.3":
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/@types/minimatch/-/minimatch-3.0.3.tgz#3dca0e3f33b200fc7d1139c0cd96c1268cadfd9d"
@@ -357,13 +353,15 @@
     "@types/node" "*"
     form-data "^3.0.0"
 
-"@types/node@*", "@types/node@^14.0.19":
+"@types/node@*", "@types/node@>=13.7.0":
+  version "25.7.0"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-25.7.0.tgz#7498f82e90dbdce7c34b75aaaa256c498a0ebe6c"
+  dependencies:
+    undici-types "~7.21.0"
+
+"@types/node@^14.0.19":
   version "14.14.6"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-14.14.6.tgz#146d3da57b3c636cc0d1769396ce1cfa8991147f"
-
-"@types/node@^13.7.0":
-  version "13.13.30"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-13.13.30.tgz#1ed6e01e4ca576d5aec9cc802cc3bcf94c274192"
 
 "@types/offscreencanvas@~2019.3.0":
   version "2019.3.0"
@@ -3091,9 +3089,9 @@ loglevel@^1.6.8:
   version "1.7.0"
   resolved "https://registry.yarnpkg.com/loglevel/-/loglevel-1.7.0.tgz#728166855a740d59d38db01cf46f042caa041bb0"
 
-long@^4.0.0:
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/long/-/long-4.0.0.tgz#9a7b71cfb7d361a194ea555241c92f7468d5bf28"
+long@^5.0.0:
+  version "5.3.2"
+  resolved "https://registry.yarnpkg.com/long/-/long-5.3.2.tgz#1d84463095999262d7d7b7f8bfd4a8cc55167f83"
 
 longest@^1.0.1:
   version "1.0.1"
@@ -3740,23 +3738,22 @@ promise-inflight@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/promise-inflight/-/promise-inflight-1.0.1.tgz#98472870bf228132fcbdd868129bad12c3c029e3"
 
-protobufjs@^6.8.6:
-  version "6.10.1"
-  resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-6.10.1.tgz#e6a484dd8f04b29629e9053344e3970cccf13cd2"
+protobufjs@^7.5.6:
+  version "7.5.6"
+  resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-7.5.6.tgz#11af832ebc4b4326f658a5b1308e6141eb57edfd"
   dependencies:
     "@protobufjs/aspromise" "^1.1.2"
     "@protobufjs/base64" "^1.1.2"
-    "@protobufjs/codegen" "^2.0.4"
+    "@protobufjs/codegen" "^2.0.5"
     "@protobufjs/eventemitter" "^1.1.0"
     "@protobufjs/fetch" "^1.1.0"
     "@protobufjs/float" "^1.0.2"
-    "@protobufjs/inquire" "^1.1.0"
+    "@protobufjs/inquire" "^1.1.1"
     "@protobufjs/path" "^1.1.2"
     "@protobufjs/pool" "^1.1.0"
-    "@protobufjs/utf8" "^1.1.0"
-    "@types/long" "^4.0.1"
-    "@types/node" "^13.7.0"
-    long "^4.0.0"
+    "@protobufjs/utf8" "^1.1.1"
+    "@types/node" ">=13.7.0"
+    long "^5.0.0"
 
 proxy-addr@~2.0.5:
   version "2.0.6"
@@ -4945,6 +4942,10 @@ undeclared-identifiers@^1.1.2:
 underscore@>=1.8.3, underscore@^1.9.1:
   version "1.13.1"
   resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.13.1.tgz#0c1c6bd2df54b6b69f2314066d65b6cde6fcf9d1"
+
+undici-types@~7.21.0:
+  version "7.21.0"
+  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-7.21.0.tgz#433f7dd1b5daa9ab4dacb721a5e11a8de51eadda"
 
 union-value@^1.0.0:
   version "1.0.1"
